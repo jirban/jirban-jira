@@ -14,16 +14,16 @@ import org.slf4j.LoggerFactory;
 public class RestServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(RestServlet.class);
 
-    private final MyPluginComponent myPluginComponent;
+    private final MyPluginComponent pluginComponent;
 
-    public RestServlet(MyPluginComponent myPluginComponent) {
-        this.myPluginComponent = myPluginComponent;
+    public RestServlet(MyPluginComponent pluginComponent) {
+        this.pluginComponent = pluginComponent;
     }
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
         resp.setContentType("text/html");
-        resp.getWriter().write("<html><body>Hello World " + myPluginComponent.getName() +
+        resp.getWriter().write("<html><body>Hello World " + pluginComponent.getName() +
                 "</body></html>");
     }
 
