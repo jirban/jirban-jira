@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+  <plugin-info>
+    <description>${project.description}</description>
+    <version>${project.version}</version>
+    <vendor name="${project.organization.name}" url="${project.organization.url}"/>
+    <param name="plugin-icon">images/pluginIcon.png</param>
+    <param name="plugin-logo">images/pluginLogo.png</param>
+  </plugin-info>
+
+  <!-- add our i18n resource -->
+  <resource type="i18n" name="i18n" location="jirban-jira"/>
+
+  <!-- add our web resources -->
+  <web-resource key="jirban-jira-resources" name="jirban-jira Web Resources">
+    <dependency>com.atlassian.auiplugin:ajs</dependency>
+    <resource type="download" name="jirban-jira.css" location="/css/jirban-jira.css"/>
+    <resource type="download" name="jirban-jira.js" location="/js/jirban-jira.js"/>
+    <resource type="download" name="images/" location="/images"/>
+    <context>jirban-jira</context>
+  </web-resource>
+  <servlet name="Rest Servlet" i18n-name-key="rest-servlet.name" key="rest-servlet" class="org.jirban.jira.servlet.RestServlet">
+    <description key="rest-servlet.description">The Rest Servlet Plugin</description>
+    <url-pattern>/jirban-rest</url-pattern>
+  </servlet>
+</atlassian-plugin>
