@@ -8,11 +8,17 @@ import javax.inject.Named;
 
 import org.jirban.jira.api.JiraFacade;
 
+import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.user.UserService;
+import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.issue.search.SearchResults;
+import com.atlassian.jira.jql.builder.JqlClauseBuilder;
+import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
+import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
@@ -51,17 +57,24 @@ public class JiraFacadeImpl implements JiraFacade
         this.userManagerJira = userManagerJira;
     }
 
-    public ApplicationUser getUserByKey(String remoteUser) {
+    public User getUserByKey(String remoteUser) {
         if (remoteUser == null) {
             return null;
         }
         ApplicationUser user = userManagerJira.getUserByKey(remoteUser);
-        return user;
+        if (user != null) {
+            return user.getDirectoryUser();
+        }
+        return null;
     }
-//
-//    public void populateIssueTable(ApplicationUser user, String boardCode) {
-//        searchService
-//    }
+
+    public void populateIssueTable(User user, String boardCode) throws SearchException {
+        JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder();
+        jqlBuilder.project("TUTORIAL").buildQuery();
+        SearchResults searchResults =
+                searchService.search(user, jqlBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+        System.out.println(searchResults.getIssues());
+    }
 
     public String getName()
     {

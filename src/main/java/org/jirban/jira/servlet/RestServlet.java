@@ -11,7 +11,8 @@ import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.issue.search.SearchException;
 
 public class RestServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(RestServlet.class);
@@ -27,8 +28,16 @@ public class RestServlet extends HttpServlet{
         String remoteUser = req.getRemoteUser();
         System.out.println("Remote user " + remoteUser);
 
-        ApplicationUser applicationUser = jiraFacade.getUserByKey(remoteUser);
-        System.out.println("Application user " + applicationUser);
+        User user = jiraFacade.getUserByKey(remoteUser);
+        System.out.println("User " + user);
+
+        if (user != null) {
+            try {
+                jiraFacade.populateIssueTable(user, "POC");
+            } catch (SearchException e) {
+                e.printStackTrace();
+            }
+        }
 
 
         resp.setContentType("text/html");

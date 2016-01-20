@@ -1,10 +1,13 @@
 package org.jirban.jira.api;
 
-import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.issue.search.SearchException;
 
 public interface JiraFacade
 {
     String getName();
 
-    ApplicationUser getUserByKey(String remoteUser);
+    User getUserByKey(String remoteUser);
+
+    void populateIssueTable(User user, String boardCode) throws SearchException;
 }
