@@ -1,12 +1,13 @@
 package org.jirban.jira.impl;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
+import org.jirban.jira.api.MyPluginComponent;
+
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
-import org.jirban.jira.api.MyPluginComponent;
-
-import javax.inject.Inject;
-import javax.inject.Named;
 
 @ExportAsService ({MyPluginComponent.class})
 @Named ("myPluginComponent")
