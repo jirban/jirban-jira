@@ -7,16 +7,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.jirban.jira.api.MyPluginComponent;
+import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RestServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(RestServlet.class);
 
-    private final MyPluginComponent pluginComponent;
+    private final JiraFacade pluginComponent;
 
-    public RestServlet(MyPluginComponent pluginComponent) {
+    public RestServlet(JiraFacade pluginComponent) {
         this.pluginComponent = pluginComponent;
     }
     @Override

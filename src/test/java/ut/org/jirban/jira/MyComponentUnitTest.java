@@ -1,17 +1,17 @@
 package ut.org.jirban.jira;
 
-import org.junit.Test;
-import org.jirban.jira.api.MyPluginComponent;
-import org.jirban.jira.impl.MyPluginComponentImpl;
-
 import static org.junit.Assert.assertEquals;
+
+import org.jirban.jira.api.JiraFacade;
+import org.jirban.jira.impl.JiraFacadeImpl;
+import org.junit.Test;
 
 public class MyComponentUnitTest
 {
     @Test
     public void testMyName()
     {
-        MyPluginComponent component = new MyPluginComponentImpl(null);
+        JiraFacade component = new JiraFacadeImpl(null);
         assertEquals("names do not match!", "myComponent",component.getName());
     }
 }

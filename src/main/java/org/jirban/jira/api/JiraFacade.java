@@ -1,6 +1,6 @@
 package org.jirban.jira.api;
 
-public interface MyPluginComponent
+public interface JiraFacade
 {
     String getName();
 }

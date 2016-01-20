@@ -3,21 +3,21 @@ package org.jirban.jira.impl;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.jirban.jira.api.MyPluginComponent;
+import org.jirban.jira.api.JiraFacade;
 
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
 
-@ExportAsService ({MyPluginComponent.class})
+@ExportAsService ({JiraFacade.class})
 @Named ("myPluginComponent")
-public class MyPluginComponentImpl implements MyPluginComponent
+public class JiraFacadeImpl implements JiraFacade
 {
     @ComponentImport
     private final ApplicationProperties applicationProperties;
 
     @Inject
-    public MyPluginComponentImpl(final ApplicationProperties applicationProperties)
+    public JiraFacadeImpl(final ApplicationProperties applicationProperties)
     {
         this.applicationProperties = applicationProperties;
     }
