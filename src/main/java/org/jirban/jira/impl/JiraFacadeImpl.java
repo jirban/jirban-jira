@@ -16,6 +16,7 @@ import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
+import com.atlassian.sal.api.user.UserManager;
 
 @ExportAsService ({JiraFacade.class})
 @Named ("myPluginComponent")
@@ -33,8 +34,8 @@ public class JiraFacadeImpl implements JiraFacade
     @ComponentImport
     private final UserService userService;
 
-//    @ComponentImport
-//    private final UserManager userManagerJira;
+    @ComponentImport
+    private final UserManager userManagerJira;
 
     @ComponentImport
     com.atlassian.sal.api.user.UserManager userManagerSal;
@@ -46,14 +47,14 @@ public class JiraFacadeImpl implements JiraFacade
                           final IssueService issueService,
                           final SearchService searchService,
                           final UserService userService,
-                          //final UserManager userManagerJira,
+                          final UserManager userManagerJira,
                           final com.atlassian.sal.api.user.UserManager userManagerSal)
     {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
         this.userService = userService;
-        //this.userManagerJira = userManagerJira;
+        this.userManagerJira = userManagerJira;
         this.userManagerSal = userManagerSal;
     }
 
