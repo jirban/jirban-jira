@@ -11,7 +11,7 @@ public class MyComponentUnitTest
     @Test
     public void testMyName()
     {
-        JiraFacade component = new JiraFacadeImpl(null);
+        JiraFacade component = new JiraFacadeImpl(null, null, null);
         assertEquals("names do not match!", "myComponent",component.getName());
     }
 }
