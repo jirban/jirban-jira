@@ -23,7 +23,8 @@ public class RestServlet extends HttpServlet{
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {
         resp.setContentType("text/html");
-        resp.getWriter().write("<html><body>Hello World</body></html>");
+        resp.getWriter().write("<html><body>Hello World " + myPluginComponent.getName() +
+                "</body></html>");
     }
 
 }
