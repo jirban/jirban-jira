@@ -10,6 +10,7 @@ import org.jirban.jira.api.JiraFacade;
 
 import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.bc.user.UserService;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
@@ -27,15 +28,19 @@ public class JiraFacadeImpl implements JiraFacade
     @ComponentImport
     private final SearchService searchService;
 
+    @ComponentImport
+    private final UserService userService;
+
     @Inject
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
                           final IssueService issueService,
-                          final SearchService searchService)
+                          final SearchService searchService,
+                          final UserService userService)
     {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
-
+        this.userService = userService;
     }
 
     public String getName()
