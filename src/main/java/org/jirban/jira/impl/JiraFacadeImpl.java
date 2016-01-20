@@ -5,12 +5,15 @@ import java.util.Date;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.servlet.http.HttpServletRequest;
 
 import org.jirban.jira.api.JiraFacade;
 
 import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.user.UserService;
+import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
@@ -31,17 +34,38 @@ public class JiraFacadeImpl implements JiraFacade
     @ComponentImport
     private final UserService userService;
 
+    @ComponentImport
+    private final UserManager userManagerJira;
+
+//    @ComponentImport
+//    com.atlassian.sal.api.user.UserManager userManagerSal;
+
+
+
     @Inject
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
                           final IssueService issueService,
                           final SearchService searchService,
-                          final UserService userService)
+                          final UserService userService,
+                          final UserManager userManagerJira/*,
+                          final com.atlassian.sal.api.user.UserManager userManagerSal*/)
     {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
         this.userService = userService;
+        this.userManagerJira = userManagerJira;
+        //this.userManagerSal = userManagerSal;
     }
+
+    public ApplicationUser getLoggedInUser(HttpServletRequest request) {
+        return null;
+        //return userManagerJira.getUserByKey(userManagerSal.getRemoteUsername(request));
+    }
+
+//    public void populateIssueTable(ApplicationUser user, String boardCode) {
+//        searchService
+//    }
 
     public String getName()
     {
