@@ -165,6 +165,10 @@
                         <!-- Ensure plugin is spring powered - see https://extranet.atlassian.com/x/xBS9hQ  -->
                         <Spring-Context>*</Spring-Context>
                     </instructions>
+
+                    <!-- TODO Get rid of this (compression causes some problems I don't want to look at now) -->
+                    <compressResources>false</compressResources>
+
                 </configuration>
             </plugin>
             <plugin>

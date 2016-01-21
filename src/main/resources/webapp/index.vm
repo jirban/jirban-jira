@@ -1,9 +1,9 @@
 <html>
 <head>
     <title>JirBan - Nicer Kanban than Jira Agile!</title>
+    <script>
+        window.location = "$webappRoot/index.html";
+    </script>
 </head>
-<body>
-    <p>This is the initial page</p>
-    <img src="$webappRoot/images/pluginIcon.png"
-</body>
 </html>
+
