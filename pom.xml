@@ -12,6 +12,19 @@
     <name>jirban-jira</name>
     <description>This is the org.jirban:jirban-jira plugin for Atlassian JIRA.</description>
     <packaging>atlassian-plugin</packaging>
+
+    <properties>
+        <jira.version>6.4.11</jira.version>
+        <amps.version>6.2.1</amps.version>
+        <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
+        <atlassian.spring.scanner.version>1.2.6</atlassian.spring.scanner.version>
+        <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
+        <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
+        <!-- TestKit version 6.x for JIRA 6.x -->
+        <testkit.version>6.3.11</testkit.version>
+    </properties>
+
+
     <dependencies>
         <dependency>
             <groupId>com.atlassian.jira</groupId>
@@ -57,6 +70,12 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.templaterenderer</groupId>
+            <artifactId>atlassian-template-renderer-api</artifactId>
+            <version>1.5.6</version>
             <scope>provided</scope>
         </dependency>
         <!-- WIRED TEST RUNNER DEPENDENCIES -->
@@ -169,14 +188,4 @@
             </plugin>
         </plugins>
     </build>
-    <properties>
-        <jira.version>6.4.11</jira.version>
-        <amps.version>6.2.1</amps.version>
-        <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
-        <atlassian.spring.scanner.version>1.2.6</atlassian.spring.scanner.version>
-        <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
-        <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
-        <!-- TestKit version 6.x for JIRA 6.x -->
-        <testkit.version>6.3.11</testkit.version>
-    </properties>
 </project>
