@@ -12,6 +12,7 @@ import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.user.UserService;
+import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
 import com.atlassian.jira.jql.builder.JqlClauseBuilder;
@@ -22,7 +23,7 @@ import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
 
-@Named ("myPluginComponent")
+@Named ("jirbanJiraFacade")
 public class JiraFacadeImpl implements JiraFacade
 {
     @ComponentImport
@@ -40,21 +41,22 @@ public class JiraFacadeImpl implements JiraFacade
     @ComponentImport
     private final UserManager userManagerJira;
 
-    
-
+    @ComponentImport
+    com.atlassian.sal.api.user.UserManager userManagerSal;
 
     @Inject
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
                           final IssueService issueService,
                           final SearchService searchService,
                           final UserService userService,
-                          final UserManager userManagerJira)
+                          final com.atlassian.sal.api.user.UserManager userManagerSal)
     {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
         this.userService = userService;
-        this.userManagerJira = userManagerJira;
+        this.userManagerJira = ComponentAccessor.getUserManager();
+        this.userManagerSal = userManagerSal;
     }
 
     public User getUserByKey(String remoteUser) {
@@ -84,5 +86,13 @@ public class JiraFacadeImpl implements JiraFacade
         }
         
         return "myComponent";
+    }
+
+    public UserManager getUserManagerJira() {
+        return userManagerJira;
+    }
+
+    public com.atlassian.sal.api.user.UserManager getUserManagerSal() {
+        return userManagerSal;
     }
 }

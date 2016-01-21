@@ -24,13 +24,9 @@ public class RestServlet extends HttpServlet{
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
-    {
-        String remoteUser = req.getRemoteUser();
-        System.out.println("Remote user " + remoteUser);
-
-        User user = jiraFacade.getUserByKey(remoteUser);
-        System.out.println("User " + user);
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        User user = Utils.getRemoteUser(req);
+        System.out.println("Rest servlet User " + user);
 
         if (user != null) {
             try {
