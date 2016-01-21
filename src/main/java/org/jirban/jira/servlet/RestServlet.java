@@ -22,6 +22,7 @@ public class RestServlet extends HttpServlet{
     public RestServlet(JiraFacade jiraFacade) {
         this.jiraFacade = jiraFacade;
     }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException
     {

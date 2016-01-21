@@ -19,11 +19,9 @@ import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.jira.web.bean.PagerFilter;
-import com.atlassian.plugin.spring.scanner.annotation.export.ExportAsService;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
 
-@ExportAsService ({JiraFacade.class})
 @Named ("myPluginComponent")
 public class JiraFacadeImpl implements JiraFacade
 {
@@ -41,6 +39,8 @@ public class JiraFacadeImpl implements JiraFacade
 
     @ComponentImport
     private final UserManager userManagerJira;
+
+    
 
 
     @Inject
