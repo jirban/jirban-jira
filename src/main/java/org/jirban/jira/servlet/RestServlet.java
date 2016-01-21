@@ -2,6 +2,8 @@ package org.jirban.jira.servlet;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,11 +16,13 @@ import org.slf4j.LoggerFactory;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.search.SearchException;
 
+@Named("jirbanRestServlet")
 public class RestServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(RestServlet.class);
 
     private final JiraFacade jiraFacade;
 
+    @Inject
     public RestServlet(JiraFacade jiraFacade) {
         this.jiraFacade = jiraFacade;
     }

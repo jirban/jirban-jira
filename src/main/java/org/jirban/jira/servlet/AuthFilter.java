@@ -2,6 +2,8 @@ package org.jirban.jira.servlet;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -19,11 +21,13 @@ import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.sal.api.user.UserProfile;
 
+@Named("jirbanAuthFilter")
 public class AuthFilter implements Filter {
     private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
 
     private final JiraFacade jiraFacade;
 
+    @Inject
     public AuthFilter(JiraFacade jiraFacade) {
         this.jiraFacade = jiraFacade;
         System.out.println("---> Jira " + jiraFacade);
