@@ -1,0 +1,103 @@
+<div class="content">
+    <h1>JirBan</h1>
+    <p>
+        JirBan addresses the shortcomings of Jira's built in boards and of the integration with Jira in
+        third-party Kanban tools. Once you enter the sample board, there is a control
+        panel in the bottom right which allows you to configure swimlanes and to filter by various attributes of the issues.
+        There is also a 'health' panel which notifies you of problems in the board's configuration. For this demo there is a
+        deliberate problem left in so that the health panel can be seen in action. The state column headers, and the swimlane
+        header rows collapse when they are clicked.
+    </p>
+    <p>
+        The login is your normal jboss.org Jira login. The username and password are used to authenticate with Jira's REST API,
+        and are not stored in persistent storage on the server. If you don't feel comfortable using your jboss.org login for
+        this app (jboss.org SSO is planned) contact <a href="mailto:kabir.khan@jboss.com">Kabir Khan</a> for a test login.
+    </p>
+    <p>
+        The server contacts Jira every 30 seconds (configurable per board)to get the data. If something was changed since the
+        last time, the data is pushed down to the connected clients using web sockets. The queue of events triggered by users
+        moving issues are processed before pushing the full refresh. The results of moving issues are pushed to the clients
+        over the same web socket
+    </p>
+    <p>
+        The mapping of states between projects happens on the server in a configuration file per board. It is envisaged that
+        each board contains a set of top-level projects and a set of 'linked' projects. The top-level projects map onto states
+        in the 'owner' project. Also the issue types and priorities are configurable on the server. The current configuration
+        for the sample board is:
+    </p>
+    <pre>
+{
+    "code" : "POC",
+    "name" : "Jira Staging Proof of Concept",
+    "refresh-interval" : 30,
+    "owning-project" : "EAPDS",
+    "jira-url" : "https://issues.stage.jboss.org",
+    "rank-custom-field-id" : 12311940,
+    "priorities" : {
+        "Blocker" : "https://issues.stage.jboss.org/images/icons/priorities/blocker.png",
+        "Major" : "https://issues.stage.jboss.org/images/icons/priorities/major.png",
+        "Minor" : "https://issues.stage.jboss.org/images/icons/priorities/minor.png",
+        "Optional" : "https://issues.stage.jboss.org/images/icons/priorities/minor.png",
+        "Trivial" : "https://issues.stage.jboss.org/images/icons/priorities/trivial.png"
+    },
+    "issue-types" : {
+        "Task" : "https://issues.stage.jboss.org/images/icons/issuetypes/task.png",
+        "Story" : "https://issues.stage.jboss.org/images/icons/issuetypes/story.png",
+        "Bug" : "https://issues.stage.jboss.org/images/icons/issuetypes/bug.png",
+        "Epic" : "https://issues.stage.jboss.org/images/icons/issuetypes/epic.png"
+    },
+    "projects" : {
+        "EAPDS" : {
+            "query-filter" : "",
+            "colour" : "#4667CA",
+            "states" : [
+                "Backlog Pool",
+                "Backlog P2",
+                "Backlog P1",
+                "Analysis Doing",
+                "Analysis PM Input",
+                "Analysis Rejected",
+                "Dev TODO",
+                "QA Rejected",
+                "Waiting For Upstream",
+                "Dev Backport TODO",
+                "Backport",
+                "Backport Review",
+                "Dev Parked",
+                "Prod",
+                "Docs",
+                "Awaiting Release",
+                "QA TODO",
+                "QA",
+                "Done"
+            ]
+        },
+        "EAPBGS" : {
+            "query-filter" : "",
+            "colour" : "#CA6746",
+            "state-links" : {
+                "Backlog" : "Backlog P1",
+                "Analysis Doing" : "Analysis Doing",
+                "Analysis Rejected" : "Analysis Rejected",
+                "QA Rejected" : "QA Rejected",
+                "Waiting For Upstream" : "Waiting For Upstream",
+                "Dev Backport TODO" : "Dev Backport TODO",
+                "Backport" : "Backport",
+                "Backport Review" : "Backport Review",
+                "Prod" : "Prod",
+                "Awaiting Release" : "Awaiting Release",
+                "QA TODO" : "QA TODO",
+                "QA" : "QA",
+                "Done" : "Done"
+            }
+        }
+    },
+    "linked-projects" : {"EAPUS" : {"states" : [
+        "Backlog",
+        "Selected for Development",
+        "In Progress",
+        "Done"
+    ]}}
+}
+    </pre>
+</div>

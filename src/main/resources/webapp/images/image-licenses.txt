@@ -1,0 +1,4 @@
+** https://useiconic.com/open/ **
+person*.png
+cog*.png
+heart*.png

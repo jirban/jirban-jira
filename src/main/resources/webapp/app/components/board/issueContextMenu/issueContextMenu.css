@@ -1,0 +1,99 @@
+.issue-context-menu {
+    font-size: 13px;
+    position: absolute;
+    z-index: 10;
+    padding: 3px;
+    background-color: lightgrey;
+    border-radius: 5px;
+}
+.issue-context-head {
+    border-bottom: 1px solid #888888;
+    width:100%;
+}
+a.context {
+    color: black;
+}
+
+
+#issue-move-panel {
+    border: 1px solid #888888;
+    position: absolute;
+    /* top, bottom will be calculated */
+    width: 720px;
+    height: 350px;
+    z-index: 10;
+    background-color: white;
+    border-radius: 5px;
+    opacity: .9;
+}
+.header {
+    width: 100%;
+    font-size: 13px;
+    height: 15px;
+    background-color: #777777;
+    color: white;
+    padding: 3px 0px;
+}
+.header-text {
+    width: 95%;
+    text-align: center;
+    float: left;
+}
+.header-close-button {
+    width: 18px;
+    text-align: right;
+    float: right;
+    font-weight: bold;
+    padding-right: 3px;
+}
+a.close {
+    color: #FFFFFF;
+}
+.content {
+    max-width: 100%;
+    max-height: 100%;
+    padding: 2px;
+    font-size: 11px;
+}
+.issue-column {
+    float: left;
+    width: 230px;
+    vertical-align: center;
+    padding-right: 8px;
+    opacity: 1;
+}
+.column {
+    font-size: 11px;
+    color: #777777;
+    float: left;
+    padding: 10px 10px 0px 3px;
+    overflow:hidden;
+}
+.column-header {
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: bold;
+}
+.states {
+    /** Need to calculate the height */
+    width:150px;
+    overflow-y: scroll;
+    white-space: nowrap;
+}
+.issues {
+    /** Need to calculate the height */
+    width:300px;
+    overflow-y: scroll;
+    white-space: nowrap;
+}
+.entry {
+}
+.entry-selected {
+    background-color: #444444;
+}
+a.entry {
+    color: #444444;
+}
+a.entry-selected {
+    color: #FFFFFF;
+}

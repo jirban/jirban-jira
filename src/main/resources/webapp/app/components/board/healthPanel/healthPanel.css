@@ -1,0 +1,46 @@
+#health-panel {
+    background: white;
+    position: fixed;
+    right: 100px;
+    bottom: 10px;
+    border: 2px solid #CCCCCC;
+    border-collapse: collapse;
+    border-radius: 6px;
+    z-index: 15;
+    overflow: hidden;
+}
+.header {
+    width: 100%;
+    font-size: 13px;
+    height: 15px;
+    background-color: #777777;
+    color: white;
+    padding: 3px;
+}
+.header-text {
+    width: 95%;
+    text-align: center;
+    float: left;
+}
+.header-close-button {
+    width: 18px;
+    text-align: left;
+    float: right;
+    font-weight: bold;
+}
+a.close {
+    color: #FFFFFF;
+}
+.content {
+    max-width: 400px;
+    max-height: 300px;
+    overflow-y: scroll;
+    padding: 5px;
+    font-size: 11px;
+    overflow-y: auto;
+}
+.h1 {
+    padding-top: 10px;
+    font-size: 12px;
+    font-weight: bold;
+}

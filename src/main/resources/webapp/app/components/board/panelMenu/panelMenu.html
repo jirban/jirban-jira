@@ -1,0 +1,8 @@
+<div id="panel-menu">
+    <div class="panel">
+        <img src="images/heart-3x.png" class="blink" (click)="toggleHealthPanel()" [hidden]="!boardData.missing" title="Problems in server configuration"/>
+        <img src="images/cog-3x.png" (click)="toggleControlPanel()" title="Board settings"/>
+    </div>
+</div>
+<health-panel [hidden]="!healthPanel" (closeHealthPanel)="onCloseHealthPanel($event)"></health-panel>
+<control-panel [hidden]="!controlPanel" (closeControlPanel)="onCloseControlPanel($event)"></control-panel>

@@ -1,0 +1,76 @@
+/*
+ * board.ts styling (inherited by swimlaneEntry.ts
+ */
+/** Clipping board for horizontal and vertical scroll **/
+#board-outer {
+    /**width: ?? - calculated in board.ts */
+    overflow-x: scroll;
+    overflow-y:hidden;
+}
+#board-inner {
+    /**height: ?? - calculated in board.ts */
+}
+.board table {
+    overflow-y: scroll;
+    border: 0px;
+}
+.board tbody {
+    overflow-x: scroll;
+    display: block;
+    /**height   : ?? - calculated in board.ts */
+}
+.board thead {
+    display: table-row;
+}
+.board th.visible, td.visible {
+    min-width: 200px;
+    max-width: 200px;
+}
+.board th.collapsed, td.collapsed {
+    min-width: 30px;
+    min-width: 30px;
+}
+
+/** Styling */
+#board-outer{
+    border: 1px solid #CCCCCC;
+}
+#board-inner table, th, td{
+    margin: 0px;
+    padding: 0px;
+    border: 1px solid #CCCCCC;
+    border-collapse: collapse;
+    font-weight: normal;
+    table-layout: fixed;
+    vertical-align: top;
+    text-align: left;
+}
+.board th{
+    text-align: center;
+    vertical-align: middle;
+    font-size: 11px;
+    font-weight: bold;
+    height: 30px;
+    cursor: pointer;
+}
+div.state-summary {
+    width: 100%;
+    font-size: 12px;
+    text-align: center;
+    min-height: 17px;
+}
+ul.issues-list {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    display: block;
+    width: 192px;
+}
+.issue-context-menu {
+    font-size: 13px;
+    position: absolute;
+    z-index: 10;
+    padding: 2px;
+    background-color: lightgrey;
+    border-radius: 5px;
+}

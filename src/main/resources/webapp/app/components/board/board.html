@@ -1,0 +1,42 @@
+<div id="board-outer" *ngIf="boardData.initialized" (window:resize)="onResize($event)" [style.width]="width" (click)="hideMenus()">
+    <div id="board-inner" [style.height]="boardHeight">
+        <table class="board">
+            <thead>
+            <tr>
+                <th *ngFor="#state of boardStates ; #stateIndex=index"
+                    [ngClass]="visibleColumns[stateIndex] ? 'visible' : 'collapsed'"
+                    (click)="toggleColumn(stateIndex)">
+                    <div [hidden]="!visibleColumns[stateIndex]">{{state}} ({{boardData.totalIssuesByState[stateIndex]}})</div>
+                    <div [hidden]="visibleColumns[stateIndex]">{{boardData.totalIssuesByState[stateIndex]}}</div>
+                </th>
+            </tr>
+            </thead>
+            <tbody *ngIf="!boardData.swimlane" [style.height]="boardBodyHeight">
+            <tr>
+                <td *ngFor="#state of boardStates ; #stateIndex=index"
+                    [ngClass]="visibleColumns[stateIndex] == true ? 'visible' : 'collapsed'"
+                    title="State: {{state}}">
+                    <div [hidden]="!visibleColumns[stateIndex]">
+                        <ul class="issues-list">
+                            <issue *ngFor="#issue of boardData.issueTable[stateIndex]"
+                                   [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
+                        </ul>
+                    </div>
+                    <div class="collapsed state-summary" [hidden]="visibleColumns[stateIndex]" *ngFor="#character of toCharArray(state)">{{character}}</div>
+                </td>
+            </tr>
+            </tbody>
+            <tbody *ngIf="boardData.swimlane"  [style.height]="boardBodyHeight">
+            <swimlane-entry *ngFor="#swimlane of boardData.swimlaneTable; #swimlaneIndex=index"
+                            [boardData]="boardData"
+                            [swimlaneIndex]="swimlaneIndex"
+                            [swimlane]="swimlane"
+                            [hidden]="swimlane.filtered"
+                            (issueContextMenu)="showIssueContextMenu($event)"></swimlane-entry>
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- The panel with links to the control and health panels -->
+<panel-menu></panel-menu>
+<issue-context-menu [data]="issueContextMenuData" (closeContextMenu)="onCloseIssueContextMenu($event)"></issue-context-menu>

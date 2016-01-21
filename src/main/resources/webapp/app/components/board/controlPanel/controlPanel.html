@@ -1,0 +1,112 @@
+<div id="control-panel" *ngIf="boardData.initialized">
+    <div class="header">
+        <div class="header-text">Board Settings</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a>
+        </div>
+    </div>
+    <div class="column">
+        <div class="setting">
+            <div class="setting-header">Swimlane</div>
+            <div class="setting-content-small">
+                <form [ngFormModel]="swimlaneForm" #f="ngForm">
+                    <select id="swimlane" ngControl="swimlane">
+                        <!-- Don't set a value for the undefined one -->
+                        <option></option>
+                        <option value="project">Project</option>
+                        <option value="priority">Priority</option>
+                        <option value="issue-type">Issue Type</option>
+                        <option value="assignee">Assignee</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+        <div class="setting">
+            <div class="setting-header">Issue Detail</div>
+            <div class="setting-content-small">
+                <form [ngFormModel]="issueDetailForm" #f="ngForm">
+                    <div>
+                        <input type="checkbox" id="d_assignee" ngControl="assignee"/>
+                        <label>Assignee</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="d_description" ngControl="description"/>
+                        <label>Description</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="d_info" ngControl="info"/>
+                        <label>Info</label>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="d_linked" ngControl="linked"/>
+                        <label>Linked issues</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="setting">
+            <div class="setting-header">Project Filter</div>
+            <div class="setting-content">
+                <form [ngFormModel]="projectFilterForm" #f="ngForm">
+                    <div *ngFor="#project of boardProjectCodes">
+                        <input type="checkbox" id="p_{{project}}" ngControl="{{project}}"/>
+                        <label>{{project}}</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="setting">
+            <div class="setting-header">Priority Filter</div>
+            <div class="setting-content" title="Scroll me!">
+                <form [ngFormModel]="priorityFilterForm" #f="ngForm">
+                    <div *ngFor="#priority of priorities">
+                        <input type="checkbox" id="pr_{{priority.name}}" ngControl="{{priority.name}}"/>
+                        <label>{{priority.name}}</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="setting">
+            <div class="setting-header">Issue Type Filter</div>
+            <div class="setting-content" title="Scroll me!">
+                <form [ngFormModel]="issueTypeFilterForm" #f="ngForm">
+                    <div *ngFor="#issueType of issueTypes">
+                        <input type="checkbox" id="i_{{issueType.name}}" ngControl="{{issueType.name}}"/>
+                        <label>{{issueType.name}}</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="setting">
+            <div class="setting-header">Assignee Filter</div>
+            <div class="setting-content" title="Scroll me!">
+                <form [ngFormModel]="assigneeFilterForm" #f="ngForm">
+                    <div>
+                        <input type="checkbox" id="a_{{noAssignee}}" ngControl="{{noAssignee}}"/>
+                        <label>None</label>
+                    </div>
+                    <div *ngFor="#assignee of assignees">
+                        <input type="checkbox" id="a_{{assignee.key}}" ngControl="{{assignee.key}}"/>
+                        <label>{{assignee.name}}</label>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="column">
+        <div class="setting">
+            <div class="setting-header">Component Filter</div>
+            <div class="setting-content" title="Scroll me!">
+                TODO (Will be simple)
+            </div>
+        </div>
+    </div>
+</div>

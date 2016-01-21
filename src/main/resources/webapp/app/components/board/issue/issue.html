@@ -1,0 +1,34 @@
+<li class="issue" (contextmenu)="showIssueContextMenuEvent($event, issue.key)" title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}"
+    [hidden]="issue.filtered">
+    <div class="header" [style.background-color]="issue.colour">
+        <div class="summary">
+            <span><a href="{{jiraUrl}}/browse/{{issue.key}}"
+                     (contextmenu)="defaultContextMenu($event)" class="header">{{issue.key}}</a></span>
+        </div>
+        <div class="assignee">
+            <span title="{{issue.assigneeName}}">{{issue.assigneeInitials}}</span>
+            <span><a href="" class="header" (click)="showIssueContextMenuEvent($event, issue.key)">...</a></span>
+        </div>
+    </div>
+    <div [ngClass]="hideAssignee ? 'detail-short' : 'detail-full'" [hidden]="hideSummary && hideAssignee">
+        <img class="avatar" [hidden]="hideAssignee"
+             title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"/>
+        <div [ngClass]="hideAssignee ? 'summary-short' : 'summary-full'">{{issue.summary}}</div>
+    </div>
+    <div class="info" [hidden]="hideInfo">
+        <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
+        <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
+    </div>
+    <div class="linked-issues" *ngFor="#linked of issue.linkedIssues"
+         title="{{linked.key}}&#013;{{linked.ownStatus}}&#013;{{linked.summary}}"
+         [hidden]="hideLinkedIssues">
+        <div class="linked-issue">
+            <div class="linked-issue-summary">
+                <a href="{{jiraUrl}}/browse/{{linked.key}}" class="linked-issue-summary">{{linked.key}}</a>
+            </div>
+            <div class="linked-issue-status">
+                <span [style.color]="getStatusColour(linked)">{{getStatusFraction(linked)}}</span>
+            </div>
+        </div>
+    </div>
+</li>
