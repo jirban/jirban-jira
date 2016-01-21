@@ -13,25 +13,31 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.util.UserManager;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.user.UserProfile;
 
 @Named("jirbanAuthFilter")
 public class AuthFilter implements Filter {
     private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
 
-    private final JiraFacade jiraFacade;
+    //private final JiraFacade jiraFacade;
+    private final UserManager jiraUserManager;
+
+    @ComponentImport
+    private final com.atlassian.sal.api.user.UserManager salUserManager;
 
     @Inject
-    public AuthFilter(JiraFacade jiraFacade) {
-        this.jiraFacade = jiraFacade;
-        System.out.println("---> Jira " + jiraFacade);
-
+    public AuthFilter(final com.atlassian.sal.api.user.UserManager salUserManager) {
+        //It does not seem to like me trying to inject both user managers
+        this.jiraUserManager = ComponentAccessor.getUserManager();
+        this.salUserManager = salUserManager;
     }
 
     public void init(FilterConfig filterConfig)throws ServletException{
@@ -56,11 +62,11 @@ public class AuthFilter implements Filter {
     }
 
     private User getUserByKey(HttpServletRequest request) {
-        UserProfile userProfile = jiraFacade.getUserManagerSal().getRemoteUser(request);
+        UserProfile userProfile = salUserManager.getRemoteUser(request);
         if (userProfile == null) {
             return null;
         }
-        ApplicationUser user = jiraFacade.getUserManagerJira().getUserByKey(userProfile.getUserKey().getStringValue());
+        ApplicationUser user = jiraUserManager.getUserByKey(userProfile.getUserKey().getStringValue());
         if (user != null) {
             return user.getDirectoryUser();
         }
