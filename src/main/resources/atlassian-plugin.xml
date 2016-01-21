@@ -18,8 +18,8 @@
     <resource type="download" name="images/" location="/images"/>
     <context>jirban-jira</context>
   </web-resource>
-  <servlet name="Init Servlet" i18n-name-key="init-servlet.name" key="init-servlet" class="org.jirban.jira.servlet.InitServlet">
-    <description key="rest-servlet.description">The Init Servlet Plugin</description>
+  <servlet name="Index Servlet" i18n-name-key="index-servlet.name" key="index-servlet" class="org.jirban.jira.servlet.IndexServlet">
+    <description key="rest-servlet.description">The Index Servlet Plugin</description>
     <url-pattern>/jirban</url-pattern>
   </servlet>
   <servlet name="Rest Servlet" i18n-name-key="rest-servlet.name" key="rest-servlet" class="org.jirban.jira.servlet.RestServlet">

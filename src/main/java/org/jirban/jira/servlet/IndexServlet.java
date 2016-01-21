@@ -23,11 +23,11 @@ import com.atlassian.templaterenderer.TemplateRenderer;
 /**
  * Loads up the init.vm template which drives the angular app, initialised with links to the correct directories.
  */
-@Named("jirbanInitServlet")
-public class InitServlet extends HttpServlet{
-    private static final Logger log = LoggerFactory.getLogger(InitServlet.class);
+@Named("jirbanIndexServlet")
+public class IndexServlet extends HttpServlet{
+    private static final Logger log = LoggerFactory.getLogger(IndexServlet.class);
 
-    private static final String INIT_BROWSER_TEMPLATE = "/templates/init.vm";
+    private static final String INDEX_BROWSER_TEMPLATE = "/webapp/index.vm";
 
     @ComponentImport
     private final TemplateRenderer templateRenderer;
@@ -35,7 +35,7 @@ public class InitServlet extends HttpServlet{
     private final ApplicationProperties applicationProperties;
 
     @Inject
-    public InitServlet(final TemplateRenderer templateRenderer) {
+    public IndexServlet(final TemplateRenderer templateRenderer) {
         this.templateRenderer = templateRenderer;
         this.applicationProperties = ComponentAccessor.getApplicationProperties();
     }
@@ -52,7 +52,7 @@ public class InitServlet extends HttpServlet{
 
         Map<String, Object> context = new HashMap<>();
         context.put("webappRoot", webappRoot.toString());
-        templateRenderer.render(INIT_BROWSER_TEMPLATE, context, resp.getWriter());
+        templateRenderer.render(INDEX_BROWSER_TEMPLATE, context, resp.getWriter());
     }
 
 }

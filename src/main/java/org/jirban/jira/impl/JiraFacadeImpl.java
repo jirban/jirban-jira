@@ -7,6 +7,8 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jirban.jira.api.JiraFacade;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.IssueService;
@@ -21,8 +23,7 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
 
 @Named ("jirbanJiraFacade")
-public class JiraFacadeImpl implements JiraFacade
-{
+public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableBean {
     @ComponentImport
     private final ApplicationProperties applicationProperties;
 
@@ -39,8 +40,7 @@ public class JiraFacadeImpl implements JiraFacade
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
                           final IssueService issueService,
                           final SearchService searchService,
-                          final UserService userService)
-    {
+                          final UserService userService) {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
@@ -55,8 +55,7 @@ public class JiraFacadeImpl implements JiraFacade
         System.out.println(searchResults.getIssues());
     }
 
-    public String getName()
-    {
+    public String getName() {
         if(null != applicationProperties)
         {
             return "myComponent:" + applicationProperties.getDisplayName() + new SimpleDateFormat("HH:mm:ss").format(new Date());
@@ -64,4 +63,15 @@ public class JiraFacadeImpl implements JiraFacade
         
         return "myComponent";
     }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+
+    }
+
+    @Override
+    public void destroy() throws Exception {
+
+    }
+
 }
