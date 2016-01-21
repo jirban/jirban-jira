@@ -33,6 +33,7 @@
       Need this since this is relative to the jira instance
       https://developer.atlassian.com/jiradev/jira-platform/guides/other/tutorial-writing-jira-event-listeners-with-the-atlassian-event-library
      -->
+    <url-pattern>/plugins/servlet/jirban</url-pattern>
     <url-pattern>/plugins/servlet/jirban/*</url-pattern>
   </servlet-filter>
 
