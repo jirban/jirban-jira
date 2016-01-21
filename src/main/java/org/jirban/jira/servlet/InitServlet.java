@@ -2,6 +2,8 @@ package org.jirban.jira.servlet;
 
 import java.io.IOException;
 
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -13,16 +15,19 @@ import org.slf4j.LoggerFactory;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.config.properties.APKeys;
 import com.atlassian.jira.config.properties.ApplicationProperties;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
+import com.atlassian.templaterenderer.TemplateRenderer;
 
+@Named("jirbanInitServlet")
 public class InitServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(InitServlet.class);
 
-    /*@ComponentImport
-    private final TemplateRenderer templateRenderer;*/
+    @ComponentImport
+    private final TemplateRenderer templateRenderer;
 
-    //@Inject
-    public InitServlet(){/*final TemplateRenderer templateRenderer) {
-        this.templateRenderer = templateRenderer;*/
+    @Inject
+    public InitServlet(final TemplateRenderer templateRenderer) {
+        this.templateRenderer = templateRenderer;
     }
 
     @Override
