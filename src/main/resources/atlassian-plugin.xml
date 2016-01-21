@@ -18,9 +18,13 @@
     <resource type="download" name="images/" location="/images"/>
     <context>jirban-jira</context>
   </web-resource>
+  <servlet name="Init Servlet" i18n-name-key="init-servlet.name" key="init-servlet" class="org.jirban.jira.servlet.InitServlet">
+    <description key="rest-servlet.description">The Init Servlet Plugin</description>
+    <url-pattern>/jirban</url-pattern>
+  </servlet>
   <servlet name="Rest Servlet" i18n-name-key="rest-servlet.name" key="rest-servlet" class="org.jirban.jira.servlet.RestServlet">
     <description key="rest-servlet.description">The Rest Servlet Plugin</description>
-    <url-pattern>/jirban-rest/*</url-pattern>
+    <url-pattern>/jirban/*</url-pattern>
   </servlet>
   <!-- Add a filter to load up the valid user -->
   <servlet-filter name="Auth Filter" i18n-name-key="auth-filter.name" key="auth-filter" class="org.jirban.jira.servlet.AuthFilter" location="before-dispatch" weight="100">
@@ -29,6 +33,9 @@
       Need this since this is relative to the jira instance
       https://developer.atlassian.com/jiradev/jira-platform/guides/other/tutorial-writing-jira-event-listeners-with-the-atlassian-event-library
      -->
-    <url-pattern>/plugins/servlet/jirban-rest/*</url-pattern>
+    <url-pattern>/plugins/servlet/jirban/*</url-pattern>
   </servlet-filter>
+
+  <!-- Should be accessible under http://kabirmac.local:2990/jira/download/resources/org.jirban.jirban-jira/webapp/ -->
+  <resource type="download" name="webapp/" location="/webapp/"/>
 </atlassian-plugin>
