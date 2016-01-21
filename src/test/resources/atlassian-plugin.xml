@@ -6,9 +6,9 @@
     </plugin-info>
 
     <!-- from our base plugin -->
-    <component-import key="myComponent" interface="org.jirban.jira.api.JiraFacade"/>
+    <!--<component-import key="myComponent" interface="org.jirban.jira.api.JiraFacade"/>-->
 
     <!-- from the product container -->
-    <component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties" />
-    
+    <!--<component-import key="applicationProperties" interface="com.atlassian.sal.api.ApplicationProperties" />-->
+
 </atlassian-plugin>
