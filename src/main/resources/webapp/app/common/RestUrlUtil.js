@@ -4,7 +4,7 @@ System.register([], function(exports_1) {
         setters:[],
         execute: function() {
             /**
-             * Utils to calculate the rest urls, depending on if we are running in dev mode (i.e. not deployed as a servlet),
+             * Util to calculate the rest urls, depending on if we are running in dev mode (i.e. not deployed as a servlet),
              * or deployed within Jira
              */
             RestUrlUtil = (function () {

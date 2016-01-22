@@ -33,7 +33,7 @@ import com.atlassian.crowd.embedded.api.User;
 /**
  * @author Kabir Khan
  */
-public class Utils {
+class Util {
     static final String CONTENT_APP_JSON = "application/json";
     private static final String USER_REQUEST_KEY = "authenticated-user";
 
@@ -70,6 +70,4 @@ public class Utils {
         }
         return sb.toString();
     }
-
-
 }

@@ -21,54 +21,37 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.config.Util.getRequiredChild;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 
 /**
- * Abstract base class for all kinds of project configurations.
+ * Project which does not appear on the board as a card, but is linked to from the cards.
  *
  * @author Kabir Khan
  */
-abstract class ProjectConfig {
-    protected final String code;
-    protected final Map<String, Integer> states;
-
-    public ProjectConfig(String code, Map<String, Integer> states) {
-        this.code = code;
-        this.states = states;
+public class LinkedProjectConfig extends ProjectConfig {
+    public LinkedProjectConfig(String code, Map<String, Integer> states) {
+        super(code, states);
     }
 
-    public String getCode() {
-        return code;
+    static LinkedProjectConfig load(String projectName, ModelNode project) {
+        List<ModelNode> statesList = getRequiredChild(project, "Project", projectName, "states").asList();
+        Map<String, Integer> statesMap = getStringIntegerMap(statesList);
+        return new LinkedProjectConfig(projectName, Collections.unmodifiableMap(statesMap));
     }
 
-    public Map<String, Integer> getStates() {
-        return states;
+    private static Map<String, Integer> getStringIntegerMap(final List<ModelNode> statesList) {
+        Map<String, Integer> statesMap = new LinkedHashMap<>();
+        for (int i = 0; i < statesList.size(); i++) {
+            statesMap.put(statesList.get(i).asString(), i);
+        }
+        return statesMap;
     }
 
-    public Set<String> getStateNames() {
-        return states.keySet();
-    }
-
-    public Integer getStateIndex(String stateName) {
-        return states.get(stateName);
-    }
-
-    public int getMaxStateIndex() {
-        return states.size() - 1;
-    }
-
-    void serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
-        ModelNode projectNode = parent.get(code);
-        ModelNode statesNode = projectNode.get("states");
-        this.states.keySet().forEach(statesNode::add);
-
-        doSerializeModelNode(boardConfig, projectNode);
-    }
-
-    void doSerializeModelNode(BoardConfig boardConfig, ModelNode projectNode) {
-        //To be overridden
-    }
 }

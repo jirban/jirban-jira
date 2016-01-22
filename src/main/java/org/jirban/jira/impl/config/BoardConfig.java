@@ -33,8 +33,8 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
 
 /**
- * A project group is the set of projects to be displayed on a board. The 'owner' is the project which contains the
- * states. The 'main' projects include the 'owner' and the other projects whose issues should be displayed as cards
+ * The set of projects to be displayed on a board. The 'owner' is the project which contains the
+ * states. The 'board' projects include the 'owner' and the other projects whose issues should be displayed as cards
  * on the Kanban board. The non-'owner' projects map their states onto the 'owner's states. The 'linked' projects are
  * 'upstream' projects, which we are interested in linking to from the 'main' projects' boards.
  *
@@ -44,29 +44,27 @@ public class BoardConfig {
 
     private final int id;
     private final String name;
-    private final int refreshInterval;
     private final String owningProjectName;
     private final String jiraUrl;
     private final int rankCustomFieldId;
-    private final Map<String, ProjectConfig> mainProjects;
-    private final Map<String, ProjectConfig> linkedProjects;
+    private final Map<String, BoardProjectConfig> boardProjects;
+    private final Map<String, LinkedProjectConfig> linkedProjects;
     private final Map<String, NameAndUrl> priorities;
     private final Map<String, Integer> priorityIndex;
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
 
-    private BoardConfig(int id, String name, int refreshInterval, String owningProjectName, String jiraUrl,
+    private BoardConfig(int id, String name, String owningProjectName, String jiraUrl,
                         int rankCustomFieldId,
-                        Map<String, ProjectConfig> mainProjects, Map<String, ProjectConfig> linkedProjects,
+                        Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
 
         this.id = id;
         this.name = name;
-        this.refreshInterval = refreshInterval;
         this.owningProjectName = owningProjectName;
         this.jiraUrl = jiraUrl;
         this.rankCustomFieldId = rankCustomFieldId;
-        this.mainProjects = mainProjects;
+        this.boardProjects = boardProjects;
         this.linkedProjects = linkedProjects;
         this.priorities = priorities;
         this.priorityIndex = getIndexMap(priorities);
@@ -87,25 +85,25 @@ public class BoardConfig {
         if (!mainProject.isDefined()) {
             throw new IllegalStateException("Project group '" + projectGroupName + "' specifies '" + mainProject + "' as its main project but it does not exist");
         }
-        Map<String, ProjectConfig> mainProjects = new LinkedHashMap<>();
-        ProjectConfig mainProjectConfig = ProjectConfig.loadOwnerProject(owningProjectName, mainProject);
+        Map<String, BoardProjectConfig> mainProjects = new LinkedHashMap<>();
+        OwnerBoardProjectConfig mainProjectConfig = OwnerBoardProjectConfig.load(owningProjectName, mainProject);
         mainProjects.put(owningProjectName, mainProjectConfig);
 
         for (String projectName : projects.keys()) {
             ModelNode project = projects.get(projectName);
             //TODO add these other top level projects, mapping their states to the main project states
-            mainProjects.put(projectName, ProjectConfig.loadNonOwnerBoardProject(projectName, project));
+            mainProjects.put(projectName, NonOwnerBoardProjectConfig.load(projectName, project));
         }
 
         ModelNode linked = boardNode.get("linked-projects");
-        Map<String, ProjectConfig> linkedProjects = new LinkedHashMap<>();
+        Map<String, LinkedProjectConfig> linkedProjects = new LinkedHashMap<>();
         if (linked.isDefined()) {
             for (String projectName : linked.keys()) {
                 ModelNode project = linked.get(projectName);
-                linkedProjects.put(projectName, ProjectConfig.loadLinkedProject(projectName, project));
+                linkedProjects.put(projectName, LinkedProjectConfig.load(projectName, project));
             }
         }
-        return new BoardConfig(id, projectGroupName, refreshInterval, owningProjectName, jiraUrl,
+        return new BoardConfig(id, projectGroupName, owningProjectName, jiraUrl,
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
@@ -136,23 +134,19 @@ public class BoardConfig {
         return name;
     }
 
-    public int getRefreshInterval() {
-        return refreshInterval;
+    public Collection<BoardProjectConfig> getBoardProjects() {
+        return boardProjects.values();
     }
 
-    public Collection<ProjectConfig> getMainProjects() {
-        return mainProjects.values();
+    public BoardProjectConfig getOwnerProject(String projectCode) {
+        return boardProjects.get(projectCode);
     }
 
-    public ProjectConfig getMainProject(String projectCode) {
-        return mainProjects.get(projectCode);
-    }
-
-    public ProjectConfig getLinkedProject(String projectCode) {
+    public LinkedProjectConfig getLinkedProject(String projectCode) {
         return linkedProjects.get(projectCode);
     }
 
-    public ProjectConfig getLinkedProjectFromIssueKey(String issueKey) {
+    public LinkedProjectConfig getLinkedProjectFromIssueKey(String issueKey) {
         return linkedProjects.get(getProjectCodeFromIssueKey(issueKey));
     }
 
@@ -175,11 +169,11 @@ public class BoardConfig {
         projects.get("owner").set(owningProjectName);
 
         final ModelNode main = projects.get("main");
-        for (ProjectConfig project : mainProjects.values()) {
+        for (BoardProjectConfig project : boardProjects.values()) {
             project.serializeModelNode(this, main);
         }
         final ModelNode linked = projects.get("linked");
-        for (ProjectConfig project : linkedProjects.values()) {
+        for (LinkedProjectConfig project : linkedProjects.values()) {
             project.serializeModelNode(this, linked);
         }
     }
@@ -189,15 +183,15 @@ public class BoardConfig {
     }
 
     public Set<String> getOwnerStateNames() {
-        return mainProjects.get(owningProjectName).getStateNames();
+        return boardProjects.get(owningProjectName).getStateNames();
     }
 
     public String getOwningProjectName() {
         return owningProjectName;
     }
 
-    public ProjectConfig getOwningProject() {
-        return mainProjects.get(owningProjectName);
+    public BoardProjectConfig getOwningProject() {
+        return boardProjects.get(owningProjectName);
     }
 
     public Integer getIssueTypeIndex(String name) {
@@ -215,5 +209,6 @@ public class BoardConfig {
     public int getRankCustomFieldId() {
         return rankCustomFieldId;
     }
+
 
 }
