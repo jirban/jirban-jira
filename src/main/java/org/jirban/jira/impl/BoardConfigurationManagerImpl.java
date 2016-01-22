@@ -35,10 +35,12 @@ import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
+import net.java.ao.DBParam;
+
 /**
  * @author Kabir Khan
  */
-@Named
+@Named("jirbanBoardConfigurationManager")
 public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
 
     @ComponentImport
@@ -50,7 +52,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public String getBoardsJson() {
+    public String getBoardsJson(boolean full) {
         Set<BoardCfg> configs = loadBoardConfigs();
         if (configs.size() == 0) {
             return "[]";
@@ -61,9 +63,40 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             ModelNode configNode = new ModelNode();
             configNode.get("id").set(config.getID());
             configNode.get("name").set(config.getName());
+            if (full) {
+                ModelNode json = ModelNode.fromJSONString(config.getConfigJson());
+                configNode.get("config").set(json);
+            }
             output.add(configNode);
         }
         return output.toJSONString(true);
+    }
+
+    @Override
+    public void saveBoard(final int id, final String json) {
+        final ModelNode board = ModelNode.fromJSONString(json);
+        final String name = board.get("name").asString();
+
+        //TODO Validate the data
+
+        activeObjects.executeInTransaction((TransactionCallback<Void>) new TransactionCallback<Void>() {
+            @Override
+            public Void doInTransaction() {
+                if (id >= 0) {
+                    final BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
+                    cfg.setName(name);
+                    cfg.setConfigJson(json);
+                    cfg.save();
+                } else {
+                    final BoardCfg cfg = activeObjects.create(
+                            BoardCfg.class,
+                            new DBParam("NAME", name),
+                            new DBParam("CONFIG_JSON", json));
+                    cfg.save();
+                }
+                return null;
+            }
+        });
     }
 
     private Set<BoardCfg> loadBoardConfigs() {

@@ -25,5 +25,7 @@ package org.jirban.jira.api;
  * @author Kabir Khan
  */
 public interface BoardConfigurationManager {
-    String getBoardsJson();
+    String getBoardsJson(boolean full);
+
+    void saveBoard(int id, String json);
 }

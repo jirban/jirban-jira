@@ -30,20 +30,34 @@ public class RestServlet extends HttpServlet{
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         User user = Utils.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
-        System.out.println("Rest servlet " + pathInfo + "(" + user + ")");
+        System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
         if (pathInfo.equals("/boards.json")) {
             System.out.println("Getting boards");
-            String json = jiraFacade.getBoardsJson();
+            boolean full = req.getParameter("full") != null;
+            String json = jiraFacade.getBoardsJson(full);
             Utils.sendResponseJson(resp, json);
             return;
         } else {
             Utils.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
         }
-
-
-        resp.setContentType("text/html");
-        resp.getWriter().write("<html><body>Hello World " + jiraFacade.getName() +
-                "</body></html>");
     }
 
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        User user = Utils.getRemoteUser(req);
+        String pathInfo = req.getPathInfo();
+        System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
+        if (pathInfo.equals("/save-board")) {
+            int id = -1;
+            if (req.getParameter("id") != null) {
+                id = Integer.valueOf(req.getParameter("id"));
+            }
+            jiraFacade.saveBoard(id, Utils.getRequestBody(req));
+            String json = jiraFacade.getBoardsJson(true);
+            Utils.sendResponseJson(resp, json);
+            return;
+        } else {
+            Utils.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+        }
+    }
 }

@@ -1,6 +1,79 @@
 [
   {
     "code": "POC",
-    "name": "Jira Staging Proof of Concept"
+    "name": "Jira Staging Proof of Concept",
+    "config" : {
+      "code" : "POC",
+      "name" : "Jira Staging Proof of Concept",
+      "refresh-interval" : 30,
+      "owning-project" : "EAPDS",
+      "jira-url" : "https://issues.stage.jboss.org",
+      "rank-custom-field-id" : 12311940,
+      "priorities" : {
+        "Blocker" : "https://issues.stage.jboss.org/images/icons/priorities/blocker.png",
+        "Major" : "https://issues.stage.jboss.org/images/icons/priorities/major.png",
+        "Minor" : "https://issues.stage.jboss.org/images/icons/priorities/minor.png",
+        "Optional" : "https://issues.stage.jboss.org/images/icons/priorities/minor.png",
+        "Trivial" : "https://issues.stage.jboss.org/images/icons/priorities/trivial.png"
+      },
+      "issue-types" : {
+        "Task" : "https://issues.stage.jboss.org/images/icons/issuetypes/task.png",
+        "Story" : "https://issues.stage.jboss.org/images/icons/issuetypes/story.png",
+        "Bug" : "https://issues.stage.jboss.org/images/icons/issuetypes/bug.png",
+        "Epic" : "https://issues.stage.jboss.org/images/icons/issuetypes/epic.png"
+      },
+      "projects" : {
+        "EAPDS" : {
+          "query-filter" : "",
+          "colour" : "#4667CA",
+          "states" : [
+            "Backlog Pool",
+            "Backlog P2",
+            "Backlog P1",
+            "Analysis Doing",
+            "Analysis PM Input",
+            "Analysis Rejected",
+            "Dev TODO",
+            "QA Rejected",
+            "Waiting For Upstream",
+            "Dev Backport TODO",
+            "Backport",
+            "Backport Review",
+            "Dev Parked",
+            "Prod",
+            "Docs",
+            "Awaiting Release",
+            "QA TODO",
+            "QA",
+            "Done"
+          ]
+        },
+        "EAPBGS" : {
+          "query-filter" : "",
+          "colour" : "#CA6746",
+          "state-links" : {
+            "Backlog" : "Backlog P1",
+            "Analysis Doing" : "Analysis Doing",
+            "Analysis Rejected" : "Analysis Rejected",
+            "QA Rejected" : "QA Rejected",
+            "Waiting For Upstream" : "Waiting For Upstream",
+            "Dev Backport TODO" : "Dev Backport TODO",
+            "Backport" : "Backport",
+            "Backport Review" : "Backport Review",
+            "Prod" : "Prod",
+            "Awaiting Release" : "Awaiting Release",
+            "QA TODO" : "QA TODO",
+            "QA" : "QA",
+            "Done" : "Done"
+          }
+        }
+      },
+      "linked-projects" : {"EAPUS" : {"states" : [
+        "Backlog",
+        "Selected for Development",
+        "In Progress",
+        "Done"
+      ]}}
+    }
   }
 ]

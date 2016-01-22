@@ -12,13 +12,10 @@ export class RestUrlUtil {
         console.log("Index: " + index);
         if (index > 0) {
             let url:string = location.href.substr(0, index);
-            console.log("Base url " + url);
             url = url + "/plugins/servlet/jirban/" + path;
-            console.log("Real url: " + url);
             return url;
         }
 
-        console.log("Returning original");
         return path;
     }
 }

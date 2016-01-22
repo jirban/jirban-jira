@@ -3,6 +3,7 @@ import {ROUTER_DIRECTIVES, ROUTER_PROVIDERS, Router, RouterLink} from 'angular2/
 import {BoardsService} from '../../services/boardsService';
 import {BoardComponent} from '../board/board';
 import {clearToken,setToken} from '../../services/authenticationHelper';
+import {Observable} from "rxjs/Observable";
 
 @Component({
     selector: 'boards',
@@ -17,7 +18,7 @@ export class BoardsComponent {
     private boards:any[]
 
     constructor(public boardsService:BoardsService, public router:Router) {
-        boardsService.boardsData.subscribe(
+        boardsService.loadBoardsList(true).subscribe(
             data => {
                 console.log('Boards: Got data' + JSON.stringify(data));
                 this.boards = data;

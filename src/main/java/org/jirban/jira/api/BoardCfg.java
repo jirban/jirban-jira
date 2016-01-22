@@ -23,15 +23,20 @@ package org.jirban.jira.api;
 
 import net.java.ao.Entity;
 import net.java.ao.Preload;
+import net.java.ao.schema.NotNull;
+import net.java.ao.schema.StringLength;
 
 /**
  * @author Kabir Khan
  */
 @Preload
 public interface BoardCfg extends Entity {
+    @NotNull
     String getName();
-    void setDescription(String description);
+    void setName(String name);
 
+    @NotNull
+    @StringLength(StringLength.UNLIMITED)
     String getConfigJson();
     void setConfigJson(String json);
 }

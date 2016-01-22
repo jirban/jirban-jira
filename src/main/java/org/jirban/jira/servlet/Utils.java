@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.servlet;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
@@ -58,5 +59,17 @@ public class Utils {
     static User getRemoteUser(final HttpServletRequest request) {
         return (User)request.getAttribute(USER_REQUEST_KEY);
     }
+
+    static String getRequestBody(HttpServletRequest request) throws IOException {
+        StringBuffer sb = new StringBuffer();
+        BufferedReader reader = request.getReader();
+        String line = reader.readLine();
+        while (line != null) {
+            sb.append(line);
+            line = reader.readLine();
+        }
+        return sb.toString();
+    }
+
 
 }

@@ -9,5 +9,7 @@ public interface JiraFacade
 
     void populateIssueTable(User user, String boardCode) throws SearchException;
 
-    String getBoardsJson();
+    String getBoardsJson(boolean full);
+
+    void saveBoard(int id, String json);
 }

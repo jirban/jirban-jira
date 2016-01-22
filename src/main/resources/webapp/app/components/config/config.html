@@ -1,0 +1,37 @@
+<h2>Configuration</h2>
+<h3>Boards</h3>
+<div *ngIf="hasBoards()">
+    Select a board to update its config
+    <ul>
+        <li *ngFor="#board of boards">
+            <a href="view" (click)="toggleBoard($event, board.id)">{{board.name}}</a>
+            <div [hidden]="!isSelected(board.id)">
+                <div [hidden]="edit">
+                    <a href="edit" (click)="toggleEdit($event, board)">Edit</a>
+                    <pre>{{getConfigJson(board)}}</pre>
+                </div>
+                <div *ngIf="edit">
+                    <form (ngSubmit)="editBoard()" [ngFormModel]="editForm" #f="ngForm">
+                        <textarea cols="100" rows="15" name="editJson" ngControl="editJson"></textarea>
+                        <div>
+                            <a href="cancel" (click)="toggleEdit($event, board)">Cancel</a>
+                            <button type="submit" [disabled]="!f.form.valid">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </li>
+    </ul>
+<hr>
+</div>
+<div>
+    <p>Enter a new board</p>
+    <div>
+        <form (ngSubmit)="newBoard()" [ngFormModel]="newForm" #f="ngForm">
+            <textarea cols="100" rows="15" name="newJson" ngControl="newJson"></textarea>
+            <div>
+                <button type="submit" [disabled]="!f.form.valid">Save</button>
+            </div>
+        </form>
+    </div>
+</div>

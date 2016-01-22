@@ -30,20 +30,37 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
             }],
         execute: function() {
             BoardsService = (function () {
-                function BoardsService(http, router) {
+                function BoardsService(_http, _router) {
+                    this._http = _http;
+                    this._router = _router;
+                }
+                BoardsService.prototype.loadBoardsList = function (summaryOnly) {
                     if (!authenticationHelper_1.hasToken()) {
-                        router.navigateByUrl('/login');
+                        this._router.navigateByUrl("/login");
                     }
                     var token = authenticationHelper_1.getToken();
                     var headers = new http_1.Headers();
                     headers.append("Authorization", token);
-                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/boards.json'); //Real URL
-                    this.boardsData =
-                        http.get(path, {
-                            headers: headers
-                        }).
-                            map(function (res) { return res.json(); });
-                }
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl(summaryOnly ? 'rest/boards.json' : 'rest/boards.json?full=1');
+                    var ret = this._http.get(path, {
+                        headers: headers
+                    }).
+                        map(function (res) { return res.json(); });
+                    return ret;
+                };
+                BoardsService.prototype.saveBoard = function (id, json) {
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/save-board');
+                    if (id >= 0) {
+                        path += "?id=" + id;
+                    }
+                    var headers = new http_1.Headers();
+                    console.log("Saving board " + path);
+                    var ret = this._http.post(path, json, {
+                        headers: headers
+                    }).
+                        map(function (res) { return res.json(); });
+                    return ret;
+                };
                 BoardsService = __decorate([
                     core_1.Injectable(), 
                     __metadata('design:paramtypes', [http_1.Http, router_1.Router])

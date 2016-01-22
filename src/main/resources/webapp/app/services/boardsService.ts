@@ -9,22 +9,38 @@ import {RestUrlUtil} from "../common/RestUrlUtil";
 
 @Injectable()
 export class BoardsService {
-    boardsData : Observable<any>;
-    router : Router;
+    constructor(private _http:Http, private _router:Router) {
+    }
 
-    constructor(http :Http, router : Router) {
+    loadBoardsList(summaryOnly:boolean) : Observable<any> {
         if (!hasToken()) {
-            router.navigateByUrl('/login');
+            this._router.navigateByUrl("/login");
         }
         let token = getToken();
         let headers = new Headers();
         headers.append("Authorization", token);
 
-        let path : string = RestUrlUtil.caclulateUrl('rest/boards.json'); //Real URL
-        this.boardsData =
-            http.get(path, {
+        let path:string = RestUrlUtil.caclulateUrl(summaryOnly ? 'rest/boards.json' : 'rest/boards.json?full=1');
+        let ret:Observable<any> =
+            this._http.get(path, {
                 headers : headers
             }).
             map((res: Response) => res.json());
+        return ret;
+    }
+
+    saveBoard(id:number, json:string) : Observable<any> {
+        let path:string = RestUrlUtil.caclulateUrl('rest/save-board');
+        if (id >= 0) {
+            path += "?id=" + id;
+        }
+        let headers = new Headers();
+        console.log("Saving board " + path);
+        let ret:Observable<any> =
+            this._http.post(path, json, {
+                headers : headers
+            }).
+            map((res: Response) => res.json());
+        return ret;
     }
 }

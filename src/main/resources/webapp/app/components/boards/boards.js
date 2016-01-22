@@ -30,7 +30,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     var _this = this;
                     this.boardsService = boardsService;
                     this.router = router;
-                    boardsService.boardsData.subscribe(function (data) {
+                    boardsService.loadBoardsList(true).subscribe(function (data) {
                         console.log('Boards: Got data' + JSON.stringify(data));
                         _this.boards = data;
                     }, function (err) {

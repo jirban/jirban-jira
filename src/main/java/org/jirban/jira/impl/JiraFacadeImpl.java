@@ -53,9 +53,15 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public String getBoardsJson() {
-        return boardConfigurationManager.getBoardsJson();
+    public String getBoardsJson(boolean full) {
+        return boardConfigurationManager.getBoardsJson(full);
     }
+
+    @Override
+    public void saveBoard(int id, String json) {
+        boardConfigurationManager.saveBoard(id, json);
+    }
+
 
     public void populateIssueTable(User user, String boardCode) throws SearchException {
         JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder();
