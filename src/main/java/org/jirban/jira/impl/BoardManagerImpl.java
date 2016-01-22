@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jirban.jira.api.BoardConfigurationManager;
-import org.jirban.jira.api.IssueManager;
+import org.jirban.jira.api.BoardManager;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
@@ -39,8 +39,8 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 /**
  * @author Kabir Khan
  */
-@Named("jirbanIssueManager")
-public class IssueManagerImpl implements IssueManager {
+@Named("jirbanBoardManager")
+public class BoardManagerImpl implements BoardManager {
 
     @ComponentImport
     private final SearchService searchService;
@@ -48,7 +48,7 @@ public class IssueManagerImpl implements IssueManager {
     private final BoardConfigurationManager boardConfigurationManager;
 
     @Inject
-    public IssueManagerImpl(SearchService searchService, BoardConfigurationManager boardConfigurationManager) {
+    public BoardManagerImpl(SearchService searchService, BoardConfigurationManager boardConfigurationManager) {
         this.searchService = searchService;
         this.boardConfigurationManager = boardConfigurationManager;
     }

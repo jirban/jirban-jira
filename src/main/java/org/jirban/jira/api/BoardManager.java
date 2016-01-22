@@ -27,6 +27,6 @@ import com.atlassian.jira.issue.search.SearchException;
 /**
  * @author Kabir Khan
  */
-public interface IssueManager {
+public interface BoardManager {
     String getBoardJson(User user, int id) throws SearchException;
 }
