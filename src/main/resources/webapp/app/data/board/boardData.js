@@ -35,8 +35,8 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                  * Called on loading the board the first time
                  * @param input the json containing the issue tables
                  */
-                BoardData.prototype.deserialize = function (boardName, input) {
-                    this.boardName = boardName;
+                BoardData.prototype.deserialize = function (boardId, input) {
+                    this.boardName = input.name;
                     this.internalDeserialize(input, true);
                     var arr = [];
                     for (var i = 0; i < this.boardStates.length; i++) {

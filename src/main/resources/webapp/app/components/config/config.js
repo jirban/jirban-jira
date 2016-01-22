@@ -36,6 +36,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this._formBuilder = _formBuilder;
                     this.selected = -1;
                     this.edit = false;
+                    this.deleting = false;
                     this.loadBoards();
                 }
                 ConfigComponent.prototype.loadBoards = function () {
@@ -88,6 +89,28 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                         });
                     }
                     event.preventDefault();
+                };
+                ConfigComponent.prototype.toggleDelete = function (event, id) {
+                    this.deleting = !this.deleting;
+                    if (this.deleting) {
+                        this.deleteForm = this._formBuilder.group({
+                            "boardName": ['', common_2.Validators.nullValidator(null)] //TODO proper validation
+                        });
+                    }
+                    event.preventDefault();
+                };
+                ConfigComponent.prototype.deleteBoard = function () {
+                    var _this = this;
+                    this._boardsService.deleteBoard(this.selected)
+                        .subscribe(function (data) {
+                        console.log("Deleted board");
+                        _this.boards = data;
+                        _this.edit = false;
+                        _this.deleting = false;
+                    }, function (err) {
+                        console.log(err);
+                        //TODO error reporting
+                    }, function () { });
                 };
                 ConfigComponent.prototype.editBoard = function () {
                     var _this = this;

@@ -20,8 +20,10 @@ export class ConfigComponent {
     private boards:any[]
     private selected:number = -1;
     private edit:boolean = false;
+    private deleting = false;
 
     private editForm:ControlGroup;
+    private deleteForm:ControlGroup;
     private newForm:ControlGroup;
 
     constructor(private _boardsService:BoardsService, private _router:Router, private _formBuilder:FormBuilder) {
@@ -88,6 +90,33 @@ export class ConfigComponent {
             });
         }
         event.preventDefault();
+    }
+
+    toggleDelete(event:MouseEvent, id:number) {
+        this.deleting = !this.deleting;
+        if (this.deleting) {
+            this.deleteForm = this._formBuilder.group({
+                "boardName": ['', Validators.nullValidator(null)] //TODO proper validation
+            })
+        }
+        event.preventDefault();
+    }
+
+    deleteBoard() {
+        this._boardsService.deleteBoard(this.selected)
+            .subscribe(
+                data => {
+                    console.log("Deleted board");
+                    this.boards = data;
+                    this.edit = false;
+                    this.deleting = false;
+                },
+                err => {
+                    console.log(err);
+                    //TODO error reporting
+                },
+                () => {}
+            );
     }
 
     editBoard() {

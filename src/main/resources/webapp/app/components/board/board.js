@@ -47,11 +47,11 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
                     this.router = router;
                     this.routeParams = routeParams;
                     this.boardData = boardData;
-                    this.boardName = routeParams.get('board');
-                    if (!this.boardName) {
-                        this.boardName = "Test Data Board (Unconnected)";
+                    var boardId = routeParams.get('board');
+                    if (boardId) {
+                        this.boardId = Number(boardId);
                     }
-                    issuesService.getIssuesData(this.boardName).subscribe(function (data) {
+                    issuesService.getIssuesData(this.boardId).subscribe(function (data) {
                         _this.setIssueData(data);
                     }, function (err) {
                         console.log(err);
@@ -65,25 +65,23 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
                     this.setWindowSize();
                 }
                 BoardComponent.prototype.ngOnDestroy = function () {
-                    this.issuesService.closeWebSocket();
+                    //this.issuesService.closeWebSocket();
                     return null;
                 };
                 BoardComponent.prototype.setIssueData = function (issueData) {
-                    var _this = this;
-                    this.boardData.deserialize(this.boardName, issueData);
-                    this.issuesService.registerWebSocket(this.boardName, function (data) {
-                        var command = data.command;
-                        if (command === "full-refresh") {
-                            var payload = data["payload"];
-                            _this.boardData.messageFullRefresh(payload);
-                            console.log("Got new data!");
-                        }
-                        else if (command === "issue-move") {
-                            var payload = data["payload"];
-                            _this.boardData.messageIssueMove(payload);
-                            console.log("Got new data!");
-                        }
-                    });
+                    this.boardData.deserialize(this.boardId, issueData);
+                    //this.issuesService.registerWebSocket(this.boardName, (data : any) => {
+                    //    let command:string = data.command;
+                    //    if (command === "full-refresh") {
+                    //        let payload:any = data["payload"];
+                    //        this.boardData.messageFullRefresh(payload);
+                    //        console.log("Got new data!")
+                    //    } else if (command === "issue-move") {
+                    //        let payload:any = data["payload"];
+                    //        this.boardData.messageIssueMove(payload);
+                    //        console.log("Got new data!")
+                    //    }
+                    //});
                 };
                 Object.defineProperty(BoardComponent.prototype, "visibleColumns", {
                     get: function () {

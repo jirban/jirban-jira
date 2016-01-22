@@ -43,4 +43,16 @@ export class BoardsService {
             map((res: Response) => res.json());
         return ret;
     }
+
+    deleteBoard(id:number) : Observable<any> {
+        let path:string = RestUrlUtil.caclulateUrl('rest/board?id=' + id);
+        let headers = new Headers();
+        console.log("Deleting board " + path);
+        let ret:Observable<any> =
+            this._http.delete(path, {
+                headers : headers
+            }).
+            map((res: Response) => res.json());
+        return ret;
+    }
 }

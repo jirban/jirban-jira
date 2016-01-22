@@ -12,4 +12,8 @@ public interface JiraFacade
     String getBoardsJson(boolean full);
 
     void saveBoard(int id, String json);
+
+    void deleteBoard(int id);
+
+    String getBoardJson(int id);
 }

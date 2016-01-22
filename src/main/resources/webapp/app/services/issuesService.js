@@ -30,6 +30,7 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
             }],
         execute: function() {
             IssuesService = (function () {
+                //private ws : WebSocket;
                 function IssuesService(http, router) {
                     if (!authenticationHelper_1.hasToken()) {
                         router.navigateByUrl('/login');
@@ -45,25 +46,27 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                         headers: headers
                     }).map(function (res) { return res.json(); });
                 };
-                IssuesService.prototype.registerWebSocket = function (board, messageCallback) {
-                    var wsUrl = this.getWebSocketUrl(board);
-                    this.ws = new WebSocket(wsUrl);
-                    this.ws.onmessage = function (evt) {
-                        console.log("got data " + evt.data);
-                        messageCallback(JSON.parse(evt.data));
-                    };
-                    this.ws.onerror = function (evt) {
-                        console.log("Error: " + JSON.stringify(evt));
-                    };
-                    this.ws.onclose = function (evt) {
-                        console.log("Close ws " + JSON.stringify(evt));
-                    };
-                };
-                IssuesService.prototype.closeWebSocket = function () {
-                    if (this.ws) {
-                        this.ws.close();
-                    }
-                };
+                //registerWebSocket(board:string,
+                //                  messageCallback : (data : any) => void) {
+                //    let wsUrl : string = this.getWebSocketUrl(board);
+                //    this.ws = new WebSocket(wsUrl);
+                //    this.ws.onmessage = (evt:MessageEvent) => {
+                //        console.log("got data " + evt.data);
+                //        messageCallback(JSON.parse(evt.data));
+                //    };
+                //    this.ws.onerror = (evt:Event) => {
+                //        console.log("Error: " + JSON.stringify(evt));
+                //    }
+                //    this.ws.onclose = (evt:Event) => {
+                //        console.log("Close ws " + JSON.stringify(evt));
+                //    }
+                //}
+                //
+                //closeWebSocket() {
+                //    if (this.ws) {
+                //        this.ws.close();
+                //    }
+                //}
                 IssuesService.prototype.moveIssue = function (boardName, issueKey, toState, insertBeforeIssueKey, insertAfterIssueKey) {
                     var token = authenticationHelper_1.getToken();
                     var headers = new http_1.Headers();

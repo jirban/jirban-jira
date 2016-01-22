@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jirban.jira.api.BoardConfigurationManager;
+import org.jirban.jira.api.IssueManager;
 import org.jirban.jira.api.JiraFacade;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -39,17 +40,21 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
 
     private final BoardConfigurationManager boardConfigurationManager;
 
+    private final IssueManager issueManager;
+
     @Inject
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
                           final IssueService issueService,
                           final SearchService searchService,
                           final UserService userService,
-                          final BoardConfigurationManager boardConfigurationManager) {
+                          final BoardConfigurationManager boardConfigurationManager,
+                          final IssueManager issueManager) {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
         this.userService = userService;
         this.boardConfigurationManager = boardConfigurationManager;
+        this.issueManager = issueManager;
     }
 
     @Override
@@ -62,6 +67,16 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
         boardConfigurationManager.saveBoard(id, json);
     }
 
+    @Override
+    public void deleteBoard(int id) {
+        boardConfigurationManager.deleteBoard(id);
+    }
+
+    @Override
+    public String getBoardJson(int id) {
+        return null;
+        //return issueManager.getBoardJson(id);
+    }
 
     public void populateIssueTable(User user, String boardCode) throws SearchException {
         JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder();

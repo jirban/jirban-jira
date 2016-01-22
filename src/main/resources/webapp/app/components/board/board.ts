@@ -20,7 +20,7 @@ import {OnDestroy} from "angular2/core";
     directives: [IssueComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
 })
 export class BoardComponent implements OnDestroy {
-    boardName:string;
+    boardId:number;
 
     private owner:string;
 
@@ -31,12 +31,12 @@ export class BoardComponent implements OnDestroy {
     private issueContextMenuData:IssueContextMenuData;
 
     constructor(private issuesService:IssuesService, private router:Router, private routeParams:RouteParams, private boardData:BoardData) {
-        this.boardName = routeParams.get('board');
-        if (!this.boardName) {
-            this.boardName = "Test Data Board (Unconnected)";
+        let boardId:string = routeParams.get('board');
+        if (boardId) {
+            this.boardId = Number(boardId);
         }
 
-        issuesService.getIssuesData(this.boardName).subscribe(
+        issuesService.getIssuesData(this.boardId).subscribe(
             data => {
                 this.setIssueData(data);
             },
@@ -56,25 +56,25 @@ export class BoardComponent implements OnDestroy {
     }
 
     ngOnDestroy():any {
-        this.issuesService.closeWebSocket();
+        //this.issuesService.closeWebSocket();
         return null;
     }
 
     private setIssueData(issueData:any) {
-        this.boardData.deserialize(this.boardName, issueData);
+        this.boardData.deserialize(this.boardId, issueData);
 
-        this.issuesService.registerWebSocket(this.boardName, (data : any) => {
-            let command:string = data.command;
-            if (command === "full-refresh") {
-                let payload:any = data["payload"];
-                this.boardData.messageFullRefresh(payload);
-                console.log("Got new data!")
-            } else if (command === "issue-move") {
-                let payload:any = data["payload"];
-                this.boardData.messageIssueMove(payload);
-                console.log("Got new data!")
-            }
-        });
+        //this.issuesService.registerWebSocket(this.boardName, (data : any) => {
+        //    let command:string = data.command;
+        //    if (command === "full-refresh") {
+        //        let payload:any = data["payload"];
+        //        this.boardData.messageFullRefresh(payload);
+        //        console.log("Got new data!")
+        //    } else if (command === "issue-move") {
+        //        let payload:any = data["payload"];
+        //        this.boardData.messageIssueMove(payload);
+        //        console.log("Got new data!")
+        //    }
+        //});
     }
 
     private get visibleColumns() {

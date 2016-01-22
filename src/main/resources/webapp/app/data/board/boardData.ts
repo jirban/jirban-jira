@@ -48,8 +48,8 @@ export class BoardData {
      * Called on loading the board the first time
      * @param input the json containing the issue tables
      */
-    deserialize(boardName:string, input:any):BoardData {
-        this.boardName = boardName;
+    deserialize(boardId:number, input:any):BoardData {
+        this.boardName = input.name;
         this.internalDeserialize(input, true);
 
         let arr:boolean[] = [];

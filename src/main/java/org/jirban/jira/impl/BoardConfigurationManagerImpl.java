@@ -21,8 +21,14 @@
  */
 package org.jirban.jira.impl;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -30,6 +36,7 @@ import javax.inject.Named;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardCfg;
 import org.jirban.jira.api.BoardConfigurationManager;
+import org.jirban.jira.impl.config.BoardConfig;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -42,6 +49,8 @@ import net.java.ao.DBParam;
  */
 @Named("jirbanBoardConfigurationManager")
 public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
+
+    private volatile Map<Integer, BoardConfig> projectGroupConfigs = new ConcurrentHashMap<>();
 
     @ComponentImport
     private final ActiveObjects activeObjects;
@@ -79,7 +88,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
         //TODO Validate the data
 
-        activeObjects.executeInTransaction((TransactionCallback<Void>) new TransactionCallback<Void>() {
+        activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
             public Void doInTransaction() {
                 if (id >= 0) {
@@ -94,6 +103,18 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                             new DBParam("CONFIG_JSON", json));
                     cfg.save();
                 }
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public void deleteBoard(int id) {
+        activeObjects.executeInTransaction(new TransactionCallback<Void>() {
+            @Override
+            public Void doInTransaction() {
+                BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
+                activeObjects.delete(cfg);
                 return null;
             }
         });
@@ -115,4 +136,58 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         });
     }
 
+    public BoardConfig getProjectGroupConfig(final int id) {
+        BoardConfig boardConfig =  projectGroupConfigs.get(id);
+        if (boardConfig == null) {
+            BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
+                @Override
+                public BoardCfg doInTransaction() {
+                    return activeObjects.get(BoardCfg.class, id);
+                }
+            });
+            if (cfg != null) {
+                boardConfig = BoardConfig.load(id, cfg.getConfigJson());
+                BoardConfig old = projectGroupConfigs.putIfAbsent(id, boardConfig);
+                if (old != null) {
+                    boardConfig = old;
+                }
+            }
+        }
+        return boardConfig;
+    }
+
+    private static Path getConfigRoot() throws IOException {
+        String dataDir = System.getenv("OPENSHIFT_DATA_DIR");
+        if (dataDir == null) {
+            dataDir = System.getProperty("jirban.data.dir");
+        }
+        if (dataDir == null) {
+            throw new IllegalStateException("No datadir set");
+        }
+
+        Path path = Paths.get(dataDir).toAbsolutePath();
+        if (!Files.exists(path)) {
+            throw new IllegalStateException("Data dir " + path.toString() + "must be an existing location");
+        }
+
+        path = path.resolve("jirban");
+        if (!Files.exists(path)) {
+            Files.createDirectories(path);
+        } else if (!Files.isDirectory(path)) {
+            throw new IllegalStateException("Data dir " + path + "must be a directory");
+        }
+
+        return path;
+    }
+
+    public ModelNode serializeProjectGroups() {
+        ModelNode modelNode = new ModelNode();
+        for (BoardConfig pgc : projectGroupConfigs.values()) {
+            ModelNode pg = new ModelNode();
+            pg.get("id").set(pgc.getId());
+            pg.get("name").set(pgc.getName());
+            modelNode.add(pg);
+        }
+        return modelNode;
+    }
 }

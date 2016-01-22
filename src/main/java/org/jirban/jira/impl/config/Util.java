@@ -19,15 +19,20 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jirban.jira.api;
+package org.jirban.jira.impl.config;
+
+import org.jboss.dmr.ModelNode;
 
 /**
  * @author Kabir Khan
  */
-public interface BoardConfigurationManager {
-    String getBoardsJson(boolean full);
+class Util {
+    static ModelNode getRequiredChild(ModelNode modelNode, String type, String typeName, String childName) {
+        ModelNode value = modelNode.get(childName);
+        if (!value.isDefined()) {
+            throw new IllegalStateException(type + " '" + typeName + "' does not have a '" + childName +"' field");
+        }
+        return value;
+    }
 
-    void saveBoard(int id, String json);
-
-    void deleteBoard(int id);
 }

@@ -13,7 +13,7 @@ export class IssuesService {
     private router : Router;
     private http : Http;
 
-    private ws : WebSocket;
+    //private ws : WebSocket;
 
     constructor(http:Http, router:Router) {
         if (!hasToken()) {
@@ -22,7 +22,7 @@ export class IssuesService {
         this.http = http;
     }
 
-    getIssuesData(board:string) : Observable<Response> {
+    getIssuesData(board:number) : Observable<Response> {
         let token = getToken();
         let headers = new Headers();
         headers.append("Authorization", token);
@@ -33,27 +33,27 @@ export class IssuesService {
     }
 
 
-    registerWebSocket(board:string,
-                      messageCallback : (data : any) => void) {
-        let wsUrl : string = this.getWebSocketUrl(board);
-        this.ws = new WebSocket(wsUrl);
-        this.ws.onmessage = (evt:MessageEvent) => {
-            console.log("got data " + evt.data);
-            messageCallback(JSON.parse(evt.data));
-        };
-        this.ws.onerror = (evt:Event) => {
-            console.log("Error: " + JSON.stringify(evt));
-        }
-        this.ws.onclose = (evt:Event) => {
-            console.log("Close ws " + JSON.stringify(evt));
-        }
-    }
-
-    closeWebSocket() {
-        if (this.ws) {
-            this.ws.close();
-        }
-    }
+    //registerWebSocket(board:string,
+    //                  messageCallback : (data : any) => void) {
+    //    let wsUrl : string = this.getWebSocketUrl(board);
+    //    this.ws = new WebSocket(wsUrl);
+    //    this.ws.onmessage = (evt:MessageEvent) => {
+    //        console.log("got data " + evt.data);
+    //        messageCallback(JSON.parse(evt.data));
+    //    };
+    //    this.ws.onerror = (evt:Event) => {
+    //        console.log("Error: " + JSON.stringify(evt));
+    //    }
+    //    this.ws.onclose = (evt:Event) => {
+    //        console.log("Close ws " + JSON.stringify(evt));
+    //    }
+    //}
+    //
+    //closeWebSocket() {
+    //    if (this.ws) {
+    //        this.ws.close();
+    //    }
+    //}
 
     moveIssue(boardName:string, issueKey:string, toState:string, insertBeforeIssueKey:string, insertAfterIssueKey:string) : Observable<void> {
         let token = getToken();

@@ -61,6 +61,16 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                         map(function (res) { return res.json(); });
                     return ret;
                 };
+                BoardsService.prototype.deleteBoard = function (id) {
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/board?id=' + id);
+                    var headers = new http_1.Headers();
+                    console.log("Deleting board " + path);
+                    var ret = this._http.delete(path, {
+                        headers: headers
+                    }).
+                        map(function (res) { return res.json(); });
+                    return ret;
+                };
                 BoardsService = __decorate([
                     core_1.Injectable(), 
                     __metadata('design:paramtypes', [http_1.Http, router_1.Router])

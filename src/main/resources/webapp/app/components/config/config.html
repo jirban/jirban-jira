@@ -7,7 +7,16 @@
             <a href="view" (click)="toggleBoard($event, board.id)">{{board.name}}</a>
             <div [hidden]="!isSelected(board.id)">
                 <div [hidden]="edit">
-                    <a href="edit" (click)="toggleEdit($event, board)">Edit</a>
+                    <a  *ngIf="!deleting" href="edit" (click)="toggleEdit($event, board)">Edit</a>
+                    <a *ngIf="!deleting" href="delete" (click)="toggleDelete($event, board.id)">Delete</a>
+                    <div *ngIf="deleting">
+                        <form (ngSubmit)="deleteBoard()" [ngFormModel]="deleteForm" #f="ngForm">
+                            <label>Type in the 'name' field of the board to delete it:</label>
+                            <input type="text" ngControl="boardName"/>
+                            <a href="cancel" (click)="toggleDelete($event, board.id)">Cancel</a>
+                            <button type="submit" [disabled]="!f.form.valid">Delete</button>
+                        </form>
+                    </div>
                     <pre>{{getConfigJson(board)}}</pre>
                 </div>
                 <div *ngIf="edit">
