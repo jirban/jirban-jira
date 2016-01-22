@@ -10,7 +10,9 @@
   </plugin-info>
   <!-- add our i18n resource -->
   <resource type="i18n" name="i18n" location="jirban-jira"/>
+
   <!-- add our web resources -->
+  <!--
   <web-resource key="jirban-jira-resources" name="jirban-jira Web Resources">
     <dependency>com.atlassian.auiplugin:ajs</dependency>
     <resource type="download" name="jirban-jira.css" location="/css/jirban-jira.css"/>
@@ -18,14 +20,20 @@
     <resource type="download" name="images/" location="/images"/>
     <context>jirban-jira</context>
   </web-resource>
+  -->
+
+  <!-- Loads up the index.html page -->
   <servlet name="Index Servlet" i18n-name-key="index-servlet.name" key="index-servlet" class="org.jirban.jira.servlet.IndexServlet">
     <description key="rest-servlet.description">The Index Servlet Plugin</description>
     <url-pattern>/jirban</url-pattern>
   </servlet>
+
+  <!-- Handles the REST calls -->
   <servlet name="Rest Servlet" i18n-name-key="rest-servlet.name" key="rest-servlet" class="org.jirban.jira.servlet.RestServlet">
     <description key="rest-servlet.description">The Rest Servlet Plugin</description>
     <url-pattern>/jirban/rest/*</url-pattern>
   </servlet>
+
   <!-- Add a filter to load up the valid user -->
   <servlet-filter name="Auth Filter" i18n-name-key="auth-filter.name" key="auth-filter" class="org.jirban.jira.servlet.AuthFilter" location="before-dispatch" weight="100">
     <description key="auth-filter.description">The Auth Filter Plugin</description>
@@ -39,4 +47,10 @@
 
   <!-- Should be accessible under http://kabirmac.local:2990/jira/download/resources/org.jirban.jirban-jira/webapp/ -->
   <resource type="download" name="webapp/" location="/webapp/"/>
+
+  <!-- Active Objects configuration for configuration storage -->
+  <ao key="ao-module">
+    <description>The module configuring the Active Objects service used by this plugin</description>
+    <entity>org.jirban.jira.api.BoardCfg</entity>
+  </ao>
 </atlassian-plugin>

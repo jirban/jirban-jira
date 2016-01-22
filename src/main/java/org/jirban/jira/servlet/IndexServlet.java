@@ -24,7 +24,7 @@ import com.atlassian.templaterenderer.TemplateRenderer;
  * Loads up the init.vm template which drives the angular app, initialised with links to the correct directories.
  */
 @Named("jirbanIndexServlet")
-public class IndexServlet extends HttpServlet{
+public class IndexServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(IndexServlet.class);
 
     private static final String INDEX_BROWSER_TEMPLATE = "/webapp/index.vm";
