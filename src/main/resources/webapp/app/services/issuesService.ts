@@ -6,6 +6,7 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import {getToken, hasToken} from '../services/authenticationHelper';
 import {BoardData} from "../data/board/boardData";
+import {RestUrlUtil} from "../common/RestUrlUtil";
 
 @Injectable()
 export class IssuesService {
@@ -25,7 +26,7 @@ export class IssuesService {
         let token = getToken();
         let headers = new Headers();
         headers.append("Authorization", token);
-        let path:string = 'rest/issues.json?board=' + board;
+        let path:string = RestUrlUtil.caclulateUrl('rest/issues.json?board=' + board);
         return this.http.get(path, {
             headers: headers
         }).map(res => (<Response>res).json());

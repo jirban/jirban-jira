@@ -4,6 +4,7 @@ import {Router} from 'angular2/router';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import {getToken, hasToken} from '../services/authenticationHelper';
+import {RestUrlUtil} from "../common/RestUrlUtil";
 
 
 @Injectable()
@@ -19,7 +20,7 @@ export class BoardsService {
         let headers = new Headers();
         headers.append("Authorization", token);
 
-        let path : string = 'rest/boards.json'; //Real URL
+        let path : string = RestUrlUtil.caclulateUrl('rest/boards.json'); //Real URL
         this.boardsData =
             http.get(path, {
                 headers : headers
