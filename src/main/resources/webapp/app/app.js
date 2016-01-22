@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/router', './components/about/about', './components/board/board', './components/boards/boards', './components/login/login', './components/logout/logout', './services/loggedInRouterOutlet', './services/authenticationHelper'], function(exports_1) {
+System.register(['angular2/core', 'angular2/router', './components/about/about', './components/board/board', './components/boards/boards', './components/login/login', './services/loggedInRouterOutlet', './services/authenticationHelper'], function(exports_1) {
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,7 +8,7 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, router_1, about_1, board_1, boards_1, login_1, logout_1, loggedInRouterOutlet_1, authenticationHelper_1;
+    var core_1, router_1, about_1, board_1, boards_1, login_1, loggedInRouterOutlet_1, authenticationHelper_1;
     var App;
     return {
         setters:[
@@ -29,9 +29,6 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
             },
             function (login_1_1) {
                 login_1 = login_1_1;
-            },
-            function (logout_1_1) {
-                logout_1 = logout_1_1;
             },
             function (loggedInRouterOutlet_1_1) {
                 loggedInRouterOutlet_1 = loggedInRouterOutlet_1_1;
@@ -55,12 +52,12 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
                     router_1.RouteConfig([
                         new router_1.Route({ path: '/', component: about_1.AboutComponent, name: 'About' }),
                         new router_1.Route({ path: '/board', component: board_1.BoardComponent, name: 'Board' }),
-                        new router_1.Route({ path: '/boards', component: boards_1.BoardsComponent, name: 'Boards' }),
-                        new router_1.Route({ path: '/login', component: login_1.LoginComponent, name: 'Login' }),
-                        new router_1.Route({ path: '/logout', component: logout_1.LogoutComponent, name: 'Logout' })
+                        new router_1.Route({ path: '/boards', component: boards_1.BoardsComponent, name: 'Boards' }) /*,
+                        new Route({path: '/login', component: LoginComponent, name: 'Login'}),
+                        new Route({path: '/logout', component: LogoutComponent, name: 'Logout'})*/
                     ]),
                     core_1.View({
-                        template: "\n<div class=\"toolbar\">\n    <div class=\"toolbar-left\">\n        <a [routerLink]=\"['/About']\" class=\"toolbar-link\"><b>JirBan</b></a>\n        <span *ngIf=\"isLoggedIn()\"> <a [routerLink]=\"['/Boards']\" class=\"toolbar-link\">Boards</a></span>\n    </div>\n    <div class=\"toolbar-right\">\n        <span *ngIf=\"!isLoggedIn()\"><a [routerLink]=\"['/Login']\"  class=\"toolbar-link\">Log in</a></span>\n        <span *ngIf=\"isLoggedIn()\"><a [routerLink]=\"['/Logout']\" class=\"toolbar-link\">Log Out</a></span>\n    </div>\n</div>\n<router-outlet></router-outlet>\n    ",
+                        template: "\n<!--<div class=\"toolbar\">\n    <div class=\"toolbar-left\">\n        <a [routerLink]=\"['/About']\" class=\"toolbar-link\"><b>JirBan</b></a>\n        <span *ngIf=\"isLoggedIn()\"> <a [routerLink]=\"['/Boards']\" class=\"toolbar-link\">Boards</a></span>\n    </div>\n    <div class=\"toolbar-right\">\n        <span *ngIf=\"!isLoggedIn()\"><a [routerLink]=\"['/Login']\"  class=\"toolbar-link\">Log in</a></span>\n        <span *ngIf=\"isLoggedIn()\"><a [routerLink]=\"['/Logout']\" class=\"toolbar-link\">Log Out</a></span>\n    </div>\n</div>-->\n<div class=\"toolbar\">\n    <div class=\"toolbar-left\">\n        <a [routerLink]=\"['/About']\" class=\"toolbar-link\"><b>JirBan</b></a>\n        <span> <a [routerLink]=\"['/Boards']\" class=\"toolbar-link\">Boards</a></span>\n    </div>\n</div>\n\n<router-outlet></router-outlet>\n    ",
                         directives: [router_1.ROUTER_DIRECTIVES, loggedInRouterOutlet_1.LoggedInRouterOutlet, about_1.AboutComponent, board_1.BoardComponent, login_1.LoginComponent]
                     }), 
                     __metadata('design:paramtypes', [router_1.Router, router_1.Location])

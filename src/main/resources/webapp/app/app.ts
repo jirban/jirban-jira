@@ -16,13 +16,13 @@ import {hasToken} from './services/authenticationHelper';
 @RouteConfig([
     new Route({path: '/', component: AboutComponent, name: 'About'}),
     new Route({path: '/board', component: BoardComponent, name: 'Board'}),
-    new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
+    new Route({path: '/boards', component: BoardsComponent, name: 'Boards'})/*,
     new Route({path: '/login', component: LoginComponent, name: 'Login'}),
-    new Route({path: '/logout', component: LogoutComponent, name: 'Logout'})
+    new Route({path: '/logout', component: LogoutComponent, name: 'Logout'})*/
 ])
 @View({
     template: `
-<div class="toolbar">
+<!--<div class="toolbar">
     <div class="toolbar-left">
         <a [routerLink]="['/About']" class="toolbar-link"><b>JirBan</b></a>
         <span *ngIf="isLoggedIn()"> <a [routerLink]="['/Boards']" class="toolbar-link">Boards</a></span>
@@ -31,7 +31,14 @@ import {hasToken} from './services/authenticationHelper';
         <span *ngIf="!isLoggedIn()"><a [routerLink]="['/Login']"  class="toolbar-link">Log in</a></span>
         <span *ngIf="isLoggedIn()"><a [routerLink]="['/Logout']" class="toolbar-link">Log Out</a></span>
     </div>
+</div>-->
+<div class="toolbar">
+    <div class="toolbar-left">
+        <a [routerLink]="['/About']" class="toolbar-link"><b>JirBan</b></a>
+        <span> <a [routerLink]="['/Boards']" class="toolbar-link">Boards</a></span>
+    </div>
 </div>
+
 <router-outlet></router-outlet>
     `,
     directives: [ROUTER_DIRECTIVES, LoggedInRouterOutlet, AboutComponent, BoardComponent, LoginComponent]
