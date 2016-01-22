@@ -25,6 +25,7 @@
         <version.javax.inject>1</version.javax.inject>
         <version.javax.jsr311-api>1.1.1</version.javax.jsr311-api>
         <version.javax.servlet-api>2.4</version.javax.servlet-api>
+        <version.jboss-dmr>1.3.0.Final</version.jboss-dmr>
         <version.jira>6.4.11</version.jira>
         <version.junit>4.10</version.junit>
         <version.mockito>1.8.5</version.mockito>
@@ -97,6 +98,12 @@
             <version>${version.atlassian.sal-api}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.jboss</groupId>
+            <artifactId>jboss-dmr</artifactId>
+            <version>${version.jboss-dmr}</version>
+        </dependency>
+
         <!-- Add dependency on jira-core if you want access to JIRA implementation classes as well as the sanctioned API. -->
         <!-- This is not normally recommended, but may be required eg when migrating a plugin originally developed against JIRA 4.x -->
         <!--

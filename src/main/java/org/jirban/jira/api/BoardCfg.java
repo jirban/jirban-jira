@@ -29,7 +29,7 @@ import net.java.ao.Preload;
  */
 @Preload
 public interface BoardCfg extends Entity {
-    String getDescription();
+    String getName();
     void setDescription(String description);
 
     String getConfigJson();

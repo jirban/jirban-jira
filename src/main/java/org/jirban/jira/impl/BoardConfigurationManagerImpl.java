@@ -21,22 +21,25 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Set;
+import java.util.TreeSet;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.jboss.dmr.ModelNode;
+import org.jirban.jira.api.BoardCfg;
 import org.jirban.jira.api.BoardConfigurationManager;
-import org.springframework.beans.factory.InitializingBean;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
-
-import net.java.ao.Disposable;
+import com.atlassian.sal.api.transaction.TransactionCallback;
 
 /**
  * @author Kabir Khan
  */
 @Named
-public class BoardConfigurationManagerImpl implements BoardConfigurationManager, InitializingBean, Disposable {
+public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
 
     @ComponentImport
     private final ActiveObjects activeObjects;
@@ -47,11 +50,36 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager,
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public String getBoardsJson() {
+        Set<BoardCfg> configs = loadBoardConfigs();
+        if (configs.size() == 0) {
+            return "[]";
+        }
+
+        ModelNode output = new ModelNode();
+        for (BoardCfg config : configs) {
+            ModelNode configNode = new ModelNode();
+            configNode.get("id").set(config.getID());
+            configNode.get("name").set(config.getName());
+            output.add(configNode);
+        }
+        return output.toJSONString(true);
     }
 
-    @Override
-    public void dispose() {
+    private Set<BoardCfg> loadBoardConfigs() {
+        return activeObjects.executeInTransaction(new TransactionCallback<Set<BoardCfg>>(){
+            @Override
+            public Set<BoardCfg> doInTransaction() {
+                Set<BoardCfg> configs = new TreeSet<>((o1, o2) -> {
+                    return o1.getName().compareTo(o2.getName());
+                });
+                for (BoardCfg boardCfg : activeObjects.find(BoardCfg.class)) {
+                    configs.add(boardCfg);
+
+                }
+                return configs;
+            }
+        });
     }
 
 }

@@ -57,7 +57,7 @@ public class AuthFilter implements Filter {
             Utils.setRemoteUser(req, user);
             chain.doFilter(request, response);
         } else {
-            Utils.sendErrorJson((HttpServletResponse)response, HttpServletResponse.SC_UNAUTHORIZED, null);
+            Utils.sendErrorJson((HttpServletResponse)response, HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
 

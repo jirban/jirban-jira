@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.atlassian.crowd.embedded.api.User;
-import com.atlassian.jira.issue.search.SearchException;
 
 @Named("jirbanRestServlet")
 public class RestServlet extends HttpServlet{
@@ -30,14 +29,15 @@ public class RestServlet extends HttpServlet{
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         User user = Utils.getRemoteUser(req);
-        System.out.println("Rest servlet User " + user);
-
-        if (user != null) {
-            try {
-                jiraFacade.populateIssueTable(user, "POC");
-            } catch (SearchException e) {
-                e.printStackTrace();
-            }
+        String pathInfo = req.getPathInfo();
+        System.out.println("Rest servlet " + pathInfo + "(" + user + ")");
+        if (pathInfo.equals("/boards.json")) {
+            System.out.println("Getting boards");
+            String json = jiraFacade.getBoardsJson();
+            Utils.sendResponseJson(resp, json);
+            return;
+        } else {
+            Utils.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
         }
 
 

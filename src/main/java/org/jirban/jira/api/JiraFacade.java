@@ -8,4 +8,6 @@ public interface JiraFacade
     String getName();
 
     void populateIssueTable(User user, String boardCode) throws SearchException;
+
+    String getBoardsJson();
 }

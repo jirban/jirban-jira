@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.MediaType;
 
 import com.atlassian.crowd.embedded.api.User;
 
@@ -35,10 +36,19 @@ public class Utils {
     static final String CONTENT_APP_JSON = "application/json";
     private static final String USER_REQUEST_KEY = "authenticated-user";
 
+    static void sendErrorJson(final HttpServletResponse response, final int error) throws IOException {
+        sendErrorJson(response, error, null);
+    }
+
     static void sendErrorJson(final HttpServletResponse response, final int error, final String message) throws IOException {
         final String msg = message == null ? "{}" : message;
         response.setContentType(CONTENT_APP_JSON);
         response.sendError(error, msg);
+    }
+
+    static void sendResponseJson(final HttpServletResponse response, final String json) throws IOException {
+        response.setContentType(MediaType.APPLICATION_JSON_TYPE.toString());
+        response.getWriter().write(json);
     }
 
     static void setRemoteUser(final HttpServletRequest request, final User user) {
@@ -48,4 +58,5 @@ public class Utils {
     static User getRemoteUser(final HttpServletRequest request) {
         return (User)request.getAttribute(USER_REQUEST_KEY);
     }
+
 }

@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.JiraFacade;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -36,15 +37,24 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     @ComponentImport
     private final UserService userService;
 
+    private final BoardConfigurationManager boardConfigurationManager;
+
     @Inject
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
                           final IssueService issueService,
                           final SearchService searchService,
-                          final UserService userService) {
+                          final UserService userService,
+                          final BoardConfigurationManager boardConfigurationManager) {
         this.applicationProperties = applicationProperties;
         this.issueService = issueService;
         this.searchService = searchService;
         this.userService = userService;
+        this.boardConfigurationManager = boardConfigurationManager;
+    }
+
+    @Override
+    public String getBoardsJson() {
+        return boardConfigurationManager.getBoardsJson();
     }
 
     public void populateIssueTable(User user, String boardCode) throws SearchException {
