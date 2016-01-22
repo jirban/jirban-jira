@@ -14,17 +14,34 @@
     <packaging>atlassian-plugin</packaging>
 
     <properties>
-        <jira.version>6.4.11</jira.version>
-        <amps.version>6.2.1</amps.version>
-        <plugin.testrunner.version>1.2.3</plugin.testrunner.version>
-        <atlassian.spring.scanner.version>1.2.6</atlassian.spring.scanner.version>
+        <!-- versions -->
+        <version.amps>6.2.1</version.amps>
+        <version.atlassian.spring.scanner>1.2.6</version.atlassian.spring.scanner>
+        <version.atlassian.templaterenderer>1.5.6</version.atlassian.templaterenderer>
+        <version.atlassian.activeobjects>0.28.7</version.atlassian.activeobjects>
+        <version.atlassian.sal-api>2.4.1</version.atlassian.sal-api>
+        <version.gson>2.2.2-atlassian-1</version.gson>
+        <version.httpcomponents>4.1.1</version.httpcomponents>
+        <version.javax.inject>1</version.javax.inject>
+        <version.javax.jsr311-api>1.1.1</version.javax.jsr311-api>
+        <version.javax.servlet-api>2.4</version.javax.servlet-api>
+        <version.jira>6.4.11</version.jira>
+        <version.junit>4.10</version.junit>
+        <version.mockito>1.8.5</version.mockito>
+        <version.plugin.testrunner>1.2.3</version.plugin.testrunner>
+        <version.slf4j>1.6.6</version.slf4j>
+        <version.spring>2.5.4</version.spring>
+        <version.spring-scanner.plugin>1.2.6</version.spring-scanner.plugin>
+        <!-- TestKit version 6.x for JIRA 6.x -->
+        <version.testkit>6.3.11</version.testkit>
+
         <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
-        <!-- TestKit version 6.x for JIRA 6.x -->
-        <testkit.version>6.3.11</testkit.version>
 
+        <!-- JDK version -->
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- Source encoding -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -34,13 +51,50 @@
         <dependency>
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-api</artifactId>
-            <version>${jira.version}</version>
+            <version>${version.jira}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring</artifactId>
-            <version>2.5.4</version>
+            <version>${version.spring}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-annotation</artifactId>
+            <version>${version.atlassian.spring.scanner}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.plugin</groupId>
+            <artifactId>atlassian-spring-scanner-runtime</artifactId>
+            <version>${version.atlassian.spring.scanner}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>${version.javax.inject}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.templaterenderer</groupId>
+            <artifactId>atlassian-template-renderer-api</artifactId>
+            <version>${version.atlassian.templaterenderer}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.activeobjects</groupId>
+            <artifactId>activeobjects-plugin</artifactId>
+            <version>${version.atlassian.activeobjects}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- SAL, the Active Objects plugin uses SAL's API for transactions -->
+        <dependency>
+            <groupId>com.atlassian.sal</groupId>
+            <artifactId>sal-api</artifactId>
+            <version>${version.atlassian.sal-api}</version>
             <scope>provided</scope>
         </dependency>
         <!-- Add dependency on jira-core if you want access to JIRA implementation classes as well as the sanctioned API. -->
@@ -56,50 +110,27 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>${version.junit}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugin</groupId>
-            <artifactId>atlassian-spring-scanner-annotation</artifactId>
-            <version>${atlassian.spring.scanner.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugin</groupId>
-            <artifactId>atlassian-spring-scanner-runtime</artifactId>
-            <version>${atlassian.spring.scanner.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-            <version>1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.templaterenderer</groupId>
-            <artifactId>atlassian-template-renderer-api</artifactId>
-            <version>1.5.6</version>
-            <scope>provided</scope>
-        </dependency>
+
         <!-- WIRED TEST RUNNER DEPENDENCIES -->
         <dependency>
             <groupId>com.atlassian.plugins</groupId>
             <artifactId>atlassian-plugins-osgi-testrunner</artifactId>
-            <version>${plugin.testrunner.version}</version>
+            <version>${version.plugin.testrunner}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
-            <version>1.1.1</version>
+            <version>${version.javax.jsr311-api}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.2.2-atlassian-1</version>
+            <version>${version.gson}</version>
         </dependency>
         <!-- Uncomment to use TestKit in your project. Details at https://bitbucket.org/atlassian/jira-testkit -->
         <!-- You can read more about TestKit at https://developer.atlassian.com/display/JIRADEV/Plugin+Tutorial+-+Smarter+integration+testing+with+TestKit -->
@@ -114,25 +145,25 @@
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>servlet-api</artifactId>
-            <version>2.4</version>
+            <version>${version.javax.servlet-api}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.6</version>
+            <version>${version.slf4j}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.1.1</version>
+            <version>${version.httpcomponents}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
-            <version>1.8.5</version>
+            <version>${version.mockito}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -141,11 +172,11 @@
             <plugin>
                 <groupId>com.atlassian.maven.plugins</groupId>
                 <artifactId>maven-jira-plugin</artifactId>
-                <version>${amps.version}</version>
+                <version>${version.amps}</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <productVersion>${jira.version}</productVersion>
-                    <productDataVersion>${jira.version}</productDataVersion>
+                    <productVersion>${version.jira}</productVersion>
+                    <productDataVersion>${version.jira}</productDataVersion>
                     <!-- Uncomment to install TestKit backdoor in JIRA. -->
                     <!--
 					<pluginArtifacts>
@@ -176,7 +207,7 @@
             <plugin>
                 <groupId>com.atlassian.plugin</groupId>
                 <artifactId>atlassian-spring-scanner-maven-plugin</artifactId>
-                <version>1.2.6</version>
+                <version>${version.spring-scanner.plugin}</version>
                 <executions>
                     <execution>
                         <goals>
