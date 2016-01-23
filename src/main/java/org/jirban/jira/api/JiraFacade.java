@@ -15,5 +15,5 @@ public interface JiraFacade
 
     void deleteBoard(int id);
 
-    String getBoardJson(int id);
+    String getBoardJson(User user, int id) throws SearchException;
 }

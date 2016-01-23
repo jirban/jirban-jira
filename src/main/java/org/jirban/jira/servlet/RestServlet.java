@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.issue.search.SearchException;
 
 @Named("jirbanRestServlet")
 public class RestServlet extends HttpServlet{
@@ -40,7 +41,13 @@ public class RestServlet extends HttpServlet{
         }
         else if (pathInfo.equals("/issues.json")) {
             final String boardId = req.getParameter("board");
-            String json = jiraFacade.getBoardJson(Integer.valueOf(boardId));
+            String json = null;
+            try {
+                json = jiraFacade.getBoardJson(user, Integer.valueOf(boardId));
+            } catch (SearchException e) {
+                //TODO figure out if a permission violation becomes a search exception
+                Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
             Util.sendResponseJson(resp, json);
             return;
         } else {
@@ -64,7 +71,8 @@ public class RestServlet extends HttpServlet{
             return;
         } else {
             Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
-        }    }
+        }
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

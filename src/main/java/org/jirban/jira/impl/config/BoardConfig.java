@@ -44,8 +44,7 @@ public class BoardConfig {
 
     private final int id;
     private final String name;
-    private final String owningProjectName;
-    private final String jiraUrl;
+    private final String ownerProjectCode;
     private final int rankCustomFieldId;
     private final Map<String, BoardProjectConfig> boardProjects;
     private final Map<String, LinkedProjectConfig> linkedProjects;
@@ -54,15 +53,14 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
 
-    private BoardConfig(int id, String name, String owningProjectName, String jiraUrl,
+    private BoardConfig(int id, String name, String ownerProjectCode,
                         int rankCustomFieldId,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
 
         this.id = id;
         this.name = name;
-        this.owningProjectName = owningProjectName;
-        this.jiraUrl = jiraUrl;
+        this.ownerProjectCode = ownerProjectCode;
         this.rankCustomFieldId = rankCustomFieldId;
         this.boardProjects = boardProjects;
         this.linkedProjects = linkedProjects;
@@ -75,9 +73,7 @@ public class BoardConfig {
     public static BoardConfig load(int id, String configJson) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
         String projectGroupName = getRequiredChild(boardNode, "Group", null, "name").asString();
-        int refreshInterval = getRequiredChild(boardNode, "Group", null, "refresh-interval").asInt();
         String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, "owning-project").asString();
-        String jiraUrl = getRequiredChild(boardNode, "Group", projectGroupName, "jira-url").asString();
         int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, "rank-custom-field-id").asInt();
 
         ModelNode projects = getRequiredChild(boardNode, "Group", projectGroupName, "projects");
@@ -103,7 +99,7 @@ public class BoardConfig {
                 linkedProjects.put(projectName, LinkedProjectConfig.load(projectName, project));
             }
         }
-        return new BoardConfig(id, projectGroupName, owningProjectName, jiraUrl,
+        return new BoardConfig(id, projectGroupName, owningProjectName,
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
@@ -138,7 +134,11 @@ public class BoardConfig {
         return boardProjects.values();
     }
 
-    public BoardProjectConfig getOwnerProject(String projectCode) {
+    public BoardProjectConfig getOwnerProject() {
+        return boardProjects.get(ownerProjectCode);
+    }
+
+    public BoardProjectConfig getBoardProject(String projectCode) {
         return boardProjects.get(projectCode);
     }
 
@@ -166,7 +166,7 @@ public class BoardConfig {
         }
 
         final ModelNode projects = parent.get("projects");
-        projects.get("owner").set(owningProjectName);
+        projects.get("owner").set(ownerProjectCode);
 
         final ModelNode main = projects.get("main");
         for (BoardProjectConfig project : boardProjects.values()) {
@@ -178,20 +178,16 @@ public class BoardConfig {
         }
     }
 
-    public String getJiraUrl() {
-        return jiraUrl;
-    }
-
     public Set<String> getOwnerStateNames() {
-        return boardProjects.get(owningProjectName).getStateNames();
+        return boardProjects.get(ownerProjectCode).getStateNames();
     }
 
-    public String getOwningProjectName() {
-        return owningProjectName;
+    public String getOwnerProjectCode() {
+        return ownerProjectCode;
     }
 
     public BoardProjectConfig getOwningProject() {
-        return boardProjects.get(owningProjectName);
+        return boardProjects.get(ownerProjectCode);
     }
 
     public Integer getIssueTypeIndex(String name) {

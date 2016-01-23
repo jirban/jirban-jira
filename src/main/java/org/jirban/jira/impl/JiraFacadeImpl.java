@@ -73,9 +73,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public String getBoardJson(int id) {
-        return null;
-        //return boardManager.getBoardJson(id);
+    public String getBoardJson(User user, int id) throws SearchException {
+        return boardManager.getBoardJson(user, id);
     }
 
     public void populateIssueTable(User user, String boardCode) throws SearchException {

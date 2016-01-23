@@ -50,6 +50,8 @@ import net.java.ao.DBParam;
 @Named("jirbanBoardConfigurationManager")
 public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
 
+    //TODO Perhaps we should not cache this here, if we do we need to delete/update the entry when
+    //updating/deleting and notify the Boards using this
     private volatile Map<Integer, BoardConfig> projectGroupConfigs = new ConcurrentHashMap<>();
 
     @ComponentImport
@@ -100,7 +102,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                     final BoardCfg cfg = activeObjects.create(
                             BoardCfg.class,
                             new DBParam("NAME", name),
-                            new DBParam("CONFIG_JSON", json));
+                            //Compact the json before saving it
+                            new DBParam("CONFIG_JSON", board.toJSONString(true)));
                     cfg.save();
                 }
                 return null;
@@ -136,7 +139,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         });
     }
 
-    public BoardConfig getProjectGroupConfig(final int id) {
+    public BoardConfig getBoardConfig(final int id) {
         BoardConfig boardConfig =  projectGroupConfigs.get(id);
         if (boardConfig == null) {
             BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){

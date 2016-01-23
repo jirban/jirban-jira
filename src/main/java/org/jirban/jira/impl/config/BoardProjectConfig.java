@@ -30,7 +30,7 @@ import org.jboss.dmr.ModelNode;
 /** Abstract base class for project configurations of projects whose issues should appear as cards on the board.
  * @author Kabir Khan
  */
-abstract class BoardProjectConfig extends ProjectConfig {
+public abstract class BoardProjectConfig extends ProjectConfig {
     private final String queryFilter;
     private final String colour;
 
@@ -59,6 +59,14 @@ abstract class BoardProjectConfig extends ProjectConfig {
         return filter;
     }
 
+    public String getQueryFilter() {
+        return queryFilter;
+    }
+
+    public String getColour() {
+        return colour;
+    }
+
     @Override
     void doSerializeModelNode(BoardConfig boardConfig, ModelNode projectNode) {
         projectNode.get("colour").set(colour);
@@ -67,4 +75,6 @@ abstract class BoardProjectConfig extends ProjectConfig {
     public abstract String mapBoardStateOntoOwnState(String boardState);
 
     public abstract String mapOwnStateOntoBoardState(String state);
+
+
 }

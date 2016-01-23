@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.api;
 
+import org.jirban.jira.impl.config.BoardConfig;
+
 /**
  * @author Kabir Khan
  */
@@ -30,4 +32,6 @@ public interface BoardConfigurationManager {
     void saveBoard(int id, String json);
 
     void deleteBoard(int id);
+
+    BoardConfig getBoardConfig(int id);
 }

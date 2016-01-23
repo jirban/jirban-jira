@@ -21,26 +21,32 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.impl.board.Board;
+import org.jirban.jira.impl.config.BoardConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.issue.search.SearchResults;
-import com.atlassian.jira.jql.builder.JqlClauseBuilder;
-import com.atlassian.jira.jql.builder.JqlQueryBuilder;
-import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
+ * The interface to the loaded boards
+ *
  * @author Kabir Khan
  */
 @Named("jirbanBoardManager")
 public class BoardManagerImpl implements BoardManager {
+
+    private Map<Integer, Board> boards = Collections.synchronizedMap(new HashMap<>());
 
     @ComponentImport
     private final SearchService searchService;
@@ -55,12 +61,19 @@ public class BoardManagerImpl implements BoardManager {
 
     @Override
     public String getBoardJson(User user, int id) throws SearchException {
-        JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder();
-        jqlBuilder.project("TUTORIAL").buildQuery();
-        SearchResults searchResults =
-                searchService.search(user, jqlBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
-        System.out.println(searchResults.getIssues());
-        return null;
+        Board board = boards.get(id);
+        if (board == null) {
+            synchronized (this) {
+                board = boards.get(id);
+                if (board == null) {
+                    final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(id);
+                    final Board.Builder boardBuilder = Board.builder(searchService, user, boardConfig).load();
+                    boards.put(id, board);
+                }
+            }
+        }
+        return "{}";
+        //return board.serialize().toJSONString(true);
     }
 
 
