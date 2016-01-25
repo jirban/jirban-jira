@@ -273,22 +273,6 @@ public class Board {
             missingIssues.add(issueKey);
         }
 
-/*        List<BoardProject.Builder> getMainProjects() {
-            List<BoardProject.Builder> builders = new ArrayList<>();
-            for (BoardProjectConfig projectConfig : boardConfig.getBoardProjects()) {
-                builders.add(projects.computeIfAbsent(projectConfig.getCode(), m -> BoardProject.builder(searchService, user, this, projectConfig)));
-            }
-            return builders;
-        }
-
-        private BoardProject.Builder getProject(String projectCode) {
-            BoardProjectConfig mainCfg = boardConfig.getBoardProject(projectCode);
-            //TODO
-            return null;
-            //BoardProjectConfig projectCfg =  mainCfg != null ? mainCfg : boardConfig.getLinkedProject(projectCode);
-            //return projects.computeIfAbsent(projectCode, m -> BoardProject.builder(this, projectCfg));
-        }*/
-
         BoardProject.LinkedProjectContext getLinkedProjectBuilder(String linkedProjectCode) {
             LinkedProjectConfig projectCfg = boardConfig.getLinkedProjectConfig(linkedProjectCode);
             if (projectCfg == null) {
