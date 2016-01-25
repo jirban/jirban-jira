@@ -180,7 +180,7 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                 });
                 Object.defineProperty(IssueData.prototype, "priorityUrl", {
                     get: function () {
-                        return this._priority.icon;
+                        return this._boardData.jiraUrl + "/" + this._priority.icon;
                     },
                     enumerable: true,
                     configurable: true
@@ -194,7 +194,8 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                 });
                 Object.defineProperty(IssueData.prototype, "typeUrl", {
                     get: function () {
-                        return this._type.icon;
+                        console.log(this._boardData.jiraUrl + "/" + this._type.icon);
+                        return this._boardData.jiraUrl + "/" + this._type.icon;
                     },
                     enumerable: true,
                     configurable: true

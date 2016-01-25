@@ -146,7 +146,7 @@ export class IssueData {
     }
 
     get priorityUrl():string {
-        return this._priority.icon;
+        return this._boardData.jiraUrl + "/" + this._priority.icon;
     }
 
     get typeName():string {
@@ -154,7 +154,8 @@ export class IssueData {
     }
 
     get typeUrl():string {
-        return this._type.icon;
+        console.log(this._boardData.jiraUrl + "/" + this._type.icon);
+        return this._boardData.jiraUrl + "/" + this._type.icon;
     }
 
     get linkedProject() : Project {

@@ -17,41 +17,41 @@
   "priorities" : [
     {
       "name" : "Blocker",
-      "icon" : "https://issues.jboss.org/images/icons/priorities/blocker.png"
+      "icon" : "/images/icons/priorities/blocker.png"
     },
     {
       "name" : "Major",
-      "icon" : "https://issues.jboss.org/images/icons/priorities/major.png"
+      "icon" : "/images/icons/priorities/major.png"
     },
     {
       "name" : "Minor",
-      "icon" : "https://issues.jboss.org/images/icons/priorities/minor.png"
+      "icon" : "/images/icons/priorities/minor.png"
     },
     {
       "name" : "Optional",
-      "icon" : "https://issues.jboss.org/images/icons/priorities/minor.png"
+      "icon" : "/images/icons/priorities/minor.png"
     },
     {
       "name" : "Trivial",
-      "icon" : "https://issues.jboss.org/images/icons/priorities/trivial.png"
+      "icon" : "/images/icons/priorities/trivial.png"
     }
   ],
   "issue-types" : [
     {
       "name" : "Task",
-      "icon" : "https://issues.jboss.org/images/icons/issuetypes/task.png"
+      "icon" : "/images/icons/issuetypes/task.png"
     },
     {
       "name" : "Story",
-      "icon" : "https://issues.jboss.org/images/icons/issuetypes/story.png"
+      "icon" : "/images/icons/issuetypes/story.png"
     },
     {
       "name" : "Bug",
-      "icon" : "https://issues.jboss.org/images/icons/issuetypes/bug.png"
+      "icon" : "/images/icons/issuetypes/bug.png"
     },
     {
       "name" : "Epic",
-      "icon" : "https://issues.jboss.org/images/icons/issuetypes/epic.png"
+      "icon" : "/images/icons/issuetypes/epic.png"
     }
   ],
   "projects" : {
