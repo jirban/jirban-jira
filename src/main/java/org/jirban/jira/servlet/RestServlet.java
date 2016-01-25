@@ -14,8 +14,8 @@ import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.user.ApplicationUser;
 
 @Named("jirbanRestServlet")
 public class RestServlet extends HttpServlet{
@@ -30,7 +30,7 @@ public class RestServlet extends HttpServlet{
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User user = Util.getRemoteUser(req);
+        ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
         try {
@@ -65,7 +65,7 @@ public class RestServlet extends HttpServlet{
 
     @Override
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User user = Util.getRemoteUser(req);
+        ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet DELETE " + pathInfo + "(" + user + ")");
         try {
@@ -86,7 +86,7 @@ public class RestServlet extends HttpServlet{
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User user = Util.getRemoteUser(req);
+        ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
         try {
@@ -108,7 +108,7 @@ public class RestServlet extends HttpServlet{
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        User user = Util.getRemoteUser(req);
+        ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet PUT " + pathInfo + "(" + user + ")");
         try {

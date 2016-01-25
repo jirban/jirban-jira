@@ -4,6 +4,7 @@ import org.jboss.dmr.ModelNode;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.user.ApplicationUser;
 
 public interface JiraFacade
 {
@@ -17,5 +18,5 @@ public interface JiraFacade
 
     void deleteBoard(int id);
 
-    String getBoardJson(User user, int id) throws SearchException;
+    String getBoardJson(ApplicationUser user, int id) throws SearchException;
 }

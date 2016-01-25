@@ -30,7 +30,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.jboss.dmr.ModelNode;
 
-import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.user.ApplicationUser;
 
 /**
  * @author Kabir Khan
@@ -56,12 +56,12 @@ class Util {
         response.getWriter().write(json);
     }
 
-    static void setRemoteUser(final HttpServletRequest request, final User user) {
+    static void setRemoteUser(final HttpServletRequest request, final ApplicationUser user) {
         request.setAttribute(USER_REQUEST_KEY, user);
     }
 
-    static User getRemoteUser(final HttpServletRequest request) {
-        return (User)request.getAttribute(USER_REQUEST_KEY);
+    static ApplicationUser getRemoteUser(final HttpServletRequest request) {
+        return (ApplicationUser) request.getAttribute(USER_REQUEST_KEY);
     }
 
     static String getRequestBody(HttpServletRequest request) throws IOException {

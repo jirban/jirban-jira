@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
@@ -27,7 +26,6 @@ import com.atlassian.sal.api.user.UserProfile;
 public class AuthFilter implements Filter {
     private static final Logger log = LoggerFactory.getLogger(AuthFilter.class);
 
-    //private final JiraFacade jiraFacade;
     private final UserManager jiraUserManager;
 
     @ComponentImport
@@ -49,7 +47,7 @@ public class AuthFilter implements Filter {
 
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)throws IOException,ServletException{
         final HttpServletRequest req = (HttpServletRequest)request;
-        final User user = getUserByKey(req);
+        final ApplicationUser user = getUserByKey(req);
         System.out.println("-----> Auth Filter " + user);
 
         //continue the request
@@ -61,16 +59,12 @@ public class AuthFilter implements Filter {
         }
     }
 
-    private User getUserByKey(HttpServletRequest request) {
+    private ApplicationUser getUserByKey(HttpServletRequest request) {
         UserProfile userProfile = salUserManager.getRemoteUser(request);
         if (userProfile == null) {
             return null;
         }
-        ApplicationUser user = jiraUserManager.getUserByKey(userProfile.getUserKey().getStringValue());
-        if (user != null) {
-            return user.getDirectoryUser();
-        }
-        return null;
+        return jiraUserManager.getUserByKey(userProfile.getUserKey().getStringValue());
     }
 
 

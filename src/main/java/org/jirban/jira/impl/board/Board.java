@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl.board;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,10 +36,14 @@ import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.avatar.Avatar;
+import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.util.UserManager;
 
 /**
  * The data for a board.
@@ -75,8 +80,9 @@ public class Board {
         this.missingStates = missingStates;
     }
 
-    public static Builder builder(SearchService searchService, User user, BoardConfig boardConfig) {
-        return new Builder(searchService, user, boardConfig);
+    public static Builder builder(SearchService searchService, AvatarService avatarService, UserManager userManager,
+                                  ApplicationUser user, BoardConfig boardConfig) {
+        return new Builder(searchService, avatarService, userManager, user, boardConfig);
     }
 
     public ModelNode serialize() {
@@ -170,9 +176,11 @@ public class Board {
     }
 
     public static class Builder {
-        private final User user;
-        private final BoardConfig boardConfig;
         private final SearchService searchService;
+        private final AvatarService avatarService;
+        private final UserManager userManager;
+        private final ApplicationUser user;
+        private final BoardConfig boardConfig;
 
         private final Map<String, Assignee> assignees = new TreeMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
@@ -182,8 +190,11 @@ public class Board {
         private final Map<String, List<String>> missingPriorities = new TreeMap<>();
         private final Map<String, List<String>> missingStates = new TreeMap<>();
 
-        public Builder(SearchService searchService, User user, BoardConfig boardConfig) {
+        public Builder(SearchService searchService, AvatarService avatarService, UserManager userManager,
+                       ApplicationUser user, BoardConfig boardConfig) {
             this.searchService = searchService;
+            this.avatarService = avatarService;
+            this.userManager = userManager;
             this.user = user;
             this.boardConfig = boardConfig;
         }
@@ -221,8 +232,8 @@ public class Board {
                     Collections.unmodifiableMap(missingStates));
         }
 
-        public Assignee getAssignee(User user) {
-            if (user != null) {
+        public Assignee getAssignee(User assigneeUser) {
+            if (user == null) {
                 //Unassigned issue
                 return null;
             }
@@ -230,7 +241,9 @@ public class Board {
             if (assignee != null) {
                 return assignee;
             }
-            assignee = Assignee.create(user);
+            ApplicationUser assigneeAppUser = userManager.getUserByKey(assigneeUser.getName());
+            URI avatarUrl = avatarService.getAvatarURL(user, assigneeAppUser, Avatar.Size.NORMAL);
+            assignee = Assignee.create(assigneeUser, avatarUrl.toString());
             assignees.put(user.getName(), assignee);
             return assignee;
         }

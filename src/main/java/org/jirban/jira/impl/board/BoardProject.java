@@ -38,6 +38,7 @@ import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.query.order.SortOrder;
 
@@ -82,19 +83,19 @@ public class BoardProject {
         }
     }
 
-    static Builder builder(SearchService searchService, User user, Board.Builder builder, BoardProjectConfig projectConfig) {
+    static Builder builder(SearchService searchService, ApplicationUser user, Board.Builder builder, BoardProjectConfig projectConfig) {
         return new Builder(searchService, user, builder, projectConfig);
     }
 
     static class Builder {
         private final SearchService searchService;
-        private final User user;
+        private final ApplicationUser user;
         private final Board.Builder boardBuilder;
         private final BoardProjectConfig projectConfig;
         private final Map<String, List<Issue>> issuesByState = new HashMap<>();
 
 
-        public Builder(SearchService searchService, User user, Board.Builder boardBuilder, BoardProjectConfig projectConfig) {
+        public Builder(SearchService searchService, ApplicationUser user, Board.Builder boardBuilder, BoardProjectConfig projectConfig) {
             this.searchService = searchService;
             this.user = user;
             this.boardBuilder = boardBuilder;
@@ -130,7 +131,7 @@ public class BoardProject {
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
 
             SearchResults searchResults =
-                    searchService.search(user, queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+                    searchService.search(user.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
                 Issue.Builder issueBuilder = Issue.builder(this);
@@ -152,8 +153,8 @@ public class BoardProject {
             return boardBuilder.getIssueTypeIndex(issueKey, issueTypeObject);
         }
 
-        public Assignee getAssignee(User user) {
-            return boardBuilder.getAssignee(user);
+        public Assignee getAssignee(User assigneeUser) {
+            return boardBuilder.getAssignee(assigneeUser);
         }
 
         public String getCode() {

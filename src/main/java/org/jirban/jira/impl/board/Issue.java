@@ -26,7 +26,6 @@ import java.util.List;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.status.Status;
 
 /**
@@ -259,7 +258,6 @@ public abstract class Issue {
         String issueKey ;
         Status status;
         String summary;
-        User user;
         Assignee assignee;
         Integer issueTypeIndex;
         Integer priorityIndex;
@@ -273,8 +271,7 @@ public abstract class Issue {
             issueKey = issue.getKey();
             status = issue.getStatusObject();
             summary = issue.getSummary();
-            user = issue.getAssignee();
-            assignee = project.getAssignee(user);
+            assignee = project.getAssignee(issue.getAssignee());
             issueTypeIndex = project.getIssueTypeIndex(issueKey, issue.getIssueTypeObject());
             priorityIndex = project.getPriorityIndex(issueKey, issue.getPriorityObject());
             state = issue.getStatusObject().getName();

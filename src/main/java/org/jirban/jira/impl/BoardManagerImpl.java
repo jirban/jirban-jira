@@ -33,9 +33,12 @@ import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.board.Board;
 import org.jirban.jira.impl.config.BoardConfig;
 
-import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -51,23 +54,35 @@ public class BoardManagerImpl implements BoardManager {
     @ComponentImport
     private final SearchService searchService;
 
+    @ComponentImport
+    private final AvatarService avatarService;
+
+    private final UserManager userManager;
+
     private final BoardConfigurationManager boardConfigurationManager;
 
+
     @Inject
-    public BoardManagerImpl(SearchService searchService, BoardConfigurationManager boardConfigurationManager) {
+    public BoardManagerImpl(SearchService searchService, AvatarService avatarService, BoardConfigurationManager boardConfigurationManager) {
         this.searchService = searchService;
+        this.avatarService = avatarService;
         this.boardConfigurationManager = boardConfigurationManager;
+
+        //It does not seem to like me trying to inject both user managers
+        // (We are injecting the sal one in AuthFilter)
+        this.userManager = ComponentAccessor.getUserManager();
+
     }
 
     @Override
-    public String getBoardJson(User user, int id) throws SearchException {
+    public String getBoardJson(ApplicationUser user, int id) throws SearchException {
         Board board = boards.get(id);
         if (board == null) {
             synchronized (this) {
                 board = boards.get(id);
                 if (board == null) {
                     final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(id);
-                    board = Board.builder(searchService, user, boardConfig).load().build();
+                    board = Board.builder(searchService, avatarService, userManager, user, boardConfig).load().build();
                     boards.put(id, board);
                 }
             }

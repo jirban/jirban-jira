@@ -21,12 +21,12 @@
  */
 package org.jirban.jira.api;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.user.ApplicationUser;
 
 /**
  * @author Kabir Khan
  */
 public interface BoardManager {
-    String getBoardJson(User user, int id) throws SearchException;
+    String getBoardJson(ApplicationUser user, int id) throws SearchException;
 }

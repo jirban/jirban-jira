@@ -40,11 +40,11 @@ class Assignee {
         this.displayName = displayName;
     }
 
-    static Assignee create(User user) {
+    static Assignee create(User user, String avatarUrl) {
         return new Assignee(
                 user.getName(),
                 user.getEmailAddress(),
-                "http://example.com", //TODO Use AvatarManager to get the url?
+                avatarUrl,
                 user.getDisplayName());
     }
 
