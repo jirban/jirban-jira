@@ -67,11 +67,17 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     @Override
     public void saveBoard(int id, String jiraUrl, ModelNode config) {
         boardConfigurationManager.saveBoard(id, jiraUrl, config);
+        if (id >= 0) {
+            //We are modifying a board's configuration. Delete the board config and board data to force a refresh.
+            boardConfigurationManager.deleteBoard(id);
+            boardManager.deleteBoard(id);
+        }
     }
 
     @Override
     public void deleteBoard(int id) {
         boardConfigurationManager.deleteBoard(id);
+        boardManager.deleteBoard(id);
     }
 
     @Override

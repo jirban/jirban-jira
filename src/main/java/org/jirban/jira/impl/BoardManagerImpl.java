@@ -91,5 +91,10 @@ public class BoardManagerImpl implements BoardManager {
         return board.serialize().toJSONString(true);
     }
 
-
+    @Override
+    public void deleteBoard(int id) {
+        synchronized (this) {
+            boards.remove(id);
+        }
+    }
 }

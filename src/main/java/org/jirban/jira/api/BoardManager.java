@@ -29,4 +29,6 @@ import com.atlassian.jira.user.ApplicationUser;
  */
 public interface BoardManager {
     String getBoardJson(ApplicationUser user, int id) throws SearchException;
+
+    void deleteBoard(int id);
 }
