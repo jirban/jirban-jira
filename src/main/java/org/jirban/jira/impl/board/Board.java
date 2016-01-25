@@ -104,9 +104,7 @@ public class Board {
 
         ModelNode allIssues = outputNode.get("issues");
         this.allIssues.forEach((code, issue) -> {
-            if (issue.isValid()) {
-                allIssues.get(code).set(issue.toModelNode(this));
-            }
+            allIssues.get(code).set(issue.toModelNode(this));
         });
 
         ModelNode mainProjectsParent = outputNode.get("projects", "main");
@@ -252,7 +250,7 @@ public class Board {
             return assignee;
         }
 
-        Integer getIssueTypeIndex(String issueKey, IssueType issueType) {
+        Integer getIssueTypeIndexRecordingMissing(String issueKey, IssueType issueType) {
             final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueType.getName());
             if (issueTypeIndex == null) {
                 addMissing(missingIssueTypes, issueType.getName(), issueKey);
@@ -260,7 +258,7 @@ public class Board {
             return issueTypeIndex;
         }
 
-        Integer getPriorityIndex(String issueKey, Priority priority) {
+        Integer getPriorityIndexRecordingMissing(String issueKey, Priority priority) {
             final Integer priorityIndex = boardConfig.getPriorityIndex(priority.getName());
             if (priority == null) {
                 addMissing(missingPriorities, priority.getName(), issueKey);
@@ -268,7 +266,7 @@ public class Board {
             return priorityIndex;
         }
 
-        private void addMissingState(String issueKey, String stateName) {
+        void addMissingState(String issueKey, String stateName) {
             addMissing(missingStates, stateName, issueKey);
         }
 
@@ -277,7 +275,7 @@ public class Board {
             missingIssues.add(issueKey);
         }
 
-        List<BoardProject.Builder> getMainProjects() {
+/*        List<BoardProject.Builder> getMainProjects() {
             List<BoardProject.Builder> builders = new ArrayList<>();
             for (BoardProjectConfig projectConfig : boardConfig.getBoardProjects()) {
                 builders.add(projects.computeIfAbsent(projectConfig.getCode(), m -> BoardProject.builder(searchService, user, this, projectConfig)));
@@ -291,14 +289,14 @@ public class Board {
             return null;
             //BoardProjectConfig projectCfg =  mainCfg != null ? mainCfg : boardConfig.getLinkedProject(projectCode);
             //return projects.computeIfAbsent(projectCode, m -> BoardProject.builder(this, projectCfg));
-        }
+        }*/
 
-        LinkedProjectConfig getLinkedProjectConfig(String linkedProjectCode) {
+        BoardProject.LinkedProjectContext getLinkedProjectBuilder(String linkedProjectCode) {
             LinkedProjectConfig projectCfg = boardConfig.getLinkedProjectConfig(linkedProjectCode);
             if (projectCfg == null) {
                 return null;
             }
-            return projects.computeIfAbsent(projectCfg.getCode(), m -> BoardProject.builder(this, projectCfg));
+            return BoardProject.linkedProjectContext(this, projectCfg);
         }
 
         BoardProjectConfig getOwningProject() {

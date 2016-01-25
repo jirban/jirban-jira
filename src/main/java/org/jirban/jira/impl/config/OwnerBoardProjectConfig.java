@@ -50,6 +50,11 @@ public class OwnerBoardProjectConfig extends BoardProjectConfig {
     }
 
     @Override
+    public boolean isOwner() {
+        return true;
+    }
+
+    @Override
     public String mapBoardStateOntoOwnState(String boardState) {
         return boardState;
     }

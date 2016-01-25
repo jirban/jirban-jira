@@ -198,7 +198,7 @@ public class BoardConfig {
         final ModelNode linked = projects.get("linked");
         linked.setEmptyList();
         for (LinkedProjectConfig project : linkedProjects.values()) {
-            project.serializeModelNode(this, linked);
+            linked.add(project.serializeModelNode(this, new ModelNode()));
         }
     }
 

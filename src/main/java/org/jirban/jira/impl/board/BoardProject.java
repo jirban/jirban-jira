@@ -77,9 +77,7 @@ class BoardProject {
             ModelNode issuesForStateNode = new ModelNode();
             issuesForStateNode.setEmptyList();
             for (Issue issue : issuesForState) {
-                if (issue.isValid()) {
-                    issuesForStateNode.add(issue.getKey());
-                }
+                issuesForStateNode.add(issue.getKey());
             }
             projectIssues.add(issuesForStateNode);
         }
@@ -87,6 +85,10 @@ class BoardProject {
 
     static Builder builder(SearchService searchService, ApplicationUser user, Board.Builder builder, BoardProjectConfig projectConfig) {
         return new Builder(searchService, user, builder, projectConfig);
+    }
+
+    static LinkedProjectContext linkedProjectContext(Board.Builder boardBuilder, LinkedProjectConfig linkedProjectConfig) {
+        return new LinkedProjectContext(boardBuilder, linkedProjectConfig);
     }
 
     static class Builder {
@@ -139,7 +141,9 @@ class BoardProject {
                 Issue.Builder issueBuilder = Issue.builder(this);
                 issueBuilder.load(jiraIssue);
                 Issue issue = issueBuilder.build();
-                addIssue(issue.getState(), issue);
+                if (issue != null) {
+                    addIssue(issue.getState(), issue);
+                }
             }
         }
 
@@ -147,12 +151,35 @@ class BoardProject {
             return projectConfig;
         }
 
-        Integer getPriorityIndex(String issueKey, Priority priorityObject) {
-            return boardBuilder.getPriorityIndex(issueKey, priorityObject);
+        Integer getPriorityIndexRecordingMissing(String issueKey, Priority priorityObject) {
+            return boardBuilder.getPriorityIndexRecordingMissing(issueKey, priorityObject);
         }
 
-        Integer getIssueTypeIndex(String issueKey, IssueType issueTypeObject) {
-            return boardBuilder.getIssueTypeIndex(issueKey, issueTypeObject);
+        Integer getIssueTypeIndexRecordingMissing(String issueKey, IssueType issueTypeObject) {
+            return boardBuilder.getIssueTypeIndexRecordingMissing(issueKey, issueTypeObject);
+        }
+
+        Integer getStateIndexRecordingMissing(String projectCode, String issueKey, String stateName) {
+            final Integer index = projectConfig.getStateIndex(stateName);
+            if (index == null) {
+                boardBuilder.addMissingState(issueKey, stateName);
+            } else {
+                if (!projectConfig.isOwner()) {
+                    Integer ownerStateIndex = null;
+                    String ownerState = projectConfig.mapOwnStateOntoBoardState(stateName);
+                    if (ownerState != null) {
+                        ownerStateIndex = boardBuilder.getOwningProject().getStateIndex(ownerState);
+                    }
+                    if (ownerStateIndex == null) {
+                        //This was not mapped to a valid owner state so report the problem
+                        boardBuilder.addMissingState(issueKey, ownerState != null ? ownerState : stateName);
+                        return null;
+                    }
+                    //Do not return the owner state index here although all was fine. The calculation of the columns
+                    //depends on everything using their own state index.
+                }
+            }
+            return index;
         }
 
         Assignee getAssignee(User assigneeUser) {
@@ -167,8 +194,35 @@ class BoardProject {
             return boardBuilder.getIssueLinkManager();
         }
 
-        public LinkedProjectConfig getLinkedProjectConfig(String linkedProjectCode) {
-            return boardBuilder.getLinkedProjectConfig(linkedProjectCode);
+        public LinkedProjectContext getLinkedProjectBuilder(String linkedProjectCode) {
+            return boardBuilder.getLinkedProjectBuilder(linkedProjectCode);
+        }
+    }
+
+    static class LinkedProjectContext {
+
+        private final Board.Builder boardBuilder;
+        private final LinkedProjectConfig linkedProjectConfig;
+
+        LinkedProjectContext(Board.Builder boardBuilder, LinkedProjectConfig linkedProjectConfig) {
+            this.boardBuilder = boardBuilder;
+            this.linkedProjectConfig = linkedProjectConfig;
+        }
+
+        public LinkedProjectConfig getConfig() {
+            return linkedProjectConfig;
+        }
+
+        Integer getStateIndexRecordingMissing(String projectCode, String issueKey, String stateName) {
+            final Integer index = linkedProjectConfig.getStateIndex(stateName);
+            if (index == null) {
+                boardBuilder.addMissingState(issueKey, stateName);
+            }
+            return index;
+        }
+
+        public String getCode() {
+            return linkedProjectConfig.getCode();
         }
     }
 }

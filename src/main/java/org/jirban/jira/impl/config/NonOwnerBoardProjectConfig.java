@@ -70,6 +70,11 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
                 Collections.unmodifiableMap(ownToBoardStates), Collections.unmodifiableMap(boardToOwnStates));
     }
 
+    @Override
+    public boolean isOwner() {
+        return false;
+    }
+
     public String mapBoardStateOntoOwnState(String boardState) {
         return boardToOwnStates.get(boardState);
     }

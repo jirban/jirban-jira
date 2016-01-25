@@ -79,5 +79,5 @@ public abstract class BoardProjectConfig extends ProjectConfig {
 
     public abstract String mapOwnStateOntoBoardState(String state);
 
-
+    public abstract boolean isOwner();
 }
