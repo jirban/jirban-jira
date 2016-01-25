@@ -24,7 +24,8 @@
          [hidden]="hideLinkedIssues">
         <div class="linked-issue">
             <div class="linked-issue-summary">
-                <a href="{{jiraUrl}}/browse/{{linked.key}}" class="linked-issue-summary">{{linked.key}}</a>
+                <a href="{{jiraUrl}}/browse/{{linked.key}}"
+                   (contextmenu)="defaultContextMenu($event)" class="linked-issue-summary">{{linked.key}}</a>
             </div>
             <div class="linked-issue-status">
                 <span [style.color]="getStatusColour(linked)">{{getStatusFraction(linked)}}</span>
