@@ -36,14 +36,14 @@ import org.jboss.dmr.ModelNode;
  * @author Kabir Khan
  */
 public class LinkedProjectConfig extends ProjectConfig {
-    public LinkedProjectConfig(String code, Map<String, Integer> states) {
+    public LinkedProjectConfig(final String code, final Map<String, Integer> states) {
         super(code, states);
     }
 
-    static LinkedProjectConfig load(String projectName, ModelNode project) {
-        List<ModelNode> statesList = getRequiredChild(project, "Project", projectName, "states").asList();
+    static LinkedProjectConfig load(final String projectCode, final ModelNode project) {
+        List<ModelNode> statesList = getRequiredChild(project, "Project", projectCode, "states").asList();
         Map<String, Integer> statesMap = getStringIntegerMap(statesList);
-        return new LinkedProjectConfig(projectName, Collections.unmodifiableMap(statesMap));
+        return new LinkedProjectConfig(projectCode, Collections.unmodifiableMap(statesMap));
     }
 
     private static Map<String, Integer> getStringIntegerMap(final List<ModelNode> statesList) {

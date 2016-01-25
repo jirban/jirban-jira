@@ -26,11 +26,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
-import org.jboss.dmr.Property;
+
+import com.atlassian.jira.config.IssueTypeManager;
+import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.priority.Priority;
 
 /**
  * The set of projects to be displayed on a board. The 'owner' is the project which contains the
@@ -70,7 +75,7 @@ public class BoardConfig {
         this.issueTypeIndex = getIndexMap(issueTypes);
     }
 
-    public static BoardConfig load(int id, String configJson) {
+    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, String configJson) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
         String projectGroupName = getRequiredChild(boardNode, "Group", null, "name").asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, "owning-project").asString();
@@ -99,23 +104,42 @@ public class BoardConfig {
                 linkedProjects.put(projectName, LinkedProjectConfig.load(projectName, project));
             }
         }
+
         return new BoardConfig(id, projectGroupName, owningProjectName,
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
-                Collections.unmodifiableMap(loadNameAndUrlPairs(boardNode.get("priorities"))),
-                Collections.unmodifiableMap(loadNameAndUrlPairs(boardNode.get("issue-types")))
+                Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get("priorities").asList())),
+                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get("issue-types").asList()))
         );
     }
 
-    private static Map<String, NameAndUrl> loadNameAndUrlPairs(ModelNode parent) {
-        Map<String, NameAndUrl> pairs = new LinkedHashMap<>();
-        if (parent.isDefined()) {
-            for (Property property : parent.asPropertyList()) {
-                pairs.put(property.getName(), new NameAndUrl(property.getName(), property.getValue().asString()));
-            }
+    private static Map<String, NameAndUrl> loadIssueTypes(IssueTypeManager issueTypeManager, List<ModelNode> typeNodes) {
+        final Collection<IssueType> allTypes = issueTypeManager.getIssueTypes();
+        Map<String, IssueType> types = new HashMap<>();
+        for (IssueType type : allTypes) {
+            types.put(type.getName(), type);
         }
-        return pairs;
+        Map<String, NameAndUrl> issueTypes = new LinkedHashMap<>();
+        for (ModelNode typeNode : typeNodes) {
+            IssueType type = types.get(typeNode.asString());
+            issueTypes.put(type.getName(), new NameAndUrl(type.getName(), type.getIconUrl()));
+        }
+        return issueTypes;
+    }
+
+    private static Map<String, NameAndUrl> loadPriorities(PriorityManager priorityManager, List<ModelNode> priorityNodes) {
+        final Collection<Priority> allPriorities = priorityManager.getPriorities();
+        Map<String, Priority> priorities = new HashMap<>();
+        for (Priority priority : allPriorities) {
+            priorities.put(priority.getName(), priority);
+        }
+        Map<String, NameAndUrl> priorityMap = new LinkedHashMap<>();
+        for (ModelNode priorityNode : priorityNodes) {
+            Priority priority = priorities.get(priorityNode.asString());
+            priorityMap.put(priority.getName(), new NameAndUrl(priority.getName(), priority.getIconUrl()));
+        }
+        return priorityMap;
     }
 
     private Map<String, Integer> getIndexMap(Map<String, NameAndUrl> original) {
@@ -173,6 +197,7 @@ public class BoardConfig {
             project.serializeModelNode(this, main);
         }
         final ModelNode linked = projects.get("linked");
+        linked.setEmptyList();
         for (LinkedProjectConfig project : linkedProjects.values()) {
             project.serializeModelNode(this, linked);
         }

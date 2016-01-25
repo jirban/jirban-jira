@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.jboss.dmr.ModelNode;
@@ -35,6 +36,8 @@ import org.jirban.jira.impl.config.BoardProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 
 /**
@@ -52,15 +55,23 @@ public class Board {
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
 
-//    private final Map<String, List<String>> missingIssueTypes;
-//    private final Map<String, List<String>> missingPriorities;
+    private final Map<String, List<String>> missingIssueTypes;
+    private final Map<String, List<String>> missingPriorities;
     private final Map<String, List<String>> missingStates;
 
-    public Board(BoardConfig boardConfig, Map<String, Assignee> assignees, Map<String, Issue> allIssues, Map<String, BoardProject> projects, Map<String, List<String>> missingStates) {
+    public Board(BoardConfig boardConfig,
+                 Map<String, Assignee> assignees,
+                 Map<String, Issue> allIssues,
+                 Map<String, BoardProject> projects,
+                 Map<String, List<String>> missingIssueTypes,
+                 Map<String, List<String>> missingPriorities,
+                 Map<String, List<String>> missingStates) {
         this.boardConfig = boardConfig;
         this.assignees = assignees;
         this.allIssues = allIssues;
         this.projects = projects;
+        this.missingIssueTypes = missingIssueTypes;
+        this.missingPriorities = missingPriorities;
         this.missingStates = missingStates;
     }
 
@@ -85,7 +96,7 @@ public class Board {
         ModelNode allIssues = outputNode.get("issues");
         this.allIssues.forEach((code, issue) -> {
             if (issue.isValid()) {
-                allIssues.get(code).set(issue.toModelNode());
+                allIssues.get(code).set(issue.toModelNode(this));
             }
         });
 
@@ -94,12 +105,11 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            //TODO
             //projectEntry.getValue().serialize(project);
         }
 
-//        serializeMissing(outputNode, "priorities", missingPriorities);
-//        serializeMissing(outputNode, "issue-types", missingIssueTypes);
+        serializeMissing(outputNode, "priorities", missingPriorities);
+        serializeMissing(outputNode, "issue-types", missingIssueTypes);
         serializeMissing(outputNode, "states", missingStates);
 
         return outputNode;
@@ -150,12 +160,12 @@ public class Board {
         return boardConfig;
     }
 
-    public BoardProjectConfig getOwningProjectConfig() {
-        return boardConfig.getOwningProject();
-    }
-
     public int getProjectCode() {
         return boardConfig.getId();
+    }
+
+    public BoardProject getBoardProject(String code) {
+        return projects.get(code);
     }
 
     public static class Builder {
@@ -182,18 +192,17 @@ public class Board {
                 BoardProjectConfig project = boardConfig.getBoardProject(boardProjectConfig.getCode());
                 BoardProject.Builder projectBuilder = BoardProject.builder(searchService, user, this, project);
                 projectBuilder.load();
+                projects.put(projectBuilder.getCode(), projectBuilder);
             }
             return this;
         }
 
-        Builder addIssue(String project, String state, Issue issue) {
+        Builder addIssue(Issue issue) {
             allIssues.put(issue.getKey(), issue);
-            BoardProject.Builder projectBuilder = getProject(project);
-            projectBuilder.addIssue(state, issue);
             return this;
         }
 
-        Board build() {
+        public Board build() {
             Map<String, BoardProject> projects = new LinkedHashMap<>();
 
             BoardProject.Builder ownerProject = this.projects.remove(boardConfig.getOwnerProjectCode());
@@ -207,46 +216,38 @@ public class Board {
 
             return new Board(boardConfig, Collections.unmodifiableMap(assignees),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
-//                    Collections.unmodifiableMap(missingIssueTypes), Collections.unmodifiableMap(missingPriorities),
+                    Collections.unmodifiableMap(missingIssueTypes), Collections.unmodifiableMap(missingPriorities),
                     Collections.unmodifiableMap(missingStates));
         }
 
-        public Assignee getAssignee(ModelNode assigneeNode) {
-            if (!assigneeNode.isDefined()) {
+        public Assignee getAssignee(User user) {
+            if (user != null) {
+                //Unassigned issue
                 return null;
             }
-            final String name = assigneeNode.get("name").asString(); //It also has 'key' but they look the same?
-            Assignee assignee = assignees.get(name);
+            Assignee assignee = assignees.get(user.getName());
             if (assignee != null) {
                 return assignee;
             }
-            assignee = new Assignee(assigneeNode);
-            assignees.put(name, assignee);
+            assignee = Assignee.create(user);
+            assignees.put(user.getName(), assignee);
             return assignee;
         }
 
-        public Integer getIssueType(String issueKey, ModelNode issueTypeNode) {
-            if (!issueTypeNode.isDefined()) {
-                return null;
+        public Integer getIssueTypeIndex(String issueKey, IssueType issueType) {
+            final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueType.getName());
+            if (issueTypeIndex == null) {
+                addMissing(missingIssueTypes, issueType.getName(), issueKey);
             }
-            final String typeName = issueTypeNode.get("name").asString();
-            final Integer issueType = boardConfig.getIssueTypeIndex(typeName);
-            if (issueType == null) {
-                addMissing(missingIssueTypes, typeName, issueKey);
-            }
-            return issueType;
+            return issueTypeIndex;
         }
 
-        public Integer getPriority(String issueKey, ModelNode priorityNode) {
-            if (!priorityNode.isDefined()) {
-                return null;
-            }
-            final String priorityName = priorityNode.get("name").asString();
-            final Integer priority = boardConfig.getPriorityIndex(priorityName);
+        public Integer getPriorityIndex(String issueKey, Priority priority) {
+            final Integer priorityIndex = boardConfig.getPriorityIndex(priority.getName());
             if (priority == null) {
-                addMissing(missingPriorities, priorityName, issueKey);
+                addMissing(missingPriorities, priority.getName(), issueKey);
             }
-            return priority;
+            return priorityIndex;
         }
 
         private void addMissingState(String issueKey, String stateName) {
@@ -285,6 +286,10 @@ public class Board {
 
         public BoardProjectConfig getOwningProject() {
             return boardConfig.getOwningProject();
+        }
+
+        public Set<String> getOwnerStateNames() {
+            return boardConfig.getOwnerStateNames();
         }
     }
 

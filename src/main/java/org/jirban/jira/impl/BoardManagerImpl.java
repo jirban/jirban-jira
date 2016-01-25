@@ -67,13 +67,13 @@ public class BoardManagerImpl implements BoardManager {
                 board = boards.get(id);
                 if (board == null) {
                     final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(id);
-                    final Board.Builder boardBuilder = Board.builder(searchService, user, boardConfig).load();
+                    board = Board.builder(searchService, user, boardConfig).load().build();
                     boards.put(id, board);
                 }
             }
         }
-        return "{}";
-        //return board.serialize().toJSONString(true);
+        System.out.println(board.serialize().toJSONString(false));
+        return board.serialize().toJSONString(true);
     }
 
 

@@ -34,7 +34,8 @@ public abstract class BoardProjectConfig extends ProjectConfig {
     private final String queryFilter;
     private final String colour;
 
-    protected BoardProjectConfig(String code, String queryFilter, String colour, Map<String, Integer> states) {
+    protected BoardProjectConfig(final String code, final String queryFilter,
+                                 final String colour, final Map<String, Integer> states) {
         super(code, states);
         this.queryFilter = queryFilter;
         this.colour = colour;
@@ -68,8 +69,10 @@ public abstract class BoardProjectConfig extends ProjectConfig {
     }
 
     @Override
-    void doSerializeModelNode(BoardConfig boardConfig, ModelNode projectNode) {
+    ModelNode serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
+        ModelNode projectNode = super.serializeModelNode(boardConfig, parent);
         projectNode.get("colour").set(colour);
+        return projectNode;
     }
 
     public abstract String mapBoardStateOntoOwnState(String boardState);

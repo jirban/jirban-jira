@@ -52,7 +52,7 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
         this.boardToOwnStates = Collections.unmodifiableMap(map);
     }
 
-    static NonOwnerBoardProjectConfig load(String projectCode, ModelNode project) {
+    static NonOwnerBoardProjectConfig load(final String projectCode, ModelNode project) {
         String colour = getRequiredChild(project, "Project", projectCode, "colour").asString();
         ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, "state-links");
         if (project.hasDefined("states")) {
@@ -79,13 +79,13 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
     }
 
     @Override
-    void doSerializeModelNode(BoardConfig boardConfig, ModelNode projectNode) {
-        super.doSerializeModelNode(boardConfig, projectNode);
+    ModelNode serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
+        ModelNode projectNode = super.serializeModelNode(boardConfig, parent);
         ModelNode stateLinksNode = projectNode.get("state-links");
         for (String state : boardConfig.getOwningProject().getStateNames()) {
             String myState = mapBoardStateOntoOwnState(state);
             stateLinksNode.get(state).set(myState == null ? new ModelNode() : new ModelNode(myState));
         }
-
+        return projectNode;
     }
 }

@@ -22,6 +22,8 @@ package org.jirban.jira.impl.board;
 
 import org.jboss.dmr.ModelNode;
 
+import com.atlassian.crowd.embedded.api.User;
+
 /**
  * @author Kabir Khan
  */
@@ -30,17 +32,23 @@ class Assignee {
     private final String email;
     private final String avatarUrl;
     private final String displayName;
-    private volatile int index;
 
-    Assignee(ModelNode assigneeNode) {
-        this.key = assigneeNode.get("name").asString(); //There is also a 'key' field but it looks the same as 'name'
-        email = assigneeNode.get("emailAddress").asString();
-        avatarUrl = assigneeNode.get("avatarUrls", "32x32").asString();
-        displayName = assigneeNode.get("displayName").asString();
+    public Assignee(String key, String email, String avatarUrl, String displayName) {
+        this.key = key;
+        this.email = email;
+        this.avatarUrl = avatarUrl;
+        this.displayName = displayName;
+    }
+
+    static Assignee create(User user) {
+        return new Assignee(
+                user.getName(),
+                user.getEmailAddress(),
+                "http://example.com", //TODO Use AvatarManager to get the url?
+                user.getDisplayName());
     }
 
     void serialize(int index, ModelNode parent) {
-        this.index = index;
         ModelNode modelNode = new ModelNode();
         modelNode.get("key").set(key);
         modelNode.get("email").set(email);
@@ -55,10 +63,6 @@ class Assignee {
 
     String getDisplayName() {
         return displayName;
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     public boolean isDataSame(Assignee that) {

@@ -35,7 +35,7 @@ abstract class ProjectConfig {
     protected final String code;
     protected final Map<String, Integer> states;
 
-    public ProjectConfig(String code, Map<String, Integer> states) {
+    public ProjectConfig(final String code, final Map<String, Integer> states) {
         this.code = code;
         this.states = states;
     }
@@ -60,15 +60,15 @@ abstract class ProjectConfig {
         return states.size() - 1;
     }
 
-    void serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
+    private ModelNode getBaseModelNode(ModelNode parent) {
         ModelNode projectNode = parent.get(code);
         ModelNode statesNode = projectNode.get("states");
         this.states.keySet().forEach(statesNode::add);
-
-        doSerializeModelNode(boardConfig, projectNode);
+        return projectNode;
     }
 
-    void doSerializeModelNode(BoardConfig boardConfig, ModelNode projectNode) {
-        //To be overridden
+    ModelNode serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
+        return getBaseModelNode(parent);
     }
+
 }

@@ -27,8 +27,6 @@ import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
-import com.atlassian.jira.issue.issuetype.IssueType;
-import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.status.Status;
 
 /**
@@ -36,45 +34,34 @@ import com.atlassian.jira.issue.status.Status;
  *
  * @author Kabir Khan
  */
-public class Issue {
+public abstract class Issue {
 
-    private final BoardProjectConfig project;
-    private final String key;
-    private final String state;
-    private final Integer stateIndex;
-    private final String summary;
-    private final Assignee assignee;
-    private final Integer issueType;
-    private final Integer priority;
-    private final List<Issue> linkedIssues;
+    protected final BoardProjectConfig project;
+    protected final String key;
+    protected final String state;
+    protected final String summary;
 
-    Issue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary, Assignee assignee, Integer issueType, Integer priority, List<Issue> linkedIssues) {
+    Issue(BoardProjectConfig project, String key, String state, String summary) {
         this.project = project;
         this.key = key;
         this.state = state;
-        this.stateIndex = stateIndex;
         this.summary = summary;
-        this.assignee = assignee;
-        this.issueType = issueType;
-        this.priority = priority;
-        this.linkedIssues = linkedIssues != null ?
-                Collections.unmodifiableList(linkedIssues) : Collections.emptyList();
     }
 
-    static Issue createIssue(final BoardProject.Builder project, final ModelNode modelNode) {
-        String key = modelNode.get(IssueFields.KEY).asString();
-        return createIssue(project, key, modelNode, true);
-    }
-
-    private static Issue createIssue(final BoardProject.Builder project, final String issueKey, final ModelNode modelNode, boolean master) {
-        final ModelNode fields = modelNode.get(IssueFields.FIELDS);
-        final String status = fields.get(IssueFields.STATUS, "name").asString();
-        final String summary = fields.get(IssueFields.SUMMARY).asString();
-        return null;
-
+//    static Issue createIssue(final BoardProject.Builder project, final ModelNode modelNode) {
+//        String key = modelNode.get(IssueFields.KEY).asString();
+//        return createIssue(project, key, modelNode, true);
+//    }
+//
+//    private static Issue createIssue(final BoardProject.Builder project, final String issueKey, final ModelNode modelNode, boolean master) {
+//        final ModelNode fields = modelNode.get(IssueFields.FIELDS);
+//        final String status = fields.get(IssueFields.STATUS, "name").asString();
+//        final String summary = fields.get(IssueFields.SUMMARY).asString();
+//        return null;
+//
 //        final Assignee assignee = project.getProjectGroup().getAssignee(fields.get(IssueFields.ASSIGNEE));
-//        final Integer issueType = project.getProjectGroup().getIssueType(issueKey, fields.get(IssueFields.ISSUE_TYPE));
-//        final Integer priority = project.getProjectGroup().getPriority(issueKey, fields.get(IssueFields.PRIORITY));
+//        final Integer issueType = project.getProjectGroup().getIssueTypeIndex(issueKey, fields.get(IssueFields.ISSUE_TYPE));
+//        final Integer priority = project.getProjectGroup().getPriorityIndex(issueKey, fields.get(IssueFields.PRIORITY));
 //        final Integer stateIndex = project.getStateIndex(issueKey, status);
 //
 //        Map<String, List<Issue>> links = null;
@@ -112,8 +99,8 @@ public class Issue {
 //            }
 //        }
 //        return new Issue(project.getConfig(), issueKey, status, stateIndex, summary, assignee, issueType, priority, linkedIssues);
-
-    }
+//
+//    }
 
 
     public String getKey() {
@@ -129,46 +116,27 @@ public class Issue {
     }
 
     boolean hasLinkedIssues() {
-        return linkedIssues.size() > 0;
+        return false;
     }
 
     Iterable<Issue> getLinkedIssues() {
-        return () -> linkedIssues.iterator();
+        return () -> Collections.<Issue>emptySet().iterator();
     }
 
-    public ModelNode toModelNode() {
-        ModelNode issueNode = new ModelNode();
-        issueNode.get("key").set(key);
-        issueNode.get("state").set(stateIndex);
-        issueNode.get("summary").set(summary);
-        if (assignee != null) {
-            issueNode.get("assignee").set(assignee.getIndex());
-        }
-        if (priority != null) {
-            issueNode.get("priority").set(priority);
-        }
-        if (issueType != null) {
-            issueNode.get("type").set(issueType);
-        }
-
-        if (hasLinkedIssues()) {
-            ModelNode linkedIssuesNode = issueNode.get("linked-issues");
-            for (Issue linkedIssue : linkedIssues) {
-                if (linkedIssue.isValid()) {
-                    ModelNode linkedIssueNode = linkedIssue.toModelNode();
-                    linkedIssuesNode.add(linkedIssueNode);
-                }
-            }
-        }
+    public ModelNode toModelNode(Board board) {
+        ModelNode issueNode = getBaseModelNode();
         return issueNode;
     }
 
-    public boolean isValid() {
-        return false;
-        //TODO
-//        return (project.isLinked() && stateIndex != null)
-//                || (issueType != null && priority != null && stateIndex != null);
+    private ModelNode getBaseModelNode() {
+        ModelNode issueNode = new ModelNode();
+        issueNode.get("key").set(key);
+        issueNode.get("state").set(project.getStateIndex(state));
+        issueNode.get("summary").set(summary);
+        return issueNode;
     }
+
+    public abstract boolean isValid();
 
     public boolean isDataSame(Issue that) {
         if (that == null) {
@@ -177,19 +145,8 @@ public class Issue {
         //I don't want to do a standard equals() since I am not comparing all the data
         if (!key.equals(that.key)) return false;
         if (!state.equals(that.state)) return false;
-        if (stateIndex != null ? !stateIndex.equals(that.stateIndex) : that.stateIndex != null) return false;
         if (!summary.equals(that.summary)) return false;
-        if (assignee != null ? !assignee.isDataSame(that.assignee) : that.assignee != null) return false;
-        if (issueType != null ? !issueType.equals(that.issueType) : that.issueType != null) return false;
-        if (priority != null ? !priority.equals(that.priority) : that.priority != null) return false;
 
-        if (linkedIssues.size() != that.linkedIssues.size()) {
-            for (int i = 0 ; i < linkedIssues.size() ; i++) {
-                if (!linkedIssues.get(i).equals(that.linkedIssues.get(i))) {
-                    return false;
-                }
-            }
-        }
         return true;
     }
 
@@ -197,64 +154,138 @@ public class Issue {
         return project.getCode();
     }
 
-
-    public Issue copyToState(String toBoardState) {
-        //TODO
-        return null;
-//        //The state and the index should be from the issue's project
-//        final String toState = project.isOwner() ? toBoardState : project.getStateFromOwnerState(toBoardState);
-//        final Integer toStateIndex = project.getStateIndex(toState);
-//        return new Issue(project, key, toState, toStateIndex, summary,
-//                assignee, issueType, priority, linkedIssues);
+    /**
+     * Returns a builder for the board issues. Linked issues are handled internally
+     *
+     * @param project the builder for the project containing the issues
+     * @return the builder
+     */
+    static Builder builder(BoardProject.Builder project) {
+        return new Builder(project);
     }
 
-    public Integer getStateIndex() {
-        return stateIndex;
+    private static class BoardIssue extends Issue {
+        private final Assignee assignee;
+        /** The index of the issue type in the owning board config */
+        private final Integer issueTypeIndex;
+        /** The index of the priority in the owning board config */
+        private final Integer priorityIndex;
+        private final List<Issue> linkedIssues;
+
+        public BoardIssue(BoardProjectConfig project, String key, String state, String summary, Integer issueTypeIndex, Integer priorityIndex, Assignee assignee, List<Issue> linkedIssues) {
+            super(project, key, state, summary);
+            this.issueTypeIndex = issueTypeIndex;
+            this.priorityIndex = priorityIndex;
+            this.assignee = assignee;
+            this.linkedIssues = linkedIssues == null ? Collections.emptyList() : Collections.unmodifiableList(linkedIssues);
+        }
+
+        boolean hasLinkedIssues() {
+            return linkedIssues.size() > 0;
+        }
+
+        Iterable<Issue> getLinkedIssues() {
+            return () -> linkedIssues.iterator();
+        }
+
+        @Override
+        public boolean isDataSame(Issue that) {
+            boolean same = super.isDataSame(that);
+            if (!same) {
+                return false;
+            }
+            if (that instanceof BoardIssue == false) {
+                return false;
+            }
+            BoardIssue thatBi = (BoardIssue)that;
+            if (!assignee.isDataSame(thatBi.assignee)) return false;
+            if (!priorityIndex.equals(thatBi.priorityIndex)) return false;
+            if (!issueTypeIndex.equals(thatBi.issueTypeIndex)) return false;
+            if (linkedIssues.size() != thatBi.linkedIssues.size()) {
+                for (int i = 0 ; i < linkedIssues.size() ; i++) {
+                    if (!linkedIssues.get(i).equals(thatBi.linkedIssues.get(i))) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ModelNode toModelNode(Board board) {
+            BoardProject boardProject = board.getBoardProject(project.getCode());
+            ModelNode issueNode = super.toModelNode(board);
+            issueNode.get("priority").set(priorityIndex);
+            issueNode.get("type").set(issueTypeIndex);
+            if (assignee != null) {
+                issueNode.get("assignee").set(boardProject.getAssigneeIndex(assignee));
+            }
+            if (hasLinkedIssues()) {
+                ModelNode linkedIssuesNode = issueNode.get("linked-issues");
+                for (Issue linkedIssue : linkedIssues) {
+                    if (linkedIssue.isValid()) {
+                        ModelNode linkedIssueNode = linkedIssue.toModelNode(board);
+                        linkedIssuesNode.add(linkedIssueNode);
+                    }
+                }
+            }
+            return issueNode;
+        }
+
+        @Override
+        public boolean isValid() {
+            //return (project.isLinked() && stateIndex != null)
+            return issueTypeIndex != null && priorityIndex != null && project.getStateIndex(state) != null;
+        }
     }
 
-    static Builder builder(BoardProjectConfig projectConfig) {
-        return new Builder(projectConfig);
+    private static class LinkedIssue extends Issue {
+        public LinkedIssue(BoardProjectConfig project, String key, String state, String summary) {
+            super(project, key, state, summary);
+        }
+
+        @Override
+        public boolean isValid() {
+            return project.getStateIndex(state) != null;
+        }
     }
 
+    /**
+     * The builder for the board issues
+     */
     static class Builder {
-        private final BoardProjectConfig projectConfig;
+        private final BoardProject.Builder project;
 
-        private Builder(BoardProjectConfig projectConfig) {
-            this.projectConfig = projectConfig;
+        String issueKey ;
+        Status status;
+        String summary;
+        User user;
+        Assignee assignee;
+        Integer issueTypeIndex;
+        Integer priorityIndex;
+        String state;
+
+        private Builder(BoardProject.Builder project) {
+            this.project = project;
         }
 
         void load(com.atlassian.jira.issue.Issue issue) {
-            String issueKey = issue.getKey();
-            Status status = issue.getStatusObject();
-            String summary = issue.getSummary();
-            User assignee = issue.getAssignee();
-            IssueType issueType = issue.getIssueTypeObject();
-            Priority priority = issue.getPriorityObject();
-
-            System.out.println("- - - - Issue " + issueKey);
-            System.out.println("Summary " + summary);
-
-            System.out.println("Status " + status);
-            System.out.println(status.getName());
-            System.out.println(status.getId());
-
-            System.out.println("Assignee " + assignee);
-            System.out.println(assignee.getName());
-            System.out.println(assignee.getDisplayName());
-            System.out.println(assignee.getEmailAddress());
-            //TODO avatar
-
-            System.out.println("IssueType " + issueType);
-            System.out.println(issueType.getName());
-            System.out.println(issueType.getIconUrl());
-
-            System.out.println("Priority " + priority);
-            System.out.println(priority.getName());
-            System.out.println(priority.getIconUrl());
-
-//            issue.
+            issueKey = issue.getKey();
+            status = issue.getStatusObject();
+            summary = issue.getSummary();
+            user = issue.getAssignee();
+            assignee = project.getAssignee(user);
+            issueTypeIndex = project.getIssueTypeIndex(issueKey, issue.getIssueTypeObject());
+            priorityIndex = project.getPriorityIndex(issueKey, issue.getPriorityObject());
+            state = issue.getStatusObject().getName();
 
             //TODO linked objects
+
+
+        }
+
+        Issue build() {
+            return new BoardIssue(project.getConfig(), issueKey, state, summary, issueTypeIndex, priorityIndex, assignee, null);
         }
     }
-}
+ }

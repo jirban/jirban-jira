@@ -21,10 +21,6 @@
  */
 package org.jirban.jira.impl;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -39,6 +35,8 @@ import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.impl.config.BoardConfig;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
+import com.atlassian.jira.config.IssueTypeManager;
+import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
@@ -57,9 +55,19 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     @ComponentImport
     private final ActiveObjects activeObjects;
 
+    @ComponentImport
+    private final IssueTypeManager issueTypeManager;
+
+    @ComponentImport
+    private final PriorityManager priorityManager;
+
     @Inject
-    public BoardConfigurationManagerImpl(final ActiveObjects activeObjects) {
+    public BoardConfigurationManagerImpl(final ActiveObjects activeObjects,
+                                         final IssueTypeManager issueTypeManager,
+                                         final PriorityManager priorityManager) {
         this.activeObjects = activeObjects;
+        this.issueTypeManager = issueTypeManager;
+        this.priorityManager = priorityManager;
     }
 
     @Override
@@ -149,7 +157,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 }
             });
             if (cfg != null) {
-                boardConfig = BoardConfig.load(id, cfg.getConfigJson());
+                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getConfigJson());
                 BoardConfig old = projectGroupConfigs.putIfAbsent(id, boardConfig);
                 if (old != null) {
                     boardConfig = old;
@@ -157,40 +165,5 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             }
         }
         return boardConfig;
-    }
-
-    private static Path getConfigRoot() throws IOException {
-        String dataDir = System.getenv("OPENSHIFT_DATA_DIR");
-        if (dataDir == null) {
-            dataDir = System.getProperty("jirban.data.dir");
-        }
-        if (dataDir == null) {
-            throw new IllegalStateException("No datadir set");
-        }
-
-        Path path = Paths.get(dataDir).toAbsolutePath();
-        if (!Files.exists(path)) {
-            throw new IllegalStateException("Data dir " + path.toString() + "must be an existing location");
-        }
-
-        path = path.resolve("jirban");
-        if (!Files.exists(path)) {
-            Files.createDirectories(path);
-        } else if (!Files.isDirectory(path)) {
-            throw new IllegalStateException("Data dir " + path + "must be a directory");
-        }
-
-        return path;
-    }
-
-    public ModelNode serializeProjectGroups() {
-        ModelNode modelNode = new ModelNode();
-        for (BoardConfig pgc : projectGroupConfigs.values()) {
-            ModelNode pg = new ModelNode();
-            pg.get("id").set(pgc.getId());
-            pg.get("name").set(pgc.getName());
-            modelNode.add(pg);
-        }
-        return modelNode;
     }
 }
