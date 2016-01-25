@@ -105,7 +105,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            //projectEntry.getValue().serialize(project);
+            projectEntry.getValue().serialize(project);
         }
 
         serializeMissing(outputNode, "priorities", missingPriorities);

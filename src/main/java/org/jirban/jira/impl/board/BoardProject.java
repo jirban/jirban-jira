@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 
@@ -66,6 +67,20 @@ BoardProject {
 
     public int getAssigneeIndex(Assignee assignee) {
         return 0;
+    }
+
+    void serialize(ModelNode parent) {
+        ModelNode projectIssues = parent.get("issues");
+        for (List<Issue> issuesForState : issuesByState) {
+            ModelNode issuesForStateNode = new ModelNode();
+            issuesForStateNode.setEmptyList();
+            for (Issue issue : issuesForState) {
+                if (issue.isValid()) {
+                    issuesForStateNode.add(issue.getKey());
+                }
+            }
+            projectIssues.add(issuesForStateNode);
+        }
     }
 
     static Builder builder(SearchService searchService, User user, Board.Builder builder, BoardProjectConfig projectConfig) {
