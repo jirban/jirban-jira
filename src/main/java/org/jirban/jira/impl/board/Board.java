@@ -260,7 +260,7 @@ public class Board {
 
         Integer getPriorityIndexRecordingMissing(String issueKey, Priority priority) {
             final Integer priorityIndex = boardConfig.getPriorityIndex(priority.getName());
-            if (priority == null) {
+            if (priorityIndex == null) {
                 addMissing(missingPriorities, priority.getName(), issueKey);
             }
             return priorityIndex;
