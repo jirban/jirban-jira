@@ -20,6 +20,7 @@
 
 package org.jirban.jira.impl.board;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -128,7 +129,7 @@ public abstract class Issue {
             this.issueTypeIndex = issueTypeIndex;
             this.priorityIndex = priorityIndex;
             this.assignee = assignee;
-            this.linkedIssues = linkedIssues == null ? Collections.emptyList() : Collections.unmodifiableList(linkedIssues);
+            this.linkedIssues = linkedIssues;
         }
 
         boolean hasLinkedIssues() {
@@ -242,7 +243,7 @@ public abstract class Issue {
                 }
                 String stateName = linkedIssue.getStatusObject().getName();
                 Integer stateIndex = linkedProjectContext.getStateIndexRecordingMissing(linkedProjectContext.getCode(), linkedIssue.getKey(), stateName);
-                if (stateIndex !=null) {
+                if (stateIndex != null) {
                     if (linkedIssues == null) {
                         linkedIssues = new TreeSet<>(new Comparator<LinkedIssue>() {
                             @Override
@@ -259,7 +260,8 @@ public abstract class Issue {
 
         Issue build() {
             if (issueTypeIndex != null && priorityIndex != null && stateIndex != null) {
-                return new BoardIssue(project.getConfig(), issueKey, state, stateIndex, summary, issueTypeIndex, priorityIndex, assignee, null);
+                List<LinkedIssue> linkedList = linkedIssues == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
+                return new BoardIssue(project.getConfig(), issueKey, state, stateIndex, summary, issueTypeIndex, priorityIndex, assignee, linkedList);
             }
             return null;
         }
