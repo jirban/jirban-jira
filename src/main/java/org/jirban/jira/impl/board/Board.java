@@ -45,7 +45,7 @@ import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.user.util.UserManager;
+import com.atlassian.jira.user.ApplicationUsers;
 
 /**
  * The data for a board.
@@ -82,9 +82,9 @@ public class Board {
         this.missingStates = missingStates;
     }
 
-    public static Builder builder(SearchService searchService, AvatarService avatarService, UserManager userManager,
+    public static Builder builder(SearchService searchService, AvatarService avatarService,
                                   IssueLinkManager issueLinkManager, ApplicationUser user, BoardConfig boardConfig) {
-        return new Builder(searchService, avatarService, userManager, issueLinkManager, user, boardConfig);
+        return new Builder(searchService, avatarService, issueLinkManager, user, boardConfig);
     }
 
     public ModelNode serialize() {
@@ -178,7 +178,6 @@ public class Board {
     public static class Builder {
         private final SearchService searchService;
         private final AvatarService avatarService;
-        private final UserManager userManager;
         private final IssueLinkManager issueLinkManager;
         private final ApplicationUser user;
         private final BoardConfig boardConfig;
@@ -191,11 +190,10 @@ public class Board {
         private final Map<String, List<String>> missingPriorities = new TreeMap<>();
         private final Map<String, List<String>> missingStates = new TreeMap<>();
 
-        public Builder(SearchService searchService, AvatarService avatarService, UserManager userManager,
+        public Builder(SearchService searchService, AvatarService avatarService,
                        IssueLinkManager issueLinkManager, ApplicationUser user, BoardConfig boardConfig) {
             this.searchService = searchService;
             this.avatarService = avatarService;
-            this.userManager = userManager;
             this.issueLinkManager = issueLinkManager;
             this.user = user;
             this.boardConfig = boardConfig;
@@ -243,7 +241,7 @@ public class Board {
             if (assignee != null) {
                 return assignee;
             }
-            ApplicationUser assigneeAppUser = userManager.getUserByKey(assigneeUser.getName());
+            ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
             URI avatarUrl = avatarService.getAvatarURL(user, assigneeAppUser, Avatar.Size.NORMAL);
             assignee = Assignee.create(assigneeUser, avatarUrl.toString());
             assignees.put(user.getName(), assignee);

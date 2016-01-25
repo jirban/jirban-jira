@@ -35,11 +35,9 @@ import org.jirban.jira.impl.config.BoardConfig;
 
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
-import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -58,8 +56,6 @@ public class BoardManagerImpl implements BoardManager {
     @ComponentImport
     private final AvatarService avatarService;
 
-    private final UserManager userManager;
-
     @ComponentImport
     private final IssueLinkManager issueLinkManager;
 
@@ -73,10 +69,6 @@ public class BoardManagerImpl implements BoardManager {
         this.issueLinkManager = issueLinkManager;
         this.boardConfigurationManager = boardConfigurationManager;
 
-        //It does not seem to like me trying to inject both user managers
-        // (We are injecting the sal one in AuthFilter)
-        this.userManager = ComponentAccessor.getUserManager();
-
     }
 
     @Override
@@ -87,7 +79,7 @@ public class BoardManagerImpl implements BoardManager {
                 board = boards.get(id);
                 if (board == null) {
                     final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(id);
-                    board = Board.builder(searchService, avatarService, userManager, issueLinkManager, user, boardConfig).load().build();
+                    board = Board.builder(searchService, avatarService, issueLinkManager, user, boardConfig).load().build();
                     boards.put(id, board);
                 }
             }
