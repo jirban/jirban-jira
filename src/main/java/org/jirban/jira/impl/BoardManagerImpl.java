@@ -36,6 +36,7 @@ import org.jirban.jira.impl.config.BoardConfig;
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.component.ComponentAccessor;
+import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
@@ -59,13 +60,17 @@ public class BoardManagerImpl implements BoardManager {
 
     private final UserManager userManager;
 
+    @ComponentImport
+    private final IssueLinkManager issueLinkManager;
+
     private final BoardConfigurationManager boardConfigurationManager;
 
 
     @Inject
-    public BoardManagerImpl(SearchService searchService, AvatarService avatarService, BoardConfigurationManager boardConfigurationManager) {
+    public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager, BoardConfigurationManager boardConfigurationManager) {
         this.searchService = searchService;
         this.avatarService = avatarService;
+        this.issueLinkManager = issueLinkManager;
         this.boardConfigurationManager = boardConfigurationManager;
 
         //It does not seem to like me trying to inject both user managers
@@ -82,7 +87,7 @@ public class BoardManagerImpl implements BoardManager {
                 board = boards.get(id);
                 if (board == null) {
                     final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(id);
-                    board = Board.builder(searchService, avatarService, userManager, user, boardConfig).load().build();
+                    board = Board.builder(searchService, avatarService, userManager, issueLinkManager, user, boardConfig).load().build();
                     boards.put(id, board);
                 }
             }

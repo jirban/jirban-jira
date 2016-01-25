@@ -30,10 +30,12 @@ import java.util.Map;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
+import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
@@ -47,25 +49,25 @@ import com.atlassian.query.order.SortOrder;
  *
  * @author Kabir Khan
  */
-public class BoardProject {
+class BoardProject {
 
     private final BoardProjectConfig projectConfig;
     private final List<List<Issue>> issuesByState;
 
-    public BoardProject(BoardProjectConfig projectConfig, List<List<Issue>> issuesByState) {
+    private BoardProject(BoardProjectConfig projectConfig, List<List<Issue>> issuesByState) {
         this.projectConfig = projectConfig;
         this.issuesByState = issuesByState;
     }
 
-    public boolean isDataSame(BoardProject boardProject) {
+    boolean isDataSame(BoardProject boardProject) {
         return false;
     }
 
-    public int getStateIndex(String state) {
+    int getStateIndex(String state) {
         return 0;
     }
 
-    public int getAssigneeIndex(Assignee assignee) {
+    int getAssigneeIndex(Assignee assignee) {
         return 0;
     }
 
@@ -95,21 +97,21 @@ public class BoardProject {
         private final Map<String, List<Issue>> issuesByState = new HashMap<>();
 
 
-        public Builder(SearchService searchService, ApplicationUser user, Board.Builder boardBuilder, BoardProjectConfig projectConfig) {
+        private Builder(SearchService searchService, ApplicationUser user, Board.Builder boardBuilder, BoardProjectConfig projectConfig) {
             this.searchService = searchService;
             this.user = user;
             this.boardBuilder = boardBuilder;
             this.projectConfig = projectConfig;
         }
 
-        public Builder addIssue(String state, Issue issue) {
+        Builder addIssue(String state, Issue issue) {
             final List<Issue> issues = issuesByState.computeIfAbsent(state, l -> new ArrayList<>());
             issues.add(issue);
             boardBuilder.addIssue(issue);
             return this;
         }
 
-        public BoardProject build(BoardConfig boardConfig, boolean owner) {
+        BoardProject build(BoardConfig boardConfig, boolean owner) {
             final List<List<Issue>> resultIssues = new ArrayList<>();
             for (String state : boardBuilder.getOwnerStateNames()) {
                 List<Issue> issues = issuesByState.get(owner ? state : projectConfig.mapBoardStateOntoOwnState(state));
@@ -122,7 +124,7 @@ public class BoardProject {
             return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
         }
 
-        public void load() throws SearchException {
+        void load() throws SearchException {
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().project(projectConfig.getCode());
             if (projectConfig.getQueryFilter() != null) {
@@ -141,24 +143,32 @@ public class BoardProject {
             }
         }
 
-        public BoardProjectConfig getConfig() {
+        BoardProjectConfig getConfig() {
             return projectConfig;
         }
 
-        public Integer getPriorityIndex(String issueKey, Priority priorityObject) {
+        Integer getPriorityIndex(String issueKey, Priority priorityObject) {
             return boardBuilder.getPriorityIndex(issueKey, priorityObject);
         }
 
-        public Integer getIssueTypeIndex(String issueKey, IssueType issueTypeObject) {
+        Integer getIssueTypeIndex(String issueKey, IssueType issueTypeObject) {
             return boardBuilder.getIssueTypeIndex(issueKey, issueTypeObject);
         }
 
-        public Assignee getAssignee(User assigneeUser) {
+        Assignee getAssignee(User assigneeUser) {
             return boardBuilder.getAssignee(assigneeUser);
         }
 
-        public String getCode() {
+        String getCode() {
             return projectConfig.getCode();
+        }
+
+        public IssueLinkManager getIssueLinkManager() {
+            return boardBuilder.getIssueLinkManager();
+        }
+
+        public LinkedProjectConfig getLinkedProjectConfig(String linkedProjectCode) {
+            return boardBuilder.getLinkedProjectConfig(linkedProjectCode);
         }
     }
 }

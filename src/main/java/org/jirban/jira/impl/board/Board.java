@@ -34,12 +34,14 @@ import java.util.TreeMap;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
+import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
@@ -64,7 +66,7 @@ public class Board {
     private final Map<String, List<String>> missingPriorities;
     private final Map<String, List<String>> missingStates;
 
-    public Board(BoardConfig boardConfig,
+    private Board(BoardConfig boardConfig,
                  Map<String, Assignee> assignees,
                  Map<String, Issue> allIssues,
                  Map<String, BoardProject> projects,
@@ -81,8 +83,8 @@ public class Board {
     }
 
     public static Builder builder(SearchService searchService, AvatarService avatarService, UserManager userManager,
-                                  ApplicationUser user, BoardConfig boardConfig) {
-        return new Builder(searchService, avatarService, userManager, user, boardConfig);
+                                  IssueLinkManager issueLinkManager, ApplicationUser user, BoardConfig boardConfig) {
+        return new Builder(searchService, avatarService, userManager, issueLinkManager, user, boardConfig);
     }
 
     public ModelNode serialize() {
@@ -179,6 +181,7 @@ public class Board {
         private final SearchService searchService;
         private final AvatarService avatarService;
         private final UserManager userManager;
+        private final IssueLinkManager issueLinkManager;
         private final ApplicationUser user;
         private final BoardConfig boardConfig;
 
@@ -191,10 +194,11 @@ public class Board {
         private final Map<String, List<String>> missingStates = new TreeMap<>();
 
         public Builder(SearchService searchService, AvatarService avatarService, UserManager userManager,
-                       ApplicationUser user, BoardConfig boardConfig) {
+                       IssueLinkManager issueLinkManager, ApplicationUser user, BoardConfig boardConfig) {
             this.searchService = searchService;
             this.avatarService = avatarService;
             this.userManager = userManager;
+            this.issueLinkManager = issueLinkManager;
             this.user = user;
             this.boardConfig = boardConfig;
         }
@@ -232,7 +236,7 @@ public class Board {
                     Collections.unmodifiableMap(missingStates));
         }
 
-        public Assignee getAssignee(User assigneeUser) {
+        Assignee getAssignee(User assigneeUser) {
             if (user == null) {
                 //Unassigned issue
                 return null;
@@ -248,7 +252,7 @@ public class Board {
             return assignee;
         }
 
-        public Integer getIssueTypeIndex(String issueKey, IssueType issueType) {
+        Integer getIssueTypeIndex(String issueKey, IssueType issueType) {
             final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueType.getName());
             if (issueTypeIndex == null) {
                 addMissing(missingIssueTypes, issueType.getName(), issueKey);
@@ -256,7 +260,7 @@ public class Board {
             return issueTypeIndex;
         }
 
-        public Integer getPriorityIndex(String issueKey, Priority priority) {
+        Integer getPriorityIndex(String issueKey, Priority priority) {
             final Integer priorityIndex = boardConfig.getPriorityIndex(priority.getName());
             if (priority == null) {
                 addMissing(missingPriorities, priority.getName(), issueKey);
@@ -273,7 +277,7 @@ public class Board {
             missingIssues.add(issueKey);
         }
 
-        public List<BoardProject.Builder> getMainProjects() {
+        List<BoardProject.Builder> getMainProjects() {
             List<BoardProject.Builder> builders = new ArrayList<>();
             for (BoardProjectConfig projectConfig : boardConfig.getBoardProjects()) {
                 builders.add(projects.computeIfAbsent(projectConfig.getCode(), m -> BoardProject.builder(searchService, user, this, projectConfig)));
@@ -289,21 +293,24 @@ public class Board {
             //return projects.computeIfAbsent(projectCode, m -> BoardProject.builder(this, projectCfg));
         }
 
-        public BoardProject.Builder getLinkedProjectFromIssueKey(String key) {
-            return null;
-//            LinkedProjectConfig projectCfg = boardConfig.getLinkedProjectFromIssueKey(key);
-//            if (projectCfg == null) {
-//                return null;
-//            }
-//            return projects.computeIfAbsent(projectCfg.getCode(), m -> BoardProject.builder(this, projectCfg));
+        LinkedProjectConfig getLinkedProjectConfig(String linkedProjectCode) {
+            LinkedProjectConfig projectCfg = boardConfig.getLinkedProjectConfig(linkedProjectCode);
+            if (projectCfg == null) {
+                return null;
+            }
+            return projects.computeIfAbsent(projectCfg.getCode(), m -> BoardProject.builder(this, projectCfg));
         }
 
-        public BoardProjectConfig getOwningProject() {
+        BoardProjectConfig getOwningProject() {
             return boardConfig.getOwningProject();
         }
 
-        public Set<String> getOwnerStateNames() {
+        Set<String> getOwnerStateNames() {
             return boardConfig.getOwnerStateNames();
+        }
+
+        public IssueLinkManager getIssueLinkManager() {
+            return issueLinkManager;
         }
     }
 

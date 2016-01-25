@@ -173,12 +173,8 @@ public class BoardConfig {
         return linkedProjects.get(projectCode);
     }
 
-    public LinkedProjectConfig getLinkedProjectFromIssueKey(String issueKey) {
-        return linkedProjects.get(getProjectCodeFromIssueKey(issueKey));
-    }
-
-    private String getProjectCodeFromIssueKey(String issueKey) {
-        return issueKey.substring(0, issueKey.lastIndexOf("-"));
+    public LinkedProjectConfig getLinkedProjectConfig(String linkedProjectCode) {
+        return linkedProjects.get(linkedProjectCode);
     }
 
     public void serializeModelNode(ModelNode parent) {

@@ -31,7 +31,7 @@ import org.jboss.dmr.ModelNode;
  *
  * @author Kabir Khan
  */
-abstract class ProjectConfig {
+public abstract class ProjectConfig {
     protected final String code;
     protected final Map<String, Integer> states;
 
