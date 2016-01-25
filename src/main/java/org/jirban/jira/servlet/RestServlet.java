@@ -33,28 +33,33 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
-        PathAndId pathAndId = PathAndId.parse("GET", pathInfo);
-        if (pathAndId.isPath("boards")) {
-            pathAndId.validateId(false);
-            System.out.println("Getting boards");
-            boolean full = req.getParameter("full") != null;
-            String json = jiraFacade.getBoardsJson(full);
-            Util.sendResponseJson(resp, json);
-            return;
-        }
-        else if (pathInfo.equals("/issues.json")) {
-            final String boardId = req.getParameter("board");
-            String json = null;
-            try {
-                json = jiraFacade.getBoardJson(user, Integer.valueOf(boardId));
-            } catch (SearchException e) {
-                //TODO figure out if a permission violation becomes a search exception
-                Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        try {
+            PathAndId pathAndId = PathAndId.parse("GET", pathInfo);
+            if (pathAndId.isPath("boards")) {
+                pathAndId.validateId(false);
+                System.out.println("Getting boards");
+                boolean full = req.getParameter("full") != null;
+                String json = jiraFacade.getBoardsJson(full);
+                Util.sendResponseJson(resp, json);
+                return;
             }
-            Util.sendResponseJson(resp, json);
-            return;
-        } else {
-            Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+            else if (pathAndId.isPath("issues")) {
+                pathAndId.validateId(true);
+                String json = null;
+                try {
+                    json = jiraFacade.getBoardJson(user, pathAndId.id);
+                } catch (SearchException e) {
+                    //TODO figure out if a permission violation becomes a search exception
+                    Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                    return;
+                }
+                Util.sendResponseJson(resp, json);
+                return;
+            } else {
+                Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        } catch (InvalidPathFormatException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -63,15 +68,19 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet DELETE " + pathInfo + "(" + user + ")");
-        PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
-        if (pathAndId.isPath("boards")) {
-            pathAndId.validateId(true);
-            jiraFacade.deleteBoard(pathAndId.id);
-            String json = jiraFacade.getBoardsJson(true);
-            Util.sendResponseJson(resp, json);
-            return;
-        } else {
-            Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+        try {
+            PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
+            if (pathAndId.isPath("boards")) {
+                pathAndId.validateId(true);
+                jiraFacade.deleteBoard(pathAndId.id);
+                String json = jiraFacade.getBoardsJson(true);
+                Util.sendResponseJson(resp, json);
+                return;
+            } else {
+                Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        } catch (InvalidPathFormatException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -80,16 +89,20 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
-        PathAndId pathAndId = PathAndId.parse("POST", pathInfo);
-        if (pathAndId.isPath("boards")) {
-            pathAndId.validateId(false);
-            final ModelNode config = Util.getRequestBodyNode(req);
-            jiraFacade.saveBoard(-1, Util.getDeployedUrl(req), config);
-            String json = jiraFacade.getBoardsJson(true);
-            Util.sendResponseJson(resp, json);
-            return;
-        } else {
-            Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+        try {
+            PathAndId pathAndId = PathAndId.parse("POST", pathInfo);
+            if (pathAndId.isPath("boards")) {
+                pathAndId.validateId(false);
+                final ModelNode config = Util.getRequestBodyNode(req);
+                jiraFacade.saveBoard(-1, Util.getDeployedUrl(req), config);
+                String json = jiraFacade.getBoardsJson(true);
+                Util.sendResponseJson(resp, json);
+                return;
+            } else {
+                Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        } catch (InvalidPathFormatException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -98,16 +111,20 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet PUT " + pathInfo + "(" + user + ")");
-        PathAndId pathAndId = PathAndId.parse("PUT", pathInfo);
-        if (pathAndId.isPath("boards")) {
-            pathAndId.validateId(true);
-            final ModelNode config = Util.getRequestBodyNode(req);
-            jiraFacade.saveBoard(pathAndId.id, Util.getDeployedUrl(req), config);
-            String json = jiraFacade.getBoardsJson(true);
-            Util.sendResponseJson(resp, json);
-            return;
-        } else {
-            Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+        try {
+            PathAndId pathAndId = PathAndId.parse("PUT", pathInfo);
+            if (pathAndId.isPath("boards")) {
+                pathAndId.validateId(true);
+                final ModelNode config = Util.getRequestBodyNode(req);
+                jiraFacade.saveBoard(pathAndId.id, Util.getDeployedUrl(req), config);
+                String json = jiraFacade.getBoardsJson(true);
+                Util.sendResponseJson(resp, json);
+                return;
+            } else {
+                Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+            }
+        } catch (InvalidPathFormatException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
 

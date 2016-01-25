@@ -26,7 +26,7 @@ export class IssuesService {
         let token = getToken();
         let headers = new Headers();
         headers.append("Authorization", token);
-        let path:string = RestUrlUtil.caclulateUrl('rest/issues.json?board=' + board);
+        let path:string = RestUrlUtil.caclulateUrl('rest/issues/' + board);
         return this.http.get(path, {
             headers: headers
         }).map(res => (<Response>res).json());
