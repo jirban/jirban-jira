@@ -46,8 +46,7 @@ import com.atlassian.query.order.SortOrder;
  *
  * @author Kabir Khan
  */
-public class
-BoardProject {
+public class BoardProject {
 
     private final BoardProjectConfig projectConfig;
     private final List<List<Issue>> issuesByState;

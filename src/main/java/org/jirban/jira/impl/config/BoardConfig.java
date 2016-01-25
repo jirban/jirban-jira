@@ -49,6 +49,7 @@ public class BoardConfig {
 
     private final int id;
     private final String name;
+    private String jiraUrl;
     private final String ownerProjectCode;
     private final int rankCustomFieldId;
     private final Map<String, BoardProjectConfig> boardProjects;
@@ -58,13 +59,14 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
 
-    private BoardConfig(int id, String name, String ownerProjectCode,
+    private BoardConfig(int id, String name, String jiraUrl, String ownerProjectCode,
                         int rankCustomFieldId,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
 
         this.id = id;
         this.name = name;
+        this.jiraUrl = jiraUrl;
         this.ownerProjectCode = ownerProjectCode;
         this.rankCustomFieldId = rankCustomFieldId;
         this.boardProjects = boardProjects;
@@ -77,6 +79,7 @@ public class BoardConfig {
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, String configJson) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
+        String jiraUrl = getRequiredChild(boardNode, "Group", null, "jira-url").asString();
         String projectGroupName = getRequiredChild(boardNode, "Group", null, "name").asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, "owning-project").asString();
         int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, "rank-custom-field-id").asInt();
@@ -105,7 +108,7 @@ public class BoardConfig {
             }
         }
 
-        return new BoardConfig(id, projectGroupName, owningProjectName,
+        return new BoardConfig(id, projectGroupName, jiraUrl, owningProjectName,
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
@@ -231,5 +234,7 @@ public class BoardConfig {
         return rankCustomFieldId;
     }
 
-
+    public String getJiraUrl() {
+        return jiraUrl;
+    }
 }

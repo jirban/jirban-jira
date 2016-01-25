@@ -28,6 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
+import org.jboss.dmr.ModelNode;
+
 import com.atlassian.crowd.embedded.api.User;
 
 /**
@@ -36,6 +38,8 @@ import com.atlassian.crowd.embedded.api.User;
 class Util {
     static final String CONTENT_APP_JSON = "application/json";
     private static final String USER_REQUEST_KEY = "authenticated-user";
+
+    private static volatile String BASE_URL;
 
     static void sendErrorJson(final HttpServletResponse response, final int error) throws IOException {
         sendErrorJson(response, error, null);
@@ -69,5 +73,23 @@ class Util {
             line = reader.readLine();
         }
         return sb.toString();
+    }
+
+    static ModelNode getRequestBodyNode(HttpServletRequest request) throws IOException {
+        return ModelNode.fromJSONStream(request.getInputStream());
+    }
+
+    static String getDeployedUrl(HttpServletRequest request) {
+        if (BASE_URL == null) {
+            String contextPath = request.getContextPath();
+            String uri = request.getRequestURI();
+            String url = request.getRequestURL().toString();
+
+            String base = url.substring(0, url.indexOf(uri));
+            base += contextPath;
+            BASE_URL = base;
+        }
+
+        return BASE_URL;
     }
 }

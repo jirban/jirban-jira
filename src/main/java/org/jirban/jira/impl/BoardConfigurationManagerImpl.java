@@ -92,9 +92,36 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public void saveBoard(final int id, final String json) {
-        final ModelNode board = ModelNode.fromJSONString(json);
-        final String name = board.get("name").asString();
+    public BoardConfig getBoardConfig(final int id) {
+        BoardConfig boardConfig =  projectGroupConfigs.get(id);
+        if (boardConfig == null) {
+            BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
+                @Override
+                public BoardCfg doInTransaction() {
+                    return activeObjects.get(BoardCfg.class, id);
+                }
+            });
+            if (cfg != null) {
+                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getConfigJson());
+                BoardConfig old = projectGroupConfigs.putIfAbsent(id, boardConfig);
+                if (old != null) {
+                    boardConfig = old;
+                }
+            }
+        }
+        return boardConfig;
+    }
+
+    @Override
+    public void saveBoard(final int id, String jiraUrl, final ModelNode config) {
+        final String name = config.get("name").asString();
+        if (!config.hasDefined(jiraUrl)) {
+            config.get("jira-url").set(jiraUrl);
+        } else {
+            if (!jiraUrl.equals(config.get("jira-url").asString())) {
+                throw new IllegalArgumentException("The jira-url does not match the url of the running instance");
+            }
+        }
 
         //TODO Validate the data
 
@@ -104,14 +131,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (id >= 0) {
                     final BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
                     cfg.setName(name);
-                    cfg.setConfigJson(json);
+                    cfg.setConfigJson(config.toJSONString(true));
                     cfg.save();
                 } else {
                     final BoardCfg cfg = activeObjects.create(
                             BoardCfg.class,
                             new DBParam("NAME", name),
                             //Compact the json before saving it
-                            new DBParam("CONFIG_JSON", board.toJSONString(true)));
+                            new DBParam("CONFIG_JSON", config.toJSONString(true)));
                     cfg.save();
                 }
                 return null;
@@ -145,25 +172,5 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 return configs;
             }
         });
-    }
-
-    public BoardConfig getBoardConfig(final int id) {
-        BoardConfig boardConfig =  projectGroupConfigs.get(id);
-        if (boardConfig == null) {
-            BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
-                @Override
-                public BoardCfg doInTransaction() {
-                    return activeObjects.get(BoardCfg.class, id);
-                }
-            });
-            if (cfg != null) {
-                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getConfigJson());
-                BoardConfig old = projectGroupConfigs.putIfAbsent(id, boardConfig);
-                if (old != null) {
-                    boardConfig = old;
-                }
-            }
-        }
-        return boardConfig;
     }
 }

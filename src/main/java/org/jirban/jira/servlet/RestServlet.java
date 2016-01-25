@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,14 +85,13 @@ public class RestServlet extends HttpServlet{
             if (req.getParameter("id") != null) {
                 id = Integer.valueOf(req.getParameter("id"));
             }
-            jiraFacade.saveBoard(id, Util.getRequestBody(req));
+            final ModelNode config = Util.getRequestBodyNode(req);
+            jiraFacade.saveBoard(id, Util.getDeployedUrl(req), config);
             String json = jiraFacade.getBoardsJson(true);
             Util.sendResponseJson(resp, json);
             return;
         } else {
             Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
         }
-
-
     }
 }

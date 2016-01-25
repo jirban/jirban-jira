@@ -6,6 +6,7 @@ import java.util.Date;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.JiraFacade;
@@ -63,8 +64,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public void saveBoard(int id, String json) {
-        boardConfigurationManager.saveBoard(id, json);
+    public void saveBoard(int id, String jiraUrl, ModelNode config) {
+        boardConfigurationManager.saveBoard(id, jiraUrl, config);
     }
 
     @Override

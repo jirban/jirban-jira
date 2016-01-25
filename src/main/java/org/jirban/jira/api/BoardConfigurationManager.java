@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.api;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardConfig;
 
 /**
@@ -29,7 +30,7 @@ import org.jirban.jira.impl.config.BoardConfig;
 public interface BoardConfigurationManager {
     String getBoardsJson(boolean full);
 
-    void saveBoard(int id, String json);
+    void saveBoard(int id, String jiraUrl, ModelNode config);
 
     void deleteBoard(int id);
 

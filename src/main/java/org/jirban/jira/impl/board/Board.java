@@ -81,9 +81,10 @@ public class Board {
 
     public ModelNode serialize() {
         ModelNode outputNode = new ModelNode();
-
+        outputNode.get("jira-url").set(boardConfig.getJiraUrl());
         //Sort the assignees by name
         ModelNode assigneesNode = outputNode.get("assignees");
+        assigneesNode.setEmptyList();
         List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
         Collections.sort(assigneeNames, (a1, a2) -> a1.getDisplayName().compareTo(a2.getDisplayName()));
         int assigneeIndex = 0;

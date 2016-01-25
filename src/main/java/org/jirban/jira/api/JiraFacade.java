@@ -1,5 +1,7 @@
 package org.jirban.jira.api;
 
+import org.jboss.dmr.ModelNode;
+
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.search.SearchException;
 
@@ -11,7 +13,7 @@ public interface JiraFacade
 
     String getBoardsJson(boolean full);
 
-    void saveBoard(int id, String json);
+    void saveBoard(int id, String jiraUrl, ModelNode config);
 
     void deleteBoard(int id);
 
