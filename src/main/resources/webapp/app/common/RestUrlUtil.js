@@ -14,11 +14,14 @@ System.register([], function(exports_1) {
                     var location = window.location;
                     console.log("href " + location.href);
                     var index = location.href.indexOf("/download/resources/");
-                    console.log("Index: " + index);
                     if (index > 0) {
                         var url = location.href.substr(0, index);
                         url = url + "/plugins/servlet/jirban/" + path;
                         return url;
+                    }
+                    if (location.hostname === "localhost" && location.port === "3000") {
+                        //For the local debugging of the UI, which does not seem to like loading json without a .json suffix
+                        return path + ".json";
                     }
                     return path;
                 };

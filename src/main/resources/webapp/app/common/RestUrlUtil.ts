@@ -9,11 +9,14 @@ export class RestUrlUtil {
         console.log("href " + location.href)
 
         let index:number = location.href.indexOf("/download/resources/");
-        console.log("Index: " + index);
         if (index > 0) {
             let url:string = location.href.substr(0, index);
             url = url + "/plugins/servlet/jirban/" + path;
             return url;
+        }
+        if (location.hostname === "localhost" && location.port === "3000") {
+            //For the local debugging of the UI, which does not seem to like loading json without a .json suffix
+            return path + ".json";
         }
 
         return path;
