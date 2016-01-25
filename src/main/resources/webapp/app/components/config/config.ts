@@ -136,7 +136,7 @@ export class ConfigComponent {
     }
 
     newBoard() {
-        this._boardsService.saveBoard(-1, this.newForm.value.newJson)
+        this._boardsService.createBoard(this.newForm.value.newJson)
             .subscribe(
                 data => {
                     console.log("Saved new board");

@@ -41,18 +41,15 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                     var token = authenticationHelper_1.getToken();
                     var headers = new http_1.Headers();
                     headers.append("Authorization", token);
-                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl(summaryOnly ? 'rest/boards.json' : 'rest/boards.json?full=1');
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
                     var ret = this._http.get(path, {
                         headers: headers
                     }).
                         map(function (res) { return res.json(); });
                     return ret;
                 };
-                BoardsService.prototype.saveBoard = function (id, json) {
-                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/save-board');
-                    if (id >= 0) {
-                        path += "?id=" + id;
-                    }
+                BoardsService.prototype.createBoard = function (json) {
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/boards');
                     var headers = new http_1.Headers();
                     console.log("Saving board " + path);
                     var ret = this._http.post(path, json, {
@@ -61,8 +58,18 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                         map(function (res) { return res.json(); });
                     return ret;
                 };
+                BoardsService.prototype.saveBoard = function (id, json) {
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/boards/' + id);
+                    var headers = new http_1.Headers();
+                    console.log("Saving board " + path);
+                    var ret = this._http.put(path, json, {
+                        headers: headers
+                    }).
+                        map(function (res) { return res.json(); });
+                    return ret;
+                };
                 BoardsService.prototype.deleteBoard = function (id) {
-                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/board?id=' + id);
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/boards/' + id);
                     var headers = new http_1.Headers();
                     console.log("Deleting board " + path);
                     var ret = this._http.delete(path, {

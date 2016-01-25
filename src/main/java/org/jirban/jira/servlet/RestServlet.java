@@ -33,7 +33,9 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
-        if (pathInfo.equals("/boards.json")) {
+        PathAndId pathAndId = PathAndId.parse("GET", pathInfo);
+        if (pathAndId.isPath("boards")) {
+            pathAndId.validateId(false);
             System.out.println("Getting boards");
             boolean full = req.getParameter("full") != null;
             String json = jiraFacade.getBoardsJson(full);
@@ -61,12 +63,10 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet DELETE " + pathInfo + "(" + user + ")");
-        if (pathInfo.equals("/board")) {
-            int id = -1;
-            if (req.getParameter("id") != null) {
-                id = Integer.valueOf(req.getParameter("id"));
-            }
-            jiraFacade.deleteBoard(id);
+        PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
+        if (pathAndId.isPath("boards")) {
+            pathAndId.validateId(true);
+            jiraFacade.deleteBoard(pathAndId.id);
             String json = jiraFacade.getBoardsJson(true);
             Util.sendResponseJson(resp, json);
             return;
@@ -80,18 +80,83 @@ public class RestServlet extends HttpServlet{
         User user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
         System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
-        if (pathInfo.equals("/save-board")) {
-            int id = -1;
-            if (req.getParameter("id") != null) {
-                id = Integer.valueOf(req.getParameter("id"));
-            }
+        PathAndId pathAndId = PathAndId.parse("POST", pathInfo);
+        if (pathAndId.isPath("boards")) {
+            pathAndId.validateId(false);
             final ModelNode config = Util.getRequestBodyNode(req);
-            jiraFacade.saveBoard(id, Util.getDeployedUrl(req), config);
+            jiraFacade.saveBoard(-1, Util.getDeployedUrl(req), config);
             String json = jiraFacade.getBoardsJson(true);
             Util.sendResponseJson(resp, json);
             return;
         } else {
             Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+        }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        User user = Util.getRemoteUser(req);
+        String pathInfo = req.getPathInfo();
+        System.out.println("Rest servlet PUT " + pathInfo + "(" + user + ")");
+        PathAndId pathAndId = PathAndId.parse("PUT", pathInfo);
+        if (pathAndId.isPath("boards")) {
+            pathAndId.validateId(true);
+            final ModelNode config = Util.getRequestBodyNode(req);
+            jiraFacade.saveBoard(pathAndId.id, Util.getDeployedUrl(req), config);
+            String json = jiraFacade.getBoardsJson(true);
+            Util.sendResponseJson(resp, json);
+            return;
+        } else {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
+        }
+    }
+
+    private static class PathAndId {
+        private final String method;
+        private final String pathInfo;
+        private final String path;
+        private final Integer id;
+
+        private PathAndId(String method, String pathInfo, String path, Integer id) {
+            this.method = method;
+            this.pathInfo = pathInfo;
+            this.path = path;
+            this.id = id;
+        }
+
+        boolean isPath(String path) {
+            return this.path.equals(path);
+        }
+
+        void validateId(boolean id) {
+            if (id && this.id == null) {
+                throw new InvalidPathFormatException(method, pathInfo, " does not have an id");
+            }
+            if (!id && this.id != null) {
+                throw new InvalidPathFormatException(method, pathInfo, " should not have an id");
+            }
+        }
+
+        static PathAndId parse(String method, String pathInfo) {
+            if (pathInfo.length() <= 1) {
+                throw new InvalidPathFormatException(method, pathInfo, " doesn't contain anything useful");
+            }
+            int index = pathInfo.lastIndexOf("/");
+            if (index == 0) {
+                return new PathAndId(method, pathInfo, pathInfo.substring(1), null);
+            }
+
+            if (pathInfo.indexOf("/", 1) != index || index == pathInfo.length() - 1) {
+                throw new InvalidPathFormatException(method, pathInfo, " has a bad format");
+            }
+
+            return new PathAndId(method, pathInfo, pathInfo.substring(1, index), Integer.valueOf(pathInfo.substring(index + 1)));
+        }
+    }
+
+    private static class InvalidPathFormatException extends RuntimeException {
+        public InvalidPathFormatException(String method, String pathInfo, String message) {
+            super(method + " " + pathInfo + " " + message);
         }
     }
 }

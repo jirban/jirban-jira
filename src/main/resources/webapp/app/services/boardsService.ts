@@ -20,7 +20,7 @@ export class BoardsService {
         let headers = new Headers();
         headers.append("Authorization", token);
 
-        let path:string = RestUrlUtil.caclulateUrl(summaryOnly ? 'rest/boards.json' : 'rest/boards.json?full=1');
+        let path:string = RestUrlUtil.caclulateUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
         let ret:Observable<any> =
             this._http.get(path, {
                 headers : headers
@@ -29,11 +29,8 @@ export class BoardsService {
         return ret;
     }
 
-    saveBoard(id:number, json:string) : Observable<any> {
-        let path:string = RestUrlUtil.caclulateUrl('rest/save-board');
-        if (id >= 0) {
-            path += "?id=" + id;
-        }
+    createBoard(json:string) : Observable<any> {
+        let path:string = RestUrlUtil.caclulateUrl('rest/boards');
         let headers = new Headers();
         console.log("Saving board " + path);
         let ret:Observable<any> =
@@ -44,8 +41,20 @@ export class BoardsService {
         return ret;
     }
 
+    saveBoard(id:number, json:string) : Observable<any> {
+        let path:string = RestUrlUtil.caclulateUrl('rest/boards/' + id);
+        let headers = new Headers();
+        console.log("Saving board " + path);
+        let ret:Observable<any> =
+            this._http.put(path, json, {
+                headers : headers
+            }).
+            map((res: Response) => res.json());
+        return ret;
+    }
+
     deleteBoard(id:number) : Observable<any> {
-        let path:string = RestUrlUtil.caclulateUrl('rest/board?id=' + id);
+        let path:string = RestUrlUtil.caclulateUrl('rest/boards/' + id);
         let headers = new Headers();
         console.log("Deleting board " + path);
         let ret:Observable<any> =

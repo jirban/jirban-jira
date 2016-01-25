@@ -126,7 +126,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                 };
                 ConfigComponent.prototype.newBoard = function () {
                     var _this = this;
-                    this._boardsService.saveBoard(-1, this.newForm.value.newJson)
+                    this._boardsService.createBoard(this.newForm.value.newJson)
                         .subscribe(function (data) {
                         console.log("Saved new board");
                         _this.boards = data;
