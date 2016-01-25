@@ -48,8 +48,6 @@ import net.java.ao.DBParam;
 @Named("jirbanBoardConfigurationManager")
 public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
 
-    //TODO Perhaps we should not cache this here, if we do we need to delete/update the entry when
-    //updating/deleting and notify the Boards using this
     private volatile Map<Integer, BoardConfig> projectGroupConfigs = new ConcurrentHashMap<>();
 
     @ComponentImport
@@ -144,6 +142,9 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 return null;
             }
         });
+        if (id >= 0) {
+            projectGroupConfigs.remove(id);
+        }
     }
 
     @Override
