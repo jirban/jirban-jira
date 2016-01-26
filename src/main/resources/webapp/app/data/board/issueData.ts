@@ -154,7 +154,6 @@ export class IssueData {
     }
 
     get typeUrl():string {
-        console.log(this._boardData.jiraUrl + "/" + this._type.icon);
         return this._boardData.jiraUrl + "/" + this._type.icon;
     }
 

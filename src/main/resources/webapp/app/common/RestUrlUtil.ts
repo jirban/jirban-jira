@@ -4,21 +4,37 @@
  */
 export class RestUrlUtil {
 
-    static caclulateUrl(path:string) : string {
+    static caclulateRestUrl(path:string) : string {
         let location:Location = window.location;
-        console.log("href " + location.href)
 
         let index:number = location.href.indexOf("/download/resources/");
         if (index > 0) {
             let url:string = location.href.substr(0, index);
             url = url + "/plugins/servlet/jirban/" + path;
             return url;
-        }
-        if (location.hostname === "localhost" && location.port === "3000") {
+        } else if (RestUrlUtil.isLocalDebug(location)) {
             //For the local debugging of the UI, which does not seem to like loading json without a .json suffix
             return path + ".json";
         }
 
         return path;
+    }
+
+    static calculateJiraUrl() : string {
+        let location:Location = window.location;
+        console.log("-----> " + location.href);
+        let index:number = location.href.indexOf("/download/resources/");
+        if (index > 0) {
+            return location.href.substr(0, index);
+        } else if (RestUrlUtil.isLocalDebug(location)) {
+            //Return the locally running Jira instance
+            return "http://localhost:2990/jira";
+        }
+        console.error("Could not determine jir url " + location.href);
+        return "";
+    }
+
+    private static isLocalDebug(location:Location) : boolean {
+        return location.hostname === "localhost" && location.port === "3000";
     }
 }

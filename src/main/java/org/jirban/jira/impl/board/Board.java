@@ -89,7 +89,6 @@ public class Board {
 
     public ModelNode serialize() {
         ModelNode outputNode = new ModelNode();
-        outputNode.get("jira-url").set(boardConfig.getJiraUrl());
         //Sort the assignees by name
         ModelNode assigneesNode = outputNode.get("assignees");
         assigneesNode.setEmptyList();

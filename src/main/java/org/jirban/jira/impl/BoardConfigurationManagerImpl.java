@@ -124,16 +124,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public void saveBoard(ApplicationUser user, final int id, String jiraUrl, final ModelNode config) {
+    public void saveBoard(ApplicationUser user, final int id, final ModelNode config) {
         final String name = config.get("name").asString();
-        if (!config.hasDefined(jiraUrl)) {
-            config.get("jira-url").set(jiraUrl);
-        } else {
-            if (!jiraUrl.equals(config.get("jira-url").asString())) {
-                throw new IllegalArgumentException("The jira-url does not match the url of the running instance");
-            }
-        }
-
         //TODO Validate the data
 
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {

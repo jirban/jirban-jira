@@ -43,13 +43,11 @@ public interface BoardConfigurationManager {
     /**
      * Saves a new board (if {@code id < 0}, or updates an exisiting one. Permissions are checked to see if the user
      * can update anything
-     *
-     * @param user    the logged in user
+     *  @param user    the logged in user
      * @param id      the id of the board
-     * @param jiraUrl the url of this jira instance
      * @param config  the configuration
      */
-    void saveBoard(ApplicationUser user, int id, String jiraUrl, ModelNode config);
+    void saveBoard(ApplicationUser user, int id, ModelNode config);
 
     void deleteBoard(ApplicationUser user, int id);
 

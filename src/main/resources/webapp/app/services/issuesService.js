@@ -41,7 +41,7 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                     var token = authenticationHelper_1.getToken();
                     var headers = new http_1.Headers();
                     headers.append("Authorization", token);
-                    var path = RestUrlUtil_1.RestUrlUtil.caclulateUrl('rest/issues/' + board);
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateRestUrl('rest/issues/' + board);
                     return this.http.get(path, {
                         headers: headers
                     }).map(function (res) { return res.json(); });

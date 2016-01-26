@@ -194,7 +194,6 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                 });
                 Object.defineProperty(IssueData.prototype, "typeUrl", {
                     get: function () {
-                        console.log(this._boardData.jiraUrl + "/" + this._type.icon);
                         return this._boardData.jiraUrl + "/" + this._type.icon;
                     },
                     enumerable: true,

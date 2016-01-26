@@ -13,6 +13,7 @@ import {ProjectDeserializer} from "./project";
 import {LinkedProject} from "./project";
 import {BoardProject} from "./project";
 import {IssueTable, SwimlaneData} from "./issueTable";
+import {RestUrlUtil} from "../../common/RestUrlUtil";
 
 
 export class BoardData {
@@ -90,7 +91,7 @@ export class BoardData {
 
 
     private internalDeserialize(input:any, first:boolean = false) {
-        this.jiraUrl = input["jira-url"];
+        this.jiraUrl = RestUrlUtil.calculateJiraUrl();
 
         this.missing = input.missing;
 
