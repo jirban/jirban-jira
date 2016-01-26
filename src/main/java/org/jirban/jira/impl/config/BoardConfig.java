@@ -49,6 +49,7 @@ public class BoardConfig {
 
     private final int id;
     private final String name;
+    private final String owningUserKey;
     private final String ownerProjectCode;
     private final int rankCustomFieldId;
     private final Map<String, BoardProjectConfig> boardProjects;
@@ -58,13 +59,14 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
 
-    private BoardConfig(int id, String name, String ownerProjectCode,
+    private BoardConfig(int id, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
 
         this.id = id;
         this.name = name;
+        this.owningUserKey = owningUserKey;
         this.ownerProjectCode = ownerProjectCode;
         this.rankCustomFieldId = rankCustomFieldId;
         this.boardProjects = boardProjects;
@@ -75,17 +77,20 @@ public class BoardConfig {
         this.issueTypeIndex = getIndexMap(issueTypes);
     }
 
-    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, String configJson) {
+    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id,
+                                   String owningUserKey, String configJson) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
-        return load(issueTypeManager, priorityManager, id, boardNode);
+        return load(issueTypeManager, priorityManager, id, owningUserKey, boardNode);
     }
 
-    public static ModelNode validateAndSerialize(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, ModelNode boardNode) {
-        BoardConfig boardConfig = load(issueTypeManager, priorityManager, id, boardNode);
+    public static ModelNode validateAndSerialize(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
+                                                 int id, String owningUserKey, ModelNode boardNode) {
+        BoardConfig boardConfig = load(issueTypeManager, priorityManager, id, owningUserKey, boardNode);
         return boardConfig.serializeModelNodeForConfig();
     }
 
-    private static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, ModelNode boardNode) {
+    private static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
+                                    int id, String owningUserKey, ModelNode boardNode) {
         String projectGroupName = getRequiredChild(boardNode, "Group", null, "name").asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, "owning-project").asString();
         int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, "rank-custom-field-id").asInt();
@@ -114,7 +119,7 @@ public class BoardConfig {
             }
         }
 
-        return new BoardConfig(id, projectGroupName, owningProjectName,
+        return new BoardConfig(id, projectGroupName, owningUserKey, owningProjectName,
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
@@ -157,6 +162,10 @@ public class BoardConfig {
             result.put(key, result.size());
         }
         return Collections.unmodifiableMap(result);
+    }
+
+    public String getOwningUserKey() {
+        return owningUserKey;
     }
 
     public String getName() {

@@ -25,6 +25,7 @@ import net.java.ao.Entity;
 import net.java.ao.Preload;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.StringLength;
+import net.java.ao.schema.Unique;
 
 /**
  * @author Kabir Khan
@@ -32,8 +33,18 @@ import net.java.ao.schema.StringLength;
 @Preload
 public interface BoardCfg extends Entity {
     @NotNull
+    @Unique
     String getName();
     void setName(String name);
+
+    /**
+     * The key of the ApplicationUser who created the board configuration.
+     * That user will be used to load the boards.
+     * @return the ApplicationUser key
+     */
+    @NotNull
+    String getOwningUser();
+    void setOwningUserKey(String name);
 
     @NotNull
     @StringLength(StringLength.UNLIMITED)

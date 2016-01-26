@@ -83,8 +83,8 @@ public class Board {
     }
 
     public static Builder builder(SearchService searchService, AvatarService avatarService,
-                                  IssueLinkManager issueLinkManager, ApplicationUser user, BoardConfig boardConfig) {
-        return new Builder(searchService, avatarService, issueLinkManager, user, boardConfig);
+                                  IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+        return new Builder(searchService, avatarService, issueLinkManager, boardConfig, boardOwner);
     }
 
     public ModelNode serialize() {
@@ -178,8 +178,8 @@ public class Board {
         private final SearchService searchService;
         private final AvatarService avatarService;
         private final IssueLinkManager issueLinkManager;
-        private final ApplicationUser user;
         private final BoardConfig boardConfig;
+        private final ApplicationUser boardOwner;
 
         private final Map<String, Assignee> assignees = new TreeMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
@@ -190,18 +190,18 @@ public class Board {
         private final Map<String, List<String>> missingStates = new TreeMap<>();
 
         public Builder(SearchService searchService, AvatarService avatarService,
-                       IssueLinkManager issueLinkManager, ApplicationUser user, BoardConfig boardConfig) {
+                       IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
             this.searchService = searchService;
             this.avatarService = avatarService;
             this.issueLinkManager = issueLinkManager;
-            this.user = user;
             this.boardConfig = boardConfig;
+            this.boardOwner = boardOwner;
         }
 
         public Builder load() throws SearchException {
             for (BoardProjectConfig boardProjectConfig : boardConfig.getBoardProjects()) {
                 BoardProjectConfig project = boardConfig.getBoardProject(boardProjectConfig.getCode());
-                BoardProject.Builder projectBuilder = BoardProject.builder(searchService, user, this, project);
+                BoardProject.Builder projectBuilder = BoardProject.builder(searchService, this, project, boardOwner);
                 projectBuilder.load();
                 projects.put(projectBuilder.getCode(), projectBuilder);
             }
@@ -232,18 +232,18 @@ public class Board {
         }
 
         Assignee getAssignee(User assigneeUser) {
-            if (user == null) {
+            if (assigneeUser == null) {
                 //Unassigned issue
                 return null;
             }
-            Assignee assignee = assignees.get(user.getName());
+            Assignee assignee = assignees.get(assigneeUser.getName());
             if (assignee != null) {
                 return assignee;
             }
             ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
-            URI avatarUrl = avatarService.getAvatarURL(user, assigneeAppUser, Avatar.Size.NORMAL);
+            URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
             assignee = Assignee.create(assigneeUser, avatarUrl.toString());
-            assignees.put(user.getName(), assignee);
+            assignees.put(assigneeUser.getName(), assignee);
             return assignee;
         }
 

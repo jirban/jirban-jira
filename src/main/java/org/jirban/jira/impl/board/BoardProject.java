@@ -83,8 +83,8 @@ class BoardProject {
         }
     }
 
-    static Builder builder(SearchService searchService, ApplicationUser user, Board.Builder builder, BoardProjectConfig projectConfig) {
-        return new Builder(searchService, user, builder, projectConfig);
+    static Builder builder(SearchService searchService, Board.Builder builder, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
+        return new Builder(searchService, builder, projectConfig, boardOwner);
     }
 
     static LinkedProjectContext linkedProjectContext(Board.Builder boardBuilder, LinkedProjectConfig linkedProjectConfig) {
@@ -93,17 +93,17 @@ class BoardProject {
 
     static class Builder {
         private final SearchService searchService;
-        private final ApplicationUser user;
         private final Board.Builder boardBuilder;
         private final BoardProjectConfig projectConfig;
+        private final ApplicationUser boardOwner;
         private final Map<String, List<Issue>> issuesByState = new HashMap<>();
 
 
-        private Builder(SearchService searchService, ApplicationUser user, Board.Builder boardBuilder, BoardProjectConfig projectConfig) {
+        private Builder(SearchService searchService, Board.Builder boardBuilder, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
             this.searchService = searchService;
-            this.user = user;
             this.boardBuilder = boardBuilder;
             this.projectConfig = projectConfig;
+            this.boardOwner = boardOwner;
         }
 
         Builder addIssue(String state, Issue issue) {
@@ -135,7 +135,7 @@ class BoardProject {
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
 
             SearchResults searchResults =
-                    searchService.search(user.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+                    searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
                 Issue.Builder issueBuilder = Issue.builder(this);

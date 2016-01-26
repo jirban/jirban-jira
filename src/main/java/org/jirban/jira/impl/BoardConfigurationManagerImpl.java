@@ -127,7 +127,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 }
             });
             if (cfg != null) {
-                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getConfigJson());
+                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getOwningUser(), cfg.getConfigJson());
                 BoardConfig old = projectGroupConfigs.putIfAbsent(id, boardConfig);
                 if (old != null) {
                     boardConfig = old;
@@ -148,7 +148,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         //Validate it, and serialize it so that the order of fields is always the same
         final ModelNode validConfig;
         try {
-            validConfig = BoardConfig.validateAndSerialize(issueTypeManager, priorityManager, id, config);
+            validConfig = BoardConfig.validateAndSerialize(issueTypeManager, priorityManager, id, user.getKey(), config);
         } catch (Exception e) {
             throw new JirbanValidationException("Invalid data: " + e.getMessage());
         }
@@ -169,12 +169,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (id >= 0) {
                     final BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
                     cfg.setName(name);
+                    cfg.setOwningUserKey(user.getKey());
                     cfg.setConfigJson(validConfig.toJSONString(true));
                     cfg.save();
                 } else {
                     final BoardCfg cfg = activeObjects.create(
                             BoardCfg.class,
                             new DBParam("NAME", name),
+                            new DBParam("OWNING_USER", user.getKey()),
                             //Compact the json before saving it
                             new DBParam("CONFIG_JSON", validConfig.toJSONString(true)));
                     cfg.save();

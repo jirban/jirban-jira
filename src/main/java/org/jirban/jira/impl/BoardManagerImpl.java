@@ -35,9 +35,11 @@ import org.jirban.jira.impl.config.BoardConfig;
 
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -59,14 +61,19 @@ public class BoardManagerImpl implements BoardManager {
     @ComponentImport
     private final IssueLinkManager issueLinkManager;
 
+    private final UserManager userManager;
+
     private final BoardConfigurationManager boardConfigurationManager;
 
 
     @Inject
-    public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager, BoardConfigurationManager boardConfigurationManager) {
+    public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
+                            BoardConfigurationManager boardConfigurationManager) {
         this.searchService = searchService;
         this.avatarService = avatarService;
         this.issueLinkManager = issueLinkManager;
+        //AuthManager is loading a few different user managers, which breaks injection
+        this.userManager = ComponentAccessor.getUserManager();
         this.boardConfigurationManager = boardConfigurationManager;
 
     }
@@ -78,8 +85,19 @@ public class BoardManagerImpl implements BoardManager {
             synchronized (this) {
                 board = boards.get(id);
                 if (board == null) {
+                    //Use the logged in user to check if we are allowed to view the board
                     final BoardConfig boardConfig = boardConfigurationManager.getBoardConfigForBoardDisplay(user, id);
-                    board = Board.builder(searchService, avatarService, issueLinkManager, user, boardConfig).load().build();
+                    /*
+                    Use the board owner to load the board data. The board is only loaded once, and shared amongst all
+                    users.
+                    Since I was not 100% sure which permission to use to determine if a user can view the board in the
+                    check done by getBoardConfigForBoardDisplay(), it feels less error-prone to use the user who created
+                    the board (who needs the project admin permission) to load this data.
+                    This user is only used to load board data; all changes will be done using the logged in user.
+                    */
+
+                    final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
+                    board = Board.builder(searchService, avatarService, issueLinkManager, boardConfig, boardOwner).load().build();
                     boards.put(id, board);
                 }
             }
