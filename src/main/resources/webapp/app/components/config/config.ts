@@ -6,6 +6,7 @@ import {clearToken,setToken} from '../../services/authenticationHelper';
 import {ControlGroup, FormBuilder} from "angular2/common";
 import {Validators} from "angular2/common";
 import {Control} from "angular2/common";
+import {Indexed} from "../../common/indexed";
 
 @Component({
     selector: 'boards',
@@ -17,7 +18,7 @@ import {Control} from "angular2/common";
     directives: [ROUTER_DIRECTIVES]
 })
 export class ConfigComponent {
-    private boards:any[]
+    private _boards:Indexed<any>;
     private selected:number = -1;
     private edit:boolean = false;
     private deleting = false;
@@ -34,7 +35,7 @@ export class ConfigComponent {
         this._boardsService.loadBoardsList(false).subscribe(
             data => {
                 console.log('Boards: Got data' + JSON.stringify(data));
-                this.boards = data;
+                this._boards = this.indexBoard(data);
             },
             err => {
                 console.log(err);
@@ -52,6 +53,13 @@ export class ConfigComponent {
         this.updateNewForm();
     }
 
+    private get boards() : any[] {
+        if (!this._boards) {
+            return [];
+        }
+        return this._boards.array;
+    }
+
     private updateNewForm() {
         this.newForm = this._formBuilder.group({
             "newJson": ["", Validators.required] //TODO validate that is is valid json at least
@@ -59,7 +67,7 @@ export class ConfigComponent {
     }
 
     hasBoards() : boolean {
-        return this.boards && this.boards.length > 0;
+        return this._boards && this._boards.array.length > 0;
     }
 
     isSelected(id:number) : boolean {
@@ -95,8 +103,20 @@ export class ConfigComponent {
     toggleDelete(event:MouseEvent, id:number) {
         this.deleting = !this.deleting;
         if (this.deleting) {
+
+            //I wasn't able to get 'this' working with the lambda below
+            let component:ConfigComponent = this;
+
             this.deleteForm = this._formBuilder.group({
-                "boardName": ['', Validators.required] //TODO proper validation
+                "boardName": ['', Validators.compose([Validators.required, (control:Control) => {
+                    if (component.selected) {
+                        let board:any = component._boards.forKey(component.selected.toString());
+                        if (board.name != control.value) {
+                            return {"boardName" : true};
+                        }
+                    }
+                    return null;
+                }])]
             })
         }
         event.preventDefault();
@@ -107,7 +127,7 @@ export class ConfigComponent {
             .subscribe(
                 data => {
                     console.log("Deleted board");
-                    this.boards = data;
+                    this._boards = this.indexBoard(data);
                     this.edit = false;
                     this.deleting = false;
                 },
@@ -124,7 +144,7 @@ export class ConfigComponent {
             .subscribe(
                 data => {
                     console.log("Edited board");
-                    this.boards = data;
+                    this._boards = this.indexBoard(data);
                     this.edit = false;
                 },
                 err => {
@@ -140,7 +160,7 @@ export class ConfigComponent {
             .subscribe(
                 data => {
                     console.log("Saved new board");
-                    this.boards = data;
+                    this._boards = this.indexBoard(data);
                     this.updateNewForm();
                 },
                 err => {
@@ -151,4 +171,19 @@ export class ConfigComponent {
             );
 
     }
+
+    private indexBoard(data:any) : Indexed<any> {
+        let boards:Indexed<any> = new Indexed<any>();
+        boards.indexArray(
+            data,
+            (entry) => entry,
+            (board) => board.id);
+        return boards;
+    }
 }
+
+interface ValidationResult {
+    [key:string]:boolean;
+}
+
+

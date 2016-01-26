@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/router', '../../services/boardsService', '../../services/authenticationHelper', "angular2/common"], function(exports_1) {
+System.register(['angular2/core', 'angular2/router', '../../services/boardsService', '../../services/authenticationHelper', "angular2/common", "../../common/indexed"], function(exports_1) {
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,7 +8,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, router_1, boardsService_1, authenticationHelper_1, common_1, common_2;
+    var core_1, router_1, boardsService_1, authenticationHelper_1, common_1, common_2, indexed_1;
     var ConfigComponent;
     return {
         setters:[
@@ -27,6 +27,9 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
             function (common_1_1) {
                 common_1 = common_1_1;
                 common_2 = common_1_1;
+            },
+            function (indexed_1_1) {
+                indexed_1 = indexed_1_1;
             }],
         execute: function() {
             ConfigComponent = (function () {
@@ -43,7 +46,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     var _this = this;
                     this._boardsService.loadBoardsList(false).subscribe(function (data) {
                         console.log('Boards: Got data' + JSON.stringify(data));
-                        _this.boards = data;
+                        _this._boards = _this.indexBoard(data);
                     }, function (err) {
                         console.log(err);
                         //TODO logout locally if 401, and redirect to login
@@ -55,13 +58,23 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     }, function () { return console.log('Board: done'); });
                     this.updateNewForm();
                 };
+                Object.defineProperty(ConfigComponent.prototype, "boards", {
+                    get: function () {
+                        if (!this._boards) {
+                            return [];
+                        }
+                        return this._boards.array;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 ConfigComponent.prototype.updateNewForm = function () {
                     this.newForm = this._formBuilder.group({
                         "newJson": ["", common_2.Validators.required] //TODO validate that is is valid json at least
                     });
                 };
                 ConfigComponent.prototype.hasBoards = function () {
-                    return this.boards && this.boards.length > 0;
+                    return this._boards && this._boards.array.length > 0;
                 };
                 ConfigComponent.prototype.isSelected = function (id) {
                     return id == this.selected;
@@ -93,8 +106,18 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                 ConfigComponent.prototype.toggleDelete = function (event, id) {
                     this.deleting = !this.deleting;
                     if (this.deleting) {
+                        //I wasn't able to get 'this' working with the lambda below
+                        var component = this;
                         this.deleteForm = this._formBuilder.group({
-                            "boardName": ['', common_2.Validators.required] //TODO proper validation
+                            "boardName": ['', common_2.Validators.compose([common_2.Validators.required, function (control) {
+                                        if (component.selected) {
+                                            var board = component._boards.forKey(component.selected.toString());
+                                            if (board.name != control.value) {
+                                                return { "boardName": true };
+                                            }
+                                        }
+                                        return null;
+                                    }])]
                         });
                     }
                     event.preventDefault();
@@ -104,7 +127,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this._boardsService.deleteBoard(this.selected)
                         .subscribe(function (data) {
                         console.log("Deleted board");
-                        _this.boards = data;
+                        _this._boards = _this.indexBoard(data);
                         _this.edit = false;
                         _this.deleting = false;
                     }, function (err) {
@@ -117,7 +140,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this._boardsService.saveBoard(this.selected, this.editForm.value.editJson)
                         .subscribe(function (data) {
                         console.log("Edited board");
-                        _this.boards = data;
+                        _this._boards = _this.indexBoard(data);
                         _this.edit = false;
                     }, function (err) {
                         console.log(err);
@@ -129,12 +152,17 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this._boardsService.createBoard(this.newForm.value.newJson)
                         .subscribe(function (data) {
                         console.log("Saved new board");
-                        _this.boards = data;
+                        _this._boards = _this.indexBoard(data);
                         _this.updateNewForm();
                     }, function (err) {
                         console.log(err);
                         //TODO error reporting
                     }, function () { });
+                };
+                ConfigComponent.prototype.indexBoard = function (data) {
+                    var boards = new indexed_1.Indexed();
+                    boards.indexArray(data, function (entry) { return entry; }, function (board) { return board.id; });
+                    return boards;
                 };
                 ConfigComponent = __decorate([
                     core_1.Component({
