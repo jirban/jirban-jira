@@ -21,14 +21,19 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.List;
+
 import javax.inject.Named;
 
+import org.ofbiz.core.entity.GenericEntityException;
+import org.ofbiz.core.entity.GenericValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.jira.event.issue.IssueEvent;
@@ -86,14 +91,45 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
         // if it's an event we're interested in, log it
-        System.out.println("-----> Event " + issueEvent);
+        System.out.println("-----> Event " + issueEvent + " " + Thread.currentThread().getName());
+
+        //TODO do some filtering of projects from the board configs above
+        //For linked projects we only care about the issues actually linked to
+
+
         if (eventTypeId.equals(EventType.ISSUE_CREATED_ID)) {
             log.info("Issue {} has been created at {}.", issue.getKey(), issue.getCreated());
         } else if (eventTypeId.equals(EventType.ISSUE_RESOLVED_ID)) {
             log.info("Issue {} has been resolved at {}.", issue.getKey(), issue.getResolutionDate());
         } else if (eventTypeId.equals(EventType.ISSUE_CLOSED_ID)) {
             log.info("Issue {} has been closed at {}.", issue.getKey(), issue.getUpdated());
+        } else if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID) || eventTypeId.equals(EventType.ISSUE_GENERICEVENT_ID)) {
+            GenericValue changeLog = issueEvent.getChangeLog();
+            List<GenericValue> changeItems = null;
+            try {
+                changeItems = changeLog.internalDelegator.findByAnd("ChangeItem", EasyMap.build("group", changeLog.get("id")));
+            } catch (GenericEntityException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println("Number of changes: " + changeItems.size());
+            for (GenericValue change : changeItems) {
+                String field = change.getString("field");
+                String oldstring = change.getString("oldstring");
+                String newstring = change.getString("newstring");
+                StringBuilder fullstring = new StringBuilder();
+                fullstring.append("Issue ");
+                fullstring.append(issue.getKey());
+                fullstring.append(" field ");
+                fullstring.append(field);
+                fullstring.append(" has been updated from ");
+                fullstring.append(oldstring);
+                fullstring.append(" to ");
+                fullstring.append(newstring);
+                System.out.println("changes " + fullstring.toString());
+            }
         }
+
     }
 
 }
