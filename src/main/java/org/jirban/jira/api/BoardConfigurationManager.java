@@ -57,6 +57,6 @@ public interface BoardConfigurationManager {
      * @param id the id of the configuration
      * @return the configuration
      */
-    BoardConfig getBoardConfig(ApplicationUser user, int id);
+    BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, int id);
 }
 

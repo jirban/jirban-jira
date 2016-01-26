@@ -65,7 +65,7 @@ public class OwnerBoardProjectConfig extends BoardProjectConfig {
     }
 
     @Override
-    public ModelNode serializeModelNodeForConfig() {
+    ModelNode serializeModelNodeForConfig() {
         final ModelNode projectNode = super.serializeModelNodeForConfig();
         final ModelNode statesNode = projectNode.get("states");
         statesNode.setEmptyList();

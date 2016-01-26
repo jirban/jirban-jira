@@ -1,7 +1,11 @@
 <h2>Configuration</h2>
 <h3>Boards</h3>
+<div>
+    Select a board to update its config. For boards where you have the 'administer project' permission for the
+    main projects, you can edit and delete boards.
+</div>
+<div *ngIf="!hasBoards()">No boards configured</div>
 <div *ngIf="hasBoards()">
-    Select a board to update its config
     <ul>
         <li *ngFor="#board of boards">
             <a href="view" (click)="toggleBoard($event, board.id)">{{board.name}}</a>
@@ -12,7 +16,7 @@
                     <a *ngIf="!deleting && board.edit" href="delete" (click)="toggleDelete($event, board.id)">Delete</a>
                     <div *ngIf="deleting">
                         <form (ngSubmit)="deleteBoard()" [ngFormModel]="deleteForm" #f="ngForm">
-                            <label>Type in the 'name' field of the board to delete it:</label>
+                            <label>Type in the 'name' field of the board to delete it <b>permanently</b>:</label>
                             <input type="text" ngControl="boardName"/>
                             <a href="cancel" (click)="toggleDelete($event, board.id)">Cancel</a>
                             <button type="submit" [disabled]="!f.form.valid">Delete</button>
@@ -35,7 +39,10 @@
 <hr>
 </div>
 <div>
-    <p>Enter a new board</p>
+    <div>
+        Create a new board. When saving it will be checked that you have the 'administer project' permission for
+        the main projects in the board.
+    </div>
     <div>
         <form (ngSubmit)="newBoard()" [ngFormModel]="newForm" #f="ngForm">
             <textarea cols="100" rows="15" name="newJson" ngControl="newJson"></textarea>

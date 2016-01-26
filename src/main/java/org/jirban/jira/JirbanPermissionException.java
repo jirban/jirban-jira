@@ -24,8 +24,8 @@ package org.jirban.jira;
 /**
  * @author Kabir Khan
  */
-public class JirbanException extends RuntimeException {
-    public JirbanException(String message) {
+public class JirbanPermissionException extends RuntimeException {
+    public JirbanPermissionException(String message) {
         super(message);
     }
 }

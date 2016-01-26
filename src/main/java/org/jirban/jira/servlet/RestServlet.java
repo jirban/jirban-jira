@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,7 +64,7 @@ public class RestServlet extends HttpServlet{
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException e) {
+        } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
@@ -84,7 +85,7 @@ public class RestServlet extends HttpServlet{
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException e) {
+        } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
@@ -106,7 +107,7 @@ public class RestServlet extends HttpServlet{
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException e) {
+        } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }
@@ -128,7 +129,7 @@ public class RestServlet extends HttpServlet{
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException e) {
+        } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         }
     }

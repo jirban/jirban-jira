@@ -54,7 +54,13 @@ public class LinkedProjectConfig extends ProjectConfig {
         return statesMap;
     }
 
-//    public ModelNode serializeModelNodeForConfig() {
-//        s
-//    }
+    ModelNode serializeModelNodeForConfig() {
+        final ModelNode projectNode = new ModelNode();
+        final ModelNode statesNode = projectNode.get("states");
+        statesNode.setEmptyList();
+        for (String state : states.keySet()) {
+            statesNode.add(state);
+        }
+        return projectNode;
+    }
 }

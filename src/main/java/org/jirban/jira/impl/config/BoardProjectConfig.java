@@ -81,7 +81,7 @@ public abstract class BoardProjectConfig extends ProjectConfig {
 
     public abstract boolean isOwner();
 
-    public ModelNode serializeModelNodeForConfig() {
+    ModelNode serializeModelNodeForConfig() {
         final ModelNode projectNode = new ModelNode();
         projectNode.get("query-filter").set(queryFilter == null ? new ModelNode() : new ModelNode(queryFilter));
         projectNode.get("colour").set(colour);

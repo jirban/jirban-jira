@@ -41,4 +41,7 @@ public class NameAndUrl {
         parent.add(modelNode);
     }
 
+    public String getName() {
+        return name;
+    }
 }

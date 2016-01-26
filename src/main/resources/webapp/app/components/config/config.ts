@@ -54,7 +54,7 @@ export class ConfigComponent {
 
     private updateNewForm() {
         this.newForm = this._formBuilder.group({
-            "newJson": ["", Validators.nullValidator(null)] //TODO validate that is is valid json at least
+            "newJson": ["", Validators.required] //TODO validate that is is valid json at least
         });
     }
 
@@ -86,7 +86,7 @@ export class ConfigComponent {
         this.edit = !this.edit;
         if (this.edit) {
             this.editForm = this._formBuilder.group({
-                "editJson": [this.getConfigJson(board), Validators.nullValidator(null)] //TODO validate that is is valid json at least
+                "editJson": [this.getConfigJson(board), Validators.required] //TODO validate that is is valid json at least
             });
         }
         event.preventDefault();
@@ -96,7 +96,7 @@ export class ConfigComponent {
         this.deleting = !this.deleting;
         if (this.deleting) {
             this.deleteForm = this._formBuilder.group({
-                "boardName": ['', Validators.nullValidator(null)] //TODO proper validation
+                "boardName": ['', Validators.required] //TODO proper validation
             })
         }
         event.preventDefault();
@@ -151,6 +151,4 @@ export class ConfigComponent {
             );
 
     }
-
-
 }

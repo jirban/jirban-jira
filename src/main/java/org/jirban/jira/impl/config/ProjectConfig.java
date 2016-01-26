@@ -60,7 +60,7 @@ public abstract class ProjectConfig {
         return states.size() - 1;
     }
 
-    private ModelNode getBaseModelNode(ModelNode parent) {
+    private ModelNode getModelNodeWithStates(ModelNode parent) {
         ModelNode projectNode = parent.get(code);
         ModelNode statesNode = projectNode.get("states");
         this.states.keySet().forEach(statesNode::add);
@@ -68,7 +68,7 @@ public abstract class ProjectConfig {
     }
 
     ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
-        return getBaseModelNode(parent);
+        return getModelNodeWithStates(parent);
     }
 
 }

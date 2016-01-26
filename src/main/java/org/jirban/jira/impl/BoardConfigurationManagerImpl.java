@@ -30,9 +30,12 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanPermissionException;
+import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.BoardCfg;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.impl.config.BoardConfig;
+import org.jirban.jira.impl.config.BoardProjectConfig;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
@@ -98,14 +101,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             configNode.get("name").set(config.getName());
             ModelNode configJson = ModelNode.fromJSONString(config.getConfigJson());
             if (forConfig) {
-                if (hasPermissionBoard(user, configJson, ProjectPermissions.ADMINISTER_PROJECTS)) {
+                if (canEditBoard(user, configJson)) {
                     configNode.get("edit").set(true);
                 }
                 configNode.get("config").set(configJson);
                 output.add(configNode);
             } else {
                 //Just a wild guess at what is needed to view the boards
-                if (hasPermissionBoard(user, configJson, ProjectPermissions.TRANSITION_ISSUES)) {
+                if (canViewBoard(user, configNode)) {
                     output.add(configNode);
                 }
             }
@@ -114,7 +117,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public BoardConfig getBoardConfig(ApplicationUser user, final int id) {
+    public BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, final int id) {
         BoardConfig boardConfig =  projectGroupConfigs.get(id);
         if (boardConfig == null) {
             BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
@@ -131,15 +134,24 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 }
             }
         }
+        if (!canViewBoard(user, boardConfig)) {
+            throw new JirbanPermissionException("Insufficient permissions to view board " +
+                    boardConfig.getName() + " (" + id + ")");
+        }
         return boardConfig;
     }
 
     @Override
     public void saveBoard(ApplicationUser user, final int id, final ModelNode config) {
         final String name = config.get("name").asString();
-        //TODO Validate the data
 
-         ModelNode validConfig = config;//BoardConfig.validateAndSerialize(issueTypeManager, priorityManager, id, config);
+        //Validate it, and serialize it so that the order of fields is always the same
+        final ModelNode validConfig;
+        try {
+            validConfig = BoardConfig.validateAndSerialize(issueTypeManager, priorityManager, id, config);
+        } catch (Exception e) {
+            throw new JirbanValidationException("Invalid data: " + e.getMessage());
+        }
 
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
@@ -147,7 +159,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (id >= 0) {
                     final BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
                     cfg.setName(name);
-                    cfg.setConfigJson(config.toJSONString(true));
+                    cfg.setConfigJson(validConfig.toJSONString(true));
                     cfg.save();
                 } else {
                     final BoardCfg cfg = activeObjects.create(
@@ -157,12 +169,12 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                             new DBParam("CONFIG_JSON", validConfig.toJSONString(true)));
                     cfg.save();
                 }
+                if (id >= 0) {
+                    projectGroupConfigs.remove(id);
+                }
                 return null;
             }
         });
-        if (id >= 0) {
-            projectGroupConfigs.remove(id);
-        }
     }
 
     @Override
@@ -171,6 +183,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             @Override
             public Void doInTransaction() {
                 BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
+                if (cfg == null) {
+                    return null;
+                }
+                final ModelNode boardConfig = ModelNode.fromJSONString(cfg.getConfigJson());
+                if (!canEditBoard(user, boardConfig)) {
+                    throw new JirbanPermissionException("Insufficient permissions to delete board " +
+                            boardConfig.get("name") + " (" + id + ")");
+                }
                 activeObjects.delete(cfg);
                 return null;
             }
@@ -193,17 +213,49 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         });
     }
 
+    //Permission methods
+    private boolean canEditBoard(ApplicationUser user, ModelNode boardConfig) {
+        return hasPermissionBoard(user, boardConfig, ProjectPermissions.ADMINISTER_PROJECTS);
+    }
+
+    private boolean canViewBoard(ApplicationUser user, ModelNode boardConfig) {
+        //A wild guess at a reasonable permission needed to view the boards
+        return hasPermissionBoard(user, boardConfig, ProjectPermissions.TRANSITION_ISSUES);
+    }
+
+    private boolean canViewBoard(ApplicationUser user, BoardConfig boardConfig) {
+        //A wild guess at a reasonable permission needed to view the boards
+        return hasPermissionBoard(user, boardConfig, ProjectPermissions.TRANSITION_ISSUES);
+    }
+
+    private boolean hasPermissionBoard(ApplicationUser user, BoardConfig boardConfig, ProjectPermissionKey... permissions) {
+        for (BoardProjectConfig boardProject : boardConfig.getBoardProjects()) {
+            if (!hasPermission(user, boardProject.getCode(), permissions)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
     private boolean hasPermissionBoard(ApplicationUser user, ModelNode boardConfig, ProjectPermissionKey...permissions) {
         if (!boardConfig.hasDefined("projects")) {
             //The project is empty, start checking once they add something
             return true;
         }
         for (String projectCode : boardConfig.get("projects").keys()) {
-            Project project = projectManager.getProjectByCurrentKey(projectCode);
-            for (ProjectPermissionKey permission : permissions) {
-                if (!permissionManager.hasPermission(permission, project, user)) {
-                    return false;
-                }
+            if (!hasPermission(user, projectCode, permissions)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean hasPermission(ApplicationUser user, String projectCode, ProjectPermissionKey[] permissions) {
+        Project project = projectManager.getProjectByCurrentKey(projectCode);
+        for (ProjectPermissionKey permission : permissions) {
+            if (!permissionManager.hasPermission(permission, project, user)) {
+                return false;
             }
         }
         return true;

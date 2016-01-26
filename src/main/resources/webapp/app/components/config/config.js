@@ -57,7 +57,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                 };
                 ConfigComponent.prototype.updateNewForm = function () {
                     this.newForm = this._formBuilder.group({
-                        "newJson": ["", common_2.Validators.nullValidator(null)] //TODO validate that is is valid json at least
+                        "newJson": ["", common_2.Validators.required] //TODO validate that is is valid json at least
                     });
                 };
                 ConfigComponent.prototype.hasBoards = function () {
@@ -85,7 +85,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this.edit = !this.edit;
                     if (this.edit) {
                         this.editForm = this._formBuilder.group({
-                            "editJson": [this.getConfigJson(board), common_2.Validators.nullValidator(null)] //TODO validate that is is valid json at least
+                            "editJson": [this.getConfigJson(board), common_2.Validators.required] //TODO validate that is is valid json at least
                         });
                     }
                     event.preventDefault();
@@ -94,7 +94,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this.deleting = !this.deleting;
                     if (this.deleting) {
                         this.deleteForm = this._formBuilder.group({
-                            "boardName": ['', common_2.Validators.nullValidator(null)] //TODO proper validation
+                            "boardName": ['', common_2.Validators.required] //TODO proper validation
                         });
                     }
                     event.preventDefault();
