@@ -139,6 +139,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         final String name = config.get("name").asString();
         //TODO Validate the data
 
+         ModelNode validConfig = config;//BoardConfig.validateAndSerialize(issueTypeManager, priorityManager, id, config);
+
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
             public Void doInTransaction() {
@@ -152,7 +154,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                             BoardCfg.class,
                             new DBParam("NAME", name),
                             //Compact the json before saving it
-                            new DBParam("CONFIG_JSON", config.toJSONString(true)));
+                            new DBParam("CONFIG_JSON", validConfig.toJSONString(true)));
                     cfg.save();
                 }
                 return null;

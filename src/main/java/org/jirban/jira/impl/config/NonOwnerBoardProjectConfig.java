@@ -84,13 +84,24 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
     }
 
     @Override
-    ModelNode serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
-        ModelNode projectNode = super.serializeModelNode(boardConfig, parent);
+    ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
+        ModelNode projectNode = super.serializeModelNodeForBoard(boardConfig, parent);
         ModelNode stateLinksNode = projectNode.get("state-links");
         for (String state : boardConfig.getOwningProject().getStateNames()) {
             String myState = mapBoardStateOntoOwnState(state);
             stateLinksNode.get(state).set(myState == null ? new ModelNode() : new ModelNode(myState));
         }
         return projectNode;
+    }
+
+    @Override
+    public ModelNode serializeModelNodeForConfig() {
+        final ModelNode projectsNode = super.serializeModelNodeForConfig();
+        final ModelNode stateLinksNode = projectsNode.get("state-links");
+        stateLinksNode.setEmptyObject();
+        for (Map.Entry<String, String> entry : ownToBoardStates.entrySet()) {
+            stateLinksNode.get(entry.getKey(), entry.getValue());
+        }
+        return projectsNode;
     }
 }

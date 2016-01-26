@@ -99,7 +99,7 @@ public class Board {
             assignees.get(assignee.getKey()).serialize(assigneeIndex++, assigneesNode);
         }
 
-        boardConfig.serializeModelNode(outputNode);
+        boardConfig.serializeModelNodeForBoard(outputNode);
 
         ModelNode allIssues = outputNode.get("issues");
         this.allIssues.forEach((code, issue) -> {

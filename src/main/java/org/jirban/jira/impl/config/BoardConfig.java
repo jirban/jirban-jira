@@ -77,6 +77,15 @@ public class BoardConfig {
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, String configJson) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
+        return load(issueTypeManager, priorityManager, id, boardNode);
+    }
+
+    public static ModelNode validateAndSerialize(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, ModelNode boardNode) {
+        BoardConfig boardConfig = load(issueTypeManager, priorityManager, id, boardNode);
+        return boardConfig.serializeModelNodeForConfig();
+    }
+
+    private static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id, ModelNode boardNode) {
         String projectGroupName = getRequiredChild(boardNode, "Group", null, "name").asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, "owning-project").asString();
         int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, "rank-custom-field-id").asInt();
@@ -174,30 +183,63 @@ public class BoardConfig {
         return linkedProjects.get(linkedProjectCode);
     }
 
-    public void serializeModelNode(ModelNode parent) {
-        ModelNode prioritiesNode = parent.get("priorities");
-        for (NameAndUrl priority : priorities.values()) {
-            priority.serialize(prioritiesNode);
-        }
-
-        ModelNode issueTypesNode = parent.get("issue-types");
-        for (NameAndUrl issueType : issueTypes.values()) {
-            issueType.serialize(issueTypesNode);
-        }
-
-        final ModelNode projects = parent.get("projects");
+    public void serializeModelNodeForBoard(ModelNode boardNode) {
+        serializePriorities(boardNode);
+        serializeIssueTypes(boardNode);
+        final ModelNode projects = boardNode.get("projects");
         projects.get("owner").set(ownerProjectCode);
 
         final ModelNode main = projects.get("main");
         for (BoardProjectConfig project : boardProjects.values()) {
-            project.serializeModelNode(this, main);
+            project.serializeModelNodeForBoard(this, main);
         }
         final ModelNode linked = projects.get("linked");
         linked.setEmptyObject();
         for (LinkedProjectConfig project : linkedProjects.values()) {
-            project.serializeModelNode(this, linked);
+            project.serializeModelNodeForBoard(this, linked);
         }
     }
+
+    private ModelNode serializeModelNodeForConfig() {
+        final ModelNode outputNode = new ModelNode();
+        outputNode.get("name").set(name);
+        outputNode.get("owning-project").set(ownerProjectCode);
+        outputNode.get("rank-custom-field-id").set(rankCustomFieldId);
+        serializePriorities(outputNode);
+        serializeIssueTypes(outputNode);
+
+        final ModelNode projectsNode = outputNode.get("projects");
+        final BoardProjectConfig owner = getOwnerProject();
+        projectsNode.get(owner.getCode()).set(owner.serializeModelNodeForConfig());
+        for (BoardProjectConfig project : boardProjects.values()) {
+            if (project.isOwner()) {
+                continue;
+            }
+            projectsNode.get(project.getCode()).set(project.serializeModelNodeForConfig());
+        }
+
+        final ModelNode linkedProjectsNode = outputNode.get("linked-projects");
+        linkedProjectsNode.setEmptyObject();
+        for (LinkedProjectConfig project : linkedProjects.values()) {
+            //projectsNode.get(project.getCode()).set(project.serializeModelNodeForConfig())
+        }
+        return outputNode;
+    }
+
+    private void serializePriorities(ModelNode boardNode) {
+        ModelNode prioritiesNode = boardNode.get("priorities");
+        for (NameAndUrl priority : priorities.values()) {
+            priority.serialize(prioritiesNode);
+        }
+    }
+
+    private void serializeIssueTypes(ModelNode boardNode) {
+        ModelNode issueTypesNode = boardNode.get("issue-types");
+        for (NameAndUrl issueType : issueTypes.values()) {
+            issueType.serialize(issueTypesNode);
+        }
+    }
+
 
     public Set<String> getOwnerStateNames() {
         return boardProjects.get(ownerProjectCode).getStateNames();
@@ -226,4 +268,5 @@ public class BoardConfig {
     public int getRankCustomFieldId() {
         return rankCustomFieldId;
     }
+
 }

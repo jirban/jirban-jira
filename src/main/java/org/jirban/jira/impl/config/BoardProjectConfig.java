@@ -69,8 +69,8 @@ public abstract class BoardProjectConfig extends ProjectConfig {
     }
 
     @Override
-    ModelNode serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
-        ModelNode projectNode = super.serializeModelNode(boardConfig, parent);
+    ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
+        ModelNode projectNode = super.serializeModelNodeForBoard(boardConfig, parent);
         projectNode.get("colour").set(colour);
         return projectNode;
     }
@@ -80,4 +80,11 @@ public abstract class BoardProjectConfig extends ProjectConfig {
     public abstract String mapOwnStateOntoBoardState(String state);
 
     public abstract boolean isOwner();
+
+    public ModelNode serializeModelNodeForConfig() {
+        final ModelNode projectNode = new ModelNode();
+        projectNode.get("query-filter").set(queryFilter == null ? new ModelNode() : new ModelNode(queryFilter));
+        projectNode.get("colour").set(colour);
+        return projectNode;
+    }
 }

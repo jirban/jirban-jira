@@ -67,7 +67,7 @@ public abstract class ProjectConfig {
         return projectNode;
     }
 
-    ModelNode serializeModelNode(BoardConfig boardConfig, ModelNode parent) {
+    ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
         return getBaseModelNode(parent);
     }
 

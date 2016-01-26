@@ -54,4 +54,7 @@ public class LinkedProjectConfig extends ProjectConfig {
         return statesMap;
     }
 
+//    public ModelNode serializeModelNodeForConfig() {
+//        s
+//    }
 }

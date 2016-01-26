@@ -63,4 +63,15 @@ public class OwnerBoardProjectConfig extends BoardProjectConfig {
     public String mapOwnStateOntoBoardState(String state) {
         return state;
     }
+
+    @Override
+    public ModelNode serializeModelNodeForConfig() {
+        final ModelNode projectNode = super.serializeModelNodeForConfig();
+        final ModelNode statesNode = projectNode.get("states");
+        statesNode.setEmptyList();
+        for (String state : states.keySet()) {
+            statesNode.add(state);
+        }
+        return projectNode;
+    }
 }
