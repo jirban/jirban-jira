@@ -24,15 +24,41 @@ package org.jirban.jira.api;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardConfig;
 
+import com.atlassian.jira.user.ApplicationUser;
+
 /**
  * @author Kabir Khan
  */
 public interface BoardConfigurationManager {
-    String getBoardsJson(boolean full);
+    /**
+     * Gets all the boards.
+     *
+     * @param user      the logged in user
+     * @param forConfig whether this is to edit/view the config (in which case we return everything),
+     *                  or to display the list of boards in view mode (in which case we return id/name pairs)
+     * @return the json for the boards
+     */
+    String getBoardsJson(ApplicationUser user, boolean forConfig);
 
-    void saveBoard(int id, String jiraUrl, ModelNode config);
+    /**
+     * Saves a new board (if {@code id < 0}, or updates an exisiting one. Permissions are checked to see if the user
+     * can update anything
+     *
+     * @param user    the logged in user
+     * @param id      the id of the board
+     * @param jiraUrl the url of this jira instance
+     * @param config  the configuration
+     */
+    void saveBoard(ApplicationUser user, int id, String jiraUrl, ModelNode config);
 
-    void deleteBoard(int id);
+    void deleteBoard(ApplicationUser user, int id);
 
-    BoardConfig getBoardConfig(int id);
+    /**
+     * Loads the board configuration
+     * @param user the user
+     * @param id the id of the configuration
+     * @return the configuration
+     */
+    BoardConfig getBoardConfig(ApplicationUser user, int id);
 }
+

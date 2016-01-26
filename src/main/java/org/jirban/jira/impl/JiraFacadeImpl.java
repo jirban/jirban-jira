@@ -1,8 +1,5 @@
 package org.jirban.jira.impl;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -13,16 +10,11 @@ import org.jirban.jira.api.JiraFacade;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.user.UserService;
 import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.issue.search.SearchResults;
-import com.atlassian.jira.jql.builder.JqlClauseBuilder;
-import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.ApplicationProperties;
 
@@ -60,23 +52,23 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public String getBoardsJson(boolean full) {
-        return boardConfigurationManager.getBoardsJson(full);
+    public String getBoardConfigurations(ApplicationUser user) {
+        return boardConfigurationManager.getBoardsJson(user, true);
     }
 
     @Override
-    public void saveBoard(int id, String jiraUrl, ModelNode config) {
-        boardConfigurationManager.saveBoard(id, jiraUrl, config);
+    public void saveBoardConfiguration(ApplicationUser user, int id, String jiraUrl, ModelNode config) {
+        boardConfigurationManager.saveBoard(user, id, jiraUrl, config);
         if (id >= 0) {
             //We are modifying a board's configuration. Delete the board config and board data to force a refresh.
-            boardManager.deleteBoard(id);
+            boardManager.deleteBoard(user,id);
         }
     }
 
     @Override
-    public void deleteBoard(int id) {
-        boardConfigurationManager.deleteBoard(id);
-        boardManager.deleteBoard(id);
+    public void deleteBoardConfiguration(ApplicationUser user, int id) {
+        boardConfigurationManager.deleteBoard(user, id);
+        boardManager.deleteBoard(user, id);
     }
 
     @Override
@@ -84,21 +76,9 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
         return boardManager.getBoardJson(user, id);
     }
 
-    public void populateIssueTable(User user, String boardCode) throws SearchException {
-        JqlClauseBuilder jqlBuilder = JqlQueryBuilder.newClauseBuilder();
-        jqlBuilder.project("TUTORIAL").buildQuery();
-        SearchResults searchResults =
-                searchService.search(user, jqlBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
-        System.out.println(searchResults.getIssues());
-    }
-
-    public String getName() {
-        if(null != applicationProperties)
-        {
-            return "myComponent:" + applicationProperties.getDisplayName() + new SimpleDateFormat("HH:mm:ss").format(new Date());
-        }
-        
-        return "myComponent";
+    @Override
+    public String getBoardsForDisplay(ApplicationUser user) {
+        return boardConfigurationManager.getBoardsJson(user, false);
     }
 
     @Override

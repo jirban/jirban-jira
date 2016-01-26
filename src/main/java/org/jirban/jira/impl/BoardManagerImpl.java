@@ -78,7 +78,7 @@ public class BoardManagerImpl implements BoardManager {
             synchronized (this) {
                 board = boards.get(id);
                 if (board == null) {
-                    final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(id);
+                    final BoardConfig boardConfig = boardConfigurationManager.getBoardConfig(user, id);
                     board = Board.builder(searchService, avatarService, issueLinkManager, user, boardConfig).load().build();
                     boards.put(id, board);
                 }
@@ -89,7 +89,7 @@ public class BoardManagerImpl implements BoardManager {
     }
 
     @Override
-    public void deleteBoard(int id) {
+    public void deleteBoard(ApplicationUser user, int id) {
         synchronized (this) {
             boards.remove(id);
         }

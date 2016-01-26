@@ -37,6 +37,9 @@ import org.jirban.jira.impl.config.BoardConfig;
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.PermissionManager;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
@@ -59,17 +62,27 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     @ComponentImport
     private final PriorityManager priorityManager;
 
+    @ComponentImport
+    private final PermissionManager permissionManager;
+
+    @ComponentImport
+    private final ProjectManager projectManager;
+
     @Inject
     public BoardConfigurationManagerImpl(final ActiveObjects activeObjects,
                                          final IssueTypeManager issueTypeManager,
-                                         final PriorityManager priorityManager) {
+                                         final PriorityManager priorityManager,
+                                         final PermissionManager permissionManager,
+                                         final ProjectManager projectManager) {
         this.activeObjects = activeObjects;
         this.issueTypeManager = issueTypeManager;
         this.priorityManager = priorityManager;
+        this.permissionManager = permissionManager;
+        this.projectManager = projectManager;
     }
 
     @Override
-    public String getBoardsJson(boolean full) {
+    public String getBoardsJson(ApplicationUser user, boolean forConfig) {
         Set<BoardCfg> configs = loadBoardConfigs();
         if (configs.size() == 0) {
             return "[]";
@@ -80,7 +93,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             ModelNode configNode = new ModelNode();
             configNode.get("id").set(config.getID());
             configNode.get("name").set(config.getName());
-            if (full) {
+            if (forConfig) {
                 ModelNode json = ModelNode.fromJSONString(config.getConfigJson());
                 configNode.get("config").set(json);
             }
@@ -90,7 +103,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public BoardConfig getBoardConfig(final int id) {
+    public BoardConfig getBoardConfig(ApplicationUser user, final int id) {
         BoardConfig boardConfig =  projectGroupConfigs.get(id);
         if (boardConfig == null) {
             BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
@@ -111,7 +124,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public void saveBoard(final int id, String jiraUrl, final ModelNode config) {
+    public void saveBoard(ApplicationUser user, final int id, String jiraUrl, final ModelNode config) {
         final String name = config.get("name").asString();
         if (!config.hasDefined(jiraUrl)) {
             config.get("jira-url").set(jiraUrl);
@@ -148,7 +161,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public void deleteBoard(int id) {
+    public void deleteBoard(ApplicationUser user, int id) {
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
             public Void doInTransaction() {
@@ -173,5 +186,9 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 return configs;
             }
         });
+    }
+
+    private boolean hasPermission(ModelNode fullConfig) {
+        return false;
     }
 }

@@ -39,7 +39,12 @@ public class RestServlet extends HttpServlet{
                 pathAndId.validateId(false);
                 System.out.println("Getting boards");
                 boolean full = req.getParameter("full") != null;
-                String json = jiraFacade.getBoardsJson(full);
+                final String json;
+                if (full) {
+                    json = jiraFacade.getBoardConfigurations(user);
+                } else {
+                    json = jiraFacade.getBoardsForDisplay(user);
+                }
                 Util.sendResponseJson(resp, json);
                 return;
             }
@@ -72,8 +77,8 @@ public class RestServlet extends HttpServlet{
             PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
             if (pathAndId.isPath("boards")) {
                 pathAndId.validateId(true);
-                jiraFacade.deleteBoard(pathAndId.id);
-                String json = jiraFacade.getBoardsJson(true);
+                jiraFacade.deleteBoardConfiguration(user, pathAndId.id);
+                String json = jiraFacade.getBoardConfigurations(user);
                 Util.sendResponseJson(resp, json);
                 return;
             } else {
@@ -94,8 +99,8 @@ public class RestServlet extends HttpServlet{
             if (pathAndId.isPath("boards")) {
                 pathAndId.validateId(false);
                 final ModelNode config = Util.getRequestBodyNode(req);
-                jiraFacade.saveBoard(-1, Util.getDeployedUrl(req), config);
-                String json = jiraFacade.getBoardsJson(true);
+                jiraFacade.saveBoardConfiguration(user, -1, Util.getDeployedUrl(req), config);
+                String json = jiraFacade.getBoardConfigurations(user);
                 Util.sendResponseJson(resp, json);
                 return;
             } else {
@@ -116,8 +121,8 @@ public class RestServlet extends HttpServlet{
             if (pathAndId.isPath("boards")) {
                 pathAndId.validateId(true);
                 final ModelNode config = Util.getRequestBodyNode(req);
-                jiraFacade.saveBoard(pathAndId.id, Util.getDeployedUrl(req), config);
-                String json = jiraFacade.getBoardsJson(true);
+                jiraFacade.saveBoardConfiguration(user, pathAndId.id, Util.getDeployedUrl(req), config);
+                String json = jiraFacade.getBoardConfigurations(user);
                 Util.sendResponseJson(resp, json);
                 return;
             } else {
