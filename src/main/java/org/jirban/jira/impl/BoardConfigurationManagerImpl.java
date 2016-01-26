@@ -37,8 +37,11 @@ import org.jirban.jira.impl.config.BoardConfig;
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.permission.ProjectPermissions;
+import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.PermissionManager;
+import com.atlassian.jira.security.plugin.ProjectPermissionKey;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.transaction.TransactionCallback;
@@ -93,11 +96,19 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             ModelNode configNode = new ModelNode();
             configNode.get("id").set(config.getID());
             configNode.get("name").set(config.getName());
+            ModelNode configJson = ModelNode.fromJSONString(config.getConfigJson());
             if (forConfig) {
-                ModelNode json = ModelNode.fromJSONString(config.getConfigJson());
-                configNode.get("config").set(json);
+                if (hasPermissionBoard(user, configJson, ProjectPermissions.ADMINISTER_PROJECTS)) {
+                    configNode.get("edit").set(true);
+                }
+                configNode.get("config").set(configJson);
+                output.add(configNode);
+            } else {
+                //Just a wild guess at what is needed to view the boards
+                if (hasPermissionBoard(user, configJson, ProjectPermissions.TRANSITION_ISSUES)) {
+                    output.add(configNode);
+                }
             }
-            output.add(configNode);
         }
         return output.toJSONString(true);
     }
@@ -180,7 +191,19 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         });
     }
 
-    private boolean hasPermission(ModelNode fullConfig) {
-        return false;
+    private boolean hasPermissionBoard(ApplicationUser user, ModelNode boardConfig, ProjectPermissionKey...permissions) {
+        if (!boardConfig.hasDefined("projects")) {
+            //The project is empty, start checking once they add something
+            return true;
+        }
+        for (String projectCode : boardConfig.get("projects").keys()) {
+            Project project = projectManager.getProjectByCurrentKey(projectCode);
+            for (ProjectPermissionKey permission : permissions) {
+                if (!permissionManager.hasPermission(permission, project, user)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
