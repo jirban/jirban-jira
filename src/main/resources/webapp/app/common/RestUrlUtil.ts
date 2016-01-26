@@ -14,6 +14,10 @@ export class RestUrlUtil {
             return url;
         } else if (RestUrlUtil.isLocalDebug(location)) {
             //For the local debugging of the UI, which does not seem to like loading json without a .json suffix
+            index = path.indexOf("?");
+            if (index > 0) {
+                path = path.substr(0, index);
+            }
             return path + ".json";
         }
 
