@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Named;
@@ -34,11 +35,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.atlassian.core.util.map.EasyMap;
+import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
+import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.priority.Priority;
+import com.atlassian.jira.issue.status.Status;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -88,48 +93,202 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
      */
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
-        Long eventTypeId = issueEvent.getEventTypeId();
+        long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
         // if it's an event we're interested in, log it
-        System.out.println("-----> Event " + issueEvent + " " + Thread.currentThread().getName());
+        System.out.println("-----> Event " + issueEvent);
 
         //TODO do some filtering of projects from the board configs above
-        //For linked projects we only care about the issues actually linked to
 
+        //TODO For linked projects we only care about the issues actually linked to!
 
-        if (eventTypeId.equals(EventType.ISSUE_CREATED_ID)) {
-            log.info("Issue {} has been created at {}.", issue.getKey(), issue.getCreated());
-        } else if (eventTypeId.equals(EventType.ISSUE_RESOLVED_ID)) {
-            log.info("Issue {} has been resolved at {}.", issue.getKey(), issue.getResolutionDate());
-        } else if (eventTypeId.equals(EventType.ISSUE_CLOSED_ID)) {
-            log.info("Issue {} has been closed at {}.", issue.getKey(), issue.getUpdated());
-        } else if (eventTypeId.equals(EventType.ISSUE_UPDATED_ID) || eventTypeId.equals(EventType.ISSUE_GENERICEVENT_ID)) {
-            GenericValue changeLog = issueEvent.getChangeLog();
-            List<GenericValue> changeItems = null;
-            try {
-                changeItems = changeLog.internalDelegator.findByAnd("ChangeItem", EasyMap.build("group", changeLog.get("id")));
-            } catch (GenericEntityException e) {
-                e.printStackTrace();
-            }
+        //TODO There are no events for when updating linked issues, so we need to poll somewhere
 
-            System.out.println("Number of changes: " + changeItems.size());
-            for (GenericValue change : changeItems) {
-                String field = change.getString("field");
-                String oldstring = change.getString("oldstring");
-                String newstring = change.getString("newstring");
-                StringBuilder fullstring = new StringBuilder();
-                fullstring.append("Issue ");
-                fullstring.append(issue.getKey());
-                fullstring.append(" field ");
-                fullstring.append(field);
-                fullstring.append(" has been updated from ");
-                fullstring.append(oldstring);
-                fullstring.append(" to ");
-                fullstring.append(newstring);
-                System.out.println("changes " + fullstring.toString());
-            }
+        /*
+            TODO The following things will need recalculation of the target state of the issue:
+             -ISSUE_CREATED_ID
+             -ISSUE_MOVED_ID
+             -ISSUE_REOPENED_ID/ISSUE_GENERICEVENT_ID/ISSUE_RESOLVED_ID, if any of the following fields changed
+                * status changed
+                * Rank changed
+
+         */
+
+        //CREATED, DELETED and MOVED do not have a worklog
+        if (eventTypeId == EventType.ISSUE_CREATED_ID) {
+            //Does not have a worklog
+            onCreateEvent(issueEvent);
+        } else if (eventTypeId == EventType.ISSUE_DELETED_ID) {
+            //Does not have a worklog
+            onDeleteEvent(issueEvent);
+        } else if (eventTypeId == EventType.ISSUE_MOVED_ID) {
+            //Has a worklog. We need to take into account the old values to delete the issue from the old project boards,
+            //while we use the issue in the event to create the issue in the new project boards.
+            onMoveEvent(issueEvent);
+        } else if (eventTypeId == EventType.ISSUE_ASSIGNED_ID ||
+                eventTypeId == EventType.ISSUE_UPDATED_ID ||
+                eventTypeId == EventType.ISSUE_GENERICEVENT_ID ||
+                eventTypeId == EventType.ISSUE_RESOLVED_ID ||
+                eventTypeId == EventType.ISSUE_CLOSED_ID ||
+                eventTypeId == EventType.ISSUE_REOPENED_ID) {
+            //Which of these events gets triggered depends on the workflow for the project, and other factors.
+            //E.g. in a normal workflow project, the ISSUE_RESOLVED_ID, ISSUE_CLOSED_ID, ISSUE_REOPENED_ID events
+            //are triggered, while in the Kanban workflow those events use the ISSUE_GENERIC_EVENT_ID.
+            //The same underlying fields are reported changed in the worklog though.
+            //Another example is that if you just change the assignee, you get an ISSUE_ASSIGNED_ID event, but if you
+            //change several fields (including the assignee) you get an event with ISSUE_UPDATED_ID and all the fields
+            //affected in the worklog
+            onWorklogEvent(issueEvent);
         }
-
     }
 
+    private void onCreateEvent(IssueEvent issueEvent) {
+        final Issue issue = issueEvent.getIssue();
+
+        StringBuilder sb = new StringBuilder("Created " + issue.getKey());
+        sb.append("\n\t");
+        sb.append(issue.getSummary());
+        sb.append("\n\t");
+        debugIssueType(sb, issue.getIssueTypeObject());
+        sb.append("\n\t");
+        debugPriority(sb, issue.getPriorityObject());
+        sb.append("\n\t");
+        debugState(sb, issue.getStatusObject());
+        sb.append("\n\t");
+        debugAssignee(sb, issue.getAssignee());
+        System.out.println(sb.toString());
+
+        //This does not have a worklog
+        System.out.println("Worklog " + getWorkLog(issueEvent));
+
+        //TODO there could be linked issues
+    }
+
+    private void onWorklogEvent(IssueEvent issueEvent) {
+        final Issue issue = issueEvent.getIssue();
+        StringBuilder sb = new StringBuilder(getEventTypeString(issueEvent) + issue.getKey());
+        sb.append("\n\t");
+        debugAssignee(sb, issue.getAssignee());
+
+        //All the fields are in the worklog
+        //TODO check the names of the fields
+
+        System.out.println("Worklog " + getWorkLog(issueEvent));
+    }
+
+    private void onDeleteEvent(IssueEvent issueEvent) {
+        final Issue issue = issueEvent.getIssue();
+        StringBuilder sb = new StringBuilder("Deleted " + issue.getKey());
+
+        //This does not have a worklog (we only need the key)
+        //System.out.println("Worklog " + getWorkLog(issueEvent));
+    }
+
+    private void onMoveEvent(IssueEvent issueEvent) {
+        final Issue issue = issueEvent.getIssue();
+
+        StringBuilder sb = new StringBuilder("Moved " + issue.getKey());
+        sb.append("\n\t");
+        sb.append(issue.getSummary());
+        sb.append("\n\t");
+        debugIssueType(sb, issue.getIssueTypeObject());
+        sb.append("\n\t");
+        debugPriority(sb, issue.getPriorityObject());
+        sb.append("\n\t");
+        debugState(sb, issue.getStatusObject());
+        sb.append("\n\t");
+        debugAssignee(sb, issue.getAssignee());
+        System.out.println(sb.toString());
+
+        System.out.println("Generic " + getWorkLog(issueEvent));
+        //This is kind of the same as the 'onWorklogEvent' but we also need to take into account the old value of the project
+        //and remove from there if it is a board project. Also, if the new value is a board project we need to add it there.
+        //So, it is a bit like a delete (although we need the worklog for that), and a create.
+
+        /*
+         Moved SKBG-18
+            sdsdsdsd
+            type='Bug'
+            priority='Major'
+            state='Backlog'
+            assignee='admin'
+         Number of changes: 5
+         changes Issue SKBG-18 field project has been updated from Sample Kanban Project to Sample Kanban Bugs
+         changes Issue SKBG-18 field Key has been updated from SKP-23 to SKBG-18
+         changes Issue SKBG-18 field issuetype has been updated from Story to Bug
+         changes Issue SKBG-18 field Workflow has been updated from Agile Simplified Workflow for Project SKP to Agile Simplified Workflow for Project SKBG
+       */
+    }
+
+    private String getEventTypeString(IssueEvent issueEvent) {
+        if (issueEvent.getEventTypeId().equals(EventType.ISSUE_UPDATED_ID)) {
+            return "Updated ";
+        } else if (issueEvent.getEventTypeId().equals(EventType.ISSUE_ASSIGNED_ID)) {
+            return "Assigned ";
+        } else if (issueEvent.getEventTypeId().equals(EventType.ISSUE_GENERICEVENT_ID)) {
+            return "Generic Event ";
+        }
+
+        return null;
+    }
+
+
+    private void debugIssueType(StringBuilder sb, IssueType issueType) {
+        sb.append("type='");
+        sb.append(issueType != null ? issueType.getName() : "None");
+        sb.append("'");
+    }
+
+    private void debugPriority(StringBuilder sb, Priority priority) {
+        sb.append("priority='");
+        sb.append(priority != null ? priority.getName() : "None");
+        sb.append("'");
+    }
+
+    private void debugState(StringBuilder sb, Status status) {
+        sb.append("state='");
+        sb.append(status != null ? status.getName() : "None");
+        sb.append("'");
+    }
+
+
+    private void debugAssignee(StringBuilder sb, User assignee) {
+        sb.append("assignee='");
+        sb.append(assignee != null ? assignee.getName() : "None");
+        sb.append("'");
+    }
+
+    private List<GenericValue> getWorkLog(IssueEvent issueEvent) {
+        final GenericValue changeLog = issueEvent.getChangeLog();
+        if (changeLog == null) {
+            return Collections.emptyList();
+        }
+
+        final List<GenericValue> changeItems;
+        try {
+            changeItems = changeLog.getDelegator().findByAnd("ChangeItem", EasyMap.build("group", changeLog.get("id")));
+        } catch (GenericEntityException e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+
+        System.out.println("Number of changes: " + changeItems.size());
+        for (GenericValue change : changeItems) {
+            String field = change.getString("field");
+            String oldstring = change.getString("oldstring");
+
+            String newstring = change.getString("newstring");
+            StringBuilder fullstring = new StringBuilder();
+            fullstring.append("Issue ");
+            fullstring.append(issueEvent.getIssue().getKey());
+            fullstring.append(" field ");
+            fullstring.append(field);
+            fullstring.append(" has been updated from ");
+            fullstring.append(oldstring);
+            fullstring.append(" to ");
+            fullstring.append(newstring);
+            System.out.println("changes " + fullstring.toString());
+        }
+        return changeItems;
+    }
 }
