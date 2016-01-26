@@ -40,6 +40,8 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     this.selected = -1;
                     this.edit = false;
                     this.deleting = false;
+                    this.jsonErrorEdit = null;
+                    this.jsonErrorCreate = null;
                     this.loadBoards();
                 }
                 ConfigComponent.prototype.loadBoards = function () {
@@ -70,7 +72,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                 });
                 ConfigComponent.prototype.updateNewForm = function () {
                     this.newForm = this._formBuilder.group({
-                        "newJson": ["", common_2.Validators.required] //TODO validate that is is valid json at least
+                        "newJson": ["", common_2.Validators.required]
                     });
                 };
                 ConfigComponent.prototype.hasBoards = function () {
@@ -85,6 +87,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     return json;
                 };
                 ConfigComponent.prototype.toggleBoard = function (event, id) {
+                    this.clearJsonErrors();
                     this.edit = false;
                     if (this.selected == id) {
                         this.selected = -1;
@@ -95,10 +98,11 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                     event.preventDefault();
                 };
                 ConfigComponent.prototype.toggleEdit = function (event, board) {
+                    this.clearJsonErrors();
                     this.edit = !this.edit;
                     if (this.edit) {
                         this.editForm = this._formBuilder.group({
-                            "editJson": [this.getConfigJson(board), common_2.Validators.required] //TODO validate that is is valid json at least
+                            "editJson": [this.getConfigJson(board), common_2.Validators.required]
                         });
                     }
                     event.preventDefault();
@@ -137,7 +141,12 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                 };
                 ConfigComponent.prototype.editBoard = function () {
                     var _this = this;
-                    this._boardsService.saveBoard(this.selected, this.editForm.value.editJson)
+                    var value = this.editForm.value.editJson;
+                    if (!this.checkJson(value)) {
+                        this.jsonErrorEdit = "The contents must be valid json";
+                        return;
+                    }
+                    this._boardsService.saveBoard(this.selected, value)
                         .subscribe(function (data) {
                         console.log("Edited board");
                         _this._boards = _this.indexBoard(data);
@@ -149,6 +158,11 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                 };
                 ConfigComponent.prototype.newBoard = function () {
                     var _this = this;
+                    var value = this.newForm.value.newJson;
+                    if (!this.checkJson(value)) {
+                        this.jsonErrorCreate = "The contents must be valid json";
+                        return;
+                    }
                     this._boardsService.createBoard(this.newForm.value.newJson)
                         .subscribe(function (data) {
                         console.log("Saved new board");
@@ -158,6 +172,19 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                         console.log(err);
                         //TODO error reporting
                     }, function () { });
+                };
+                ConfigComponent.prototype.checkJson = function (value) {
+                    try {
+                        JSON.parse(value);
+                        return true;
+                    }
+                    catch (e) {
+                        return false;
+                    }
+                };
+                ConfigComponent.prototype.clearJsonErrors = function () {
+                    this.jsonErrorCreate = null;
+                    this.jsonErrorEdit = null;
                 };
                 ConfigComponent.prototype.indexBoard = function (data) {
                     var boards = new indexed_1.Indexed();

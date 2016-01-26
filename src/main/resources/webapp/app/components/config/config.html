@@ -26,7 +26,8 @@
                 </div>
                 <div *ngIf="edit">
                     <form (ngSubmit)="editBoard()" [ngFormModel]="editForm" #f="ngForm">
-                        <textarea cols="100" rows="15" name="editJson" ngControl="editJson"></textarea>
+                        <textarea cols="100" rows="15" name="editJson" ngControl="editJson" (keyup)="clearJsonErrors()"></textarea>
+                        <div *ngIf="jsonErrorEdit">{{jsonErrorEdit}}</div>
                         <div>
                             <a href="cancel" (click)="toggleEdit($event, board)">Cancel</a>
                             <button type="submit" [disabled]="!f.form.valid">Save</button>
@@ -45,7 +46,8 @@
     </div>
     <div>
         <form (ngSubmit)="newBoard()" [ngFormModel]="newForm" #f="ngForm">
-            <textarea cols="100" rows="15" name="newJson" ngControl="newJson"></textarea>
+            <textarea cols="100" rows="15" name="newJson" ngControl="newJson" (keyup)="clearJsonErrors()"></textarea>
+            <div *ngIf="jsonErrorCreate">{{jsonErrorCreate}}</div>
             <div>
                 <button type="submit" [disabled]="!f.form.valid">Save</button>
             </div>

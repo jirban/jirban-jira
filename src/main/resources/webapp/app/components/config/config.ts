@@ -26,6 +26,8 @@ export class ConfigComponent {
     private editForm:ControlGroup;
     private deleteForm:ControlGroup;
     private newForm:ControlGroup;
+    private jsonErrorEdit:string = null;
+    private jsonErrorCreate:string = null;
 
     constructor(private _boardsService:BoardsService, private _router:Router, private _formBuilder:FormBuilder) {
         this.loadBoards();
@@ -62,7 +64,7 @@ export class ConfigComponent {
 
     private updateNewForm() {
         this.newForm = this._formBuilder.group({
-            "newJson": ["", Validators.required] //TODO validate that is is valid json at least
+            "newJson": ["", Validators.required]
         });
     }
 
@@ -81,6 +83,7 @@ export class ConfigComponent {
     }
 
     toggleBoard(event:MouseEvent, id:number) {
+        this.clearJsonErrors();
         this.edit = false;
         if (this.selected == id) {
             this.selected = -1;
@@ -91,10 +94,11 @@ export class ConfigComponent {
     }
 
     toggleEdit(event:MouseEvent, board?:any) {
+        this.clearJsonErrors();
         this.edit = !this.edit;
         if (this.edit) {
             this.editForm = this._formBuilder.group({
-                "editJson": [this.getConfigJson(board), Validators.required] //TODO validate that is is valid json at least
+                "editJson": [this.getConfigJson(board), Validators.required]
             });
         }
         event.preventDefault();
@@ -140,7 +144,12 @@ export class ConfigComponent {
     }
 
     editBoard() {
-        this._boardsService.saveBoard(this.selected, this.editForm.value.editJson)
+        let value:string = this.editForm.value.editJson;
+        if (!this.checkJson(value)) {
+            this.jsonErrorEdit = "The contents must be valid json";
+            return;
+        }
+        this._boardsService.saveBoard(this.selected, value)
             .subscribe(
                 data => {
                     console.log("Edited board");
@@ -156,6 +165,11 @@ export class ConfigComponent {
     }
 
     newBoard() {
+        let value:string = this.newForm.value.newJson;
+        if (!this.checkJson(value)) {
+            this.jsonErrorCreate = "The contents must be valid json";
+            return;
+        }
         this._boardsService.createBoard(this.newForm.value.newJson)
             .subscribe(
                 data => {
@@ -169,7 +183,20 @@ export class ConfigComponent {
                 },
                 () => {}
             );
+    }
 
+    checkJson(value:string):boolean {
+        try {
+            JSON.parse(value);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    private clearJsonErrors() {
+        this.jsonErrorCreate = null;
+        this.jsonErrorEdit = null;
     }
 
     private indexBoard(data:any) : Indexed<any> {
@@ -180,10 +207,6 @@ export class ConfigComponent {
             (board) => board.id);
         return boards;
     }
-}
-
-interface ValidationResult {
-    [key:string]:boolean;
 }
 
 
