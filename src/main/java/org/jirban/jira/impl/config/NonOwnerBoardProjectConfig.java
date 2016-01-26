@@ -59,15 +59,15 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
             throw new IllegalStateException("The non-main projects should not have states, only a state-links entry mapping its states to those of the main project");
         }
 
-        Map<String, Integer> ownToBoardStates = new LinkedHashMap<>();
-        Map<String, String> boardToOwnStates = new HashMap<>();
+        Map<String, Integer> states = new LinkedHashMap<>();
+        Map<String, String> ownToBoardStates = new HashMap<>();
         int i = 0;
         for (Property prop : statesLinks.asPropertyList()) {
-            ownToBoardStates.put(prop.getName(), i++);
-            boardToOwnStates.put(prop.getName(), prop.getValue().asString());
+            states.put(prop.getName(), i++);
+            ownToBoardStates.put(prop.getName(), prop.getValue().asString());
         }
         return new NonOwnerBoardProjectConfig(projectCode, loadQueryFilter(project), colour,
-                Collections.unmodifiableMap(ownToBoardStates), Collections.unmodifiableMap(boardToOwnStates));
+                Collections.unmodifiableMap(states), Collections.unmodifiableMap(ownToBoardStates));
     }
 
     @Override
@@ -100,7 +100,7 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
         final ModelNode stateLinksNode = projectsNode.get("state-links");
         stateLinksNode.setEmptyObject();
         for (Map.Entry<String, String> entry : ownToBoardStates.entrySet()) {
-            stateLinksNode.get(entry.getKey(), entry.getValue());
+            stateLinksNode.get(entry.getKey()).set(entry.getValue());
         }
         return projectsNode;
     }
