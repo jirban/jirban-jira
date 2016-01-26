@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanPermissionException;
 import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.JiraFacade;
 import org.slf4j.Logger;
@@ -48,8 +49,7 @@ public class RestServlet extends HttpServlet{
                 }
                 Util.sendResponseJson(resp, json);
                 return;
-            }
-            else if (pathAndId.isPath("issues")) {
+            } else if (pathAndId.isPath("issues")) {
                 pathAndId.validateId(true);
                 String json = null;
                 try {
@@ -66,6 +66,8 @@ public class RestServlet extends HttpServlet{
             }
         } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (JirbanPermissionException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         }
     }
 
@@ -87,6 +89,8 @@ public class RestServlet extends HttpServlet{
             }
         } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (JirbanPermissionException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         }
     }
 
@@ -109,6 +113,8 @@ public class RestServlet extends HttpServlet{
             }
         } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (JirbanPermissionException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         }
     }
 
@@ -131,6 +137,8 @@ public class RestServlet extends HttpServlet{
             }
         } catch (InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+        } catch (JirbanPermissionException e) {
+            Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
         }
     }
 

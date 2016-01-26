@@ -156,6 +156,16 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
             public Void doInTransaction() {
+                if (!canEditBoard(user, validConfig)) {
+                    if (id >= 0) {
+                        throw new JirbanPermissionException("Insufficient permissions to edit board '" +
+                                validConfig.get("name") + "' (" + id + ")");
+                    } else {
+                        throw new JirbanPermissionException("Insufficient permissions to create board '" +
+                                validConfig.get("name") + "'");
+                    }
+                }
+
                 if (id >= 0) {
                     final BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
                     cfg.setName(name);
@@ -188,8 +198,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 }
                 final ModelNode boardConfig = ModelNode.fromJSONString(cfg.getConfigJson());
                 if (!canEditBoard(user, boardConfig)) {
-                    throw new JirbanPermissionException("Insufficient permissions to delete board " +
-                            boardConfig.get("name") + " (" + id + ")");
+                    throw new JirbanPermissionException("Insufficient permissions to delete board '" +
+                            boardConfig.get("name") + "' (" + id + ")");
                 }
                 activeObjects.delete(cfg);
                 return null;
