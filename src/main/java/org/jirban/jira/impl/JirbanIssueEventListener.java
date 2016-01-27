@@ -65,6 +65,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     private static final String CHANGE_LOG_RANK = "Rank";
     private static final String CHANGE_LOG_PROJECT = "project";
     private static final String CHANGE_LOG_OLD_VALUE = "oldvalue";
+    private static final String CHANGE_LOG_ISSUE_KEY = "Key";
 
     @ComponentImport
     private final EventPublisher eventPublisher;
@@ -229,6 +230,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         //1) We need to inspect the change log to find the project we are deleting from
         String oldProjectCode = null;
         String oldIssueKey = null;
+        String newState = null;
         List<GenericValue> changeItems = getWorkLog(issueEvent);
         for (GenericValue change : changeItems) {
             final String field = change.getString(CHANGE_LOG_FIELD);
@@ -236,10 +238,10 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
                 String oldProjectId = change.getString(CHANGE_LOG_OLD_VALUE);
                 Project project = projectManager.getProjectObj(Long.valueOf(oldProjectId));
                 oldProjectCode = project.getKey();
-            } else if (field.equals("Key")) {
+            } else if (field.equals(CHANGE_LOG_ISSUE_KEY)) {
                 oldIssueKey = change.getString(CHANGE_LOG_OLD_STRING);
-            } else {
-                System.out.println(field + ": " + change.getString(field));
+            } else if (field.equals(CHANGE_LOG_ISSUETYPE)){
+                newState = change.getString(CHANGE_LOG_NEW_STRING);
             }
         }
 
@@ -249,7 +251,20 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         }
 
         //2) Then we can do a create on the project with the issue in the event
+        final Issue issue = issueEvent.getIssue();
         onCreateEvent(issueEvent);
+        if (!isAffectedProject(issue.getProjectObject().getKey())) {
+            return;
+        }
+        //Note that the status column in the event issue isn't up to date yet, we need to get it from the change log
+        //if it was updated
+        newState = newState == null ? issue.getStatusObject().getName() : newState;
+        
+        final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
+                issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
+                issue.getAssignee(), newState);
+        passEventToBoardManager(event);
+
     }
 
     private List<GenericValue> getWorkLog(IssueEvent issueEvent) {
