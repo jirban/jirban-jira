@@ -26,6 +26,7 @@ import java.util.List;
 
 import javax.inject.Named;
 
+import org.jirban.jira.api.BoardManager;
 import org.ofbiz.core.entity.GenericEntityException;
 import org.ofbiz.core.entity.GenericValue;
 import org.slf4j.Logger;
@@ -73,15 +74,19 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     @ComponentImport
     private final ProjectManager projectManager;
 
+    private final BoardManager boardManager;
+
     /**
      * Constructor.
      * @param eventPublisher injected {@code EventPublisher} implementation.
      * @param projectManager injected {@code ProjectManager} implementation.
+     * @param boardManager injected {@code BoardManager} implementation.
      */
     @Autowired
-    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager) {
+    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager, BoardManager boardManager) {
         this.eventPublisher = eventPublisher;
         this.projectManager = projectManager;
+        this.boardManager = boardManager;
     }
 
     /**
@@ -259,7 +264,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         //Note that the status column in the event issue isn't up to date yet, we need to get it from the change log
         //if it was updated
         newState = newState == null ? issue.getStatusObject().getName() : newState;
-        
+
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), newState);
@@ -288,8 +293,6 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     }
 
     private boolean isAffectedProject(String projectCode) {
-        //TODO do some filtering of projects from the board configs above
-
-        return true;
+        return boardManager.hasBoardsForProjectCode(projectCode);
     }
 }

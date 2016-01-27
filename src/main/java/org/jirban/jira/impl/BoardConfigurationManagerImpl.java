@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -57,7 +59,7 @@ import net.java.ao.DBParam;
 @Named("jirbanBoardConfigurationManager")
 public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
 
-    private volatile Map<Integer, BoardConfig> projectGroupConfigs = new ConcurrentHashMap<>();
+    private volatile Map<Integer, BoardConfig> boardConfigs = new ConcurrentHashMap<>();
 
     @ComponentImport
     private final ActiveObjects activeObjects;
@@ -118,7 +120,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     @Override
     public BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, final int id) {
-        BoardConfig boardConfig =  projectGroupConfigs.get(id);
+        BoardConfig boardConfig =  boardConfigs.get(id);
         if (boardConfig == null) {
             BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
                 @Override
@@ -128,7 +130,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             });
             if (cfg != null) {
                 boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getOwningUser(), cfg.getConfigJson());
-                BoardConfig old = projectGroupConfigs.putIfAbsent(id, boardConfig);
+                BoardConfig old = boardConfigs.putIfAbsent(id, boardConfig);
                 if (old != null) {
                     boardConfig = old;
                 }
@@ -182,7 +184,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                     cfg.save();
                 }
                 if (id >= 0) {
-                    projectGroupConfigs.remove(id);
+                    boardConfigs.remove(id);
                 }
                 return null;
             }
@@ -207,6 +209,18 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 return null;
             }
         });
+    }
+
+    @Override
+    public List<Integer> getBoardIdsForProjectCode(String projectCode) {
+        //For now just iterate
+        List<Integer> boardIds = new ArrayList<>();
+        for (Map.Entry<Integer, BoardConfig> entry : boardConfigs.entrySet()) {
+            if (entry.getValue().getBoardProject(projectCode) != null) {
+                boardIds.add(entry.getKey());
+            }
+        }
+        return boardIds;
     }
 
     private Set<BoardCfg> loadBoardConfigs() {

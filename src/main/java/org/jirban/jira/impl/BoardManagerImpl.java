@@ -23,6 +23,7 @@ package org.jirban.jira.impl;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -111,5 +112,19 @@ public class BoardManagerImpl implements BoardManager {
         synchronized (this) {
             boards.remove(id);
         }
+    }
+
+    @Override
+    public boolean hasBoardsForProjectCode(String projectCode) {
+        List<Integer> boardIds = boardConfigurationManager.getBoardIdsForProjectCode(projectCode);
+        if (boardIds.size() == 0) {
+            return false;
+        }
+        for (Integer boardId : boardIds) {
+            if (boards.get(boardId) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 }

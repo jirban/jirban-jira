@@ -31,4 +31,6 @@ public interface BoardManager {
     String getBoardJson(ApplicationUser user, int id) throws SearchException;
 
     void deleteBoard(ApplicationUser user, int id);
+
+    boolean hasBoardsForProjectCode(String projectCode);
 }

@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.api;
 
+import java.util.List;
+
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardConfig;
 
@@ -58,5 +60,7 @@ public interface BoardConfigurationManager {
      * @return the configuration
      */
     BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, int id);
+
+    List<Integer> getBoardIdsForProjectCode(String projectCode);
 }
 
