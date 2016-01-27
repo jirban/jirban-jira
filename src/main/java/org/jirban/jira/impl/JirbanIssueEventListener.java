@@ -41,9 +41,8 @@ import com.atlassian.event.api.EventPublisher;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
-import com.atlassian.jira.issue.issuetype.IssueType;
-import com.atlassian.jira.issue.priority.Priority;
-import com.atlassian.jira.issue.status.Status;
+import com.atlassian.jira.project.Project;
+import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -55,16 +54,33 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 public class JirbanIssueEventListener  implements InitializingBean, DisposableBean {
     private static final Logger log = LoggerFactory.getLogger(JirbanIssueEventListener.class);
 
+    private static final String CHANGE_LOG_FIELD = "field";
+    private static final String CHANGE_LOG_ISSUETYPE = "issuetype";
+    private static final String CHANGE_LOG_PRIORITY = "priority";
+    private static final String CHANGE_LOG_SUMMARY = "summary";
+    private static final String CHANGE_LOG_ASSIGNEE = "assignee";
+    private static final String CHANGE_LOG_STATUS = "status";
+    private static final String CHANGE_LOG_OLD_STRING = "oldstring";
+    private static final String CHANGE_LOG_NEW_STRING = "newstring";
+    private static final String CHANGE_LOG_RANK = "Rank";
+    private static final String CHANGE_LOG_PROJECT = "project";
+    private static final String CHANGE_LOG_OLD_VALUE = "oldvalue";
+
     @ComponentImport
     private final EventPublisher eventPublisher;
+
+    @ComponentImport
+    private final ProjectManager projectManager;
 
     /**
      * Constructor.
      * @param eventPublisher injected {@code EventPublisher} implementation.
+     * @param projectManager injected {@code ProjectManager} implementation.
      */
     @Autowired
-    public JirbanIssueEventListener(EventPublisher eventPublisher) {
+    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager) {
         this.eventPublisher = eventPublisher;
+        this.projectManager = projectManager;
     }
 
     /**
@@ -94,11 +110,8 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
         long eventTypeId = issueEvent.getEventTypeId();
-        Issue issue = issueEvent.getIssue();
         // if it's an event we're interested in, log it
         System.out.println("-----> Event " + issueEvent);
-
-        //TODO do some filtering of projects from the board configs above
 
         //TODO For linked projects we only care about the issues actually linked to!
 
@@ -144,118 +157,99 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
 
     private void onCreateEvent(IssueEvent issueEvent) {
         final Issue issue = issueEvent.getIssue();
+        if (!isAffectedProject(issue.getProjectObject().getKey())) {
+            return;
+        }
 
-        StringBuilder sb = new StringBuilder("Created " + issue.getKey());
-        sb.append("\n\t");
-        sb.append(issue.getSummary());
-        sb.append("\n\t");
-        debugIssueType(sb, issue.getIssueTypeObject());
-        sb.append("\n\t");
-        debugPriority(sb, issue.getPriorityObject());
-        sb.append("\n\t");
-        debugState(sb, issue.getStatusObject());
-        sb.append("\n\t");
-        debugAssignee(sb, issue.getAssignee());
-        System.out.println(sb.toString());
-
-        //This does not have a worklog
-        System.out.println("Worklog " + getWorkLog(issueEvent));
+        final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
+                issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
+                issue.getAssignee(), issue.getStatusObject().getName());
+        passEventToBoardManager(event);
 
         //TODO there could be linked issues
     }
 
-    private void onWorklogEvent(IssueEvent issueEvent) {
-        final Issue issue = issueEvent.getIssue();
-        StringBuilder sb = new StringBuilder(getEventTypeString(issueEvent) + issue.getKey());
-        sb.append("\n\t");
-        debugAssignee(sb, issue.getAssignee());
-
-        //All the fields are in the worklog
-        //TODO check the names of the fields
-
-        System.out.println("Worklog " + getWorkLog(issueEvent));
-    }
-
     private void onDeleteEvent(IssueEvent issueEvent) {
         final Issue issue = issueEvent.getIssue();
-        StringBuilder sb = new StringBuilder("Deleted " + issue.getKey());
+        if (!isAffectedProject(issue.getProjectObject().getKey())) {
+            return;
+        }
 
-        //This does not have a worklog (we only need the key)
-        //System.out.println("Worklog " + getWorkLog(issueEvent));
+        final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(issue.getKey(), issue.getProjectObject().getKey());
+        passEventToBoardManager(event);
+    }
+
+    private void onWorklogEvent(IssueEvent issueEvent) {
+        final Issue issue = issueEvent.getIssue();
+        if (!isAffectedProject(issue.getProjectObject().getKey())) {
+            return;
+        }
+
+        //All the fields that changed, and only those, are in the change log.
+        //For our created event, only set the fields that actually changed.
+        String issueType = null;
+        String priority = null;
+        String summary = null;
+        User assignee = null;
+        boolean unassigned = false;
+        String state = null;
+        boolean rankOrStateChanged = false;
+        List<GenericValue> changeItems = getWorkLog(issueEvent);
+        for (GenericValue change : changeItems) {
+            final String field = change.getString(CHANGE_LOG_FIELD);
+            if (field.equals(CHANGE_LOG_ISSUETYPE)) {
+                issueType = issue.getIssueTypeObject().getName();
+            } else if (field.equals(CHANGE_LOG_PRIORITY)) {
+                priority = issue.getPriorityObject().getName();
+            } else if (field.equals(CHANGE_LOG_SUMMARY)) {
+                summary = issue.getSummary();
+            } else if (field.equals(CHANGE_LOG_ASSIGNEE)) {
+                assignee = issue.getAssignee();
+                if (assignee == null) {
+                    unassigned = true;
+                }
+            } else if (field.equals(CHANGE_LOG_STATUS)) {
+                rankOrStateChanged = true;
+                state = issue.getStatusObject().getName();
+            } else if (field.equals(CHANGE_LOG_RANK)) {
+                rankOrStateChanged = true;
+            }
+        }
+        final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
+                issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
+                summary, assignee, unassigned, state, rankOrStateChanged);
+        passEventToBoardManager(event);
     }
 
     private void onMoveEvent(IssueEvent issueEvent) {
-        final Issue issue = issueEvent.getIssue();
-
-        StringBuilder sb = new StringBuilder("Moved " + issue.getKey());
-        sb.append("\n\t");
-        sb.append(issue.getSummary());
-        sb.append("\n\t");
-        debugIssueType(sb, issue.getIssueTypeObject());
-        sb.append("\n\t");
-        debugPriority(sb, issue.getPriorityObject());
-        sb.append("\n\t");
-        debugState(sb, issue.getStatusObject());
-        sb.append("\n\t");
-        debugAssignee(sb, issue.getAssignee());
-        System.out.println(sb.toString());
-
-        System.out.println("Generic " + getWorkLog(issueEvent));
         //This is kind of the same as the 'onWorklogEvent' but we also need to take into account the old value of the project
         //and remove from there if it is a board project. Also, if the new value is a board project we need to add it there.
         //So, it is a bit like a delete (although we need the worklog for that), and a create.
 
-        /*
-         Moved SKBG-18
-            sdsdsdsd
-            type='Bug'
-            priority='Major'
-            state='Backlog'
-            assignee='admin'
-         Number of changes: 5
-         changes Issue SKBG-18 field project has been updated from Sample Kanban Project to Sample Kanban Bugs
-         changes Issue SKBG-18 field Key has been updated from SKP-23 to SKBG-18
-         changes Issue SKBG-18 field issuetype has been updated from Story to Bug
-         changes Issue SKBG-18 field Workflow has been updated from Agile Simplified Workflow for Project SKP to Agile Simplified Workflow for Project SKBG
-       */
-    }
-
-    private String getEventTypeString(IssueEvent issueEvent) {
-        if (issueEvent.getEventTypeId().equals(EventType.ISSUE_UPDATED_ID)) {
-            return "Updated ";
-        } else if (issueEvent.getEventTypeId().equals(EventType.ISSUE_ASSIGNED_ID)) {
-            return "Assigned ";
-        } else if (issueEvent.getEventTypeId().equals(EventType.ISSUE_GENERICEVENT_ID)) {
-            return "Generic Event ";
+        //1) We need to inspect the change log to find the project we are deleting from
+        String oldProjectCode = null;
+        String oldIssueKey = null;
+        List<GenericValue> changeItems = getWorkLog(issueEvent);
+        for (GenericValue change : changeItems) {
+            final String field = change.getString(CHANGE_LOG_FIELD);
+            if (field.equals(CHANGE_LOG_PROJECT)) {
+                String oldProjectId = change.getString(CHANGE_LOG_OLD_VALUE);
+                Project project = projectManager.getProjectObj(Long.valueOf(oldProjectId));
+                oldProjectCode = project.getKey();
+            } else if (field.equals("Key")) {
+                oldIssueKey = change.getString(CHANGE_LOG_OLD_STRING);
+            } else {
+                System.out.println(field + ": " + change.getString(field));
+            }
         }
 
-        return null;
-    }
+        if (isAffectedProject(oldProjectCode)) {
+            final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(oldIssueKey, oldProjectCode);
+            passEventToBoardManager(event);
+        }
 
-
-    private void debugIssueType(StringBuilder sb, IssueType issueType) {
-        sb.append("type='");
-        sb.append(issueType != null ? issueType.getName() : "None");
-        sb.append("'");
-    }
-
-    private void debugPriority(StringBuilder sb, Priority priority) {
-        sb.append("priority='");
-        sb.append(priority != null ? priority.getName() : "None");
-        sb.append("'");
-    }
-
-    private void debugState(StringBuilder sb, Status status) {
-        sb.append("state='");
-        sb.append(status != null ? status.getName() : "None");
-        sb.append("'");
-    }
-
-
-    private void debugAssignee(StringBuilder sb, User assignee) {
-        sb.append("assignee='");
-        sb.append(assignee != null ? assignee.getName() : "None");
-        sb.append("'");
+        //2) Then we can do a create on the project with the issue in the event
+        onCreateEvent(issueEvent);
     }
 
     private List<GenericValue> getWorkLog(IssueEvent issueEvent) {
@@ -271,24 +265,16 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
             e.printStackTrace();
             return Collections.emptyList();
         }
-
-        System.out.println("Number of changes: " + changeItems.size());
-        for (GenericValue change : changeItems) {
-            String field = change.getString("field");
-            String oldstring = change.getString("oldstring");
-
-            String newstring = change.getString("newstring");
-            StringBuilder fullstring = new StringBuilder();
-            fullstring.append("Issue ");
-            fullstring.append(issueEvent.getIssue().getKey());
-            fullstring.append(" field ");
-            fullstring.append(field);
-            fullstring.append(" has been updated from ");
-            fullstring.append(oldstring);
-            fullstring.append(" to ");
-            fullstring.append(newstring);
-            System.out.println("changes " + fullstring.toString());
-        }
         return changeItems;
+    }
+
+    private void passEventToBoardManager(JirbanIssueEvent event) {
+        System.out.println(event);
+    }
+
+    private boolean isAffectedProject(String projectCode) {
+        //TODO do some filtering of projects from the board configs above
+
+        return true;
     }
 }
