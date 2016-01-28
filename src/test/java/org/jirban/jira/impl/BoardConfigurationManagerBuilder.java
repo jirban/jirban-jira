@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package ut.org.jirban.jira.mock;
+package org.jirban.jira.impl;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -37,7 +37,6 @@ import java.util.List;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardCfg;
 import org.jirban.jira.api.BoardConfigurationManager;
-import org.jirban.jira.impl.BoardConfigurationManagerImpl;
 import org.junit.Assert;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
@@ -46,6 +45,10 @@ import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.sal.api.transaction.TransactionCallback;
+
+import ut.org.jirban.jira.mock.IssueTypeManagerBuilder;
+import ut.org.jirban.jira.mock.PermissionManagerBuilder;
+import ut.org.jirban.jira.mock.PriorityManagerBuilder;
 
 /**
  * @author Kabir Khan

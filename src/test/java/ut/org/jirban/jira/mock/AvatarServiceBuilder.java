@@ -21,9 +21,32 @@
  */
 package ut.org.jirban.jira.mock;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.atlassian.jira.avatar.Avatar;
+import com.atlassian.jira.avatar.AvatarService;
+import com.atlassian.jira.user.ApplicationUser;
+
 /**
  * @author Kabir Khan
  */
-public class ApplicationUserBuilder {
+public class AvatarServiceBuilder {
+    private final AvatarService avatarService = mock(AvatarService.class);
+
+    private AvatarServiceBuilder() {
+    }
+
+    public static AvatarService getUserNameUrlMock() {
+        AvatarServiceBuilder builder = new AvatarServiceBuilder();
+        return builder.build();
+    }
+
+    AvatarService build() {
+        when(avatarService.getAvatarURL(any(ApplicationUser.class), any(ApplicationUser.class), any(Avatar.Size.class)))
+                .then(invocation -> "/avatars/" + (String)invocation.getArguments()[1] + ".png");
+        return avatarService;
+    }
 
 }

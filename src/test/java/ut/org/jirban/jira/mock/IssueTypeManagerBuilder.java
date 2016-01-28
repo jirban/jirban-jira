@@ -64,7 +64,7 @@ public class IssueTypeManagerBuilder {
         return issueType;
     }
 
-    static IssueTypeManager getDefaultIssueTypeManager() {
+    public static IssueTypeManager getDefaultIssueTypeManager() {
         IssueTypeManagerBuilder builder = new IssueTypeManagerBuilder();
         builder.addIssueType("task");
         builder.addIssueType("bug");

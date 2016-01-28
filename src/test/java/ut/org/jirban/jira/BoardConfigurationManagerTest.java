@@ -24,11 +24,10 @@ package ut.org.jirban.jira;
 import java.io.IOException;
 
 import org.jirban.jira.api.BoardConfigurationManager;
+import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.junit.Assert;
 import org.junit.Test;
-
-import ut.org.jirban.jira.mock.BoardConfigurationManagerBuilder;
 
 /**
  * @author Kabir Khan

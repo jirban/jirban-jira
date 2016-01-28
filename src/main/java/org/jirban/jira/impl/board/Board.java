@@ -47,6 +47,7 @@ import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.ApplicationUsers;
+import com.atlassian.jira.user.util.UserManager;
 
 /**
  * The data for a board.
@@ -85,8 +86,8 @@ public class Board {
     }
 
     public static Builder builder(SearchService searchService, AvatarService avatarService,
-                                  IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
-        return new Builder(searchService, avatarService, issueLinkManager, boardConfig, boardOwner);
+                                  IssueLinkManager issueLinkManager, UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+        return new Builder(searchService, avatarService, issueLinkManager, userManager,boardConfig, boardOwner);
     }
 
     public ModelNode serialize() {
@@ -231,6 +232,7 @@ public class Board {
         private final SearchService searchService;
         private final AvatarService avatarService;
         private final IssueLinkManager issueLinkManager;
+        private final UserManager userManager;
         private final BoardConfig boardConfig;
         private final ApplicationUser boardOwner;
 
@@ -242,11 +244,12 @@ public class Board {
         private final Map<String, List<String>> missingPriorities = new TreeMap<>();
         private final Map<String, List<String>> missingStates = new TreeMap<>();
 
-        public Builder(SearchService searchService, AvatarService avatarService,
-                       IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+        public Builder(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
+                       UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
             this.searchService = searchService;
             this.avatarService = avatarService;
             this.issueLinkManager = issueLinkManager;
+            this.userManager = userManager;
             this.boardConfig = boardConfig;
             this.boardOwner = boardOwner;
         }

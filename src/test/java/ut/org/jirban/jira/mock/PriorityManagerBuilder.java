@@ -64,7 +64,7 @@ public class PriorityManagerBuilder {
         return priority;
     }
 
-    static PriorityManager getDefaultPriorityManager() {
+    public static PriorityManager getDefaultPriorityManager() {
         PriorityManagerBuilder builder = new PriorityManagerBuilder();
         builder.addPriority("highest");
         builder.addPriority("high");
