@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanValidationException;
 
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
@@ -137,6 +138,9 @@ public class BoardConfig {
         Map<String, NameAndUrl> issueTypes = new LinkedHashMap<>();
         for (ModelNode typeNode : typeNodes) {
             IssueType type = types.get(typeNode.asString());
+            if (type == null) {
+                throw new JirbanValidationException(typeNode.asString() + " is not a known issue type in this Jira instance");
+            }
             issueTypes.put(type.getName(), new NameAndUrl(type.getName(), type.getIconUrl()));
         }
         return issueTypes;
@@ -151,6 +155,9 @@ public class BoardConfig {
         Map<String, NameAndUrl> priorityMap = new LinkedHashMap<>();
         for (ModelNode priorityNode : priorityNodes) {
             Priority priority = priorities.get(priorityNode.asString());
+            if (priority == null) {
+                throw new JirbanValidationException(priorityNode.asString() + " is not a known priority name in this Jira instance");
+            }
             priorityMap.put(priority.getName(), new NameAndUrl(priority.getName(), priority.getIconUrl()));
         }
         return priorityMap;

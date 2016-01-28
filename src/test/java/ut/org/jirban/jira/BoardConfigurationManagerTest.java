@@ -19,22 +19,30 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jirban.jira.api;
+package ut.org.jirban.jira;
 
-import org.jirban.jira.impl.JirbanIssueEvent;
+import java.io.IOException;
 
-import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.user.ApplicationUser;
+import org.jirban.jira.api.BoardConfigurationManager;
+import org.jirban.jira.impl.config.BoardConfig;
+import org.junit.Assert;
+import org.junit.Test;
+
+import ut.org.jirban.jira.mock.BoardConfigurationManagerBuilder;
 
 /**
  * @author Kabir Khan
  */
-public interface BoardManager {
-    String getBoardJson(ApplicationUser user, int id) throws SearchException;
+public class BoardConfigurationManagerTest {
 
-    void deleteBoard(ApplicationUser user, int id);
+    //TODO Add more tests for things like saving, and not having the correct permissions
+    @Test
+    public void testLoadConfiguration() throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
+        cfgManagerBuilder.addConfigActiveObjects("config/board-tdp.json");
+        BoardConfigurationManager cfgManager= cfgManagerBuilder.build();
 
-    boolean hasBoardsForProjectCode(String projectCode);
-
-    void handleEvent(JirbanIssueEvent event);
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, 0);
+        Assert.assertNotNull(boardConfig);
+    }
 }

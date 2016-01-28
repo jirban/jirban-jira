@@ -136,7 +136,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 }
             }
         }
-        if (!canViewBoard(user, boardConfig)) {
+        if (boardConfig != null && !canViewBoard(user, boardConfig)) {
             throw new JirbanPermissionException("Insufficient permissions to view board " +
                     boardConfig.getName() + " (" + id + ")");
         }

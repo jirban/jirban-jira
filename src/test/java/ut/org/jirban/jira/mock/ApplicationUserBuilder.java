@@ -19,22 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jirban.jira.api;
-
-import org.jirban.jira.impl.JirbanIssueEvent;
-
-import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.user.ApplicationUser;
+package ut.org.jirban.jira.mock;
 
 /**
  * @author Kabir Khan
  */
-public interface BoardManager {
-    String getBoardJson(ApplicationUser user, int id) throws SearchException;
+public class ApplicationUserBuilder {
 
-    void deleteBoard(ApplicationUser user, int id);
-
-    boolean hasBoardsForProjectCode(String projectCode);
-
-    void handleEvent(JirbanIssueEvent event);
 }

@@ -289,7 +289,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     }
 
     private void passEventToBoardManager(JirbanIssueEvent event) {
-        System.out.println(event);
+        boardManager.handleEvent(event);
     }
 
     private boolean isAffectedProject(String projectCode) {

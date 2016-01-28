@@ -91,6 +91,27 @@ class BoardProject {
         return new LinkedProjectContext(boardBuilder, linkedProjectConfig);
     }
 
+    public BoardProject copyAndDeleteIssue(Issue deleteIssue) {
+        List<List<Issue>> issuesByStateCopy = new ArrayList<>();
+        int stateIndex = getStateIndex(deleteIssue.getState());
+        for (int i = 0 ; i < issuesByState.size() ; i++) {
+            if (stateIndex == i) {
+                //delete the issue
+                List<Issue> issues = issuesByState.get(i);
+                List<Issue> issuesCopy = new ArrayList<>(i);
+                for (Issue curr : issues) {
+                    if (deleteIssue.getKey().equals(curr.getKey())) {
+                        continue;
+                    }
+                    issuesCopy.add(curr);
+                }
+            } else {
+                issuesByStateCopy.add(issuesByState.get(i));
+            }
+        }
+        return null;
+    }
+
     static class Builder {
         private final SearchService searchService;
         private final Board.Builder boardBuilder;

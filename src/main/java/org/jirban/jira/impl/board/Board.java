@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -54,7 +55,7 @@ import com.atlassian.jira.user.ApplicationUsers;
  */
 public class Board {
     //This is incremented every time a change is made to the board
-    volatile int currentView = 0;
+    final int currentView;
 
     private final BoardConfig boardConfig;
 
@@ -66,13 +67,14 @@ public class Board {
     private final Map<String, List<String>> missingPriorities;
     private final Map<String, List<String>> missingStates;
 
-    private Board(BoardConfig boardConfig,
+    private Board(int currentView, BoardConfig boardConfig,
                  Map<String, Assignee> assignees,
                  Map<String, Issue> allIssues,
                  Map<String, BoardProject> projects,
                  Map<String, List<String>> missingIssueTypes,
                  Map<String, List<String>> missingPriorities,
                  Map<String, List<String>> missingStates) {
+        this.currentView = currentView;
         this.boardConfig = boardConfig;
         this.assignees = assignees;
         this.allIssues = allIssues;
@@ -174,6 +176,57 @@ public class Board {
         return projects.get(code);
     }
 
+    public Board handleEvent(JirbanIssueEvent event) {
+        switch (event.getType()) {
+            case DELETE:
+                return handleDeleteEvent(event);
+            case CREATE:
+                return handleCreateEvent(event);
+            case UPDATE:
+                return handleUpdateEvent(event);
+            default:
+                throw new IllegalArgumentException("Unknown event type " + event.getType());
+
+        }
+    }
+
+    private Board handleDeleteEvent(JirbanIssueEvent event) {
+        final BoardProject project = projects.get(event.getProjectCode());
+        if (project == null) {
+            throw new IllegalArgumentException("Can't find project " + event.getProjectCode() + " in board " + boardConfig.getId());
+        }
+        final Issue issue = allIssues.get(event.getIssueKey());
+        if (issue == null) {
+            throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() + " in board " + boardConfig.getId());
+        }
+        final BoardProject projectCopy = project.copyAndDeleteIssue(issue);
+
+        final Map<String, BoardProject> projectsCopy = new HashMap<>(projects);
+        projectsCopy.put(event.getProjectCode(), projectCopy);
+
+        final Map<String, Issue> allIssuesCopy = new HashMap<>(allIssues);
+        allIssuesCopy.remove(issue.getKey());
+
+        //TODO put the event in some wrapper with the view id on the 'update registry'
+
+        return new Board(currentView + 1, boardConfig,
+                assignees,
+                Collections.unmodifiableMap(allIssuesCopy),
+                Collections.unmodifiableMap(projectsCopy),
+                missingIssueTypes,
+                missingPriorities,
+                missingStates);
+    }
+
+    private Board handleCreateEvent(JirbanIssueEvent event) {
+        return this;
+
+    }
+
+    private Board handleUpdateEvent(JirbanIssueEvent event) {
+        return this;
+    }
+
     public static class Builder {
         private final SearchService searchService;
         private final AvatarService avatarService;
@@ -225,7 +278,7 @@ public class Board {
                 }
             });
 
-            return new Board(boardConfig, Collections.unmodifiableMap(assignees),
+            return new Board(0, boardConfig, Collections.unmodifiableMap(assignees),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
                     Collections.unmodifiableMap(missingIssueTypes), Collections.unmodifiableMap(missingPriorities),
                     Collections.unmodifiableMap(missingStates));

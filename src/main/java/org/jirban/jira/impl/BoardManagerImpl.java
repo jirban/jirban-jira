@@ -121,10 +121,24 @@ public class BoardManagerImpl implements BoardManager {
             return false;
         }
         for (Integer boardId : boardIds) {
+            //There might be a config, but no board. So check if there is a board first.
             if (boards.get(boardId) != null) {
                 return true;
             }
         }
         return false;
+    }
+
+    @Override
+    public void handleEvent(JirbanIssueEvent event) {
+        List<Integer> boardIds = boardConfigurationManager.getBoardIdsForProjectCode(event.getProjectCode());
+        for (Integer boardId : boardIds) {
+            Board board = boards.get(boardId);
+            if (board == null) {
+                continue;
+            }
+            Board newBoard = board.handleEvent(event);
+            boards.put(boardId, newBoard);
+        }
     }
 }
