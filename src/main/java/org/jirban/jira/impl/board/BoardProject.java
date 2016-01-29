@@ -51,12 +51,17 @@ import com.atlassian.query.order.SortOrder;
  */
 class BoardProject {
 
+    private volatile Board board;
     private final BoardProjectConfig projectConfig;
     private final List<List<Issue>> issuesByState;
 
     private BoardProject(BoardProjectConfig projectConfig, List<List<Issue>> issuesByState) {
         this.projectConfig = projectConfig;
         this.issuesByState = issuesByState;
+    }
+
+    void setBoard(Board board) {
+        this.board = board;
     }
 
     boolean isDataSame(BoardProject boardProject) {
@@ -68,7 +73,7 @@ class BoardProject {
     }
 
     int getAssigneeIndex(Assignee assignee) {
-        return 0;
+        return board.getAssigneeIndex(assignee);
     }
 
     void serialize(ModelNode parent) {

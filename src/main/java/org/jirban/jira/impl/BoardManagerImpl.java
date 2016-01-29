@@ -70,11 +70,6 @@ public class BoardManagerImpl implements BoardManager {
     @Inject
     public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
                             BoardConfigurationManager boardConfigurationManager) {
-//        this(searchService, avatarService, issueLinkManager, ComponentAccessor.getUserManager(), boardConfigurationManager);
-//    }
-//
-//    BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
-//                     UserManager userManager, BoardConfigurationManager boardConfigurationManager) {
         this.searchService = searchService;
         this.avatarService = avatarService;
         this.issueLinkManager = issueLinkManager;

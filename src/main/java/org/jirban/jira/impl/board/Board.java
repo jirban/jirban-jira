@@ -61,6 +61,7 @@ public class Board {
     private final BoardConfig boardConfig;
 
     private final Map<String, Assignee> assignees;
+    private final Map<String, Integer> assigneeIndices;
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
 
@@ -78,6 +79,10 @@ public class Board {
         this.currentView = currentView;
         this.boardConfig = boardConfig;
         this.assignees = assignees;
+        this.assigneeIndices = Collections.synchronizedMap(new HashMap<>());
+        for (String assigneeKey : assignees.keySet()) {
+            assigneeIndices.put(assigneeKey, assigneeIndices.size());
+        }
         this.allIssues = allIssues;
         this.projects = projects;
         this.missingIssueTypes = missingIssueTypes;
@@ -97,9 +102,8 @@ public class Board {
         assigneesNode.setEmptyList();
         List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
         Collections.sort(assigneeNames, (a1, a2) -> a1.getDisplayName().compareTo(a2.getDisplayName()));
-        int assigneeIndex = 0;
         for (Assignee assignee : assigneeNames) {
-            assignees.get(assignee.getKey()).serialize(assigneeIndex++, assigneesNode);
+            assignees.get(assignee.getKey()).serialize(assigneesNode);
         }
 
         boardConfig.serializeModelNodeForBoard(outputNode);
@@ -228,6 +232,10 @@ public class Board {
         return this;
     }
 
+    public int getAssigneeIndex(Assignee assignee) {
+        return assigneeIndices.get(assignee.getKey());
+    }
+
     public static class Builder {
         private final SearchService searchService;
         private final AvatarService avatarService;
@@ -281,10 +289,14 @@ public class Board {
                 }
             });
 
-            return new Board(0, boardConfig, Collections.unmodifiableMap(assignees),
+            Board board = new Board(0, boardConfig, Collections.unmodifiableMap(assignees),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
                     Collections.unmodifiableMap(missingIssueTypes), Collections.unmodifiableMap(missingPriorities),
                     Collections.unmodifiableMap(missingStates));
+            for (BoardProject project : projects.values()) {
+                project.setBoard(board);
+            }
+            return board;
         }
 
         Assignee getAssignee(User assigneeUser) {

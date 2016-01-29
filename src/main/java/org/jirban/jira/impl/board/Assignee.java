@@ -48,7 +48,7 @@ class Assignee {
                 user.getDisplayName());
     }
 
-    void serialize(int index, ModelNode parent) {
+    void serialize(ModelNode parent) {
         ModelNode modelNode = new ModelNode();
         modelNode.get("key").set(key);
         modelNode.get("email").set(email);

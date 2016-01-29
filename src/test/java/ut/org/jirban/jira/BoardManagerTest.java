@@ -91,9 +91,9 @@ public class BoardManagerTest {
         issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
         issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
         issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "bug", "high", "Two", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "feature", "low", "Three", "TDP-C", "kabir");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", "TDP-C", null);
 
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
         Assert.assertNotNull(json);
@@ -101,6 +101,16 @@ public class BoardManagerTest {
         checkUsers(boardNode, "kabir", "brian");
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 1);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", 0, 2, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 1);
+        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 1);
+        checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
+
     }
 
     private void checkUsers(ModelNode board, String...users) {
@@ -131,4 +141,24 @@ public class BoardManagerTest {
         }
     }
 
+    private ModelNode getIssuesCheckingSize(ModelNode board, int expectedLength) {
+        ModelNode issues = board.get("issues");
+        Assert.assertEquals(expectedLength, issues.keys().size());
+        return issues;
+    }
+
+    private void checkIssue(ModelNode issues, String key, int type, int priority, String summary, int state, int assignee) {
+        ModelNode issue = issues.get(key);
+        Assert.assertNotNull(issue);
+        Assert.assertEquals(key, issue.get("key").asString());
+        Assert.assertEquals(type, issue.get("type").asInt());
+        Assert.assertEquals(priority, issue.get("priority").asInt());
+        Assert.assertEquals(summary, issue.get("summary").asString());
+        Assert.assertEquals(state, issue.get("state").asInt());
+        if (assignee < 0) {
+            Assert.assertFalse(issue.get("assignee").isDefined());
+        } else {
+            Assert.assertEquals(assignee, issue.get("assignee").asInt());
+        }
+    }
 }
