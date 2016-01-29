@@ -68,10 +68,6 @@ class BoardProject {
         return false;
     }
 
-    int getStateIndex(String state) {
-        return 0;
-    }
-
     int getAssigneeIndex(Assignee assignee) {
         return board.getAssigneeIndex(assignee);
     }
@@ -98,7 +94,7 @@ class BoardProject {
 
     public BoardProject copyAndDeleteIssue(Issue deleteIssue) {
         List<List<Issue>> issuesByStateCopy = new ArrayList<>();
-        int stateIndex = getStateIndex(deleteIssue.getState());
+        int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(deleteIssue.getState());
         for (int i = 0 ; i < issuesByState.size() ; i++) {
             if (stateIndex == i) {
                 //delete the issue
@@ -110,11 +106,12 @@ class BoardProject {
                     }
                     issuesCopy.add(curr);
                 }
+                issuesByStateCopy.add(Collections.unmodifiableList(issuesCopy));
             } else {
                 issuesByStateCopy.add(issuesByState.get(i));
             }
         }
-        return null;
+        return new BoardProject(projectConfig, issuesByStateCopy);
     }
 
     static class Builder {

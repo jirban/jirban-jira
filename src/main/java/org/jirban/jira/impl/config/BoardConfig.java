@@ -120,13 +120,16 @@ public class BoardConfig {
             }
         }
 
-        return new BoardConfig(id, projectGroupName, owningUserKey, owningProjectName,
+        BoardConfig boardConfig = new BoardConfig(id, projectGroupName, owningUserKey, owningProjectName,
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
                 Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get("priorities").asList())),
-                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get("issue-types").asList()))
-        );
+                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get("issue-types").asList())));
+        for (BoardProjectConfig cfg : mainProjects.values()) {
+            cfg.setBoardConfig(boardConfig);
+        }
+        return boardConfig;
     }
 
     private static Map<String, NameAndUrl> loadIssueTypes(IssueTypeManager issueTypeManager, List<ModelNode> typeNodes) {

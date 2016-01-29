@@ -82,7 +82,7 @@ public class JirbanIssueEvent {
         return detail;
     }
 
-    static JirbanIssueEvent createDeleteEvent(String issueKey, String projectCode) {
+    public static JirbanIssueEvent createDeleteEvent(String issueKey, String projectCode) {
         return new JirbanIssueEvent(Type.DELETE, issueKey, projectCode, null);
     }
 

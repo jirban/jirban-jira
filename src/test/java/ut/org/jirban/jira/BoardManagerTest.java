@@ -29,6 +29,7 @@ import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.BoardManagerBuilder;
+import org.jirban.jira.impl.JirbanIssueEvent;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -194,6 +195,146 @@ public class BoardManagerTest {
                 {"TBG-1", "TBG-3"},
                 {"TBG-2", "TBG-4"},
                 {}});
+    }
+
+    @Test
+    public void testDeleteIssue() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", "TDP-C", null);
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "TBG-Y", "jason");
+
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+
+        //Delete an issue in main project and check board
+        JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
+        boardManager.handleEvent(delete);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(1, boardNode.get("viewId").asInt());
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 10);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
+        checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
+        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-5"},
+                {"TDP-2", "TDP-6"},
+                {"TDP-7"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2", "TBG-4"},
+                {}});
+
+        //Delete an issue in main project and check board
+        delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
+        boardManager.handleEvent(delete);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(2, boardNode.get("viewId").asInt());
+
+        allIssues = getIssuesCheckingSize(boardNode, 9);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
+        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-5"},
+                {"TDP-2", "TDP-6"},
+                {},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2", "TBG-4"},
+                {}});
+
+        //Delete an issue in other project and check board
+        delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
+        boardManager.handleEvent(delete);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(3, boardNode.get("viewId").asInt());
+
+        allIssues = getIssuesCheckingSize(boardNode, 8);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-5"},
+                {"TDP-2", "TDP-6"},
+                {},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-3"},
+                {"TBG-2", "TBG-4"},
+                {}});
+
+        //Delete an issue in other project and check board
+        delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
+        boardManager.handleEvent(delete);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(4, boardNode.get("viewId").asInt());
+
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-5"},
+                {"TDP-2", "TDP-6"},
+                {},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {},
+                {"TBG-2", "TBG-4"},
+                {}});
+
+        //TODO Check the diffs we will send to clients
     }
 
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {

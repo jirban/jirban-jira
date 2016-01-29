@@ -215,13 +215,15 @@ public class Board {
 
         //TODO put the event in some wrapper with the view id on the 'update registry'
 
-        return new Board(currentView + 1, boardConfig,
+        Board board = new Board(currentView + 1, boardConfig,
                 assignees,
                 Collections.unmodifiableMap(allIssuesCopy),
                 Collections.unmodifiableMap(projectsCopy),
                 missingIssueTypes,
                 missingPriorities,
                 missingStates);
+        projectCopy.setBoard(board);
+        return board;
     }
 
     private Board handleCreateEvent(JirbanIssueEvent event) {

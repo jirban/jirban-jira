@@ -31,6 +31,7 @@ import org.jboss.dmr.ModelNode;
  * @author Kabir Khan
  */
 public abstract class BoardProjectConfig extends ProjectConfig {
+    private volatile BoardConfig boardConfig;
     private final String queryFilter;
     private final String colour;
 
@@ -60,6 +61,10 @@ public abstract class BoardProjectConfig extends ProjectConfig {
         return filter;
     }
 
+    void setBoardConfig(BoardConfig boardConfig) {
+        this.boardConfig = boardConfig;
+    }
+
     public String getQueryFilter() {
         return queryFilter;
     }
@@ -75,6 +80,11 @@ public abstract class BoardProjectConfig extends ProjectConfig {
         return projectNode;
     }
 
+    public Integer mapOwnStateOntoBoardStateIndex(String state) {
+        String boardState = mapOwnStateOntoBoardState(state);
+        return boardConfig.getOwnerProject().getStateIndex(boardState);
+
+    }
     public abstract String mapBoardStateOntoOwnState(String boardState);
 
     public abstract String mapOwnStateOntoBoardState(String state);
