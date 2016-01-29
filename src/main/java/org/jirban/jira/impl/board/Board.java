@@ -98,6 +98,7 @@ public class Board {
     public ModelNode serialize() {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
+        outputNode.get("viewId").set(currentView);
         ModelNode assigneesNode = outputNode.get("assignees");
         assigneesNode.setEmptyList();
         List<Assignee> assigneeNames = new ArrayList<>(assignees.values());

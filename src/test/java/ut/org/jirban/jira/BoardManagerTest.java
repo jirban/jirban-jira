@@ -98,6 +98,7 @@ public class BoardManagerTest {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, boardNode.get("viewId").asInt());
         checkUsers(boardNode, "kabir", "brian");
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
@@ -110,6 +111,101 @@ public class BoardManagerTest {
         checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 1);
         checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 1);
         checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-5"},
+                {"TDP-2", "TDP-6"},
+                {"TDP-3", "TDP-7"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{{},{},{},{}});
+    }
+
+    @Test
+    public void testLoadBoardOnlyNonOwnerProjectIssues() throws Exception {
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "TBG-Y", "jason");
+
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+        checkUsers(boardNode, "jason", "kabir");
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
+        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -11);
+        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 0);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{{}, {}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2", "TBG-4"},
+                {}});
+    }
+
+    @Test
+    public void testLoadBoard() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", "TDP-C", null);
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "TBG-Y", "jason");
+
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+        checkUsers(boardNode, "brian", "jason", "kabir");
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-3", 0, 2, "Three", 2, 2);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
+        checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
+        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-5"},
+                {"TDP-2", "TDP-6"},
+                {"TDP-3", "TDP-7"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2", "TBG-4"},
+                {}});
+    }
+
+    private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
+        List<ModelNode> issues = boardNode.get("projects", "main", project, "issues").asList();
+        Assert.assertEquals(issueTable.length, issues.size());
+        for (int i = 0 ; i < issueTable.length ; i++) {
+            List<ModelNode> issuesForState = issues.get(i).asList();
+            Assert.assertEquals(issueTable[i].length, issuesForState.size());
+            for (int j = 0 ; j < issueTable[i].length ; j++) {
+                Assert.assertEquals(issueTable[i][j], issuesForState.get(j).asString());
+            }
+        }
 
     }
 

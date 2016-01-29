@@ -101,7 +101,6 @@ public class BoardManagerImpl implements BoardManager {
                 }
             }
         }
-        System.out.println(board.serialize().toJSONString(false));
         return board.serialize().toJSONString(true);
     }
 

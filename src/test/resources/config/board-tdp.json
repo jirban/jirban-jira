@@ -28,8 +28,8 @@
       "query-filter": null,
       "colour": "#CA6746",
       "state-links": {
-        "TBP-A": "TDP-B",
-        "TBG-B": "TDB-C"
+        "TBG-X": "TDP-B",
+        "TBG-Y": "TDP-C"
       }
     }
   },
