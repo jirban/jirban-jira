@@ -29,7 +29,7 @@
       "colour": "#CA6746",
       "state-links": {
         "TBP-A": "TDP-B",
-        "TBG-B": "TBG-C"
+        "TBG-B": "TDB-C"
       }
     }
   },

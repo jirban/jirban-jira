@@ -42,7 +42,7 @@ public class IssueTypeManagerBuilder {
     public Map<String, String> issueTypeIconUrls = new LinkedHashMap<>();
 
     public IssueTypeManagerBuilder addIssueType(String name) {
-        issueTypeIconUrls.put(name, "/icons/issuetypes/" + name + ".png");
+        issueTypeIconUrls.put(name, "/icons/issue-types/" + name + ".png");
         return this;
     }
 

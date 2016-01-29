@@ -21,10 +21,16 @@
  */
 package ut.org.jirban.jira;
 
+import java.util.HashMap;
+import java.util.List;
+
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.BoardManagerBuilder;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -48,32 +54,81 @@ public class BoardManagerTest {
     @Rule
     public MockitoContainer mockitoContainer = MockitoMocksInContainer.rule(this);
 
-    @Test
-    public void testLoadBoard() throws Exception {
+    private BoardManager boardManager;
+    private UserManager userManager;
+    private IssueRegistry issueRegistry;
+
+    @Before
+    public void initializeMocks() throws Exception {
 
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
                 .addConfigActiveObjects("config/board-tdp.json")
                 .build();
 
         MockComponentWorker worker = new MockComponentWorker();
-        UserManager userManager = new UserManagerBuilder()
+        userManager = new UserManagerBuilder()
                 .addDefaultUsers()
                 .build(worker);
 
-        IssueRegistry issueRegistry = new IssueRegistry(userManager)
-                .addIssue("TDP", "task", "high", "First task", "TDP-A", "kabir");
+        issueRegistry = new IssueRegistry(userManager);
         SearchService searchService = new SearchServiceBuilder()
                 .setIssueRegistry(issueRegistry)
                 .build(worker);
         IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
         worker.init();
 
-        BoardManager boardManager = new BoardManagerBuilder()
+        boardManager = new BoardManagerBuilder()
                 .setBoardConfigurationManager(cfgManager)
                 .setUserManager(userManager)
                 .setSearchService(searchService)
                 .setIssueLinkManager(issueLinkManager)
                 .build();
-        boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
     }
+
+    @Test
+    public void testLoadBoardOnlyOwnerProjectIssues() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
+        issueRegistry.addIssue("TDP", "bug", "high", "Two", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "feature", "low", "Three", "TDP-C", "kabir");
+
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        checkUsers(boardNode, "kabir", "brian");
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+    }
+
+    private void checkUsers(ModelNode board, String...users) {
+        List<ModelNode> assignees = board.get("assignees").asList();
+        Assert.assertEquals(assignees.size(), users.length);
+        HashMap<String, ModelNode> map = new HashMap<>();
+        assignees.forEach(node -> map.put(node.get("key").asString(), node));
+
+        for (String user : users) {
+            ModelNode assignee = map.get(user);
+            Assert.assertNotNull(assignee);
+            Assert.assertEquals(user + "@example.com", assignee.get("email").asString());
+            Assert.assertEquals("/avatars/" + user + ".png", assignee.get("avatar").asString());
+
+            String displayName = assignee.get("name").toString().toLowerCase();
+            Assert.assertTrue(displayName.length() > user.length());
+            Assert.assertTrue(displayName.contains(user));
+        }
+    }
+
+    private void checkNameAndIcon(ModelNode board, String type, String...names) {
+        List<ModelNode> entries = board.get(type).asList();
+        Assert.assertEquals(entries.size(), names.length);
+        for (int i = 0 ; i < names.length ; i++) {
+            ModelNode entry = entries.get(i);
+            Assert.assertEquals(names[i], entry.get("name").asString());
+            Assert.assertEquals("/icons/" + type + "/" + names[i] + ".png", entry.get("icon").asString());
+        }
+    }
+
 }
