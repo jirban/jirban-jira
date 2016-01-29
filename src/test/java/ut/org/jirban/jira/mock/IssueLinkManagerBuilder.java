@@ -21,38 +21,29 @@
  */
 package ut.org.jirban.jira.mock;
 
-import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
-import com.atlassian.jira.avatar.Avatar;
-import com.atlassian.jira.avatar.AvatarService;
-import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.issue.link.IssueLinkManager;
 
 /**
  * @author Kabir Khan
  */
-public class AvatarServiceBuilder {
-    private final AvatarService avatarService = mock(AvatarService.class);
+public class IssueLinkManagerBuilder {
+    private final IssueLinkManager issueLinkManager = mock(IssueLinkManager.class);
 
-    private AvatarServiceBuilder() {
+    private List<String> outwardLinks = new ArrayList<>();
+    private List<String> inwardLinks = new ArrayList<>();
+
+    public IssueLinkManager build() {
+        //TODO configure some links
+        when(issueLinkManager.getInwardLinks(anyLong())).thenReturn(Collections.emptyList());
+        when(issueLinkManager.getOutwardLinks(anyLong())).thenReturn(Collections.emptyList());
+        return issueLinkManager;
     }
-
-    public static AvatarService getUserNameUrlMock() {
-        AvatarServiceBuilder builder = new AvatarServiceBuilder();
-        return builder.build();
-    }
-
-    AvatarService build() {
-        when(avatarService.getAvatarURL(any(ApplicationUser.class), any(ApplicationUser.class), any(Avatar.Size.class)))
-                .then(invocation -> {
-                    ApplicationUser user = (ApplicationUser)invocation.getArguments()[1];
-                    String name = user.getName();
-                    return new URI("/avatars/" + name + ".png");
-                });
-        return avatarService;
-    }
-
 }

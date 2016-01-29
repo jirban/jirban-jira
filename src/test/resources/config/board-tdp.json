@@ -18,28 +18,27 @@
       "query-filter": null,
       "colour": "#4667CA",
       "states": [
-        "Backlog",
-        "Selected for Development",
-        "In Progress",
-        "Done"
+        "TDP-A",
+        "TDP-B",
+        "TDP-C",
+        "TDP-D"
       ]
     },
     "TBG": {
       "query-filter": null,
       "colour": "#CA6746",
       "state-links": {
-        "Done": "Done",
-        "Backloglog": "Backlog",
-        "In Progress": "In Progress"
+        "TBP-A": "TDP-B",
+        "TBG-B": "TBG-C"
       }
     }
   },
   "linked-projects": {
     "TUP": {
       "states": [
-        "To Do",
-        "In Progress",
-        "Done"
+        "TUP-A",
+        "TUP-B",
+        "TUP-C"
       ]
     }
   }

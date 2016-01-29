@@ -27,14 +27,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
-import java.util.List;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.Issue;
+import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
 import com.atlassian.jira.issue.search.managers.SearchHandlerManager;
+import com.atlassian.jira.issue.status.Status;
 import com.atlassian.jira.jql.builder.JqlClauseBuilder;
 import com.atlassian.jira.jql.builder.JqlClauseBuilderFactory;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
@@ -47,26 +49,28 @@ import com.atlassian.query.Query;
  */
 public class SearchServiceBuilder {
     private final SearchService searchService = mock(SearchService.class);
-    private String project;
 
+    private IssueRegistry issueRegistry = new IssueRegistry(new UserManagerBuilder().addDefaultUsers().build());
+    private String searchProject;
+
+    public SearchServiceBuilder setIssueRegistry(IssueRegistry issueRegistry) {
+        this.issueRegistry = issueRegistry;
+        return this;
+    }
 
     public SearchService build(MockComponentWorker mockComponentWorker) throws SearchException {
         registerMockQueryManagers(mockComponentWorker);
 
         when(searchService.search(any(User.class), any(Query.class), any(PagerFilter.class)))
-                .then(invocation -> getSearchResults(project));
+                .then(invocation -> getSearchResults(searchProject));
 
         return searchService;
     }
 
     private SearchResults getSearchResults(String project) {
         SearchResults searchResults = mock(SearchResults.class);
-        when(searchResults.getIssues()).thenReturn(getIssueList(project));
+        when(searchResults.getIssues()).thenReturn(issueRegistry.getIssueList(project));
         return searchResults;
-    }
-
-    private List<Issue> getIssueList(String project) {
-        return Collections.emptyList();
     }
 
     private void registerMockQueryManagers(MockComponentWorker mockComponentWorker) {
@@ -81,7 +85,7 @@ public class SearchServiceBuilder {
         ClauseBuilderFactory(JqlQueryBuilder jqlQueryBuilder) {
             this.jqlQueryBuilder = jqlQueryBuilder;
             when(jqlClauseBuilder.project(anyString())).then(invocation -> {
-                project = (String) invocation.getArguments()[0];
+                searchProject = (String) invocation.getArguments()[0];
                 return jqlClauseBuilder;
             });
 
@@ -99,4 +103,28 @@ public class SearchServiceBuilder {
         }
     }
 
+    private static class IssueDetail {
+        final Issue issue = mock(Issue.class);
+
+        final IssueType issueType = mock(IssueType.class);
+        final Priority priority = mock(Priority.class);
+        final Status state = mock(Status.class);
+        final User assignee = mock(User.class);
+
+        public IssueDetail(String key, String issueType, String priority, String summary,
+                           String state, String assignee) {
+            //Do the nested mocks first
+            when(this.issueType.getName()).thenReturn(issueType);
+            when(this.priority.getName()).thenReturn(priority);
+            when(this.state.getName()).thenReturn(state);
+            when(this.assignee.getName()).thenReturn(assignee);
+
+            when(issue.getKey()).thenReturn(key);
+            when(issue.getSummary()).thenReturn(summary);
+            when(issue.getIssueTypeObject()).thenReturn(this.issueType);
+            when(issue.getPriorityObject()).thenReturn(this.priority);
+            when(issue.getStatusObject()).thenReturn(this.state);
+            when(issue.getAssignee()).thenReturn(this.assignee);
+        }
+    }
 }

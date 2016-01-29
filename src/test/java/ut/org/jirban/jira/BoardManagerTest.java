@@ -29,11 +29,14 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
 import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
 import com.atlassian.jira.mock.component.MockComponentWorker;
 import com.atlassian.jira.user.util.UserManager;
 
+import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
+import ut.org.jirban.jira.mock.IssueRegistry;
 import ut.org.jirban.jira.mock.SearchServiceBuilder;
 import ut.org.jirban.jira.mock.UserManagerBuilder;
 
@@ -48,25 +51,28 @@ public class BoardManagerTest {
     @Test
     public void testLoadBoard() throws Exception {
 
-        MockComponentWorker worker = new MockComponentWorker();
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
                 .addConfigActiveObjects("config/board-tdp.json")
                 .build();
 
+        MockComponentWorker worker = new MockComponentWorker();
         UserManager userManager = new UserManagerBuilder()
                 .addDefaultUsers()
-                .build();
-        worker.addMock(UserManager.class, userManager);
-
-        SearchService searchService = new SearchServiceBuilder()
                 .build(worker);
 
+        IssueRegistry issueRegistry = new IssueRegistry(userManager)
+                .addIssue("TDP", "task", "high", "First task", "TDP-A", "kabir");
+        SearchService searchService = new SearchServiceBuilder()
+                .setIssueRegistry(issueRegistry)
+                .build(worker);
+        IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
         worker.init();
 
         BoardManager boardManager = new BoardManagerBuilder()
                 .setBoardConfigurationManager(cfgManager)
                 .setUserManager(userManager)
                 .setSearchService(searchService)
+                .setIssueLinkManager(issueLinkManager)
                 .build();
         boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
     }

@@ -27,6 +27,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 
+import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.mock.component.MockComponentWorker;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 
@@ -37,6 +39,7 @@ public class UserManagerBuilder {
     private final UserManager userManager = mock(UserManager.class);
 
     private final HashMap<String, String> users = new HashMap<>();
+
     public UserManagerBuilder addUser(String username, String displayName) {
         users.put(username, displayName);
         return this;
@@ -50,22 +53,71 @@ public class UserManagerBuilder {
     }
 
     public UserManager build() {
+        return build(null);
+    }
+
+    public UserManager build(MockComponentWorker worker) {
         when(userManager.getUserByKey(any(String .class))).then(invocation -> {
             String name = (String)invocation.getArguments()[0];
             String displayName = users.get(name);
-            ApplicationUser appUser = mock(ApplicationUser.class);
-            when(appUser.getKey()).thenReturn(name);
-            when(appUser.getUsername()).thenReturn(name);
-            when(appUser.getName()).thenReturn(name);
-            when(appUser.getDirectoryId()).thenReturn(new Long(1));
-            when(appUser.isActive()).thenReturn(new Boolean(true));
-            when(appUser.getEmailAddress()).thenReturn(name + "@example.com");
-            when(appUser.getDisplayName()).thenReturn(displayName);
-            //TODO
-            when(appUser.getDirectoryUser()).thenReturn(null);
+            if (displayName == null) {
+                return null;
+            }
+            return new ApplicationUser() {
+                public String getKey() {
+                    return name;
+                }
 
-            return appUser;
+                public String getUsername() {
+                    return name;
+                }
+
+                @Override
+                public String getName() {
+                    return name;
+                }
+
+                @Override
+                public long getDirectoryId() {
+                    return 0;
+                }
+
+                @Override
+                public boolean isActive() {
+                    return true;
+                }
+
+                @Override
+                public String getEmailAddress() {
+                    return name + "@example.com";
+                }
+
+                @Override
+                public String getDisplayName() {
+                    return displayName;
+                }
+
+                @Override
+                public User getDirectoryUser() {
+                    return null;
+                }
+            };
+//            ApplicationUser appUser = mock(ApplicationUser.class);
+//            when(appUser.getKey()).thenReturn(name);
+//            when(appUser.getUsername()).thenReturn(name);
+//            when(appUser.getName()).thenReturn(name);
+//            when(appUser.getDirectoryId()).thenReturn(new Long(1));
+//            when(appUser.isActive()).thenReturn(new Boolean(true));
+//            when(appUser.getEmailAddress()).thenReturn(name + "@example.com");
+//            when(appUser.getDisplayName()).thenReturn(displayName);
+//            when(appUser.get)
+            //TODO
+            //when(appUser.getDirectoryUser()).thenReturn(null);
+//            return appUser;
         });
+        if (worker != null) {
+            worker.addMock(UserManager.class, userManager);
+        }
         return userManager;
     }
 

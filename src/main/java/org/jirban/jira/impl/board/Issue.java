@@ -34,7 +34,6 @@ import org.jirban.jira.impl.config.ProjectConfig;
 
 import com.atlassian.jira.issue.link.IssueLink;
 import com.atlassian.jira.issue.link.IssueLinkManager;
-import com.atlassian.jira.issue.status.Status;
 
 /**
  * The data for an issue on the board
@@ -197,7 +196,6 @@ public abstract class Issue {
         private final BoardProject.Builder project;
 
         String issueKey;
-        Status status;
         String summary;
         Assignee assignee;
         Integer issueTypeIndex;
@@ -212,7 +210,6 @@ public abstract class Issue {
 
         void load(com.atlassian.jira.issue.Issue issue) {
             issueKey = issue.getKey();
-            status = issue.getStatusObject();
             summary = issue.getSummary();
             assignee = project.getAssignee(issue.getAssignee());
             issueTypeIndex = project.getIssueTypeIndexRecordingMissing(issueKey, issue.getIssueTypeObject());
