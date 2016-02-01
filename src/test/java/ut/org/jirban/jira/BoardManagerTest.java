@@ -21,7 +21,6 @@
  */
 package ut.org.jirban.jira;
 
-import java.util.HashMap;
 import java.util.List;
 
 import org.jboss.dmr.ModelNode;
@@ -35,6 +34,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
@@ -42,6 +42,7 @@ import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
 import com.atlassian.jira.mock.component.MockComponentWorker;
 import com.atlassian.jira.user.util.UserManager;
 
+import ut.org.jirban.jira.mock.CrowdUserBridge;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
 import ut.org.jirban.jira.mock.SearchServiceBuilder;
@@ -100,7 +101,7 @@ public class BoardManagerTest {
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(0, boardNode.get("viewId").asInt());
-        checkUsers(boardNode, "kabir", "brian");
+        checkUsers(boardNode, "brian", "kabir");
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -337,6 +338,55 @@ public class BoardManagerTest {
         //TODO Check the diffs we will send to clients
     }
 
+    @Test
+    public void testAddIssue() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", null);
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
+
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
+                "Five", "kabir", "TDP-B");
+        //Add the issue to the search manager here
+        boardManager.handleEvent(create);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(1, boardNode.get("viewId").asInt());
+        System.out.println(boardNode);
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
+        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, -1);
+        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", 0, 2, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", 2, 1, "Five", 1, 1);
+        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2", "TDP-5"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2"},
+                {}});
+        //More, also pull in users
+
+    }
+
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
         List<ModelNode> issues = boardNode.get("projects", "main", project, "issues").asList();
         Assert.assertEquals(issueTable.length, issues.size());
@@ -353,18 +403,15 @@ public class BoardManagerTest {
     private void checkUsers(ModelNode board, String...users) {
         List<ModelNode> assignees = board.get("assignees").asList();
         Assert.assertEquals(assignees.size(), users.length);
-        HashMap<String, ModelNode> map = new HashMap<>();
-        assignees.forEach(node -> map.put(node.get("key").asString(), node));
-
-        for (String user : users) {
-            ModelNode assignee = map.get(user);
+        for (int i = 0 ; i < users.length ; i++) {
+            ModelNode assignee = assignees.get(i);
             Assert.assertNotNull(assignee);
-            Assert.assertEquals(user + "@example.com", assignee.get("email").asString());
-            Assert.assertEquals("/avatars/" + user + ".png", assignee.get("avatar").asString());
+            Assert.assertEquals(users[i] + "@example.com", assignee.get("email").asString());
+            Assert.assertEquals("/avatars/" + users[i] + ".png", assignee.get("avatar").asString());
 
             String displayName = assignee.get("name").toString().toLowerCase();
-            Assert.assertTrue(displayName.length() > user.length());
-            Assert.assertTrue(displayName.contains(user));
+            Assert.assertTrue(displayName.length() > users[i].length());
+            Assert.assertTrue(displayName.contains(users[i]));
         }
     }
 
@@ -397,5 +444,17 @@ public class BoardManagerTest {
         } else {
             Assert.assertEquals(assignee, issue.get("assignee").asInt());
         }
+    }
+
+    private JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey, String projectCode,
+                                               String issueType, String priority, String summary, String username, String state) {
+        CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
+        User user = userBridge.getUserByKey(username);
+        JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
+                summary, user, state);
+
+        issueRegistry.addIssue(projectCode, issueType, priority, summary, state, username);
+
+        return create;
     }
 }

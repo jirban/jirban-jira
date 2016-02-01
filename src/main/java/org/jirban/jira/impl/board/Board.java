@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -41,9 +42,7 @@ import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
-import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.link.IssueLinkManager;
-import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.ApplicationUsers;
@@ -95,6 +94,12 @@ public class Board {
         return new Builder(searchService, avatarService, issueLinkManager, userManager,boardConfig, boardOwner);
     }
 
+    public Board handleEvent(SearchService searchService, AvatarService avatarService,
+                             IssueLinkManager issueLinkManager, ApplicationUser boardOwner, JirbanIssueEvent event) throws SearchException {
+        Updater boardUpdater = new Updater(searchService, avatarService, issueLinkManager, this, boardOwner);
+        return boardUpdater.handleEvent(event);
+    }
+
     public ModelNode serialize() {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
@@ -111,7 +116,7 @@ public class Board {
 
         ModelNode allIssues = outputNode.get("issues");
         this.allIssues.forEach((code, issue) -> {
-            allIssues.get(code).set(issue.toModelNode(this));
+            allIssues.get(code).set(issue.getModelNodeForFullRefresh(this));
         });
 
         ModelNode mainProjectsParent = outputNode.get("projects", "main");
@@ -182,87 +187,103 @@ public class Board {
         return projects.get(code);
     }
 
-    public Board handleEvent(JirbanIssueEvent event) {
-        switch (event.getType()) {
-            case DELETE:
-                return handleDeleteEvent(event);
-            case CREATE:
-                return handleCreateEvent(event);
-            case UPDATE:
-                return handleUpdateEvent(event);
-            default:
-                throw new IllegalArgumentException("Unknown event type " + event.getType());
-
-        }
-    }
-
-    private Board handleDeleteEvent(JirbanIssueEvent event) {
-        final BoardProject project = projects.get(event.getProjectCode());
-        if (project == null) {
-            throw new IllegalArgumentException("Can't find project " + event.getProjectCode() + " in board " + boardConfig.getId());
-        }
-        final Issue issue = allIssues.get(event.getIssueKey());
-        if (issue == null) {
-            throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() + " in board " + boardConfig.getId());
-        }
-        final BoardProject projectCopy = project.copyAndDeleteIssue(issue);
-
-        final Map<String, BoardProject> projectsCopy = new HashMap<>(projects);
-        projectsCopy.put(event.getProjectCode(), projectCopy);
-
-        final Map<String, Issue> allIssuesCopy = new HashMap<>(allIssues);
-        allIssuesCopy.remove(issue.getKey());
-
-        //TODO put the event in some wrapper with the view id on the 'update registry'
-
-        Board board = new Board(currentView + 1, boardConfig,
-                assignees,
-                Collections.unmodifiableMap(allIssuesCopy),
-                Collections.unmodifiableMap(projectsCopy),
-                missingIssueTypes,
-                missingPriorities,
-                missingStates);
-        projectCopy.setBoard(board);
-        return board;
-    }
-
-    private Board handleCreateEvent(JirbanIssueEvent event) {
-        return this;
-
-    }
-
-    private Board handleUpdateEvent(JirbanIssueEvent event) {
-        return this;
-    }
-
     public int getAssigneeIndex(Assignee assignee) {
         return assigneeIndices.get(assignee.getKey());
     }
 
-    public static class Builder {
+    private static Assignee createAssignee(AvatarService avatarService, ApplicationUser boardOwner, User assigneeUser) {
+        ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
+        URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
+        Assignee assignee = Assignee.create(assigneeUser, avatarUrl.toString());
+        return assignee;
+    }
+
+    static abstract class Accessor {
+        protected final BoardConfig boardConfig;
+        protected final IssueLinkManager issueLinkManager;
+        protected final ApplicationUser boardOwner;
+
+        protected final Map<String, List<String>> missingIssueTypes = new TreeMap<>();
+        protected final Map<String, List<String>> missingPriorities = new TreeMap<>();
+        protected final Map<String, List<String>> missingStates = new TreeMap<>();
+
+
+        public Accessor(IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+            this.issueLinkManager = issueLinkManager;
+            this.boardConfig = boardConfig;
+            this.boardOwner = boardOwner;
+        }
+
+        Set<String> getOwnerStateNames() {
+            return boardConfig.getOwnerStateNames();
+        }
+
+        Integer getIssueTypeIndexRecordingMissing(String issueKey, String issueTypeName) {
+            final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueTypeName);
+            if (issueTypeIndex == null) {
+                addMissing(missingIssueTypes, issueTypeName, issueKey);
+            }
+            return issueTypeIndex;
+        }
+
+        Integer getPriorityIndexRecordingMissing(String issueKey, String priorityName) {
+            final Integer priorityIndex = boardConfig.getPriorityIndex(priorityName);
+            if (priorityIndex == null) {
+                addMissing(missingPriorities, priorityName, issueKey);
+            }
+            return priorityIndex;
+        }
+
+        void addMissingState(String issueKey, String stateName) {
+            addMissing(missingStates, stateName, issueKey);
+        }
+
+        BoardProjectConfig getOwningProject() {
+            return boardConfig.getOwningProject();
+        }
+
+        IssueLinkManager getIssueLinkManager() {
+            return issueLinkManager;
+        }
+
+
+        public BoardProject.LinkedProjectContext getLinkedProjectContext(String linkedProjectCode) {
+            LinkedProjectConfig projectCfg = boardConfig.getLinkedProjectConfig(linkedProjectCode);
+            if (projectCfg == null) {
+                return null;
+            }
+            return BoardProject.linkedProjectContext(this, projectCfg);
+        }
+
+        abstract Accessor addIssue(Issue issue);
+
+        abstract Assignee getAssignee(User assigneeUser);
+
+        abstract Issue getIssue(String issueKey);
+
+        private void addMissing(Map<String, List<String>> missingMap, String mapKey, String issueKey) {
+            List<String> missingIssues = missingMap.computeIfAbsent(mapKey, l -> new ArrayList<String>());
+            missingIssues.add(issueKey);
+        }
+
+    }
+
+    /**
+     * Used to create a new board
+     */
+    public static class Builder extends Accessor {
         private final SearchService searchService;
         private final AvatarService avatarService;
-        private final IssueLinkManager issueLinkManager;
-        private final UserManager userManager;
-        private final BoardConfig boardConfig;
-        private final ApplicationUser boardOwner;
 
         private final Map<String, Assignee> assignees = new TreeMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
         private final Map<String, BoardProject.Builder> projects = new HashMap<>();
 
-        private final Map<String, List<String>> missingIssueTypes = new TreeMap<>();
-        private final Map<String, List<String>> missingPriorities = new TreeMap<>();
-        private final Map<String, List<String>> missingStates = new TreeMap<>();
-
         public Builder(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
                        UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+            super(issueLinkManager, boardConfig, boardOwner);
             this.searchService = searchService;
             this.avatarService = avatarService;
-            this.issueLinkManager = issueLinkManager;
-            this.userManager = userManager;
-            this.boardConfig = boardConfig;
-            this.boardOwner = boardOwner;
         }
 
         public Builder load() throws SearchException {
@@ -275,20 +296,40 @@ public class Board {
             return this;
         }
 
-        Builder addIssue(Issue issue) {
+        public Accessor addIssue(Issue issue) {
             allIssues.put(issue.getKey(), issue);
             return this;
+        }
+
+        Assignee getAssignee(User assigneeUser) {
+            if (assigneeUser == null) {
+                //Unassigned issue
+                return null;
+            }
+            Assignee assignee = assignees.get(assigneeUser.getName());
+            if (assignee != null) {
+                return assignee;
+            }
+            assignee = createAssignee(avatarService, boardOwner, assigneeUser);
+            assignees.put(assigneeUser.getName(), assignee);
+            return assignee;
+        }
+
+        @Override
+        Issue getIssue(String issueKey) {
+            //Should not get called for this code path
+            throw new IllegalStateException();
         }
 
         public Board build() {
             Map<String, BoardProject> projects = new LinkedHashMap<>();
 
             BoardProject.Builder ownerProject = this.projects.remove(boardConfig.getOwnerProjectCode());
-            projects.put(boardConfig.getOwnerProjectCode(), ownerProject.build(boardConfig, true));
+            projects.put(boardConfig.getOwnerProjectCode(), ownerProject.build(true));
 
             this.projects.forEach((name, projectBuilder) -> {
                 if (boardConfig.getBoardProject(name) != null) {
-                    projects.put(name, projectBuilder.build(boardConfig, false));
+                    projects.put(name, projectBuilder.build(false));
                 }
             });
 
@@ -301,67 +342,173 @@ public class Board {
             }
             return board;
         }
-
-        Assignee getAssignee(User assigneeUser) {
-            if (assigneeUser == null) {
-                //Unassigned issue
-                return null;
-            }
-            Assignee assignee = assignees.get(assigneeUser.getName());
-            if (assignee != null) {
-                return assignee;
-            }
-            ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
-            URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
-            assignee = Assignee.create(assigneeUser, avatarUrl.toString());
-            assignees.put(assigneeUser.getName(), assignee);
-            return assignee;
-        }
-
-        Integer getIssueTypeIndexRecordingMissing(String issueKey, IssueType issueType) {
-            final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueType.getName());
-            if (issueTypeIndex == null) {
-                addMissing(missingIssueTypes, issueType.getName(), issueKey);
-            }
-            return issueTypeIndex;
-        }
-
-        Integer getPriorityIndexRecordingMissing(String issueKey, Priority priority) {
-            final Integer priorityIndex = boardConfig.getPriorityIndex(priority.getName());
-            if (priorityIndex == null) {
-                addMissing(missingPriorities, priority.getName(), issueKey);
-            }
-            return priorityIndex;
-        }
-
-        void addMissingState(String issueKey, String stateName) {
-            addMissing(missingStates, stateName, issueKey);
-        }
-
-        private void addMissing(Map<String, List<String>> missingMap, String mapKey, String issueKey) {
-            List<String> missingIssues = missingMap.computeIfAbsent(mapKey, l -> new ArrayList<String>());
-            missingIssues.add(issueKey);
-        }
-
-        BoardProject.LinkedProjectContext getLinkedProjectBuilder(String linkedProjectCode) {
-            LinkedProjectConfig projectCfg = boardConfig.getLinkedProjectConfig(linkedProjectCode);
-            if (projectCfg == null) {
-                return null;
-            }
-            return BoardProject.linkedProjectContext(this, projectCfg);
-        }
-
-        BoardProjectConfig getOwningProject() {
-            return boardConfig.getOwningProject();
-        }
-
-        Set<String> getOwnerStateNames() {
-            return boardConfig.getOwnerStateNames();
-        }
-
-        public IssueLinkManager getIssueLinkManager() {
-            return issueLinkManager;
-        }
     }
 
+    /**
+     * Used to update an already existing/loaded board
+     */
+    static class Updater extends Accessor {
+        private final Board board;
+        private final AvatarService avatarService;
+        private final SearchService searchService;
+        //Will only be populated if a new assignee is brought in
+        private Map<String, Assignee> assigneesCopy;
+        Map<String, Issue> allIssuesCopy;
+
+        Updater(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
+                Board board, ApplicationUser boardOwner) {
+            super(issueLinkManager, board.getConfig(), boardOwner);
+            this.board = board;
+            this.searchService = searchService;
+            this.avatarService = avatarService;
+        }
+
+        Board handleEvent(JirbanIssueEvent event) throws SearchException {
+            switch (event.getType()) {
+                case DELETE:
+                    return handleDeleteEvent(event);
+                case CREATE:
+                    return handleCreateOrUpdateIssue(event, true);
+                case UPDATE:
+//                    return handleCreateOrUpdateIssue(event, false, (project, issue, assignee, detail) -> project.copyAndUpdateIssue(
+//                    this,
+//                    issue,
+//                    detail.getIssueType(), detail.getPriority(),
+//                    detail.getSummary(), assignee, detail.isUnassigned(),
+//                    detail.getState(), detail.isRankOrStateChanged()));
+                return null;
+
+                default:
+                    throw new IllegalArgumentException("Unknown event type " + event.getType());
+            }
+        }
+
+        private Board handleDeleteEvent(JirbanIssueEvent event) {
+            final BoardProject project = board.projects.get(event.getProjectCode());
+            if (project == null) {
+                throw new IllegalArgumentException("Can't find project " + event.getProjectCode() +
+                        " in board " + board.boardConfig.getId());
+            }
+            final Issue issue = board.allIssues.get(event.getIssueKey());
+            if (issue == null) {
+                throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() +
+                        " in board " + board.boardConfig.getId());
+            }
+            final BoardProject projectCopy = project.copyAndDeleteIssue(issue);
+
+            final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
+            projectsCopy.put(event.getProjectCode(), projectCopy);
+
+            final Map<String, Issue> allIssuesCopy = new HashMap<>(board.allIssues);
+            allIssuesCopy.remove(issue.getKey());
+
+            //TODO delete the issue from the missing
+
+            //TODO put the event in some wrapper with the view id on the 'update registry'
+
+            Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
+                    board.assignees,
+                    Collections.unmodifiableMap(allIssuesCopy),
+                    Collections.unmodifiableMap(projectsCopy),
+                    board.missingIssueTypes,
+                    board.missingPriorities,
+                    board.missingStates);
+            projectCopy.setBoard(boardCopy);
+            return boardCopy;
+        }
+
+        Board handleCreateOrUpdateIssue(JirbanIssueEvent event, boolean create) throws SearchException {
+            final BoardProject project = board.projects.get(event.getProjectCode());
+            if (project == null) {
+                throw new IllegalArgumentException("Can't find project " + event.getProjectCode()
+                        + " in board " + board.boardConfig.getId());
+            }
+
+            JirbanIssueEvent.Detail evtDetail = event.getDetails();
+
+            //Might bring in a new assignee, need to add that first
+            final Assignee newAssignee = createAssigneeIfNeeded(evtDetail);
+            final Assignee issueAssignee = getIssueAssignee(newAssignee, evtDetail);
+            final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner, create);
+            final Issue newIssue;
+            if (create) {
+                newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
+                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, evtDetail.getState());
+            } else {
+                Issue existing = board.allIssues.get(event.getIssueKey());
+                if (existing == null) {
+                    throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() + " in board " + board.boardConfig.getId());
+                }
+                newIssue = null;
+            }
+            allIssuesCopy = copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new);
+
+            BoardProject projectCopy = projectUpdater.update();
+            final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
+            projectsCopy.put(event.getProjectCode(), projectCopy);
+
+
+            //TODO put the event in some wrapper with the view id on the 'update registry'
+            //Include the assignee if it was new
+            //Include the project state table if recalculated
+
+            //TODO recalculate the missingXXXs maps
+
+            Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
+                    board.assignees,
+                    Collections.unmodifiableMap(allIssuesCopy),
+                    Collections.unmodifiableMap(projectsCopy),
+                    board.missingIssueTypes,
+                    board.missingPriorities,
+                    board.missingStates);
+            projectCopy.setBoard(boardCopy);
+            return boardCopy;
+        }
+
+        Assignee getAssignee(User assigneeUser) {
+            //This should not happen for this code path
+            throw new IllegalStateException();
+        }
+
+        @Override
+        Accessor addIssue(Issue issue) {
+            //This should not happen for this code path
+            throw new IllegalStateException();
+        }
+
+        @Override
+        Issue getIssue(String issueKey) {
+            return allIssuesCopy.get(issueKey);
+        }
+
+        private Assignee createAssigneeIfNeeded(JirbanIssueEvent.Detail evtDetail) {
+            //Might bring in a new assignee, need to add that first
+            final User eventAssignee = evtDetail.getAssignee();
+            final Map<String, Assignee> assigneesCopy;
+            Assignee newAssignee = null;
+            if (eventAssignee != null && !board.assignees.containsKey(eventAssignee.getName())) {
+                newAssignee = Board.createAssignee(avatarService, boardOwner, evtDetail.getAssignee());
+                this.assigneesCopy = Collections.unmodifiableMap(
+                        copyAndPut(board.assignees, eventAssignee.getName(), newAssignee, TreeMap::new));
+            }
+            return newAssignee;
+        }
+
+        private Assignee getIssueAssignee(Assignee newAssignee, JirbanIssueEvent.Detail evtDetail) {
+            if (newAssignee != null) {
+                return newAssignee;
+            } else if (evtDetail.getAssignee() == null) {
+                return null;
+            } else {
+                return board.assignees.get(evtDetail.getAssignee().getName());
+            }
+
+        }
+        private <K, V> Map<K, V> copyAndPut(Map<K, V> map, K key, V value, Supplier<Map<K, V>> supplier) {
+            Map<K, V> copy = supplier.get();
+            copy.putAll(map);
+            copy.put(key, value);
+            return Collections.unmodifiableMap(copy);
+        }
+    }
 }

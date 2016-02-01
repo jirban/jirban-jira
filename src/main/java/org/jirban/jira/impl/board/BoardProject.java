@@ -28,15 +28,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
-import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.link.IssueLinkManager;
-import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
@@ -53,6 +50,7 @@ class BoardProject {
 
     private volatile Board board;
     private final BoardProjectConfig projectConfig;
+    //TODO linkedhashset
     private final List<List<Issue>> issuesByState;
 
     private BoardProject(BoardProjectConfig projectConfig, List<List<Issue>> issuesByState) {
@@ -84,12 +82,17 @@ class BoardProject {
         }
     }
 
-    static Builder builder(SearchService searchService, Board.Builder builder, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
+    boolean isOwner() {
+        return board.getConfig().getOwnerProjectCode().equals(projectConfig.getCode());
+    }
+
+    static Builder builder(SearchService searchService, Board.Builder builder, BoardProjectConfig projectConfig,
+                           ApplicationUser boardOwner) {
         return new Builder(searchService, builder, projectConfig, boardOwner);
     }
 
-    static LinkedProjectContext linkedProjectContext(Board.Builder boardBuilder, LinkedProjectConfig linkedProjectConfig) {
-        return new LinkedProjectContext(boardBuilder, linkedProjectConfig);
+    static LinkedProjectContext linkedProjectContext(Board.Accessor board, LinkedProjectConfig linkedProjectConfig) {
+        return new LinkedProjectContext(board, linkedProjectConfig);
     }
 
     public BoardProject copyAndDeleteIssue(Issue deleteIssue) {
@@ -114,39 +117,94 @@ class BoardProject {
         return new BoardProject(projectConfig, issuesByStateCopy);
     }
 
-    static class Builder {
-        private final SearchService searchService;
-        private final Board.Builder boardBuilder;
-        private final BoardProjectConfig projectConfig;
-        private final ApplicationUser boardOwner;
+    public Updater updater(SearchService searchService, Board.Updater boardUpdater,
+                           ApplicationUser boardOwner, boolean create) {
+        return new Updater(searchService, boardUpdater, this, boardOwner);
+    }
+
+    static class Accessor {
+        protected final SearchService searchService;
+        protected final Board.Accessor board;
+        protected final BoardProjectConfig projectConfig;
+        protected final ApplicationUser boardOwner;
+
+        public Accessor(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
+            this.searchService = searchService;
+            this.board = board;
+            this.projectConfig = projectConfig;
+            this.boardOwner = boardOwner;
+        }
+
+        BoardProjectConfig getConfig() {
+            return projectConfig;
+        }
+
+        Integer getPriorityIndexRecordingMissing(String issueKey, String priorityName) {
+            return board.getPriorityIndexRecordingMissing(issueKey, priorityName);
+        }
+
+        Integer getIssueTypeIndexRecordingMissing(String issueKey, String issueTypeName) {
+            return board.getIssueTypeIndexRecordingMissing(issueKey, issueTypeName);
+        }
+
+        Integer getStateIndexRecordingMissing(String projectCode, String issueKey, String stateName) {
+            final Integer index = projectConfig.getStateIndex(stateName);
+            if (index == null) {
+                board.addMissingState(issueKey, stateName);
+            } else {
+                if (!projectConfig.isOwner()) {
+                    Integer ownerStateIndex = null;
+                    String ownerState = projectConfig.mapOwnStateOntoBoardState(stateName);
+                    if (ownerState != null) {
+                        ownerStateIndex = board.getOwningProject().getStateIndex(ownerState);
+                    }
+                    if (ownerStateIndex == null) {
+                        //This was not mapped to a valid owner state so report the problem
+                        board.addMissingState(issueKey, ownerState != null ? ownerState : stateName);
+                        return null;
+                    }
+                    //Do not return the owner state index here although all was fine. The calculation of the columns
+                    //depends on everything using their own state index.
+                }
+            }
+            return index;
+        }
+
+        IssueLinkManager getIssueLinkManager() {
+            return board.getIssueLinkManager();
+        }
+
+        Assignee getAssignee(User assigneeUser) {
+            return board.getAssignee(assigneeUser);
+        }
+
+        public String getCode() {
+            return projectConfig.getCode();
+        }
+
+        public LinkedProjectContext getLinkedProjectContext(String linkedProjectCode) {
+            return board.getLinkedProjectContext(linkedProjectCode);
+        }
+
+    }
+
+    /**
+     * Used to load a project when creating a new board
+     */
+    static class Builder extends Accessor {
         private final Map<String, List<Issue>> issuesByState = new HashMap<>();
 
 
-        private Builder(SearchService searchService, Board.Builder boardBuilder, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
-            this.searchService = searchService;
-            this.boardBuilder = boardBuilder;
-            this.projectConfig = projectConfig;
-            this.boardOwner = boardOwner;
+        private Builder(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig,
+                        ApplicationUser boardOwner) {
+            super(searchService, board, projectConfig, boardOwner);
         }
 
         Builder addIssue(String state, Issue issue) {
             final List<Issue> issues = issuesByState.computeIfAbsent(state, l -> new ArrayList<>());
             issues.add(issue);
-            boardBuilder.addIssue(issue);
+            board.addIssue(issue);
             return this;
-        }
-
-        BoardProject build(BoardConfig boardConfig, boolean owner) {
-            final List<List<Issue>> resultIssues = new ArrayList<>();
-            for (String state : boardBuilder.getOwnerStateNames()) {
-                List<Issue> issues = issuesByState.get(owner ? state : projectConfig.mapBoardStateOntoOwnState(state));
-                if (issues == null) {
-                    issues = new ArrayList<>();
-                }
-                resultIssues.add(Collections.synchronizedList(issues));
-            }
-
-            return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
         }
 
         void load() throws SearchException {
@@ -170,65 +228,95 @@ class BoardProject {
             }
         }
 
-        BoardProjectConfig getConfig() {
-            return projectConfig;
-        }
-
-        Integer getPriorityIndexRecordingMissing(String issueKey, Priority priorityObject) {
-            return boardBuilder.getPriorityIndexRecordingMissing(issueKey, priorityObject);
-        }
-
-        Integer getIssueTypeIndexRecordingMissing(String issueKey, IssueType issueTypeObject) {
-            return boardBuilder.getIssueTypeIndexRecordingMissing(issueKey, issueTypeObject);
-        }
-
-        Integer getStateIndexRecordingMissing(String projectCode, String issueKey, String stateName) {
-            final Integer index = projectConfig.getStateIndex(stateName);
-            if (index == null) {
-                boardBuilder.addMissingState(issueKey, stateName);
-            } else {
-                if (!projectConfig.isOwner()) {
-                    Integer ownerStateIndex = null;
-                    String ownerState = projectConfig.mapOwnStateOntoBoardState(stateName);
-                    if (ownerState != null) {
-                        ownerStateIndex = boardBuilder.getOwningProject().getStateIndex(ownerState);
-                    }
-                    if (ownerStateIndex == null) {
-                        //This was not mapped to a valid owner state so report the problem
-                        boardBuilder.addMissingState(issueKey, ownerState != null ? ownerState : stateName);
-                        return null;
-                    }
-                    //Do not return the owner state index here although all was fine. The calculation of the columns
-                    //depends on everything using their own state index.
+        BoardProject build(boolean owner) {
+            final List<List<Issue>> resultIssues = new ArrayList<>();
+            for (String state : board.getOwnerStateNames()) {
+                List<Issue> issues = issuesByState.get(owner ? state : projectConfig.mapBoardStateOntoOwnState(state));
+                if (issues == null) {
+                    issues = new ArrayList<>();
                 }
+                resultIssues.add(Collections.synchronizedList(issues));
             }
-            return index;
+
+            return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
+        }
+    }
+
+    /**
+     * Used to update an existing board
+     */
+    static class Updater extends Accessor {
+        private final BoardProject project;
+        private Issue issue;
+        private boolean updatedState;
+
+
+        Updater(SearchService searchService, Board.Accessor board, BoardProject project,
+                       ApplicationUser boardOwner) {
+            super(searchService, board, project.projectConfig, boardOwner);
+            this.project = project;
         }
 
-        Assignee getAssignee(User assigneeUser) {
-            return boardBuilder.getAssignee(assigneeUser);
+        Issue createIssue(String issueKey, String issueType, String priority, String summary,
+                          Assignee assignee, String state) {
+            issue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee);
+            updatedState = true;
+            return issue;
         }
 
-        String getCode() {
-            return projectConfig.getCode();
+        BoardProject update() throws SearchException {
+            final List<List<Issue>> issuesByStateCopy;
+            if (updatedState) {
+                issuesByStateCopy = new ArrayList<>();
+                List<Issue> issuesForState = updateState();
+                final int stateIndex = project.projectConfig.mapOwnStateOntoBoardStateIndex(issue.getState());
+                for (int i = 0 ; i < project.issuesByState.size() ; i++) {
+                    if (stateIndex == i) {
+                        issuesByStateCopy.add(issuesForState);
+                    } else {
+                        issuesByStateCopy.add(project.issuesByState.get(i));
+                    }
+                }
+
+                return new BoardProject(projectConfig, Collections.unmodifiableList(issuesByStateCopy));
+            } else {
+                //No need to recalculate anything
+                return project;
+            }
         }
 
-        public IssueLinkManager getIssueLinkManager() {
-            return boardBuilder.getIssueLinkManager();
-        }
+        private List<Issue> updateState() throws SearchException {
+            JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
+            queryBuilder.where().project(projectConfig.getCode()).status(issue.state);
+            if (projectConfig.getQueryFilter() != null) {
+                queryBuilder.where().addCondition(projectConfig.getQueryFilter());
+            }
+            //TODO if it is possible to narrow this down to only get the product keys that would be better than loading everything
+            queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
 
-        public LinkedProjectContext getLinkedProjectBuilder(String linkedProjectCode) {
-            return boardBuilder.getLinkedProjectBuilder(linkedProjectCode);
+            SearchResults searchResults =
+                    searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+
+            List<Issue> issues = new ArrayList<>();
+            for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
+                String issueKey = jiraIssue.getKey();
+                Issue issue = board.getIssue(issueKey);
+                if (issue == null) {
+                    System.out.println("Could not find issue " + issue);
+                }
+
+            }
+            return Collections.unmodifiableList(issues);
         }
     }
 
     static class LinkedProjectContext {
 
-        private final Board.Builder boardBuilder;
+        private final Board.Accessor board;
         private final LinkedProjectConfig linkedProjectConfig;
 
-        LinkedProjectContext(Board.Builder boardBuilder, LinkedProjectConfig linkedProjectConfig) {
-            this.boardBuilder = boardBuilder;
+        LinkedProjectContext(Board.Accessor board, LinkedProjectConfig linkedProjectConfig) {
+            this.board = board;
             this.linkedProjectConfig = linkedProjectConfig;
         }
 
@@ -239,7 +327,7 @@ class BoardProject {
         Integer getStateIndexRecordingMissing(String projectCode, String issueKey, String stateName) {
             final Integer index = linkedProjectConfig.getStateIndex(stateName);
             if (index == null) {
-                boardBuilder.addMissingState(issueKey, stateName);
+                board.addMissingState(issueKey, stateName);
             }
             return index;
         }

@@ -71,21 +71,29 @@ public class IssueRegistry {
         return this;
     }
 
-    List<Issue> getIssueList(String project) {
+    List<Issue> getIssueList(String project, String searchStatus) {
         List<IssueDetail> issues = issuesByProject.get(project);
         if (issues == null) {
             return Collections.emptyList();
         }
 
         List<Issue> ret = new ArrayList<>();
-        issues.forEach(id -> ret.add(id.issue));
+        for (IssueDetail issueDetail : issues) {
+            if (searchStatus != null) {
+                System.out.println(issueDetail.state.getName());
+                if (!searchStatus.equals(issueDetail.state.getName())) {
+                    continue;
+                }
+            }
+            ret.add(issueDetail.issue);
+        }
         return ret;
     }
 
     private class IssueDetail {
         final Issue issue;
 
-        final IssueType issueType = mock(IssueType.class);
+        final IssueType issueType;
         final Priority priority = mock(Priority.class);
         final Status state = mock(Status.class);
 
@@ -93,8 +101,8 @@ public class IssueRegistry {
         public IssueDetail(String key, String issueType, String priority, String summary,
                            String state, String assignee) {
             //Do the nested mocks first
-            when(this.issueType.toString()).thenReturn(issueType);
-            when(this.issueType.getName()).thenReturn(issueType);
+            this.issueType = IssueTypeManagerBuilder.MockIssueType.get(issueType);
+
             when(this.priority.toString()).thenReturn(priority);
             when(this.priority.getName()).thenReturn(priority);
             when(this.state.toString()).thenReturn(state);

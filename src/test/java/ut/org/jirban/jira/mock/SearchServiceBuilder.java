@@ -52,6 +52,7 @@ public class SearchServiceBuilder {
 
     private IssueRegistry issueRegistry = new IssueRegistry(new UserManagerBuilder().addDefaultUsers().build());
     private String searchProject;
+    private String searchStatus;
 
     public SearchServiceBuilder setIssueRegistry(IssueRegistry issueRegistry) {
         this.issueRegistry = issueRegistry;
@@ -60,16 +61,17 @@ public class SearchServiceBuilder {
 
     public SearchService build(MockComponentWorker mockComponentWorker) throws SearchException {
         registerMockQueryManagers(mockComponentWorker);
-
         when(searchService.search(any(User.class), any(Query.class), any(PagerFilter.class)))
-                .then(invocation -> getSearchResults(searchProject));
+                .then(invocation -> getSearchResults());
 
         return searchService;
     }
 
-    private SearchResults getSearchResults(String project) {
+    private SearchResults getSearchResults() {
         SearchResults searchResults = mock(SearchResults.class);
-        when(searchResults.getIssues()).thenReturn(issueRegistry.getIssueList(project));
+        when(searchResults.getIssues()).thenReturn(issueRegistry.getIssueList(searchProject, searchStatus));
+
+        when(searchResults.toString()).thenReturn("<SNIP>");
         return searchResults;
     }
 
@@ -86,6 +88,10 @@ public class SearchServiceBuilder {
             this.jqlQueryBuilder = jqlQueryBuilder;
             when(jqlClauseBuilder.project(anyString())).then(invocation -> {
                 searchProject = (String) invocation.getArguments()[0];
+                return jqlClauseBuilder;
+            });
+            when(jqlClauseBuilder.status(anyString())).then(invocation -> {
+                searchStatus = (String) invocation.getArguments()[0];
                 return jqlClauseBuilder;
             });
 
@@ -106,7 +112,7 @@ public class SearchServiceBuilder {
     private static class IssueDetail {
         final Issue issue = mock(Issue.class);
 
-        final IssueType issueType = mock(IssueType.class);
+        final IssueType issueType;
         final Priority priority = mock(Priority.class);
         final Status state = mock(Status.class);
         final User assignee = mock(User.class);
@@ -114,7 +120,7 @@ public class SearchServiceBuilder {
         public IssueDetail(String key, String issueType, String priority, String summary,
                            String state, String assignee) {
             //Do the nested mocks first
-            when(this.issueType.getName()).thenReturn(issueType);
+            this.issueType = IssueTypeManagerBuilder.MockIssueType.get(issueType);
             when(this.priority.getName()).thenReturn(priority);
             when(this.state.getName()).thenReturn(state);
             when(this.assignee.getName()).thenReturn(assignee);

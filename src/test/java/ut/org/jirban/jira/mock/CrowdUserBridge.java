@@ -28,14 +28,14 @@ import com.atlassian.jira.user.util.UserManager;
 /**
  * @author Kabir Khan
  */
-class CrowdUserBridge {
+public class CrowdUserBridge {
     private final UserManager userManager;
 
-    CrowdUserBridge(UserManager userManager) {
+    public CrowdUserBridge(UserManager userManager) {
         this.userManager = userManager;
     }
 
-    User getUserByKey(String key) {
+    public User getUserByKey(String key) {
         ApplicationUser applicationUser = userManager.getUserByKey(key);
         if (applicationUser == null) {
             return null;

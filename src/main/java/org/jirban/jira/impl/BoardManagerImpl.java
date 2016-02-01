@@ -134,8 +134,13 @@ public class BoardManagerImpl implements BoardManager {
             if (board == null) {
                 continue;
             }
-            Board newBoard = board.handleEvent(event);
-            boards.put(boardId, newBoard);
+            final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
+            try {
+                Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event);
+                boards.put(boardId, newBoard);
+            } catch (Exception e) {
+                new Exception("Error handling  " + event + " for board " + board.getConfig().getId(), e).printStackTrace();
+            }
         }
     }
 }

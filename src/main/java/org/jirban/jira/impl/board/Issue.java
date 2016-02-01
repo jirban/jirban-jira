@@ -76,7 +76,7 @@ public abstract class Issue {
         return () -> Collections.<LinkedIssue>emptySet().iterator();
     }
 
-    ModelNode toModelNode(Board board) {
+    ModelNode getModelNodeForFullRefresh(Board board) {
         ModelNode issueNode = getBaseModelNode();
         return issueNode;
     }
@@ -111,8 +111,21 @@ public abstract class Issue {
      * @param project the builder for the project containing the issues
      * @return the builder
      */
-    static Builder builder(BoardProject.Builder project) {
-        return new Builder(project);
+    static Builder builder(BoardProject.Accessor project) {
+        return new Builder(project, null);
+    }
+
+    public static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
+                                             String summary, String issueType, String priority, Assignee assignee) {
+        Builder builder = new BoardIssue.Builder(project, issueKey);
+        builder.setState(state);
+        builder.setSummary(summary);
+        builder.setIssueType(issueType);
+        builder.setPriority(priority);
+        builder.setAssignee(assignee);
+
+        //TODO linked issues
+        return builder.build();
     }
 
     private static class BoardIssue extends Issue {
@@ -163,18 +176,19 @@ public abstract class Issue {
         }
 
         @Override
-        ModelNode toModelNode(Board board) {
+        ModelNode getModelNodeForFullRefresh(Board board) {
             BoardProject boardProject = board.getBoardProject(project.getCode());
-            ModelNode issueNode = super.toModelNode(board);
+            ModelNode issueNode = super.getModelNodeForFullRefresh(board);
             issueNode.get("priority").set(priorityIndex);
             issueNode.get("type").set(issueTypeIndex);
             if (assignee != null) {
+                //This map will always be populated
                 issueNode.get("assignee").set(boardProject.getAssigneeIndex(assignee));
             }
             if (hasLinkedIssues()) {
                 ModelNode linkedIssuesNode = issueNode.get("linked-issues");
                 for (Issue linkedIssue : linkedIssues) {
-                    ModelNode linkedIssueNode = linkedIssue.toModelNode(board);
+                    ModelNode linkedIssueNode = linkedIssue.getModelNodeForFullRefresh(board);
                     linkedIssuesNode.add(linkedIssueNode);
                 }
             }
@@ -193,7 +207,7 @@ public abstract class Issue {
      * The builder for the board issues
      */
     static class Builder {
-        private final BoardProject.Builder project;
+        private final BoardProject.Accessor project;
 
         String issueKey;
         String summary;
@@ -204,23 +218,53 @@ public abstract class Issue {
         Integer stateIndex;
         Set<LinkedIssue> linkedIssues;
 
-        private Builder(BoardProject.Builder project) {
+        private Builder(BoardProject.Accessor project, String issueKey) {
             this.project = project;
+            this.issueKey = issueKey;
         }
 
         void load(com.atlassian.jira.issue.Issue issue) {
             issueKey = issue.getKey();
             summary = issue.getSummary();
             assignee = project.getAssignee(issue.getAssignee());
-            issueTypeIndex = project.getIssueTypeIndexRecordingMissing(issueKey, issue.getIssueTypeObject());
-            priorityIndex = project.getPriorityIndexRecordingMissing(issueKey, issue.getPriorityObject());
-            state = issue.getStatusObject().getName();
-            stateIndex = project.getStateIndexRecordingMissing(project.getCode(), issueKey, state);
+            setIssueType(issue.getIssueTypeObject().getName());
+            setPriority(issue.getPriorityObject().getName());
+            setState(issue.getStatusObject().getName());
 
-            //TODO linked objects
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
             addLinkedIssues(issueLinkManager.getOutwardLinks(issue.getId()), true);
             addLinkedIssues(issueLinkManager.getInwardLinks(issue.getId()), false);
+        }
+
+        Builder setIssueKey(String issueKey) {
+            this.issueKey = issueKey;
+            return this;
+        }
+
+        Builder setSummary(String summary) {
+            this.summary = summary;
+            return this;
+        }
+
+        Builder setAssignee(Assignee assignee) {
+            this.assignee = assignee;
+            return this;
+        }
+
+        Builder setIssueType(String issueTypeName) {
+            this.issueTypeIndex = project.getIssueTypeIndexRecordingMissing(issueKey, issueTypeName);
+            return this;
+        }
+
+        Builder setPriority(String priorityName) {
+            this.priorityIndex = project.getPriorityIndexRecordingMissing(issueKey, priorityName);
+            return this;
+        }
+
+        Builder setState(String stateName) {
+            state = stateName;
+            stateIndex = project.getStateIndexRecordingMissing(project.getCode(), issueKey, state);
+            return this;
         }
 
         private void addLinkedIssues(List<IssueLink> links, boolean outbound) {
@@ -233,7 +277,7 @@ public abstract class Issue {
             for (IssueLink link : links) {
                 com.atlassian.jira.issue.Issue linkedIssue = outbound ? link.getDestinationObject() : link.getSourceObject();
                 String linkedProjectKey = linkedIssue.getProjectObject().getKey();
-                BoardProject.LinkedProjectContext linkedProjectContext = project.getLinkedProjectBuilder(linkedProjectKey);
+                BoardProject.LinkedProjectContext linkedProjectContext = project.getLinkedProjectContext(linkedProjectKey);
                 if (linkedProjectContext == null) {
                     //This was not set up as one of the linked projects we are interested in
                     continue;
@@ -262,6 +306,5 @@ public abstract class Issue {
             }
             return null;
         }
-
     }
  }

@@ -86,7 +86,7 @@ public class JirbanIssueEvent {
         return new JirbanIssueEvent(Type.DELETE, issueKey, projectCode, null);
     }
 
-    static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
+    public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
                                               String summary,  User assignee, String state) {
         Detail detail = new Detail(issueType, priority, summary, assignee, assignee == null, state, true);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
@@ -116,6 +116,34 @@ public class JirbanIssueEvent {
             this.priority = priority;
             this.state = state;
             this.rankOrStateChanged = rankOrStateChanged;
+        }
+
+        public String getIssueType() {
+            return issueType;
+        }
+
+        public String getPriority() {
+            return priority;
+        }
+
+        public String getSummary() {
+            return summary;
+        }
+
+        public User getAssignee() {
+            return assignee;
+        }
+
+        public boolean isUnassigned() {
+            return unassigned;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        public boolean isRankOrStateChanged() {
+            return rankOrStateChanged;
         }
     }
 
