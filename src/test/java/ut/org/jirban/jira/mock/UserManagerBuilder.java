@@ -49,6 +49,8 @@ public class UserManagerBuilder {
         addUser("kabir", "Kabir Khan");
         addUser("brian", "Brian Stansberry");
         addUser("jason", "Jason Greene");
+        addUser("stuart", "Stuart Douglas");
+        addUser("james", "James Perkins");
         return this;
     }
 
@@ -102,18 +104,6 @@ public class UserManagerBuilder {
                     return null;
                 }
             };
-//            ApplicationUser appUser = mock(ApplicationUser.class);
-//            when(appUser.getKey()).thenReturn(name);
-//            when(appUser.getUsername()).thenReturn(name);
-//            when(appUser.getName()).thenReturn(name);
-//            when(appUser.getDirectoryId()).thenReturn(new Long(1));
-//            when(appUser.isActive()).thenReturn(new Boolean(true));
-//            when(appUser.getEmailAddress()).thenReturn(name + "@example.com");
-//            when(appUser.getDisplayName()).thenReturn(displayName);
-//            when(appUser.get)
-            //TODO
-            //when(appUser.getDirectoryUser()).thenReturn(null);
-//            return appUser;
         });
         if (worker != null) {
             worker.addMock(UserManager.class, userManager);

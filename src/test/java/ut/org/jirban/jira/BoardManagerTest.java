@@ -106,13 +106,13 @@ public class BoardManagerTest {
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 1);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 1);
-        checkIssue(allIssues, "TDP-3", 0, 2, "Three", 2, 1);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 1);
-        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 1);
-        checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, 1);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, 1);
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2, -1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1", "TDP-5"},
@@ -138,10 +138,10 @@ public class BoardManagerTest {
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 1);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 1);
-        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -11);
-        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -11);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, 0);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{{}, {}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
@@ -174,17 +174,17 @@ public class BoardManagerTest {
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TDP-3", 0, 2, "Three", 2, 2);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
-        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
-        checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
-        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
-        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, 2);
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2, -1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, 1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1", "TDP-5"},
@@ -226,16 +226,16 @@ public class BoardManagerTest {
         Assert.assertEquals(1, boardNode.get("viewId").asInt());
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 10);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
-        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
-        checkIssue(allIssues, "TDP-7", 2, 2, "Seven", 2, -1);
-        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
-        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, 2);
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2, -1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, 1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1", "TDP-5"},
@@ -257,15 +257,15 @@ public class BoardManagerTest {
         Assert.assertEquals(2, boardNode.get("viewId").asInt());
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
-        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
-        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
-        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, 2);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, 1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1", "TDP-5"},
@@ -287,14 +287,14 @@ public class BoardManagerTest {
         Assert.assertEquals(3, boardNode.get("viewId").asInt());
 
         allIssues = getIssuesCheckingSize(boardNode, 8);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
-        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
-        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, 1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1", "TDP-5"},
@@ -316,13 +316,13 @@ public class BoardManagerTest {
         Assert.assertEquals(4, boardNode.get("viewId").asInt());
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, 2);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 0, 0, "Five", 0, 2);
-        checkIssue(allIssues, "TDP-6", 1, 1, "Six", 1, 2);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 2);
-        checkIssue(allIssues, "TBG-4", 0, 3, "Four", 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, 1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1", "TDP-5"},
@@ -339,7 +339,7 @@ public class BoardManagerTest {
     }
 
     @Test
-    public void testAddIssue() throws Exception {
+    public void testAddIssuesNoNewUsers() throws Exception {
         issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", null);
         issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
         issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
@@ -355,23 +355,22 @@ public class BoardManagerTest {
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
                 "Five", "kabir", "TDP-B");
-        //Add the issue to the search manager here
         boardManager.handleEvent(create);
         json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
         Assert.assertNotNull(json);
         boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(1, boardNode.get("viewId").asInt());
-        System.out.println(boardNode);
 
+        checkUsers(boardNode, "brian", "kabir");
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
-        checkIssue(allIssues, "TDP-1", 0, 0, "One", 0, -1);
-        checkIssue(allIssues, "TDP-2", 0, 1, "Two", 1, 1);
-        checkIssue(allIssues, "TDP-3", 0, 2, "Three", 2, 1);
-        checkIssue(allIssues, "TDP-4", 0, 3, "Four", 3, 0);
-        checkIssue(allIssues, "TDP-5", 2, 1, "Five", 1, 1);
-        checkIssue(allIssues, "TBG-1", 0, 0, "One", 0, 1);
-        checkIssue(allIssues, "TBG-2", 1, 1, "Two", 1, 1);
-        checkIssue(allIssues, "TBG-3", 2, 2, "Three", 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, 1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
 
         checkProjectIssues(boardNode, "TDP", new String[][]{
                 {"TDP-1"},
@@ -383,8 +382,114 @@ public class BoardManagerTest {
                 {"TBG-1", "TBG-3"},
                 {"TBG-2"},
                 {}});
-        //More, also pull in users
 
+        create = createCreateEventAndAddToRegistry("TBG-4", "TBG", "feature", "high",
+                "Four", null, "TBG-X");
+        boardManager.handleEvent(create);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(2, boardNode.get("viewId").asInt());
+
+        checkUsers(boardNode, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 9);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, 1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", 0, -1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2", "TDP-5"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3", "TBG-4"},
+                {"TBG-2"},
+                {}});
+    }
+
+    @Test
+    public void testAddIssuesNewUsers() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", null);
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
+
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
+                "Five", "james", "TDP-B");
+        boardManager.handleEvent(create);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(1, boardNode.get("viewId").asInt());
+
+        checkUsers(boardNode, "brian", "james", "kabir");
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, 1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2", "TDP-5"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2"},
+                {}});
+
+        create = createCreateEventAndAddToRegistry("TBG-4", "TBG", "feature", "high",
+                "Four", "stuart", "TBG-X");
+        boardManager.handleEvent(create);
+        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(2, boardNode.get("viewId").asInt());
+
+        checkUsers(boardNode, "brian", "james", "kabir", "stuart");
+        allIssues = getIssuesCheckingSize(boardNode, 9);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, 1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", 0, 3);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2", "TDP-5"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3", "TBG-4"},
+                {"TBG-2"},
+                {}});
     }
 
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
@@ -431,12 +536,12 @@ public class BoardManagerTest {
         return issues;
     }
 
-    private void checkIssue(ModelNode issues, String key, int type, int priority, String summary, int state, int assignee) {
+    private void checkIssue(ModelNode issues, String key, IssueType type, Priority priority, String summary, int state, int assignee) {
         ModelNode issue = issues.get(key);
         Assert.assertNotNull(issue);
         Assert.assertEquals(key, issue.get("key").asString());
-        Assert.assertEquals(type, issue.get("type").asInt());
-        Assert.assertEquals(priority, issue.get("priority").asInt());
+        Assert.assertEquals(type.index, issue.get("type").asInt());
+        Assert.assertEquals(priority.index, issue.get("priority").asInt());
         Assert.assertEquals(summary, issue.get("summary").asString());
         Assert.assertEquals(state, issue.get("state").asInt());
         if (assignee < 0) {
@@ -457,4 +562,30 @@ public class BoardManagerTest {
 
         return create;
     }
+
+    private enum IssueType {
+        TASK(0),
+        BUG(1),
+        FEATURE(2);
+
+        private final int index;
+
+        IssueType(int index) {
+            this.index = index;
+        }
+    }
+
+    private enum Priority {
+        HIGHEST(0),
+        HIGH(1),
+        LOW(2),
+        LOWEST(3);
+
+        private final int index;
+
+        Priority(int index) {
+            this.index = index;
+        }
+    }
+
 }

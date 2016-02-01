@@ -183,7 +183,11 @@ public abstract class Issue {
             issueNode.get("type").set(issueTypeIndex);
             if (assignee != null) {
                 //This map will always be populated
-                issueNode.get("assignee").set(boardProject.getAssigneeIndex(assignee));
+                try {
+                    issueNode.get("assignee").set(boardProject.getAssigneeIndex(assignee));
+                } catch (Exception e) {
+                    boardProject.getAssigneeIndex(assignee);
+                }
             }
             if (hasLinkedIssues()) {
                 ModelNode linkedIssuesNode = issueNode.get("linked-issues");

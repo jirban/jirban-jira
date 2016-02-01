@@ -70,6 +70,7 @@ public class Board {
 
     private Board(int currentView, BoardConfig boardConfig,
                  Map<String, Assignee> assignees,
+                  Map<String, Integer> assigneeIndices,
                  Map<String, Issue> allIssues,
                  Map<String, BoardProject> projects,
                  Map<String, List<String>> missingIssueTypes,
@@ -78,10 +79,7 @@ public class Board {
         this.currentView = currentView;
         this.boardConfig = boardConfig;
         this.assignees = assignees;
-        this.assigneeIndices = Collections.synchronizedMap(new HashMap<>());
-        for (String assigneeKey : assignees.keySet()) {
-            assigneeIndices.put(assigneeKey, assigneeIndices.size());
-        }
+        this.assigneeIndices = assigneeIndices;
         this.allIssues = allIssues;
         this.projects = projects;
         this.missingIssueTypes = missingIssueTypes;
@@ -191,6 +189,12 @@ public class Board {
         return assigneeIndices.get(assignee.getKey());
     }
 
+    private void updateBoardInProjects() {
+        for (BoardProject project : projects.values()) {
+            project.setBoard(this);
+        }
+    }
+
     private static Assignee createAssignee(AvatarService avatarService, ApplicationUser boardOwner, User assigneeUser) {
         ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
         URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
@@ -265,7 +269,14 @@ public class Board {
             List<String> missingIssues = missingMap.computeIfAbsent(mapKey, l -> new ArrayList<String>());
             missingIssues.add(issueKey);
         }
+    }
 
+    private static Map<String, Integer> getAssigneeIndices(Map<String, Assignee> assignees) {
+        Map<String, Integer> assigneeIndices = new HashMap<>();
+        for (String assigneeKey : assignees.keySet()) {
+            assigneeIndices.put(assigneeKey, assigneeIndices.size());
+        }
+        return assigneeIndices;
     }
 
     /**
@@ -333,7 +344,7 @@ public class Board {
                 }
             });
 
-            Board board = new Board(0, boardConfig, Collections.unmodifiableMap(assignees),
+            Board board = new Board(0, boardConfig, Collections.unmodifiableMap(assignees), Collections.unmodifiableMap(getAssigneeIndices(assignees)),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
                     Collections.unmodifiableMap(missingIssueTypes), Collections.unmodifiableMap(missingPriorities),
                     Collections.unmodifiableMap(missingStates));
@@ -407,13 +418,13 @@ public class Board {
             //TODO put the event in some wrapper with the view id on the 'update registry'
 
             Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
-                    board.assignees,
+                    board.assignees, board.assigneeIndices,
                     Collections.unmodifiableMap(allIssuesCopy),
                     Collections.unmodifiableMap(projectsCopy),
                     board.missingIssueTypes,
                     board.missingPriorities,
                     board.missingStates);
-            projectCopy.setBoard(boardCopy);
+            boardCopy.updateBoardInProjects();
             return boardCopy;
         }
 
@@ -455,13 +466,14 @@ public class Board {
             //TODO recalculate the missingXXXs maps
 
             Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
-                    board.assignees,
+                    assigneesCopy == null ? board.assignees : Collections.unmodifiableMap(assigneesCopy),
+                    assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
                     Collections.unmodifiableMap(allIssuesCopy),
                     Collections.unmodifiableMap(projectsCopy),
                     board.missingIssueTypes,
                     board.missingPriorities,
                     board.missingStates);
-            projectCopy.setBoard(boardCopy);
+            boardCopy.updateBoardInProjects();
             return boardCopy;
         }
 

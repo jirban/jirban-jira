@@ -304,7 +304,7 @@ class BoardProject {
                 if (issue == null) {
                     System.out.println("Could not find issue " + issue);
                 }
-
+                issues.add(issue);
             }
             return Collections.unmodifiableList(issues);
         }

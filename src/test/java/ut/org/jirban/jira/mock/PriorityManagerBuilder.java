@@ -28,15 +28,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-
-import org.ofbiz.core.entity.GenericValue;
 
 import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.priority.Priority;
-import com.atlassian.jira.util.I18nHelper;
-import com.opensymphony.module.propertyset.PropertySet;
 
 /**
  * @author Kabir Khan
@@ -72,143 +67,5 @@ public class PriorityManagerBuilder {
         builder.addPriority("lowest");
 
         return builder.build();
-    }
-
-    static class MockPriority implements Priority {
-        private final String priorityName;
-        private final String iconUrl;
-
-        private MockPriority(String priorityName) {
-            this.priorityName = priorityName;
-            this.iconUrl = "/icons/priorities/" + priorityName + ".png";
-        }
-
-        static Priority get(String issueTypeName) {
-            return PRIORITIES.get(issueTypeName);
-        }
-
-        static Priority create(String issueTypeName) {
-            return PRIORITIES.computeIfAbsent(issueTypeName, name -> new MockPriority(name));
-        }
-
-        @Override
-        public String getStatusColor() {
-            return null;
-        }
-
-        @Override
-        public void setStatusColor(String s) {
-
-        }
-
-        @Override
-        public GenericValue getGenericValue() {
-            return null;
-        }
-
-        @Override
-        public String getId() {
-            return null;
-        }
-
-        @Override
-        public String getName() {
-            return priorityName;
-        }
-
-        @Override
-        public void setName(String s) {
-
-        }
-
-        @Override
-        public String getDescription() {
-            return null;
-        }
-
-        @Override
-        public void setDescription(String s) {
-
-        }
-
-        @Override
-        public Long getSequence() {
-            return null;
-        }
-
-        @Override
-        public void setSequence(Long aLong) {
-
-        }
-
-        @Override
-        public String getCompleteIconUrl() {
-            return null;
-        }
-
-        @Override
-        public String getIconUrl() {
-            return iconUrl;
-        }
-
-        @Override
-        public String getIconUrlHtml() {
-            return null;
-        }
-
-        @Override
-        public void setIconUrl(String s) {
-
-        }
-
-        @Override
-        public String getNameTranslation() {
-            return null;
-        }
-
-        @Override
-        public String getDescTranslation() {
-            return null;
-        }
-
-        @Override
-        public String getNameTranslation(String s) {
-            return null;
-        }
-
-        @Override
-        public String getDescTranslation(String s) {
-            return null;
-        }
-
-        @Override
-        public String getNameTranslation(I18nHelper i18nHelper) {
-            return null;
-        }
-
-        @Override
-        public String getDescTranslation(I18nHelper i18nHelper) {
-            return null;
-        }
-
-        @Override
-        public void setTranslation(String s, String s1, String s2, Locale locale) {
-
-        }
-
-        @Override
-        public void deleteTranslation(String s, Locale locale) {
-
-        }
-
-        @Override
-        public PropertySet getPropertySet() {
-            return null;
-        }
-
-        @Override
-        public int compareTo(Object o) {
-            return 0;
-        }
     }
 }
