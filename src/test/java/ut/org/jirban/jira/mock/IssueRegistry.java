@@ -24,8 +24,11 @@ package ut.org.jirban.jira.mock;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.junit.Assert;
 
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
@@ -38,29 +41,42 @@ import com.atlassian.jira.user.util.UserManager;
  */
 public class IssueRegistry {
     private final CrowdUserBridge userBridge;
-    private final Map<String, List<Issue>> issuesByProject = new HashMap<>();
+    private final Map<String, Map<String, Issue>> issuesByProject = new HashMap<>();
 
     public IssueRegistry(UserManager userManager) {
         this.userBridge = new CrowdUserBridge(userManager);
     }
 
     public IssueRegistry addIssue(String projectCode, String issueType, String priority, String summary,
-                                         String state, String assignee) {
-        List<Issue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new ArrayList<>());
+                                  String assignee, String state) {
+        Map<String, Issue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
         String issueKey = projectCode + "-" + (issues.size() + 1);
-        issues.add(new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
+        issues.put(issueKey, new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
                 userBridge.getUserByKey(assignee), MockStatus.create(state)));
         return this;
     }
 
+
+    public void updateIssue(String issueKey, String projectCode, String issueType, String priority, String summary, String assignee, String state) {
+        Map<String, Issue> issues = issuesByProject.get(projectCode);
+        Assert.assertNotNull(issues);
+        Issue issue = issues.get(issueKey);
+        Assert.assertNotNull(issue);
+
+        Issue newIssue = new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
+                userBridge.getUserByKey(assignee), MockStatus.create(state));
+        issues.put(issueKey, newIssue);
+    }
+
+
     List<Issue> getIssueList(String project, String searchStatus) {
-        List<Issue> issues = issuesByProject.get(project);
+        Map<String, Issue> issues = issuesByProject.get(project);
         if (issues == null) {
             return Collections.emptyList();
         }
 
         List<Issue> ret = new ArrayList<>();
-        for (Issue issue : issues) {
+        for (Issue issue : issues.values()) {
             if (searchStatus != null) {
                 if (!issue.getStatusId().equals(searchStatus)) {
                     continue;

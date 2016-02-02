@@ -508,12 +508,11 @@ public class Board {
         private Assignee getIssueAssignee(Assignee newAssignee, JirbanIssueEvent.Detail evtDetail) {
             if (newAssignee != null) {
                 return newAssignee;
-            } else if (evtDetail.getAssignee() == null || evtDetail.isUnassigned()) {
-                return Assignee.UNASSIGNED;
+            } else if (evtDetail.getAssignee() == null) {
+                return evtDetail.isUnassigned() ? Assignee.UNASSIGNED : null;
             } else {
                 return board.assignees.get(evtDetail.getAssignee().getName());
             }
-
         }
         private <K, V> Map<K, V> copyAndPut(Map<K, V> map, K key, V value, Supplier<Map<K, V>> supplier) {
             Map<K, V> copy = supplier.get();

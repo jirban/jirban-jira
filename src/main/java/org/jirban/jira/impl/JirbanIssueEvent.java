@@ -92,7 +92,7 @@ public class JirbanIssueEvent {
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
-    static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
+    public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
                                               String summary, User assignee, boolean unassigned, String state, boolean rankOrStateChanged) {
         Detail detail = new Detail(issueType, priority, summary, assignee, unassigned, state, rankOrStateChanged);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);

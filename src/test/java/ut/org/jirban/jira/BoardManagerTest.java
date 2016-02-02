@@ -37,6 +37,7 @@ import org.junit.Test;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.link.IssueLinkManager;
+import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.junit.rules.MockitoContainer;
 import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
 import com.atlassian.jira.mock.component.MockComponentWorker;
@@ -89,19 +90,15 @@ public class BoardManagerTest {
 
     @Test
     public void testLoadBoardOnlyOwnerProjectIssues() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", "TDP-C", null);
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", "TDP-A");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
 
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(0, boardNode.get("viewId").asInt());
-        checkUsers(boardNode, "brian", "kabir");
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -124,16 +121,12 @@ public class BoardManagerTest {
 
     @Test
     public void testLoadBoardOnlyNonOwnerProjectIssues() throws Exception {
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "TBG-Y", "jason");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
 
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(0, boardNode.get("viewId").asInt());
-        checkUsers(boardNode, "jason", "kabir");
+        ModelNode boardNode = boardNode = getJsonCheckingViewIdAndUsers(0, "jason", "kabir");
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -153,23 +146,19 @@ public class BoardManagerTest {
 
     @Test
     public void testLoadBoard() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", "TDP-C", null);
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "TBG-Y", "jason");
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", "TDP-A");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
 
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(0, boardNode.get("viewId").asInt());
-        checkUsers(boardNode, "brian", "jason", "kabir");
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -200,30 +189,23 @@ public class BoardManagerTest {
 
     @Test
     public void testDeleteIssue() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "TDP-A", "kabir");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", "TDP-C", null);
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "TBG-Y", "jason");
-
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", "TDP-A");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
+        getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
 
         //Delete an issue in main project and check board
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(1, boardNode.get("viewId").asInt());
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 10);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -251,10 +233,7 @@ public class BoardManagerTest {
         //Delete an issue in main project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(2, boardNode.get("viewId").asInt());
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -281,10 +260,7 @@ public class BoardManagerTest {
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(3, boardNode.get("viewId").asInt());
+        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 8);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -310,10 +286,7 @@ public class BoardManagerTest {
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
         boardManager.handleEvent(delete);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(4, boardNode.get("viewId").asInt());
+        boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -340,26 +313,19 @@ public class BoardManagerTest {
 
     @Test
     public void testAddIssuesNoNewUsers() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", null);
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
-
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+        issueRegistry.addIssue("TDP", "task", "highest", "One", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
                 "Five", "kabir", "TDP-B");
         boardManager.handleEvent(create);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(1, boardNode.get("viewId").asInt());
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
 
         checkUsers(boardNode, "brian", "kabir");
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
@@ -386,10 +352,7 @@ public class BoardManagerTest {
         create = createCreateEventAndAddToRegistry("TBG-4", "TBG", "feature", "high",
                 "Four", null, "TBG-X");
         boardManager.handleEvent(create);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(2, boardNode.get("viewId").asInt());
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
 
         checkUsers(boardNode, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 9);
@@ -417,28 +380,20 @@ public class BoardManagerTest {
 
     @Test
     public void testAddIssuesNewUsers() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "TDP-A", null);
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "TDP-B", "kabir");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "TDP-C", "kabir");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "TDP-D", "brian");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "TBG-X", "kabir");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "TBG-Y", "kabir");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", "TBG-X", null);
+        issueRegistry.addIssue("TDP", "task", "highest", "One", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
 
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(0, boardNode.get("viewId").asInt());
+        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
                 "Five", "james", "TDP-B");
         boardManager.handleEvent(create);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(1, boardNode.get("viewId").asInt());
-
-        checkUsers(boardNode, "brian", "james", "kabir");
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
@@ -463,10 +418,7 @@ public class BoardManagerTest {
         create = createCreateEventAndAddToRegistry("TBG-4", "TBG", "feature", "high",
                 "Four", "stuart", "TBG-X");
         boardManager.handleEvent(create);
-        json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
-        Assert.assertNotNull(json);
-        boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(2, boardNode.get("viewId").asInt());
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
 
         checkUsers(boardNode, "brian", "james", "kabir", "stuart");
         allIssues = getIssuesCheckingSize(boardNode, 9);
@@ -492,6 +444,170 @@ public class BoardManagerTest {
                 {}});
     }
 
+    @Test
+    public void testUpdateIssueNoNewUsers() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", "TDP", "feature", "high",
+                "Four-1", "kabir", false, "TDP-B", true);
+        boardManager.handleEvent(update);
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four-1", 1, 1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, -1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2", "TDP-4"},
+                {"TDP-3"},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2"},
+                {}});
+
+        //Do updates of single fields, don't bother checking everything now. Just the issue tables and the changed issue
+        //We will do a full check later
+
+        //type
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", "feature", null, null, null, false, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", 0, -1);
+
+        //priority
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, "low", null, null, false, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", 0, -1);
+
+        //summary
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, "One-1", null, false, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
+
+        //assign
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, "brian", false, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
+
+        //No updated assignee, nor unassigned
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, null, false, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
+
+        //Unassign
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, null, true, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
+
+        //Change state
+        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, null, false, "TDP-D", true);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3, -1);
+
+        //Change in the other project
+        update = createUpdateEventAndAddToRegistry("TBG-3", "TBG", "bug", "highest", "Three-1", "kabir", false, "TBG-Y", true);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(9, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1, 1);
+
+        //Check full issue table
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3, -1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 1);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four-1", 1, 1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 1);
+        checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {},
+                {"TDP-2", "TDP-4"},
+                {"TDP-3"},
+                {"TDP-1"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {"TBG-2", "TBG-3"},
+                {}});
+    }
+
+    @Test
+    public void testUpdateIssueNewUsers() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
+        issueRegistry.addIssue("TDP", "feature", "lowest", "Four", "brian", "TDP-D");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, "jason", false, null, false);
+        boardManager.handleEvent(update);
+        getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
+
+        update = createUpdateEventAndAddToRegistry("TBG-3", "TBG", null, null, null, "james", false, null, false);
+        boardManager.handleEvent(update);
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 3);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, 3);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 3);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, 3);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, 1);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-3"},
+                {"TBG-2"},
+                {}});
+    }
+
+    private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        Assert.assertNotNull(json);
+        ModelNode boardNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(expectedViewId, boardNode.get("viewId").asInt());
+        checkUsers(boardNode, users);
+        return boardNode;
+    }
 
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
         List<ModelNode> issues = boardNode.get("projects", "main", project, "issues").asList();
@@ -559,10 +675,22 @@ public class BoardManagerTest {
         JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
                 summary, user, state);
 
-        issueRegistry.addIssue(projectCode, issueType, priority, summary, state, username);
-
+        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, state);
         return create;
     }
+
+    private JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String projectCode, String issueType,
+                                                   String priority, String summary, String username, boolean unassigned, String state, boolean rank) {
+        CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
+        User user = userBridge.getUserByKey(username);
+        JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueType, priority,
+                summary, user, unassigned, state, rank);
+
+        issueRegistry.updateIssue(issueKey, projectCode, issueType, priority, summary, username, state);
+        return update;
+    }
+
+
 
     private enum IssueType {
         TASK(0),
