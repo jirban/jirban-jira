@@ -28,12 +28,14 @@ import com.atlassian.crowd.embedded.api.User;
  * @author Kabir Khan
  */
 class Assignee {
+    static final Assignee UNASSIGNED = new Assignee(null, null, null, null);
+
     private final String key;
     private final String email;
     private final String avatarUrl;
     private final String displayName;
 
-    public Assignee(String key, String email, String avatarUrl, String displayName) {
+    private Assignee(String key, String email, String avatarUrl, String displayName) {
         this.key = key;
         this.email = email;
         this.avatarUrl = avatarUrl;

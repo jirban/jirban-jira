@@ -264,6 +264,13 @@ class BoardProject {
             return issue;
         }
 
+        public Issue updateIssue(Issue existing, String issueType, String priority, String summary,
+                                 Assignee issueAssignee, boolean rankOrStateChanged, String state) {
+            issue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, state);
+            this.updatedState = rankOrStateChanged;
+            return null;
+        }
+
         BoardProject update() throws SearchException {
             final List<List<Issue>> issuesByStateCopy;
             if (updatedState) {
@@ -280,7 +287,7 @@ class BoardProject {
 
                 return new BoardProject(projectConfig, Collections.unmodifiableList(issuesByStateCopy));
             } else {
-                //No need to recalculate anything
+                //TODO Replace the updated issue in the state tables
                 return project;
             }
         }

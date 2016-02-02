@@ -492,6 +492,7 @@ public class BoardManagerTest {
                 {}});
     }
 
+
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
         List<ModelNode> issues = boardNode.get("projects", "main", project, "issues").asList();
         Assert.assertEquals(issueTable.length, issues.size());

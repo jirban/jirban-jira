@@ -106,18 +106,29 @@ public abstract class Issue {
     }
 
     /**
-     * Returns a builder for the board issues. Linked issues are handled internally
+     * Returns a builder for the board issues during a full load of the board. Linked issues are handled internally.
      *
      * @param project the builder for the project containing the issues
      * @return the builder
      */
     static Builder builder(BoardProject.Accessor project) {
-        return new Builder(project, null);
+        return new Builder(project);
     }
 
-    public static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
+    /**
+     * Creates a new issue
+     * @param project the project the issue belongs to
+     * @param issueKey the issue's key
+     * @param state the issue's state id
+     * @param summary the issue summary
+     * @param issueType the issue's type
+     * @param priority the priority
+     * @param assignee the assignee
+     * @return
+     */
+    static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
                                              String summary, String issueType, String priority, Assignee assignee) {
-        Builder builder = new BoardIssue.Builder(project, issueKey);
+        Builder builder = new Builder(project, issueKey);
         builder.setState(state);
         builder.setSummary(summary);
         builder.setIssueType(issueType);
@@ -125,6 +136,55 @@ public abstract class Issue {
         builder.setAssignee(assignee);
 
         //TODO linked issues
+        return builder.build();
+    }
+
+    /**
+     * Creates a new issue based on an {@code exisiting} one. The data is then updated with the results of
+     * {@code issueType}, {@code priority}, {@code summary}, {@code issueAssignee}, {@code rankOrStateChanged}
+     * {@code state} if they are different from the current issue detail. Note that the update event might be raised
+     * for fields we are not interested in, in which case we don't care about the change, and return {@code null}.
+     *
+     * @param project the project the issue belongs to
+     * @param existing the issue to update
+     * @param issueType the new issue type
+     * @param priority the new issue priority
+     * @param summary the new issue summary
+     * @param issueAssignee the new issue assignee
+     * @param state the state of the issue
+     * @return the new issue, or {@code null} if no relevant change was made
+     */
+    static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
+                                    String summary, Assignee issueAssignee, String state) {
+        if (existing instanceof BoardIssue == false) {
+            return null;
+        }
+        return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority, summary, issueAssignee, state);
+    }
+
+    private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
+                                    String summary, Assignee issueAssignee, String state) {
+        Builder builder = new Builder(project, existing);
+        if (issueType != null) {
+            builder.setIssueType(issueType);
+        }
+        if (priority != null) {
+            builder.setPriority(priority);
+        }
+        if (summary != null) {
+            builder.setSummary(summary);
+        }
+        if (issueAssignee != null) {
+            //A non-null assignee means it was updated, either to an assignee or unassigned.
+            if (issueAssignee == Assignee.UNASSIGNED) {
+                builder.setAssignee(null);
+            } else {
+                builder.setAssignee(issueAssignee);
+            }
+        }
+        if (state != null) {
+            builder.setState(state);
+        }
         return builder.build();
     }
 
@@ -222,9 +282,33 @@ public abstract class Issue {
         Integer stateIndex;
         Set<LinkedIssue> linkedIssues;
 
+
+        private Builder(BoardProject.Accessor project) {
+            this.project = project;
+            this.issueKey = null;
+        }
+
         private Builder(BoardProject.Accessor project, String issueKey) {
             this.project = project;
             this.issueKey = issueKey;
+        }
+
+        private Builder(BoardProject.Accessor project, BoardIssue existing) {
+            this.project = project;
+            this.issueKey = existing.key;
+            this.summary = existing.summary;
+            this.assignee = existing.assignee;
+            this.issueTypeIndex = existing.issueTypeIndex;
+            this.priorityIndex = existing.priorityIndex;
+            this.state = existing.state;
+            this.stateIndex = existing.stateIndex;
+            if (existing.linkedIssues.size() > 0) {
+                Set<LinkedIssue> linkedIssues = createLinkedIssueSet();
+                linkedIssues.addAll(existing.linkedIssues);
+                this.linkedIssues = Collections.unmodifiableSet(linkedIssues);
+            } else {
+                this.linkedIssues = Collections.emptySet();
+            }
         }
 
         void load(com.atlassian.jira.issue.Issue issue) {
@@ -251,7 +335,7 @@ public abstract class Issue {
         }
 
         Builder setAssignee(Assignee assignee) {
-            this.assignee = assignee;
+            this.assignee = assignee == Assignee.UNASSIGNED ? null : assignee;
             return this;
         }
 
@@ -290,17 +374,21 @@ public abstract class Issue {
                 Integer stateIndex = linkedProjectContext.getStateIndexRecordingMissing(linkedProjectContext.getCode(), linkedIssue.getKey(), stateName);
                 if (stateIndex != null) {
                     if (linkedIssues == null) {
-                        linkedIssues = new TreeSet<>(new Comparator<LinkedIssue>() {
-                            @Override
-                            public int compare(LinkedIssue o1, LinkedIssue o2) {
-                                return o1.getKey().compareTo(o2.getKey());
-                            }
-                        });
+                        linkedIssues = createLinkedIssueSet();
                     }
                     linkedIssues.add(new LinkedIssue(linkedProjectContext.getConfig(), linkedIssue.getKey(),
                             stateName, stateIndex, linkedIssue.getSummary()));
                 }
             }
+        }
+
+        private TreeSet<LinkedIssue> createLinkedIssueSet() {
+            return new TreeSet<>(new Comparator<LinkedIssue>() {
+                @Override
+                public int compare(LinkedIssue o1, LinkedIssue o2) {
+                    return o1.getKey().compareTo(o2.getKey());
+                }
+            });
         }
 
         Issue build() {

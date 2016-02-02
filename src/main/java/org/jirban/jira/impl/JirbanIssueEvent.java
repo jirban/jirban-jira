@@ -150,4 +150,5 @@ public class JirbanIssueEvent {
     public enum Type {
         CREATE, UPDATE, DELETE;
     }
+
 }

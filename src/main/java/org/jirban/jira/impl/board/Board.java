@@ -442,18 +442,24 @@ public class Board {
             final Assignee issueAssignee = getIssueAssignee(newAssignee, evtDetail);
             final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner, create);
             final Issue newIssue;
+            final Issue existing;
             if (create) {
+                existing = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, evtDetail.getState());
             } else {
-                Issue existing = board.allIssues.get(event.getIssueKey());
+                existing = board.allIssues.get(event.getIssueKey());
                 if (existing == null) {
-                    throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() + " in board " + board.boardConfig.getId());
+                    throw new IllegalArgumentException("Can't find issue to update " + event.getIssueKey() + " in board " + board.boardConfig.getId());
                 }
-                newIssue = null;
+                newIssue = projectUpdater.updateIssue(existing, evtDetail.getIssueType(),
+                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
+                        evtDetail.isRankOrStateChanged(), evtDetail.getState());
             }
+            //This will replace the old issue
             allIssuesCopy = copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new);
 
+            //The project's issue tables will be updated if needed
             BoardProject projectCopy = projectUpdater.update();
             final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
             projectsCopy.put(event.getProjectCode(), projectCopy);
@@ -463,7 +469,7 @@ public class Board {
             //Include the assignee if it was new
             //Include the project state table if recalculated
 
-            //TODO recalculate the missingXXXs maps
+            //TODO recalculate the missingXXXs maps (if an update we will need to remove the old ones)
 
             Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
                     assigneesCopy == null ? board.assignees : Collections.unmodifiableMap(assigneesCopy),
@@ -509,8 +515,8 @@ public class Board {
         private Assignee getIssueAssignee(Assignee newAssignee, JirbanIssueEvent.Detail evtDetail) {
             if (newAssignee != null) {
                 return newAssignee;
-            } else if (evtDetail.getAssignee() == null) {
-                return null;
+            } else if (evtDetail.getAssignee() == null || evtDetail.isUnassigned()) {
+                return Assignee.UNASSIGNED;
             } else {
                 return board.assignees.get(evtDetail.getAssignee().getName());
             }
@@ -520,7 +526,7 @@ public class Board {
             Map<K, V> copy = supplier.get();
             copy.putAll(map);
             copy.put(key, value);
-            return Collections.unmodifiableMap(copy);
+            return copy;
         }
     }
 }
