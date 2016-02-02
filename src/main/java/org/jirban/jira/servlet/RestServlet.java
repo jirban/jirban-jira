@@ -51,20 +51,29 @@ public class RestServlet extends HttpServlet{
                 return;
             } else if (pathAndId.isPath("issues")) {
                 pathAndId.validateId(true);
-                String json = null;
-                try {
-                    json = jiraFacade.getBoardJson(user, pathAndId.id);
-                } catch (SearchException e) {
-                    //TODO figure out if a permission violation becomes a search exception
-                    Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                PathAndId next = pathAndId.getNext();
+                if (next != null) {
+                    String json = null;
+                    try {
+                        json = jiraFacade.getBoardJson(user, pathAndId.getId());
+                    } catch (SearchException e) {
+                        //TODO figure out if a permission violation becomes a search exception
+                        Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        return;
+                    }
+                    Util.sendResponseJson(resp, json);
                     return;
+                } else {
+                    next.validateId(true);
+                    if (next.isPath("updates")) {
+                        //TODO
+                        return;
+                    }
                 }
-                Util.sendResponseJson(resp, json);
-                return;
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException | JirbanValidationException e) {
+        } catch (PathAndId.InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (JirbanPermissionException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
@@ -80,14 +89,14 @@ public class RestServlet extends HttpServlet{
             PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
             if (pathAndId.isPath("boards")) {
                 pathAndId.validateId(true);
-                jiraFacade.deleteBoardConfiguration(user, pathAndId.id);
+                jiraFacade.deleteBoardConfiguration(user, pathAndId.getId());
                 String json = jiraFacade.getBoardConfigurations(user);
                 Util.sendResponseJson(resp, json);
                 return;
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException | JirbanValidationException e) {
+        } catch (PathAndId.InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (JirbanPermissionException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
@@ -111,7 +120,7 @@ public class RestServlet extends HttpServlet{
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException | JirbanValidationException e) {
+        } catch (PathAndId.InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (JirbanPermissionException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
@@ -128,66 +137,17 @@ public class RestServlet extends HttpServlet{
             if (pathAndId.isPath("boards")) {
                 pathAndId.validateId(true);
                 final ModelNode config = Util.getRequestBodyNode(req);
-                jiraFacade.saveBoardConfiguration(user, pathAndId.id, Util.getDeployedUrl(req), config);
+                jiraFacade.saveBoardConfiguration(user, pathAndId.getId(), Util.getDeployedUrl(req), config);
                 String json = jiraFacade.getBoardConfigurations(user);
                 Util.sendResponseJson(resp, json);
                 return;
             } else {
                 Util.sendErrorJson(resp, HttpServletResponse.SC_UNAUTHORIZED);
             }
-        } catch (InvalidPathFormatException | JirbanValidationException e) {
+        } catch (PathAndId.InvalidPathFormatException | JirbanValidationException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         } catch (JirbanPermissionException e) {
             Util.sendErrorJson(resp, HttpServletResponse.SC_FORBIDDEN, e.getMessage());
-        }
-    }
-
-    private static class PathAndId {
-        private final String method;
-        private final String pathInfo;
-        private final String path;
-        private final Integer id;
-
-        private PathAndId(String method, String pathInfo, String path, Integer id) {
-            this.method = method;
-            this.pathInfo = pathInfo;
-            this.path = path;
-            this.id = id;
-        }
-
-        boolean isPath(String path) {
-            return this.path.equals(path);
-        }
-
-        void validateId(boolean id) {
-            if (id && this.id == null) {
-                throw new InvalidPathFormatException(method, pathInfo, " does not have an id");
-            }
-            if (!id && this.id != null) {
-                throw new InvalidPathFormatException(method, pathInfo, " should not have an id");
-            }
-        }
-
-        static PathAndId parse(String method, String pathInfo) {
-            if (pathInfo.length() <= 1) {
-                throw new InvalidPathFormatException(method, pathInfo, " doesn't contain anything useful");
-            }
-            int index = pathInfo.lastIndexOf("/");
-            if (index == 0) {
-                return new PathAndId(method, pathInfo, pathInfo.substring(1), null);
-            }
-
-            if (pathInfo.indexOf("/", 1) != index || index == pathInfo.length() - 1) {
-                throw new InvalidPathFormatException(method, pathInfo, " has a bad format");
-            }
-
-            return new PathAndId(method, pathInfo, pathInfo.substring(1, index), Integer.valueOf(pathInfo.substring(index + 1)));
-        }
-    }
-
-    private static class InvalidPathFormatException extends RuntimeException {
-        public InvalidPathFormatException(String method, String pathInfo, String message) {
-            super(method + " " + pathInfo + " " + message);
         }
     }
 }
