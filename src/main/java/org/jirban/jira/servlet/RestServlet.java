@@ -53,15 +53,14 @@ public class RestServlet extends HttpServlet{
                 pathAndId.validateId(true);
                 PathAndId next = pathAndId.getNext();
                 if (next != null) {
-                    String json = null;
                     try {
-                        json = jiraFacade.getBoardJson(user, pathAndId.getId());
+                        String json = jiraFacade.getBoardJson(user, pathAndId.getId());
+                        Util.sendResponseJson(resp, json);
                     } catch (SearchException e) {
                         //TODO figure out if a permission violation becomes a search exception
                         Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                         return;
                     }
-                    Util.sendResponseJson(resp, json);
                     return;
                 } else {
                     next.validateId(true);

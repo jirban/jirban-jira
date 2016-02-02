@@ -30,11 +30,46 @@ import com.atlassian.jira.user.ApplicationUser;
  * @author Kabir Khan
  */
 public interface BoardManager {
+    /**
+     * Gets the json for a board populated with issues
+     *
+     * @param user the logged in user
+     * @param id the id of the board
+     * @return the board in json format
+     * @throws SearchException
+     */
     String getBoardJson(ApplicationUser user, int id) throws SearchException;
 
+    /**
+     * Deletes a board
+     * @param user the logged in user
+     * @param id the id of the board to delete
+     */
     void deleteBoard(ApplicationUser user, int id);
 
+    /**
+     * Checks whether there are any boards which has the passed in {@code projectCode} as one of the board projects.
+     *
+     * @param projectCode the project code
+     * @return {@code true} if there are boards
+     */
     boolean hasBoardsForProjectCode(String projectCode);
 
+    /**
+     * Handles an event from the underlying Jira instance to create, delete, update issues on the affected boards
+     *
+     * @param event the event
+     */
     void handleEvent(JirbanIssueEvent event);
+
+    /**
+     * Gets the changes for a board. The client passes in their view id, and the delta is passed back to the client in
+     * json format so they can apply it to their own model.
+     *
+     * @param user the logged in user
+     * @param id the board id
+     * @param viewId the view id of the client.
+     * @return the json containing the changes
+     */
+    String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException;
 }

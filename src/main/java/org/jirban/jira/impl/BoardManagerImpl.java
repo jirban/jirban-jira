@@ -21,7 +21,6 @@
  */
 package org.jirban.jira.impl;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +28,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.board.Board;
@@ -51,7 +51,10 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 @Named("jirbanBoardManager")
 public class BoardManagerImpl implements BoardManager {
 
-    private Map<Integer, Board> boards = Collections.synchronizedMap(new HashMap<>());
+    //Guarded by this
+    private Map<Integer, Board> boards = new HashMap<>();
+    //Guarded by this
+    private Map<Integer, BoardChangeRegistry> boardChangeRegistries = new HashMap<>();
 
     @ComponentImport
     private final SearchService searchService;
@@ -98,6 +101,7 @@ public class BoardManagerImpl implements BoardManager {
                     final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
                     board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
                     boards.put(id, board);
+                    boardChangeRegistries.put(id, new BoardChangeRegistry(board.getCurrentView()));
                 }
             }
         }
@@ -108,6 +112,7 @@ public class BoardManagerImpl implements BoardManager {
     public void deleteBoard(ApplicationUser user, int id) {
         synchronized (this) {
             boards.remove(id);
+            boardChangeRegistries.remove(id);
         }
     }
 
@@ -117,10 +122,12 @@ public class BoardManagerImpl implements BoardManager {
         if (boardIds.size() == 0) {
             return false;
         }
-        for (Integer boardId : boardIds) {
-            //There might be a config, but no board. So check if there is a board first.
-            if (boards.get(boardId) != null) {
-                return true;
+        synchronized (this) {
+            for (Integer boardId : boardIds) {
+                //There might be a config, but no board. So check if there is a board first.
+                if (boards.get(boardId) != null) {
+                    return true;
+                }
             }
         }
         return false;
@@ -128,19 +135,50 @@ public class BoardManagerImpl implements BoardManager {
 
     @Override
     public void handleEvent(JirbanIssueEvent event) {
+        //Jira seems to only handle one event at a time, which is good
+
         List<Integer> boardIds = boardConfigurationManager.getBoardIdsForProjectCode(event.getProjectCode());
         for (Integer boardId : boardIds) {
-            Board board = boards.get(boardId);
-            if (board == null) {
-                continue;
+            final Board board;
+            final BoardChangeRegistry changeRegistry;
+            synchronized (this) {
+                board = boards.get(boardId);
+                if (board == null) {
+                    continue;
+                }
+                changeRegistry = boardChangeRegistries.get(boardId);
             }
             final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
             try {
-                Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event);
-                boards.put(boardId, newBoard);
+                Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event, changeRegistry);
+                synchronized (this) {
+                    boards.put(boardId, newBoard);
+                }
             } catch (Exception e) {
                 new Exception("Error handling  " + event + " for board " + board.getConfig().getId(), e).printStackTrace();
             }
         }
+    }
+
+    @Override
+    public String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException {
+        //Check we are allowed to view the board
+        boardConfigurationManager.getBoardConfigForBoardDisplay(user, id);
+
+        BoardChangeRegistry boardChangeRegistry;
+        synchronized (this) {
+            boardChangeRegistry = boardChangeRegistries.get(id);
+        }
+
+        if (boardChangeRegistry == null) {
+            //There is config but no board, so do a full refresh
+            //TODO flag somehow that this is a full-refresh
+            return getBoardJson(user, id);
+        }
+
+        ModelNode changes = boardChangeRegistry.getChangesSince(viewId);
+
+        return changes.toJSONString(true);
+
     }
 }

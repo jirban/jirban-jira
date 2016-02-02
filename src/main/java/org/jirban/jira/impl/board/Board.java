@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.BoardChangeRegistry;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
@@ -93,8 +94,8 @@ public class Board {
     }
 
     public Board handleEvent(SearchService searchService, AvatarService avatarService,
-                             IssueLinkManager issueLinkManager, ApplicationUser boardOwner, JirbanIssueEvent event) throws SearchException {
-        Updater boardUpdater = new Updater(searchService, avatarService, issueLinkManager, this, boardOwner);
+                             IssueLinkManager issueLinkManager, ApplicationUser boardOwner, JirbanIssueEvent event, BoardChangeRegistry changeRegistry) throws SearchException {
+        Updater boardUpdater = new Updater(searchService, avatarService, issueLinkManager, this, boardOwner, changeRegistry);
         return boardUpdater.handleEvent(event);
     }
 
@@ -200,6 +201,10 @@ public class Board {
         URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
         Assignee assignee = Assignee.create(assigneeUser, avatarUrl.toString());
         return assignee;
+    }
+
+    public int getCurrentView() {
+        return currentView;
     }
 
     static abstract class Accessor {
@@ -361,17 +366,19 @@ public class Board {
     static class Updater extends Accessor {
         private final Board board;
         private final AvatarService avatarService;
+        private final BoardChangeRegistry changeRegistry;
         private final SearchService searchService;
         //Will only be populated if a new assignee is brought in
         private Map<String, Assignee> assigneesCopy;
         Map<String, Issue> allIssuesCopy;
 
         Updater(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
-                Board board, ApplicationUser boardOwner) {
+                Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
             super(issueLinkManager, board.getConfig(), boardOwner);
             this.board = board;
             this.searchService = searchService;
             this.avatarService = avatarService;
+            this.changeRegistry = changeRegistry;
         }
 
         Board handleEvent(JirbanIssueEvent event) throws SearchException {
@@ -418,6 +425,7 @@ public class Board {
                     board.missingPriorities,
                     board.missingStates);
             boardCopy.updateBoardInProjects();
+            changeRegistry.addChange(boardCopy.currentView, event).buildAndRegister();
             return boardCopy;
         }
 
@@ -473,6 +481,7 @@ public class Board {
                     board.missingPriorities,
                     board.missingStates);
             boardCopy.updateBoardInProjects();
+            changeRegistry.addChange(boardCopy.currentView, event).buildAndRegister();
             return boardCopy;
         }
 

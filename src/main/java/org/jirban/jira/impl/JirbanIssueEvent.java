@@ -145,6 +145,7 @@ public class JirbanIssueEvent {
         public boolean isRankOrStateChanged() {
             return rankOrStateChanged;
         }
+
     }
 
     public enum Type {
