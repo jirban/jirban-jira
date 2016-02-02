@@ -42,11 +42,11 @@ import com.atlassian.jira.issue.link.IssueLinkManager;
  */
 public abstract class Issue {
 
-    protected final ProjectConfig project;
-    protected final String key;
-    protected final String state;
-    protected final Integer stateIndex;
-    protected final String summary;
+    private final ProjectConfig project;
+    private final String key;
+    private final String state;
+    private final Integer stateIndex;
+    private final String summary;
 
     Issue(ProjectConfig project, String key, String state, Integer stateIndex, String summary) {
         this.project = project;
@@ -68,6 +68,13 @@ public abstract class Issue {
         return summary;
     }
 
+    String getProjectCode() {
+        return project.getCode();
+    }
+
+    Integer getStateIndex() {
+        return stateIndex;
+    }
     boolean hasLinkedIssues() {
         return false;
     }
@@ -101,9 +108,6 @@ public abstract class Issue {
         return true;
     }
 
-    String getProjectCode() {
-        return project.getCode();
-    }
 
     /**
      * Returns a builder for the board issues during a full load of the board. Linked issues are handled internally.
@@ -237,7 +241,7 @@ public abstract class Issue {
 
         @Override
         ModelNode getModelNodeForFullRefresh(Board board) {
-            BoardProject boardProject = board.getBoardProject(project.getCode());
+            BoardProject boardProject = board.getBoardProject(getProjectCode());
             ModelNode issueNode = super.getModelNodeForFullRefresh(board);
             issueNode.get("priority").set(priorityIndex);
             issueNode.get("type").set(issueTypeIndex);
@@ -295,13 +299,13 @@ public abstract class Issue {
 
         private Builder(BoardProject.Accessor project, BoardIssue existing) {
             this.project = project;
-            this.issueKey = existing.key;
-            this.summary = existing.summary;
+            this.issueKey = existing.getKey();
+            this.summary = existing.getSummary();
             this.assignee = existing.assignee;
             this.issueTypeIndex = existing.issueTypeIndex;
             this.priorityIndex = existing.priorityIndex;
-            this.state = existing.state;
-            this.stateIndex = existing.stateIndex;
+            this.state = existing.getState();
+            this.stateIndex = existing.getStateIndex();
             if (existing.linkedIssues.size() > 0) {
                 Set<LinkedIssue> linkedIssues = createLinkedIssueSet();
                 linkedIssues.addAll(existing.linkedIssues);

@@ -381,20 +381,13 @@ public class Board {
                 case CREATE:
                     return handleCreateOrUpdateIssue(event, true);
                 case UPDATE:
-//                    return handleCreateOrUpdateIssue(event, false, (project, issue, assignee, detail) -> project.copyAndUpdateIssue(
-//                    this,
-//                    issue,
-//                    detail.getIssueType(), detail.getPriority(),
-//                    detail.getSummary(), assignee, detail.isUnassigned(),
-//                    detail.getState(), detail.isRankOrStateChanged()));
-                return null;
-
+                    return handleCreateOrUpdateIssue(event, false);
                 default:
                     throw new IllegalArgumentException("Unknown event type " + event.getType());
             }
         }
 
-        private Board handleDeleteEvent(JirbanIssueEvent event) {
+        private Board handleDeleteEvent(JirbanIssueEvent event) throws SearchException {
             final BoardProject project = board.projects.get(event.getProjectCode());
             if (project == null) {
                 throw new IllegalArgumentException("Can't find project " + event.getProjectCode() +
@@ -440,7 +433,7 @@ public class Board {
             //Might bring in a new assignee, need to add that first
             final Assignee newAssignee = createAssigneeIfNeeded(evtDetail);
             final Assignee issueAssignee = getIssueAssignee(newAssignee, evtDetail);
-            final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner, create);
+            final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner);
             final Issue newIssue;
             final Issue existing;
             if (create) {

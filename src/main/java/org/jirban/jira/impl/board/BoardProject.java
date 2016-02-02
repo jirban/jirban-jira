@@ -95,30 +95,14 @@ class BoardProject {
         return new LinkedProjectContext(board, linkedProjectConfig);
     }
 
-    public BoardProject copyAndDeleteIssue(Issue deleteIssue) {
-        List<List<String>> issuesByStateCopy = new ArrayList<>();
-        int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(deleteIssue.getState());
-        for (int i = 0; i < issueKeysByState.size() ; i++) {
-            if (stateIndex == i) {
-                //delete the issue
-                List<String> issueKeys = issueKeysByState.get(i);
-                List<String> issueKeysCopy = new ArrayList<>(i);
-                for (String key : issueKeys) {
-                    if (deleteIssue.getKey().equals(key)) {
-                        continue;
-                    }
-                    issueKeysCopy.add(key);
-                }
-                issuesByStateCopy.add(Collections.unmodifiableList(issueKeysCopy));
-            } else {
-                issuesByStateCopy.add(issueKeysByState.get(i));
-            }
-        }
-        return new BoardProject(projectConfig, issuesByStateCopy);
+    public BoardProject copyAndDeleteIssue(Issue deleteIssue) throws SearchException {
+        Updater updater = new Updater(null, null, this, null);
+        updater.deleteIssue(deleteIssue);
+        return updater.update();
     }
 
     public Updater updater(SearchService searchService, Board.Updater boardUpdater,
-                           ApplicationUser boardOwner, boolean create) {
+                           ApplicationUser boardOwner) {
         return new Updater(searchService, boardUpdater, this, boardOwner);
     }
 
@@ -247,7 +231,8 @@ class BoardProject {
      */
     static class Updater extends Accessor {
         private final BoardProject project;
-        private Issue issue;
+        private Issue existing;
+        private Issue newIssue;
         private boolean updatedState;
 
 
@@ -259,42 +244,99 @@ class BoardProject {
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
                           Assignee assignee, String state) {
-            issue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee);
+            newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee);
             updatedState = true;
-            return issue;
+            return newIssue;
         }
 
-        public Issue updateIssue(Issue existing, String issueType, String priority, String summary,
+        Issue updateIssue(Issue existing, String issueType, String priority, String summary,
                                  Assignee issueAssignee, boolean rankOrStateChanged, String state) {
-            issue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, state);
+            this.existing = existing;
+            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, state);
             this.updatedState = rankOrStateChanged;
-            return null;
+            return newIssue;
+        }
+
+        void deleteIssue(Issue issue) {
+            this.existing = issue;
+//            List<List<String>> issuesByStateCopy = new ArrayList<>();
+//            int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(deleteIssue.getState());
+//            for (int i = 0; i < issueKeysByState.size() ; i++) {
+//                if (stateIndex == i) {
+//                    //delete the newIssue
+//                    List<String> issueKeys = issueKeysByState.get(i);
+//                    List<String> issueKeysCopy = new ArrayList<>(i);
+//                    for (String key : issueKeys) {
+//                        if (deleteIssue.getKey().equals(key)) {
+//                            continue;
+//                        }
+//                        issueKeysCopy.add(key);
+//                    }
+//                    issuesByStateCopy.add(Collections.unmodifiableList(issueKeysCopy));
+//                } else {
+//                    issuesByStateCopy.add(issueKeysByState.get(i));
+//                }
+//            }
+//            return new BoardProject(projectConfig, issuesByStateCopy);
         }
 
         BoardProject update() throws SearchException {
-            final List<List<String>> issuesByStateCopy;
-            if (updatedState) {
-                issuesByStateCopy = new ArrayList<>();
-                List<String> issueKeysForState = updateState();
-                final int stateIndex = project.projectConfig.mapOwnStateOntoBoardStateIndex(issue.getState());
-                for (int i = 0; i < project.issueKeysByState.size() ; i++) {
-                    if (stateIndex == i) {
-                        issuesByStateCopy.add(issueKeysForState);
-                    } else {
-                        issuesByStateCopy.add(project.issueKeysByState.get(i));
-                    }
-                }
 
-                return new BoardProject(projectConfig, Collections.unmodifiableList(issuesByStateCopy));
+            final int deleteIndex = getStateIndexToDeleteFrom();
+            final List<String> deletedStateIssues = deleteIndex >= 0 ?
+                    deleteFromState(deleteIndex, existing.getKey()) : null;
+
+            final List<String> toStateIssues;
+            final int toIndex;
+            if (!updatedState) {
+                toIndex = -1;
+                toStateIssues = null;
             } else {
-                //No need to do anything. The issue will have been updated in the board, but the table of keys will be the same
-                return project;
+                toIndex = project.projectConfig.mapOwnStateOntoBoardStateIndex(newIssue.getState());
+                toStateIssues = updateState();
             }
+
+            final List<List<String>> issuesKeysByStateCopy = new ArrayList<>();
+
+            for (int i = 0; i < project.issueKeysByState.size() ; i++) {
+                if (deleteIndex == i) {
+                    issuesKeysByStateCopy.add(Collections.unmodifiableList(deletedStateIssues));
+                } else if (toIndex == i) {
+                    issuesKeysByStateCopy.add(Collections.unmodifiableList(toStateIssues));
+                } else {
+                    issuesKeysByStateCopy.add(project.issueKeysByState.get(i));
+                }
+            }
+            return new BoardProject(projectConfig, Collections.unmodifiableList(issuesKeysByStateCopy));
+        }
+
+        private List<String> deleteFromState(int stateIndex, String issueKey) {
+            List<String> issueKeys = project.issueKeysByState.get(stateIndex);
+            List<String> copy = new ArrayList<>();
+            for (String key : issueKeys) {
+                if (!key.equals(issueKey)) {
+                    copy.add(key);
+                }
+            }
+            return copy;
+        }
+
+        private int getStateIndexToDeleteFrom() {
+            if (existing != null) {
+                if (newIssue == null) {
+                    //It was a plain delete
+                    return project.projectConfig.mapOwnStateOntoBoardStateIndex(existing.getState());
+                } else if (!existing.getState().equals(newIssue.getState())) {
+                    //It was a move which affected states
+                    return project.projectConfig.mapOwnStateOntoBoardStateIndex(existing.getState());
+                }
+            }
+            return -1;
         }
 
         private List<String> updateState() throws SearchException {
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
-            queryBuilder.where().project(projectConfig.getCode()).status(issue.state);
+            queryBuilder.where().project(projectConfig.getCode()).status(newIssue.getState());
             if (projectConfig.getQueryFilter() != null) {
                 queryBuilder.where().addCondition(projectConfig.getQueryFilter());
             }
