@@ -50,12 +50,12 @@ class BoardProject {
 
     private volatile Board board;
     private final BoardProjectConfig projectConfig;
-    //TODO linkedhashset
-    private final List<List<Issue>> issuesByState;
+    //TODO linkedhashset for the issues list?
+    private final List<List<String>> issueKeysByState;
 
-    private BoardProject(BoardProjectConfig projectConfig, List<List<Issue>> issuesByState) {
+    private BoardProject(BoardProjectConfig projectConfig, List<List<String>> issueKeysByState) {
         this.projectConfig = projectConfig;
-        this.issuesByState = issuesByState;
+        this.issueKeysByState = issueKeysByState;
     }
 
     void setBoard(Board board) {
@@ -72,11 +72,11 @@ class BoardProject {
 
     void serialize(ModelNode parent) {
         ModelNode projectIssues = parent.get("issues");
-        for (List<Issue> issuesForState : issuesByState) {
+        for (List<String> issuesForState : issueKeysByState) {
             ModelNode issuesForStateNode = new ModelNode();
             issuesForStateNode.setEmptyList();
-            for (Issue issue : issuesForState) {
-                issuesForStateNode.add(issue.getKey());
+            for (String key: issuesForState) {
+                issuesForStateNode.add(key);
             }
             projectIssues.add(issuesForStateNode);
         }
@@ -96,22 +96,22 @@ class BoardProject {
     }
 
     public BoardProject copyAndDeleteIssue(Issue deleteIssue) {
-        List<List<Issue>> issuesByStateCopy = new ArrayList<>();
+        List<List<String>> issuesByStateCopy = new ArrayList<>();
         int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(deleteIssue.getState());
-        for (int i = 0 ; i < issuesByState.size() ; i++) {
+        for (int i = 0; i < issueKeysByState.size() ; i++) {
             if (stateIndex == i) {
                 //delete the issue
-                List<Issue> issues = issuesByState.get(i);
-                List<Issue> issuesCopy = new ArrayList<>(i);
-                for (Issue curr : issues) {
-                    if (deleteIssue.getKey().equals(curr.getKey())) {
+                List<String> issueKeys = issueKeysByState.get(i);
+                List<String> issueKeysCopy = new ArrayList<>(i);
+                for (String key : issueKeys) {
+                    if (deleteIssue.getKey().equals(key)) {
                         continue;
                     }
-                    issuesCopy.add(curr);
+                    issueKeysCopy.add(key);
                 }
-                issuesByStateCopy.add(Collections.unmodifiableList(issuesCopy));
+                issuesByStateCopy.add(Collections.unmodifiableList(issueKeysCopy));
             } else {
-                issuesByStateCopy.add(issuesByState.get(i));
+                issuesByStateCopy.add(issueKeysByState.get(i));
             }
         }
         return new BoardProject(projectConfig, issuesByStateCopy);
@@ -192,7 +192,7 @@ class BoardProject {
      * Used to load a project when creating a new board
      */
     static class Builder extends Accessor {
-        private final Map<String, List<Issue>> issuesByState = new HashMap<>();
+        private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
         private Builder(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig,
@@ -201,8 +201,8 @@ class BoardProject {
         }
 
         Builder addIssue(String state, Issue issue) {
-            final List<Issue> issues = issuesByState.computeIfAbsent(state, l -> new ArrayList<>());
-            issues.add(issue);
+            final List<String> issueKeys = issueKeysByState.computeIfAbsent(state, l -> new ArrayList<>());
+            issueKeys.add(issue.getKey());
             board.addIssue(issue);
             return this;
         }
@@ -229,9 +229,9 @@ class BoardProject {
         }
 
         BoardProject build(boolean owner) {
-            final List<List<Issue>> resultIssues = new ArrayList<>();
+            final List<List<String>> resultIssues = new ArrayList<>();
             for (String state : board.getOwnerStateNames()) {
-                List<Issue> issues = issuesByState.get(owner ? state : projectConfig.mapBoardStateOntoOwnState(state));
+                List<String> issues = issueKeysByState.get(owner ? state : projectConfig.mapBoardStateOntoOwnState(state));
                 if (issues == null) {
                     issues = new ArrayList<>();
                 }
@@ -272,27 +272,27 @@ class BoardProject {
         }
 
         BoardProject update() throws SearchException {
-            final List<List<Issue>> issuesByStateCopy;
+            final List<List<String>> issuesByStateCopy;
             if (updatedState) {
                 issuesByStateCopy = new ArrayList<>();
-                List<Issue> issuesForState = updateState();
+                List<String> issueKeysForState = updateState();
                 final int stateIndex = project.projectConfig.mapOwnStateOntoBoardStateIndex(issue.getState());
-                for (int i = 0 ; i < project.issuesByState.size() ; i++) {
+                for (int i = 0; i < project.issueKeysByState.size() ; i++) {
                     if (stateIndex == i) {
-                        issuesByStateCopy.add(issuesForState);
+                        issuesByStateCopy.add(issueKeysForState);
                     } else {
-                        issuesByStateCopy.add(project.issuesByState.get(i));
+                        issuesByStateCopy.add(project.issueKeysByState.get(i));
                     }
                 }
 
                 return new BoardProject(projectConfig, Collections.unmodifiableList(issuesByStateCopy));
             } else {
-                //TODO Replace the updated issue in the state tables
+                //No need to do anything. The issue will have been updated in the board, but the table of keys will be the same
                 return project;
             }
         }
 
-        private List<Issue> updateState() throws SearchException {
+        private List<String> updateState() throws SearchException {
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().project(projectConfig.getCode()).status(issue.state);
             if (projectConfig.getQueryFilter() != null) {
@@ -304,14 +304,14 @@ class BoardProject {
             SearchResults searchResults =
                     searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
-            List<Issue> issues = new ArrayList<>();
+            List<String> issues = new ArrayList<>();
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
                 String issueKey = jiraIssue.getKey();
                 Issue issue = board.getIssue(issueKey);
                 if (issue == null) {
                     System.out.println("Could not find issue " + issue);
                 }
-                issues.add(issue);
+                issues.add(issue.getKey());
             }
             return Collections.unmodifiableList(issues);
         }
