@@ -57,7 +57,7 @@ public class BoardChangeRegistry {
 
     BoardChangeRegistry(int startView) {
         this.startView = startView;
-        this.endView = endView;
+        this.endView = startView;
         incrementNextCleanup();
     }
 
@@ -75,17 +75,21 @@ public class BoardChangeRegistry {
         }
     }
 
-    ModelNode getChangesSince(int sinceView) {
+    ModelNode getChangesSince(int sinceView) throws FullRefreshNeededException {
         //Get a snapshot of the changes
         if (sinceView > endView) {
             //Our board was probably reset since we last connected, so we need to send a full refresh instead
-            //TODO notify the caller we need a full refresh
+            throw new FullRefreshNeededException();
+        }
+        if (sinceView < startView) {
+            //The client has taken too long to ask for changes
+            throw new FullRefreshNeededException();
         }
 
         final List<BoardChange> changes = getChangesListCleaningUpIfNeeded();
         final BoardChangeCollector collector = new BoardChangeCollector();
         for (BoardChange change : changes) {
-            if (change.getView() < sinceView) {
+            if (change.getView() <= sinceView) {
                 continue;
             }
             collector.addChange(change);
@@ -105,14 +109,20 @@ public class BoardChangeRegistry {
                 return changes;
             }
 
+            int firstView = 0;
             if (changes.size() > 0 && changes.get(0).getTime() < expiryTime) {
                 final List<BoardChange> changesCopy = new ArrayList<>();
                 for (BoardChange change : changes) {
                     if (change.getTime() < expiryTime) {
                         continue;
                     }
+                    if (firstView == 0) {
+                        firstView = change.getView();
+                    }
                     changesCopy.add(change);
+                    endView = change.getView();
                 }
+                startView = firstView;
                 changes = new CopyOnWriteArrayList<>(changesCopy);
             }
             incrementNextCleanup();
@@ -315,5 +325,9 @@ public class BoardChangeRegistry {
             }
             return output;
         }
+    }
+
+    public class FullRefreshNeededException extends Exception {
+
     }
 }

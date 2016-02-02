@@ -82,6 +82,11 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
+    public String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException {
+        return boardManager.getChangesJson(user, id, viewId);
+    }
+
+    @Override
     public void afterPropertiesSet() throws Exception {
 
     }

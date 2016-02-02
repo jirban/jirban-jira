@@ -59,13 +59,18 @@ public class RestServlet extends HttpServlet{
                     } catch (SearchException e) {
                         //TODO figure out if a permission violation becomes a search exception
                         Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                        return;
                     }
                     return;
                 } else {
                     next.validateId(true);
                     if (next.isPath("updates")) {
-                        //TODO
+                        try {
+                            String json = jiraFacade.getChangesJson(user, pathAndId.getId(), next.getId());
+                            Util.sendResponseJson(resp, json);
+                        } catch (SearchException e) {
+                            //TODO figure out if a permission violation becomes a search exception
+                            Util.sendErrorJson(resp, HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        }
                         return;
                     }
                 }

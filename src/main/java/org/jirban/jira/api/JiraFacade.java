@@ -45,4 +45,15 @@ public interface JiraFacade
      * @throws SearchException
      */
     String getBoardJson(ApplicationUser user, int id) throws SearchException;
+
+    /**
+     * Gets the changes for a board. The client passes in their view id, and the delta is passed back to the client in
+     * json format so they can apply it to their own model.
+     *
+     * @param user the logged in user
+     * @param id the board id
+     * @param viewId the view id of the client.
+     * @return the json containing the changes
+     */
+    String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException;
 }

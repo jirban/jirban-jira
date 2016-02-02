@@ -172,13 +172,16 @@ public class BoardManagerImpl implements BoardManager {
 
         if (boardChangeRegistry == null) {
             //There is config but no board, so do a full refresh
-            //TODO flag somehow that this is a full-refresh
             return getBoardJson(user, id);
         }
 
-        ModelNode changes = boardChangeRegistry.getChangesSince(viewId);
+        final ModelNode changes;
+        try {
+            changes = boardChangeRegistry.getChangesSince(viewId);
+        } catch (BoardChangeRegistry.FullRefreshNeededException e) {
+            return getBoardJson(user, id);
+        }
 
         return changes.toJSONString(true);
-
     }
 }
