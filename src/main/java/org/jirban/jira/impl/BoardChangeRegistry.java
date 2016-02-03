@@ -87,7 +87,7 @@ public class BoardChangeRegistry {
         }
 
         final List<BoardChange> changes = getChangesListCleaningUpIfNeeded();
-        final ChangeSetCollector collector = new ChangeSetCollector();
+        final ChangeSetCollector collector = new ChangeSetCollector(endView);
         for (BoardChange change : changes) {
             if (change.getView() <= sinceView) {
                 continue;
@@ -135,7 +135,12 @@ public class BoardChangeRegistry {
     }
 
     private static class ChangeSetCollector {
+        private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
+
+        public ChangeSetCollector(int endView) {
+            this.view = endView;
+        }
 
         void addChange(BoardChange boardChange) {
             final String issueKey = boardChange.getEvent().getIssueKey();
@@ -149,11 +154,15 @@ public class BoardChangeRegistry {
                     issueChanges.remove(issueChange.issueKey);
                 }
             }
+            if (boardChange.getView() > view) {
+                view = boardChange.getView();
+            }
         }
 
         ModelNode serialize() {
             ModelNode output = new ModelNode();
             ModelNode changes = output.get("changes");
+            changes.get("view").set(view);
             serializeIssues(changes);
             return output;
         }
@@ -163,7 +172,12 @@ public class BoardChangeRegistry {
             Set<IssueChange> updatedIssues = new HashSet<>();
             Set<IssueChange> deletedIssues = new HashSet<>();
             sortIssues(newIssues, updatedIssues, deletedIssues);
-            serializeIssues(parent.get("issues"), newIssues, updatedIssues, deletedIssues);
+
+            ModelNode issues = new ModelNode();
+            serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
+            if (issues.isDefined()) {
+                parent.get("issues").set(issues);
+            }
         }
 
         private void serializeIssues(ModelNode parent, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues) {
@@ -276,6 +290,10 @@ public class BoardChangeRegistry {
 
         void mergeType(JirbanIssueEvent event) {
             Type evtType = event.getType();
+            if (type == null) {
+                type = evtType;
+                return;
+            }
             switch (type) {
                 case CREATE:
                     //We were created as part of this change-set, so keep CREATE unless we were deleted
@@ -290,16 +308,14 @@ public class BoardChangeRegistry {
                 case DELETE:
                     //No more changes should happen here
                     break;
-                default:
-                    type = evtType;
             }
         }
 
         public ModelNode serialize() {
             ModelNode output = new ModelNode();
-            output.get("key").set(issueKey);
             switch (type) {
                 case CREATE:
+                    output.get("key").set(issueKey);
                     output.get("type").set(issueType);
                     output.get("priority").set(priority);
                     output.get("summary").set(summary);
@@ -307,6 +323,7 @@ public class BoardChangeRegistry {
                     output.get("state").set(state);
                     break;
                 case UPDATE:
+                    output.get("key").set(issueKey);
                     if (type != null) {
                         output.get("type").set(issueType);
                     }
@@ -325,6 +342,7 @@ public class BoardChangeRegistry {
                     break;
                 case DELETE:
                     //No more data needed
+                    output.set(issueKey);
                     break;
             }
             return output;

@@ -24,69 +24,19 @@ package ut.org.jirban.jira;
 import java.util.List;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.api.BoardConfigurationManager;
-import org.jirban.jira.api.BoardManager;
-import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
-import org.jirban.jira.impl.BoardManagerBuilder;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
 import com.atlassian.crowd.embedded.api.User;
-import com.atlassian.jira.bc.issue.search.SearchService;
-import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.junit.rules.MockitoContainer;
-import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
-import com.atlassian.jira.mock.component.MockComponentWorker;
-import com.atlassian.jira.user.util.UserManager;
 
 import ut.org.jirban.jira.mock.CrowdUserBridge;
-import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
-import ut.org.jirban.jira.mock.IssueRegistry;
-import ut.org.jirban.jira.mock.SearchServiceBuilder;
-import ut.org.jirban.jira.mock.UserManagerBuilder;
 
 /**
  * @author Kabir Khan
  */
-public class BoardManagerTest {
-
-    @Rule
-    public MockitoContainer mockitoContainer = MockitoMocksInContainer.rule(this);
-
-    private BoardManager boardManager;
-    private UserManager userManager;
-    private IssueRegistry issueRegistry;
-
-    @Before
-    public void initializeMocks() throws Exception {
-
-        BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
-                .addConfigActiveObjects("config/board-tdp.json")
-                .build();
-
-        MockComponentWorker worker = new MockComponentWorker();
-        userManager = new UserManagerBuilder()
-                .addDefaultUsers()
-                .build(worker);
-
-        issueRegistry = new IssueRegistry(userManager);
-        SearchService searchService = new SearchServiceBuilder()
-                .setIssueRegistry(issueRegistry)
-                .build(worker);
-        IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
-        worker.init();
-
-        boardManager = new BoardManagerBuilder()
-                .setBoardConfigurationManager(cfgManager)
-                .setUserManager(userManager)
-                .setSearchService(searchService)
-                .setIssueLinkManager(issueLinkManager)
-                .build();
-    }
+public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testLoadBoardOnlyOwnerProjectIssues() throws Exception {
@@ -604,7 +554,7 @@ public class BoardManagerTest {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(expectedViewId, boardNode.get("viewId").asInt());
+        Assert.assertEquals(expectedViewId, boardNode.get("view").asInt());
         checkUsers(boardNode, users);
         return boardNode;
     }
