@@ -28,10 +28,7 @@ import org.jirban.jira.impl.JirbanIssueEvent;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.search.SearchException;
-
-import ut.org.jirban.jira.mock.CrowdUserBridge;
 
 /**
  * @author Kabir Khan
@@ -272,7 +269,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "feature", "high",
                 "Five", "kabir", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
@@ -299,7 +296,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-2"},
                 {}});
 
-        create = createCreateEventAndAddToRegistry("TBG-4", "TBG", "feature", "high",
+        create = createCreateEventAndAddToRegistry("TBG-4", "feature", "high",
                 "Four", null, "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
@@ -340,7 +337,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "TDP", "feature", "high",
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "feature", "high",
                 "Five", "james", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
@@ -365,7 +362,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-2"},
                 {}});
 
-        create = createCreateEventAndAddToRegistry("TBG-4", "TBG", "feature", "high",
+        create = createCreateEventAndAddToRegistry("TBG-4", "feature", "high",
                 "Four", "stuart", "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
@@ -405,7 +402,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", "TDP", "feature", "high",
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", "feature", "high",
                 "Four-1", "kabir", false, "TDP-B", true);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
@@ -434,56 +431,56 @@ public class BoardManagerTest extends AbstractBoardTest {
         //We will do a full check later
 
         //type
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", "feature", null, null, null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", "feature", null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", 0, -1);
 
         //priority
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, "low", null, null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, "low", null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", 0, -1);
 
         //summary
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, "One-1", null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, "One-1", null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
         //assign
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, "brian", false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, "brian", false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
         //No updated assignee, nor unassigned
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
         //Unassign
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, null, true, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
         //Change state
-        update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, null, false, "TDP-D", true);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, "TDP-D", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3, -1);
 
         //Change in the other project
-        update = createUpdateEventAndAddToRegistry("TBG-3", "TBG", "bug", "highest", "Three-1", "kabir", false, "TBG-Y", true);
+        update = createUpdateEventAndAddToRegistry("TBG-3", "bug", "highest", "Three-1", "kabir", false, "TBG-Y", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(9, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
@@ -521,11 +518,11 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", "TDP", null, null, null, "jason", false, null, false);
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, "jason", false, null, false);
         boardManager.handleEvent(update);
         getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
 
-        update = createUpdateEventAndAddToRegistry("TBG-3", "TBG", null, null, null, "james", false, null, false);
+        update = createUpdateEventAndAddToRegistry("TBG-3", null, null, null, "james", false, null, false);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
 
@@ -617,61 +614,4 @@ public class BoardManagerTest extends AbstractBoardTest {
             Assert.assertEquals(assignee, issue.get("assignee").asInt());
         }
     }
-
-    private JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey, String projectCode,
-                                               String issueType, String priority, String summary, String username, String state) {
-        CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
-        User user = userBridge.getUserByKey(username);
-        JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, state);
-
-        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, state);
-        return create;
-    }
-
-    private JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String projectCode, String issueType,
-                                                   String priority, String summary, String username, boolean unassigned, String state, boolean rank) {
-        Assert.assertFalse(username != null && unassigned);
-
-        User user;
-        if (unassigned) {
-            user = JirbanIssueEvent.UNASSIGNED;
-        } else {
-            CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
-            user = userBridge.getUserByKey(username);
-        }
-        JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, state, rank);
-
-        issueRegistry.updateIssue(issueKey, projectCode, issueType, priority, summary, username, state);
-        return update;
-    }
-
-
-
-    private enum IssueType {
-        TASK(0),
-        BUG(1),
-        FEATURE(2);
-
-        private final int index;
-
-        IssueType(int index) {
-            this.index = index;
-        }
-    }
-
-    private enum Priority {
-        HIGHEST(0),
-        HIGH(1),
-        LOW(2),
-        LOWEST(3);
-
-        private final int index;
-
-        Priority(int index) {
-            this.index = index;
-        }
-    }
-
 }

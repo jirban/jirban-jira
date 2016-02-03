@@ -25,9 +25,12 @@ import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.BoardManagerBuilder;
+import org.jirban.jira.impl.JirbanIssueEvent;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 
+import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
@@ -35,6 +38,7 @@ import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
 import com.atlassian.jira.mock.component.MockComponentWorker;
 import com.atlassian.jira.user.util.UserManager;
 
+import ut.org.jirban.jira.mock.CrowdUserBridge;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
 import ut.org.jirban.jira.mock.SearchServiceBuilder;
@@ -79,4 +83,65 @@ public class AbstractBoardTest {
                 .build();
     }
 
+    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
+                                                                 String issueType, String priority, String summary, String username, String state) {
+        CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
+        User user = userBridge.getUserByKey(username);
+        String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
+        JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
+                summary, user, state);
+
+        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, state);
+        return create;
+    }
+
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueType,
+                                                                 String priority, String summary, String username, boolean unassigned, String state, boolean rank) {
+        Assert.assertFalse(username != null && unassigned);
+
+        User user;
+        if (unassigned) {
+            user = JirbanIssueEvent.UNASSIGNED;
+        } else {
+            CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
+            user = userBridge.getUserByKey(username);
+        }
+        String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
+        JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueType, priority,
+                summary, user, state, rank);
+
+        issueRegistry.updateIssue(issueKey, projectCode, issueType, priority, summary, username, state);
+        return update;
+    }
+
+    protected enum IssueType {
+        TASK(0),
+        BUG(1),
+        FEATURE(2);
+
+        final int index;
+        final String name;
+
+        IssueType(int index) {
+            this.index = index;
+            this.name = super.name().toLowerCase();
+        }
+
+
+    }
+
+    protected enum Priority {
+        HIGHEST(0),
+        HIGH(1),
+        LOW(2),
+        LOWEST(3);
+
+        final int index;
+        final String name;
+
+        Priority(int index) {
+            this.index = index;
+            this.name = super.name().toLowerCase();
+        }
+    }
 }

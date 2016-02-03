@@ -35,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent.Type;
+import org.jirban.jira.impl.board.Assignee;
 
 /**
  * @author Kabir Khan
@@ -163,21 +164,21 @@ public class BoardChangeRegistry {
             ModelNode output = new ModelNode();
             ModelNode changes = output.get("changes");
             changes.get("view").set(view);
-            serializeIssues(changes);
-            return output;
-        }
 
-        private void serializeIssues(ModelNode parent) {
             Set<IssueChange> newIssues = new HashSet<>();
             Set<IssueChange> updatedIssues = new HashSet<>();
             Set<IssueChange> deletedIssues = new HashSet<>();
-            sortIssues(newIssues, updatedIssues, deletedIssues);
+            Map<String, Assignee> newAssignees = new HashMap<>();
+            sortIssues(newIssues, updatedIssues, deletedIssues, newAssignees);
 
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
             if (issues.isDefined()) {
-                parent.get("issues").set(issues);
+                changes.get("issues").set(issues);
             }
+
+            serializeAssignees(changes, newAssignees);
+            return output;
         }
 
         private void serializeIssues(ModelNode parent, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues) {
@@ -196,15 +197,30 @@ public class BoardChangeRegistry {
             }
         }
 
+        private void serializeAssignees(ModelNode parent, Map<String, Assignee> newAssignees) {
+            if (newAssignees.size() > 0) {
+                ModelNode assignees = parent.get("assignees");
+                for (Assignee assignee : newAssignees.values()) {
+                    assignee.serialize(assignees);
+                }
+            }
+        }
 
-        void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues) {
+        void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees) {
             for (IssueChange change : issueChanges.values()) {
+                Assignee newAssignee = null;
                 if (change.type == CREATE) {
                     newIssues.add(change);
+                    newAssignee = change.newAssignee;
                 } else if (change.type == UPDATE) {
                     updatedIssues.add(change);
+                    newAssignee = change.newAssignee;
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
+                }
+
+                if (newAssignee != null) {
+                    newAssignees.put(newAssignee.getKey(), newAssignee);
                 }
             }
         }
@@ -223,6 +239,7 @@ public class BoardChangeRegistry {
         private boolean unassigned;
         private String state;
 
+        private Assignee newAssignee;
 
         public IssueChange(String issueKey) {
             this.issueKey = issueKey;
@@ -240,6 +257,9 @@ public class BoardChangeRegistry {
             JirbanIssueEvent event = boardChange.getEvent();
             view = boardChange.getView();
             mergeType(event);
+            if (boardChange.getNewAssignee() != null) {
+                newAssignee = boardChange.getNewAssignee();
+            }
             switch (type) {
                 case CREATE:
                     setFieldsForCreate(event);
@@ -252,6 +272,7 @@ public class BoardChangeRegistry {
                     break;
                 default:
             }
+
         }
 
         void setFieldsForCreate(JirbanIssueEvent event) {
@@ -278,6 +299,7 @@ public class BoardChangeRegistry {
                 if (detail.getAssignee() == JirbanIssueEvent.UNASSIGNED) {
                     assignee = null;
                     unassigned = true;
+                    newAssignee = null;
                 } else {
                     assignee = detail.getAssignee().getName();
                     unassigned = false;
@@ -319,7 +341,9 @@ public class BoardChangeRegistry {
                     output.get("type").set(issueType);
                     output.get("priority").set(priority);
                     output.get("summary").set(summary);
-                    output.get("assignee").set(assignee);
+                    if (assignee != null) {
+                        output.get("assignee").set(assignee);
+                    }
                     output.get("state").set(state);
                     break;
                 case UPDATE:

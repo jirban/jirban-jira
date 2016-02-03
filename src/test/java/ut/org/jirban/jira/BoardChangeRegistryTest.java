@@ -22,8 +22,10 @@
 package ut.org.jirban.jira;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
@@ -49,7 +51,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
         issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
     }
 
     @Test
@@ -78,8 +79,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //TODO should check the same when passing in an old view id that has been reaped after being too old
     }
 
-
-
     @Test
     public void testDeleteIssues() throws Exception {
         configureBoardStart();
@@ -90,22 +89,80 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete);
         checkViewId(1);
+        checkAssignees(getChangesJson(0), 1);
+        checkAdds(getChangesJson(0), 1);
         checkDeletes(getChangesJson(0), 1, "TDP-3");
 
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete);
         checkViewId(2);
+        checkAssignees(getChangesJson(0), 2);
+        checkAdds(getChangesJson(0), 2);
         checkDeletes(getChangesJson(0), 2, "TDP-3", "TDP-7");
         checkDeletes(getChangesJson(1), 2, "TDP-7");
 
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete);
         checkViewId(3);
+        checkAssignees(getChangesJson(0), 3);
+        checkAdds(getChangesJson(0), 3);
         checkDeletes(getChangesJson(0), 3, "TDP-3", "TDP-7", "TBG-1");
         checkDeletes(getChangesJson(1), 3, "TDP-7", "TBG-1");
         checkDeletes(getChangesJson(2), 3, "TBG-1");
         checkNoChanges(getChangesJson(3), 3);
     }
+
+    @Test
+    public void testCreateIssues() throws Exception {
+        configureBoardStart();
+
+        checkViewId(0);
+        checkNoChanges(getChangesJson(0), 0);
+
+        //Add an issue which does not bring in new assignees
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", "bug", "high", "Eight", "kabir", "TDP-D");
+        boardManager.handleEvent(create);
+        checkViewId(1);
+        checkAssignees(getChangesJson(0), 1);
+        checkDeletes(getChangesJson(0), 1);
+        checkAdds(getChangesJson(0), 1, new CreatedIssue("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"));
+
+        //Now add an issue which brings in new assignees
+        create = createCreateEventAndAddToRegistry("TBG-4", "feature", "low", "Four", "jason", "TBG-X");
+        boardManager.handleEvent(create);
+        checkViewId(2);
+        checkAssignees(getChangesJson(0), 2, "jason");
+        checkDeletes(getChangesJson(0), 2);
+        checkAdds(getChangesJson(0), 2,
+                new CreatedIssue("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"),
+                new CreatedIssue("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
+        checkAssignees(getChangesJson(1), 2, "jason");
+        checkDeletes(getChangesJson(1), 2);
+        checkAdds(getChangesJson(1), 2,
+                new CreatedIssue("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
+
+        //Add another one not bringing in new assignees
+        create = createCreateEventAndAddToRegistry("TDP-9", "bug", "high", "Nine", null, "TDP-D");
+        boardManager.handleEvent(create);
+        checkViewId(3);
+        checkAssignees(getChangesJson(0), 3, "jason");
+        checkDeletes(getChangesJson(0), 3);
+        checkAdds(getChangesJson(0), 3,
+                new CreatedIssue("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"),
+                new CreatedIssue("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"),
+                new CreatedIssue("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkAssignees(getChangesJson(1), 3, "jason");
+        checkDeletes(getChangesJson(1), 3);
+        checkAdds(getChangesJson(1), 3,
+                new CreatedIssue("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"),
+                new CreatedIssue("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkAssignees(getChangesJson(2), 3);
+        checkDeletes(getChangesJson(2), 3);
+        checkAdds(getChangesJson(2), 3,
+                new CreatedIssue("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+    }
+
+    //Test create and add
 
     private void checkNoChanges(ModelNode changesNode, int expectedView) {
         Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
@@ -127,6 +184,58 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
+    private void checkAdds(ModelNode changesNode, int expectedView, CreatedIssue...expectedIssues) {
+        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertEquals(1, changesNode.keys().size());
+        if (expectedIssues.length == 0) {
+            Assert.assertFalse(changesNode.get("changes", "issues").hasDefined("new"));
+        } else {
+            Map<String, CreatedIssue> expectedIssuesMap = new HashMap<>();
+            Arrays.asList(expectedIssues).forEach(ei -> expectedIssuesMap.put(ei.key, ei));
+            List<ModelNode> list = changesNode.get("changes", "issues", "new").asList();
+            Assert.assertEquals(expectedIssuesMap.size(), list.size());
+            for (ModelNode node : list) {
+                final String key = node.get("key").asString();
+                CreatedIssue expected = expectedIssuesMap.get(key);
+                Assert.assertNotNull(expected);
+                Assert.assertEquals(expected.type.name, nullOrString(node.get("type")));
+                Assert.assertEquals(expected.priority.name, nullOrString(node.get("priority")));
+                Assert.assertEquals(expected.summary, nullOrString(node.get("summary")));
+                Assert.assertEquals(expected.assignee, nullOrString(node.get("assignee")));
+                Assert.assertEquals(expected.state, nullOrString(node.get("state")));
+            }
+        }
+    }
+
+    private void checkAssignees(ModelNode changesNode, int expectedView, String...expectedAssignees) {
+        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertEquals(1, changesNode.keys().size());
+        if (expectedAssignees.length == 0) {
+            Assert.assertFalse(changesNode.get("changes").hasDefined("assignees"));
+        } else {
+            List<ModelNode> list = changesNode.get("changes", "assignees").asList();
+            Assert.assertEquals(expectedAssignees.length, list.size());
+            Set<String> assignees = new HashSet<>(Arrays.asList(expectedAssignees));
+            for (ModelNode assigneeNode : list) {
+                String key = assigneeNode.get("key").asString();
+                Assert.assertTrue(assignees.contains(key));
+                Assert.assertEquals(key + "@example.com", assigneeNode.get("email").asString());
+                Assert.assertEquals("/avatars/" + key + ".png", assigneeNode.get("avatar").asString());
+                String displayName = assigneeNode.get("name").toString().toLowerCase();
+                Assert.assertTrue(displayName.length() > key.length());
+                Assert.assertTrue(displayName.contains(key));
+            }
+        }
+    }
+
+    String nullOrString(ModelNode node) {
+        if (node.isDefined()) {
+            return node.asString();
+        }
+        return null;
+    }
+
+
 
     private void checkViewId(int expectedViewId) throws SearchException {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
@@ -139,5 +248,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), 0, fromView);
         ModelNode changesNode = ModelNode.fromJSONString(json);
         return changesNode;
+    }
+
+    private static class CreatedIssue {
+        private final String key;
+        private final IssueType type;
+        private final Priority priority;
+        private final String summary;
+        private final String state;
+        private final String assignee;
+
+        CreatedIssue(String key, IssueType type, Priority priority, String summary, String assignee, String state) {
+            this.key = key;
+            this.type = type;
+            this.priority = priority;
+            this.summary = summary;
+            this.assignee = assignee;
+            this.state = state;
+        }
     }
 }

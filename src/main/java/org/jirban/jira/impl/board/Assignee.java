@@ -50,7 +50,7 @@ public class Assignee {
                 user.getDisplayName());
     }
 
-    void serialize(ModelNode parent) {
+    public void serialize(ModelNode parent) {
         ModelNode modelNode = new ModelNode();
         modelNode.get("key").set(key);
         modelNode.get("email").set(email);
@@ -59,7 +59,7 @@ public class Assignee {
         parent.add(modelNode);
     }
 
-    String getKey() {
+    public String getKey() {
         return key;
     }
 
