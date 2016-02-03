@@ -259,25 +259,6 @@ class BoardProject {
 
         void deleteIssue(Issue issue) {
             this.existing = issue;
-//            List<List<String>> issuesByStateCopy = new ArrayList<>();
-//            int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(deleteIssue.getState());
-//            for (int i = 0; i < issueKeysByState.size() ; i++) {
-//                if (stateIndex == i) {
-//                    //delete the newIssue
-//                    List<String> issueKeys = issueKeysByState.get(i);
-//                    List<String> issueKeysCopy = new ArrayList<>(i);
-//                    for (String key : issueKeys) {
-//                        if (deleteIssue.getKey().equals(key)) {
-//                            continue;
-//                        }
-//                        issueKeysCopy.add(key);
-//                    }
-//                    issuesByStateCopy.add(Collections.unmodifiableList(issueKeysCopy));
-//                } else {
-//                    issuesByStateCopy.add(issueKeysByState.get(i));
-//                }
-//            }
-//            return new BoardProject(projectConfig, issuesByStateCopy);
         }
 
         BoardProject update() throws SearchException {

@@ -151,6 +151,10 @@ public class BoardManagerImpl implements BoardManager {
             final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
             try {
                 Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event, changeRegistry);
+                if (newBoard == null) {
+                    //The changes in the issue were not relevant
+                    return;
+                }
                 synchronized (this) {
                     boards.put(boardId, newBoard);
                 }

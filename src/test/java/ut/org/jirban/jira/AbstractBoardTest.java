@@ -95,8 +95,8 @@ public class AbstractBoardTest {
         return create;
     }
 
-    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueType,
-                                                                 String priority, String summary, String username, boolean unassigned, String state, boolean rank) {
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
+                                                                 Priority priority, String summary, String username, boolean unassigned, String state, boolean rank) {
         Assert.assertFalse(username != null && unassigned);
 
         User user;
@@ -106,11 +106,13 @@ public class AbstractBoardTest {
             CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
             user = userBridge.getUserByKey(username);
         }
+        String issueTypeName = issueType == null ? null : issueType.name;
+        String priorityName = priority == null ? null : priority.name;
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
-        JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, state, rank);
+        JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
+                priorityName, summary, user, state, rank);
 
-        issueRegistry.updateIssue(issueKey, projectCode, issueType, priority, summary, username, state);
+        issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, state);
         return update;
     }
 

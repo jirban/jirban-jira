@@ -169,27 +169,37 @@ public abstract class Issue {
     private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
                                     String summary, Assignee issueAssignee, String state) {
         Builder builder = new Builder(project, existing);
+        boolean changed = false;
         if (issueType != null) {
             builder.setIssueType(issueType);
+            changed = true;
         }
         if (priority != null) {
             builder.setPriority(priority);
+            changed = true;
         }
         if (summary != null) {
             builder.setSummary(summary);
+            changed = true;
         }
         if (issueAssignee != null) {
             //A non-null assignee means it was updated, either to an assignee or unassigned.
             if (issueAssignee == Assignee.UNASSIGNED) {
                 builder.setAssignee(null);
+                changed = true;
             } else {
                 builder.setAssignee(issueAssignee);
+                changed = true;
             }
         }
         if (state != null) {
+            changed = true;
             builder.setState(state);
         }
-        return builder.build();
+        if (changed) {
+            return builder.build();
+        }
+        return null;
     }
 
     private static class BoardIssue extends Issue {

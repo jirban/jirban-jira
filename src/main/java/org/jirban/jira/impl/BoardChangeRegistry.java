@@ -257,15 +257,12 @@ public class BoardChangeRegistry {
             JirbanIssueEvent event = boardChange.getEvent();
             view = boardChange.getView();
             mergeType(event);
-            if (boardChange.getNewAssignee() != null) {
-                newAssignee = boardChange.getNewAssignee();
-            }
             switch (type) {
                 case CREATE:
-                    setFieldsForCreate(event);
+                    setFieldsForCreate(event, boardChange.getNewAssignee());
                     break;
                 case UPDATE:
-                    setFieldsForUpdate(event);
+                    setFieldsForUpdate(event, boardChange.getNewAssignee());
                     break;
                 case DELETE:
                     //No need to do anything, we will not serialize this issue's details
@@ -275,16 +272,17 @@ public class BoardChangeRegistry {
 
         }
 
-        void setFieldsForCreate(JirbanIssueEvent event) {
+        void setFieldsForCreate(JirbanIssueEvent event, Assignee evtNewAssignee) {
             final JirbanIssueEvent.Detail detail = event.getDetails();
             issueType = detail.getIssueType();
             priority = detail.getPriority();
             summary = detail.getSummary();
             assignee = detail.getAssignee() == null ? null : detail.getAssignee().getName();
             state = detail.getState();
+            newAssignee = evtNewAssignee;
         }
 
-        void setFieldsForUpdate(JirbanIssueEvent event) {
+        void setFieldsForUpdate(JirbanIssueEvent event, Assignee evtNewAssignee) {
             final JirbanIssueEvent.Detail detail = event.getDetails();
             if (detail.getIssueType() != null) {
                 issueType = detail.getIssueType();
@@ -299,10 +297,16 @@ public class BoardChangeRegistry {
                 if (detail.getAssignee() == JirbanIssueEvent.UNASSIGNED) {
                     assignee = null;
                     unassigned = true;
-                    newAssignee = null;
+                    this.newAssignee = null;
                 } else {
                     assignee = detail.getAssignee().getName();
                     unassigned = false;
+                    if (this.newAssignee != null && !this.newAssignee.getKey().equals(detail.getAssignee().getName())) {
+                        this.newAssignee = null;
+                    }
+                    if (evtNewAssignee != null) {
+                        newAssignee = evtNewAssignee;
+                    }
                 }
             }
             if (detail.getState() != null) {
@@ -348,7 +352,7 @@ public class BoardChangeRegistry {
                     break;
                 case UPDATE:
                     output.get("key").set(issueKey);
-                    if (type != null) {
+                    if (issueType != null) {
                         output.get("type").set(issueType);
                     }
                     if (priority != null) {
@@ -362,6 +366,9 @@ public class BoardChangeRegistry {
                     }
                     if (state != null) {
                         output.get("state").set(state);
+                    }
+                    if (unassigned) {
+                        output.get("unassigned").set(true);
                     }
                     break;
                 case DELETE:

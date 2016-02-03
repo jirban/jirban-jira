@@ -402,7 +402,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", "feature", "high",
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
                 "Four-1", "kabir", false, "TDP-B", true);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
@@ -431,14 +431,14 @@ public class BoardManagerTest extends AbstractBoardTest {
         //We will do a full check later
 
         //type
-        update = createUpdateEventAndAddToRegistry("TDP-1", "feature", null, null, null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", IssueType.FEATURE, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", 0, -1);
 
         //priority
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, "low", null, null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", null, Priority.LOW, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
@@ -458,31 +458,31 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
-        //No updated assignee, nor unassigned
+        //No updated assignee, nor unassigned - and nothing else changed so the event is a noop and the view does not change
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
-        boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
+        boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
         //Unassign
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
-        boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
+        boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
         //Change state
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, "TDP-D", true);
         boardManager.handleEvent(update);
-        boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
+        boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3, -1);
 
         //Change in the other project
-        update = createUpdateEventAndAddToRegistry("TBG-3", "bug", "highest", "Three-1", "kabir", false, "TBG-Y", true);
+        update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", "kabir", false, "TBG-Y", true);
         boardManager.handleEvent(update);
-        boardNode = getJsonCheckingViewIdAndUsers(9, "brian", "kabir");
+        boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1, 1);
 

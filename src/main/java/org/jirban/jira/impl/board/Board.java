@@ -457,6 +457,9 @@ public class Board {
                 newIssue = projectUpdater.updateIssue(existing, evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                         evtDetail.isRankOrStateChanged(), evtDetail.getState());
+                if (newIssue == null) {
+                    return null;
+                }
             }
             //This will replace the old issue
             allIssuesCopy = copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new);
