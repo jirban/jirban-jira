@@ -52,7 +52,7 @@ public class RestServlet extends HttpServlet{
             } else if (pathAndId.isPath("issues")) {
                 pathAndId.validateId(true);
                 PathAndId next = pathAndId.getNext();
-                if (next != null) {
+                if (next == null) {
                     try {
                         String json = jiraFacade.getBoardJson(user, pathAndId.getId());
                         Util.sendResponseJson(resp, json);
