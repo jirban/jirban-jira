@@ -27,7 +27,7 @@ import com.atlassian.crowd.embedded.api.User;
 /**
  * @author Kabir Khan
  */
-class Assignee {
+public class Assignee {
     static final Assignee UNASSIGNED = new Assignee(null, null, null, null);
 
     private final String key;

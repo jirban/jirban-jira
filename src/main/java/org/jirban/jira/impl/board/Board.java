@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.BoardChange;
 import org.jirban.jira.impl.BoardChangeRegistry;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
@@ -481,7 +482,11 @@ public class Board {
                     board.missingPriorities,
                     board.missingStates);
             boardCopy.updateBoardInProjects();
-            changeRegistry.addChange(boardCopy.currentView, event).buildAndRegister();
+            BoardChange.Builder changeBuilder =  changeRegistry.addChange(boardCopy.currentView, event);
+            if (newAssignee != null) {
+                changeBuilder.addNewAssignee(newAssignee);
+            }
+            changeBuilder.buildAndRegister();
             return boardCopy;
         }
 

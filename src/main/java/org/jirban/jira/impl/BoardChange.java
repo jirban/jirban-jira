@@ -21,17 +21,21 @@
  */
 package org.jirban.jira.impl;
 
+import org.jirban.jira.impl.board.Assignee;
+
 /**
  * @author Kabir Khan
  */
-class BoardChange {
+public class BoardChange {
     private final long time = System.currentTimeMillis();
     private final int view;
     private final JirbanIssueEvent event;
+    private final Assignee newAssignee;
 
-    private BoardChange(int view, JirbanIssueEvent event) {
+    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee) {
         this.view = view;
         this.event = event;
+        this.newAssignee = newAssignee;
     }
 
     long getTime() {
@@ -46,10 +50,15 @@ class BoardChange {
         return event;
     }
 
+    Assignee getNewAssignee() {
+        return newAssignee;
+    }
+
     public static class Builder {
         private final BoardChangeRegistry registry;
         private final int view;
         private final JirbanIssueEvent event;
+        private Assignee newAssignee;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -57,8 +66,13 @@ class BoardChange {
             this.event = event;
         }
 
+        public Builder addNewAssignee(Assignee newAssignee) {
+            this.newAssignee = newAssignee;
+            return this;
+        }
+
         public void buildAndRegister() {
-            BoardChange change = new BoardChange(view, event);
+            BoardChange change = new BoardChange(view, event, newAssignee);
             registry.registerChange(change);
         }
     }
