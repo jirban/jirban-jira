@@ -681,10 +681,17 @@ public class BoardManagerTest {
 
     private JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String projectCode, String issueType,
                                                    String priority, String summary, String username, boolean unassigned, String state, boolean rank) {
-        CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
-        User user = userBridge.getUserByKey(username);
+        Assert.assertFalse(username != null && unassigned);
+
+        User user;
+        if (unassigned) {
+            user = JirbanIssueEvent.UNASSIGNED;
+        } else {
+            CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
+            user = userBridge.getUserByKey(username);
+        }
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, unassigned, state, rank);
+                summary, user, state, rank);
 
         issueRegistry.updateIssue(issueKey, projectCode, issueType, priority, summary, username, state);
         return update;

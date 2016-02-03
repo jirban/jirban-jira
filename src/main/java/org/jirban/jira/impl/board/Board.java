@@ -511,7 +511,7 @@ public class Board {
             final User eventAssignee = evtDetail.getAssignee();
             final Map<String, Assignee> assigneesCopy;
             Assignee newAssignee = null;
-            if (eventAssignee != null && !board.assignees.containsKey(eventAssignee.getName())) {
+            if (eventAssignee != null && eventAssignee != JirbanIssueEvent.UNASSIGNED && !board.assignees.containsKey(eventAssignee.getName())) {
                 newAssignee = Board.createAssignee(avatarService, boardOwner, evtDetail.getAssignee());
                 this.assigneesCopy = Collections.unmodifiableMap(
                         copyAndPut(board.assignees, eventAssignee.getName(), newAssignee, TreeMap::new));
@@ -523,7 +523,9 @@ public class Board {
             if (newAssignee != null) {
                 return newAssignee;
             } else if (evtDetail.getAssignee() == null) {
-                return evtDetail.isUnassigned() ? Assignee.UNASSIGNED : null;
+                return null;
+            } else if (evtDetail.getAssignee() == JirbanIssueEvent.UNASSIGNED) {
+                return Assignee.UNASSIGNED;
             } else {
                 return board.assignees.get(evtDetail.getAssignee().getName());
             }

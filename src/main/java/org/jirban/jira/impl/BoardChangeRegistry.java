@@ -87,7 +87,7 @@ public class BoardChangeRegistry {
         }
 
         final List<BoardChange> changes = getChangesListCleaningUpIfNeeded();
-        final BoardChangeCollector collector = new BoardChangeCollector();
+        final ChangeSetCollector collector = new ChangeSetCollector();
         for (BoardChange change : changes) {
             if (change.getView() <= sinceView) {
                 continue;
@@ -134,7 +134,7 @@ public class BoardChangeRegistry {
         nextCleanup = System.currentTimeMillis() + CLEANUP_TICK_MS;
     }
 
-    private static class BoardChangeCollector {
+    private static class ChangeSetCollector {
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
 
         void addChange(BoardChange boardChange) {
@@ -196,7 +196,7 @@ public class BoardChangeRegistry {
         }
     }
 
-    //Will all be called in one thread by BoardChangeCollector, so
+    //Will all be called in one thread by ChangeSetCollector, so
     private static class IssueChange {
         private final String issueKey;
         private int view;
@@ -206,6 +206,7 @@ public class BoardChangeRegistry {
         private String priority;
         private String summary;
         private String assignee;
+        private boolean unassigned;
         private String state;
 
 
@@ -260,10 +261,13 @@ public class BoardChangeRegistry {
                 summary = detail.getSummary();
             }
             if (detail.getAssignee() != null) {
-                assignee = detail.getAssignee().getName();
-            } else if (detail.isUnassigned()) {
-                //TODO something here to distinguish better
-                //detail.is
+                if (detail.getAssignee() == JirbanIssueEvent.UNASSIGNED) {
+                    assignee = null;
+                    unassigned = true;
+                } else {
+                    assignee = detail.getAssignee().getName();
+                    unassigned = false;
+                }
             }
             if (detail.getState() != null) {
                 state = detail.getState();

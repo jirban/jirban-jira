@@ -212,7 +212,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
             } else if (field.equals(CHANGE_LOG_ASSIGNEE)) {
                 assignee = issue.getAssignee();
                 if (assignee == null) {
-                    unassigned = true;
+                    assignee = JirbanIssueEvent.UNASSIGNED;
                 }
             } else if (field.equals(CHANGE_LOG_STATUS)) {
                 rankOrStateChanged = true;
@@ -223,7 +223,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         }
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
                 issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
-                summary, assignee, unassigned, state, rankOrStateChanged);
+                summary, assignee, state, rankOrStateChanged);
         passEventToBoardManager(event);
     }
 

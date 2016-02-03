@@ -88,13 +88,13 @@ public class JirbanIssueEvent {
 
     public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
                                               String summary,  User assignee, String state) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, assignee == null, state, true);
+        Detail detail = new Detail(issueType, priority, summary, assignee, state, true);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                              String summary, User assignee, boolean unassigned, String state, boolean rankOrStateChanged) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, unassigned, state, rankOrStateChanged);
+                                              String summary, User assignee, String state, boolean rankOrStateChanged) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, state, rankOrStateChanged);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
@@ -103,15 +103,13 @@ public class JirbanIssueEvent {
         private final String priority;
         private final String summary;
         private final User assignee;
-        private final boolean unassigned;
         private final String state;
         private final boolean rankOrStateChanged;
 
         private Detail(String issueType, String priority, String summary, User assignee,
-                      boolean unassigned, String state, boolean rankOrStateChanged) {
+                      String state, boolean rankOrStateChanged) {
             this.summary = summary;
             this.assignee = assignee;
-            this.unassigned = unassigned;
             this.issueType = issueType;
             this.priority = priority;
             this.state = state;
@@ -134,10 +132,6 @@ public class JirbanIssueEvent {
             return assignee;
         }
 
-        public boolean isUnassigned() {
-            return unassigned;
-        }
-
         public String getState() {
             return state;
         }
@@ -152,4 +146,32 @@ public class JirbanIssueEvent {
         CREATE, UPDATE, DELETE;
     }
 
+    /**
+     * Used during an update event to indicate that the assignee was set to unassigned
+     */
+    public static final User UNASSIGNED = new User() {
+        public long getDirectoryId() {
+            return 0;
+        }
+
+        public boolean isActive() {
+            return false;
+        }
+
+        public String getEmailAddress() {
+            return "";
+        }
+
+        public String getDisplayName() {
+            return "unassigned";
+        }
+
+        public int compareTo(User user) {
+            return -1;
+        }
+
+        public String getName() {
+            return "unassigned";
+        }
+    };
 }
