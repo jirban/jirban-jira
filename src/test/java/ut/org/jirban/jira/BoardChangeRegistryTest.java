@@ -82,7 +82,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testDeleteIssues() throws Exception {
         configureBoardStart();
-
         checkViewId(0);
         checkNoChanges(getChangesJson(0), 0);
 
@@ -91,6 +90,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkAssignees(getChangesJson(0), 1);
         checkAdds(getChangesJson(0), 1);
+        checkUpdates(getChangesJson(0), 1);
         checkDeletes(getChangesJson(0), 1, "TDP-3");
 
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
@@ -98,6 +98,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(getChangesJson(0), 2);
         checkAdds(getChangesJson(0), 2);
+        checkUpdates(getChangesJson(0), 2);
         checkDeletes(getChangesJson(0), 2, "TDP-3", "TDP-7");
         checkDeletes(getChangesJson(1), 2, "TDP-7");
 
@@ -106,6 +107,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(getChangesJson(0), 3);
         checkAdds(getChangesJson(0), 3);
+        checkUpdates(getChangesJson(0), 3);
         checkDeletes(getChangesJson(0), 3, "TDP-3", "TDP-7", "TBG-1");
         checkDeletes(getChangesJson(1), 3, "TDP-7", "TBG-1");
         checkDeletes(getChangesJson(2), 3, "TBG-1");
@@ -115,7 +117,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testCreateIssues() throws Exception {
         configureBoardStart();
-
         checkViewId(0);
         checkNoChanges(getChangesJson(0), 0);
 
@@ -125,6 +126,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkAssignees(getChangesJson(0), 1);
         checkDeletes(getChangesJson(0), 1);
+        checkUpdates(getChangesJson(0), 1);
         checkAdds(getChangesJson(0), 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"));
 
         //Now add an issue which brings in new assignees
@@ -133,6 +135,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(getChangesJson(0), 2, "jason");
         checkDeletes(getChangesJson(0), 2);
+        checkUpdates(getChangesJson(0), 2);
         checkAdds(getChangesJson(0), 2,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
@@ -147,17 +150,20 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(getChangesJson(0), 3, "jason");
         checkDeletes(getChangesJson(0), 3);
+        checkUpdates(getChangesJson(0), 3);
         checkAdds(getChangesJson(0), 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
         checkAssignees(getChangesJson(1), 3, "jason");
         checkDeletes(getChangesJson(1), 3);
+        checkUpdates(getChangesJson(1), 3);
         checkAdds(getChangesJson(1), 3,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
         checkAssignees(getChangesJson(2), 3);
         checkDeletes(getChangesJson(2), 3);
+        checkUpdates(getChangesJson(2), 3);
         checkAdds(getChangesJson(2), 3,
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
     }
@@ -165,7 +171,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testUpdateSameIssueNonAssignees() throws Exception {
         configureBoardStart();
-
         checkViewId(0);
         checkNoChanges(getChangesJson(0), 0);
 
@@ -213,7 +218,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testSameIssueAssignees() throws Exception {
         configureBoardStart();
-
         checkViewId(0);
         checkNoChanges(getChangesJson(0), 0);
 
@@ -258,10 +262,21 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testUpdateSeveralIssues() throws Exception {
+        configureBoardStart();
+        checkViewId(0);
+        checkNoChanges(getChangesJson(0), 0);
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, "Seven-1", null, false, null, false);
+        boardManager.handleEvent(update);
+        checkViewId(1);
+        checkUpdates(getChangesJson(0), 1, new IssueData("TDP-7", null, null, "Seven-1", null, null));
+
+        //        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+
+        Assert.fail("Continue this test");
+
 
     }
-
-    //Test create and add
 
     private void checkNoChanges(ModelNode changesNode, int expectedView) {
         Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
