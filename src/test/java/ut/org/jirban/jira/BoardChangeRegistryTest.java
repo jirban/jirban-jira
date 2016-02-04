@@ -108,7 +108,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testCreateIssues() throws Exception {
         //Add an issue which does not bring in new assignees
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", "bug", "high", "Eight", "kabir", "TDP-D");
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D");
         boardManager.handleEvent(create);
         checkViewId(1);
         checkAssignees(getChangesJson(0), 1);
@@ -117,7 +117,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(getChangesJson(0), 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"));
 
         //Now add an issue which brings in new assignees
-        create = createCreateEventAndAddToRegistry("TBG-4", "feature", "low", "Four", "jason", "TBG-X");
+        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X");
         boardManager.handleEvent(create);
         checkViewId(2);
         checkAssignees(getChangesJson(0), 2, "jason");
@@ -132,7 +132,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
 
         //Add another one not bringing in new assignees
-        create = createCreateEventAndAddToRegistry("TDP-9", "bug", "high", "Nine", null, "TDP-D");
+        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D");
         boardManager.handleEvent(create);
         checkViewId(3);
         checkAssignees(getChangesJson(0), 3, "jason");
@@ -254,7 +254,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
 
         //Create, update and delete one to make sure that does not affect the others
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", "bug", "high", "Nine", null, "TDP-D");
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D");
         boardManager.handleEvent(create);
         checkViewId(3);
         checkUpdates(getChangesJson(0), 3,

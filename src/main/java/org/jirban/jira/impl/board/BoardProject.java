@@ -131,7 +131,7 @@ class BoardProject {
             return board.getIssueTypeIndexRecordingMissing(issueKey, issueTypeName);
         }
 
-        Integer getStateIndexRecordingMissing(String projectCode, String issueKey, String stateName) {
+        Integer getStateIndexRecordingMissing(String issueKey, String stateName) {
             final Integer index = projectConfig.getStateIndex(stateName);
             if (index == null) {
                 board.addMissingState(issueKey, stateName);
@@ -259,6 +259,7 @@ class BoardProject {
 
         void deleteIssue(Issue issue) {
             this.existing = issue;
+
         }
 
         BoardProject update() throws SearchException {

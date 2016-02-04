@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
@@ -66,18 +67,18 @@ public class Board {
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
 
-    private final Map<String, List<String>> missingIssueTypes;
-    private final Map<String, List<String>> missingPriorities;
-    private final Map<String, List<String>> missingStates;
+    private final Map<String, Set<String>> missingIssueTypes;
+    private final Map<String, Set<String>> missingPriorities;
+    private final Map<String, Set<String>> missingStates;
 
     private Board(int currentView, BoardConfig boardConfig,
                  Map<String, Assignee> assignees,
                   Map<String, Integer> assigneeIndices,
                  Map<String, Issue> allIssues,
                  Map<String, BoardProject> projects,
-                 Map<String, List<String>> missingIssueTypes,
-                 Map<String, List<String>> missingPriorities,
-                 Map<String, List<String>> missingStates) {
+                 Map<String, Set<String>> missingIssueTypes,
+                 Map<String, Set<String>> missingPriorities,
+                 Map<String, Set<String>> missingStates) {
         this.currentView = currentView;
         this.boardConfig = boardConfig;
         this.assignees = assignees;
@@ -134,12 +135,12 @@ public class Board {
         return outputNode;
     }
 
-    private void serializeMissing(ModelNode root, String key, Map<String, List<String>> missing) {
+    private void serializeMissing(ModelNode root, String key, Map<String, Set<String>> missing) {
         if (missing.size() == 0) {
             return;
         }
         ModelNode missingNode = root.get("missing", key);
-        for (Map.Entry<String, List<String>> entry : missing.entrySet()) {
+        for (Map.Entry<String, Set<String>> entry : missing.entrySet()) {
             ModelNode issues = missingNode.get(entry.getKey(), "issues");
             for (String issue : entry.getValue()) {
                 issues.add(issue);
@@ -213,12 +214,12 @@ public class Board {
         protected final IssueLinkManager issueLinkManager;
         protected final ApplicationUser boardOwner;
 
-        protected final Map<String, List<String>> missingIssueTypes = new TreeMap<>();
-        protected final Map<String, List<String>> missingPriorities = new TreeMap<>();
-        protected final Map<String, List<String>> missingStates = new TreeMap<>();
+        protected Map<String, Set<String>> missingIssueTypes;
+        protected Map<String, Set<String>> missingPriorities;
+        protected Map<String, Set<String>> missingStates;
 
 
-        public Accessor(IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+        Accessor(IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
             this.issueLinkManager = issueLinkManager;
             this.boardConfig = boardConfig;
             this.boardOwner = boardOwner;
@@ -231,6 +232,9 @@ public class Board {
         Integer getIssueTypeIndexRecordingMissing(String issueKey, String issueTypeName) {
             final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueTypeName);
             if (issueTypeIndex == null) {
+                if (missingIssueTypes == null) {
+                    missingIssueTypes = initialiseMissingIssueTypes();
+                }
                 addMissing(missingIssueTypes, issueTypeName, issueKey);
             }
             return issueTypeIndex;
@@ -239,14 +243,21 @@ public class Board {
         Integer getPriorityIndexRecordingMissing(String issueKey, String priorityName) {
             final Integer priorityIndex = boardConfig.getPriorityIndex(priorityName);
             if (priorityIndex == null) {
+                if (missingPriorities == null) {
+                    missingPriorities = initialiseMissingPriorities();
+                }
                 addMissing(missingPriorities, priorityName, issueKey);
             }
             return priorityIndex;
         }
 
         void addMissingState(String issueKey, String stateName) {
+            if (missingStates == null) {
+                missingStates = initialiseMissingStates();
+            }
             addMissing(missingStates, stateName, issueKey);
         }
+
 
         BoardProjectConfig getOwningProject() {
             return boardConfig.getOwningProject();
@@ -266,13 +277,14 @@ public class Board {
         }
 
         abstract Accessor addIssue(Issue issue);
-
         abstract Assignee getAssignee(User assigneeUser);
-
         abstract Issue getIssue(String issueKey);
+        abstract Map<String,Set<String>> initialiseMissingPriorities();
+        abstract Map<String,Set<String>> initialiseMissingStates();
+        abstract Map<String,Set<String>> initialiseMissingIssueTypes();
 
-        private void addMissing(Map<String, List<String>> missingMap, String mapKey, String issueKey) {
-            List<String> missingIssues = missingMap.computeIfAbsent(mapKey, l -> new ArrayList<String>());
+        private void addMissing(Map<String, Set<String>> missingMap, String mapKey, String issueKey) {
+            Set<String> missingIssues = missingMap.computeIfAbsent(mapKey, l -> new TreeSet<>());
             missingIssues.add(issueKey);
         }
     }
@@ -338,6 +350,21 @@ public class Board {
             throw new IllegalStateException();
         }
 
+        @Override
+        Map<String, Set<String>> initialiseMissingPriorities() {
+            return new TreeMap<>();
+        }
+
+        @Override
+        Map<String, Set<String>> initialiseMissingStates() {
+            return new TreeMap<>();
+        }
+
+        @Override
+        Map<String, Set<String>> initialiseMissingIssueTypes() {
+            return new TreeMap<>();
+        }
+
         public Board build() {
             Map<String, BoardProject> projects = new LinkedHashMap<>();
 
@@ -352,8 +379,9 @@ public class Board {
 
             Board board = new Board(0, boardConfig, Collections.unmodifiableMap(assignees), Collections.unmodifiableMap(getAssigneeIndices(assignees)),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
-                    Collections.unmodifiableMap(missingIssueTypes), Collections.unmodifiableMap(missingPriorities),
-                    Collections.unmodifiableMap(missingStates));
+                    Collections.unmodifiableMap(missingIssueTypes != null ? missingIssueTypes : Collections.emptyMap()),
+                    Collections.unmodifiableMap(missingPriorities != null ? missingPriorities : Collections.emptyMap()),
+                    Collections.unmodifiableMap(missingStates != null ? missingStates : Collections.emptyMap()));
             for (BoardProject project : projects.values()) {
                 project.setBoard(board);
             }
@@ -470,20 +498,20 @@ public class Board {
             projectsCopy.put(event.getProjectCode(), projectCopy);
 
 
-            //TODO put the event in some wrapper with the view id on the 'update registry'
+            //TODO for the change registry include the state table
             //Include the assignee if it was new
             //Include the project state table if recalculated
 
             //TODO recalculate the missingXXXs maps (if an update we will need to remove the old ones)
 
             Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
-                    assigneesCopy == null ? board.assignees : Collections.unmodifiableMap(assigneesCopy),
+                    assigneesCopy == null ? board.assignees : assigneesCopy,
                     assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
-                    Collections.unmodifiableMap(allIssuesCopy),
+                    allIssuesCopy,
                     Collections.unmodifiableMap(projectsCopy),
-                    board.missingIssueTypes,
-                    board.missingPriorities,
-                    board.missingStates);
+                    calclulateMissing(board.missingIssueTypes, missingIssueTypes),
+                    calclulateMissing(board.missingPriorities, missingPriorities),
+                    calclulateMissing(board.missingStates, missingStates));
             boardCopy.updateBoardInProjects();
             BoardChange.Builder changeBuilder =  changeRegistry.addChange(boardCopy.currentView, event);
             if (newAssignee != null) {
@@ -509,6 +537,21 @@ public class Board {
             return allIssuesCopy.get(issueKey);
         }
 
+        @Override
+        Map<String, Set<String>> initialiseMissingPriorities() {
+            return new TreeMap<>(board.missingPriorities);
+        }
+
+        @Override
+        Map<String, Set<String>> initialiseMissingStates() {
+            return new TreeMap<>(board.missingStates);
+        }
+
+        @Override
+        Map<String, Set<String>> initialiseMissingIssueTypes() {
+            return new TreeMap<>(board.missingIssueTypes);
+        }
+
         private Assignee createAssigneeIfNeeded(JirbanIssueEvent.Detail evtDetail) {
             //Might bring in a new assignee, need to add that first
             final User eventAssignee = evtDetail.getAssignee();
@@ -516,8 +559,7 @@ public class Board {
             Assignee newAssignee = null;
             if (eventAssignee != null && eventAssignee != JirbanIssueEvent.UNASSIGNED && !board.assignees.containsKey(eventAssignee.getName())) {
                 newAssignee = Board.createAssignee(avatarService, boardOwner, evtDetail.getAssignee());
-                this.assigneesCopy = Collections.unmodifiableMap(
-                        copyAndPut(board.assignees, eventAssignee.getName(), newAssignee, TreeMap::new));
+                this.assigneesCopy = copyAndPut(board.assignees, eventAssignee.getName(), newAssignee, TreeMap::new);
             }
             return newAssignee;
         }
@@ -533,11 +575,16 @@ public class Board {
                 return board.assignees.get(evtDetail.getAssignee().getName());
             }
         }
+
         private <K, V> Map<K, V> copyAndPut(Map<K, V> map, K key, V value, Supplier<Map<K, V>> supplier) {
             Map<K, V> copy = supplier.get();
             copy.putAll(map);
             copy.put(key, value);
-            return copy;
+            return Collections.unmodifiableMap(copy);
+        }
+
+        private Map<String, Set<String>> calclulateMissing(Map<String, Set<String>> existing, Map<String, Set<String>> updated) {
+            return updated == null ? existing : updated;
         }
     }
 }

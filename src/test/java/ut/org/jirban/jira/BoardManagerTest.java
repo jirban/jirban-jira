@@ -21,7 +21,10 @@
  */
 package ut.org.jirban.jira;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -276,7 +279,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "feature", "high",
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "kabir", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
@@ -304,7 +307,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-2"},
                 {}});
 
-        create = createCreateEventAndAddToRegistry("TBG-4", "feature", "high",
+        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", null, "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
@@ -346,7 +349,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", "feature", "high",
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
                 "Five", "james", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
@@ -372,7 +375,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-2"},
                 {}});
 
-        create = createCreateEventAndAddToRegistry("TBG-4", "feature", "high",
+        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "stuart", "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
@@ -566,6 +569,70 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-1", "TBG-3"},
                 {"TBG-2"},
                 {}});
+    }
+
+    @Test
+    public void testMissingState() throws SearchException {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", null, "BAD");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "BAD");
+        issueRegistry.addIssue("TBG", "bug", "low", "Two", "kabir", "TBG-Y");
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+
+        //Check the missing issues
+        Map<String, String> missing = getMissingForStates(boardNode);
+        Assert.assertEquals(2, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+
+        //Add another issue to the same bad state to check that this works on updating
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.TASK, Priority.HIGHEST, "Three", null, "BAD");
+        boardManager.handleEvent(event);
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        missing = getMissingForStates(boardNode);
+        Assert.assertEquals(2, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+        //Add another issue to another bad state
+
+        //Move an issue from a
+    }
+
+    private Map<String, String> getMissingForStates(ModelNode boardNode) {
+        return getMissingIssues(boardNode, "states");
+    }
+
+    private Map<String, String> getMissingForPriorities(ModelNode boardNode) {
+        return getMissingIssues(boardNode, "priorities");
+    }
+
+    private Map<String, String> getMissingForIssueTypes(ModelNode boardNode) {
+        return getMissingIssues(boardNode, "issue-types");
+    }
+
+    private Map<String, String> getMissingIssues(ModelNode boardNode, String type) {
+        if (!boardNode.hasDefined("missing", type)){
+            return Collections.emptyMap();
+        }
+        ModelNode missing = boardNode.get("missing", type);
+        Map<String, String> issues = new HashMap<>();
+        for (String key : missing.keys()) {
+            for (ModelNode issue : missing.get(key, "issues").asList()) {
+                Assert.assertNull(issues.put(issue.asString(), key));
+            }
+        }
+        return issues;
     }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {

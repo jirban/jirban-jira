@@ -365,7 +365,7 @@ public abstract class Issue {
 
         Builder setState(String stateName) {
             state = stateName;
-            stateIndex = project.getStateIndexRecordingMissing(project.getCode(), issueKey, state);
+            stateIndex = project.getStateIndexRecordingMissing(issueKey, state);
             return this;
         }
 
