@@ -257,12 +257,14 @@ public class BoardChangeRegistry {
             JirbanIssueEvent event = boardChange.getEvent();
             view = boardChange.getView();
             mergeType(event);
+            if (type == null) {
+                //If the issue was both updated and deleted we return null
+                return;
+            }
             switch (type) {
                 case CREATE:
-                    setFieldsForCreate(event, boardChange.getNewAssignee());
-                    break;
                 case UPDATE:
-                    setFieldsForUpdate(event, boardChange.getNewAssignee());
+                    mergeFields(event, boardChange.getNewAssignee());
                     break;
                 case DELETE:
                     //No need to do anything, we will not serialize this issue's details
@@ -272,17 +274,7 @@ public class BoardChangeRegistry {
 
         }
 
-        void setFieldsForCreate(JirbanIssueEvent event, Assignee evtNewAssignee) {
-            final JirbanIssueEvent.Detail detail = event.getDetails();
-            issueType = detail.getIssueType();
-            priority = detail.getPriority();
-            summary = detail.getSummary();
-            assignee = detail.getAssignee() == null ? null : detail.getAssignee().getName();
-            state = detail.getState();
-            newAssignee = evtNewAssignee;
-        }
-
-        void setFieldsForUpdate(JirbanIssueEvent event, Assignee evtNewAssignee) {
+        void mergeFields(JirbanIssueEvent event, Assignee evtNewAssignee) {
             final JirbanIssueEvent.Detail detail = event.getDetails();
             if (detail.getIssueType() != null) {
                 issueType = detail.getIssueType();

@@ -30,6 +30,7 @@ import java.util.Map;
 
 import org.junit.Assert;
 
+import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
@@ -57,14 +58,20 @@ public class IssueRegistry {
     }
 
 
-    public void updateIssue(String issueKey, String projectCode, String issueType, String priority, String summary, String assignee, String state) {
+    public void updateIssue(String issueKey, String projectCode, String issueTypeName, String priorityName, String summary, String assignee, String state) {
         Map<String, Issue> issues = issuesByProject.get(projectCode);
         Assert.assertNotNull(issues);
         Issue issue = issues.get(issueKey);
         Assert.assertNotNull(issue);
 
-        Issue newIssue = new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
-                userBridge.getUserByKey(assignee), MockStatus.create(state));
+        IssueType issueType = issueTypeName == null ? issue.getIssueTypeObject() : MockIssueType.create(issueTypeName);
+        Priority priority = priorityName == null ? issue.getPriorityObject() : MockPriority.create(priorityName);
+        String summ = summary == null ? issue.getSummary() : summary;
+        User assigneeUser = assignee == null ? issue.getAssignee() : userBridge.getUserByKey(assignee);
+        Status status = state == null ? issue.getStatusObject() : MockStatus.create(state);
+
+        Issue newIssue = new MockIssue(issueKey, issueType, priority, summ,
+                assigneeUser, status);
         issues.put(issueKey, newIssue);
     }
 

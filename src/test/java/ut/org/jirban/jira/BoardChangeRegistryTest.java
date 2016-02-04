@@ -31,6 +31,7 @@ import java.util.Set;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.atlassian.jira.issue.search.SearchException;
@@ -40,22 +41,19 @@ import com.atlassian.jira.issue.search.SearchException;
  */
 public class BoardChangeRegistryTest extends AbstractBoardTest {
 
-    private void configureBoardStart() {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
-    }
+    @Before
+    public void setupInitialBoard() throws SearchException {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", "TDP-A");  //1
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");     //2
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", "TDP-C");    //3
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", "TDP-D");  //4
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", "TDP-A"); //5
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", "TDP-B");      //6
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");    //7
 
-    @Test
-    public void testNoChanges() throws Exception {
-        configureBoardStart();
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", "TBG-X");  //1
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", "TBG-Y");      //2
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");    //3
 
         checkViewId(0);
         checkNoChanges(getChangesJson(0), 0);
@@ -63,9 +61,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testFullRefreshOnTooHighView() throws Exception {
-        configureBoardStart();
-
-        checkViewId(0);
         ModelNode changes = getChangesJson(1);
         Assert.assertFalse(changes.hasDefined("changes"));
         //Check that the top-level fields of the board are there
@@ -81,10 +76,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testDeleteIssues() throws Exception {
-        configureBoardStart();
-        checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
-
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete);
         checkViewId(1);
@@ -116,10 +107,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testCreateIssues() throws Exception {
-        configureBoardStart();
-        checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
-
         //Add an issue which does not bring in new assignees
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", "bug", "high", "Eight", "kabir", "TDP-D");
         boardManager.handleEvent(create);
@@ -170,10 +157,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testUpdateSameIssueNonAssignees() throws Exception {
-        configureBoardStart();
-        checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
-
         //Do a noop update
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
@@ -217,10 +200,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testSameIssueAssignees() throws Exception {
-        configureBoardStart();
-        checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
-
         //Do a noop update
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, "kabir", false, null, false);
         boardManager.handleEvent(update);
@@ -262,20 +241,89 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testUpdateSeveralIssues() throws Exception {
-        configureBoardStart();
-        checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
-
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, "Seven-1", null, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(1);
         checkUpdates(getChangesJson(0), 1, new IssueData("TDP-7", null, null, "Seven-1", null, null));
 
-        //        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
+        update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, null, null, "kabir", false, null, false);
+        boardManager.handleEvent(update);
+        checkViewId(2);
+        checkUpdates(getChangesJson(0), 2,
+                new IssueData("TDP-7", null, null, "Seven-1", null, null),
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
 
-        Assert.fail("Continue this test");
+        //Create, update and delete one to make sure that does not affect the others
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", "bug", "high", "Nine", null, "TDP-D");
+        boardManager.handleEvent(create);
+        checkViewId(3);
+        checkUpdates(getChangesJson(0), 3,
+                new IssueData("TDP-7", null, null, "Seven-1", null, null),
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkAdds(getChangesJson(0), 3,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkUpdates(getChangesJson(1), 3,
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkAdds(getChangesJson(1), 3,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkUpdates(getChangesJson(2), 3);
+        checkAdds(getChangesJson(2), 3,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
 
+        //This should appear as an add for change sets including its previous create, and an update for change
+        //sets not including the create
+        update = createUpdateEventAndAddToRegistry("TDP-8", null, null, null, "jason", false, "TDP-C", false);
+        boardManager.handleEvent(update);
+        checkViewId(4);
+        checkAssignees(getChangesJson(0), 4, "jason");
+        checkUpdates(getChangesJson(0), 4,
+                new IssueData("TDP-7", null, null, "Seven-1", null, null),
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkAdds(getChangesJson(0), 4,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", "TDP-C"));
 
+        checkAssignees(getChangesJson(1), 4, "jason");
+        checkUpdates(getChangesJson(1), 4,
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkAdds(getChangesJson(1), 4,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", "TDP-C"));
+
+        checkAssignees(getChangesJson(2), 4, "jason");
+        checkUpdates(getChangesJson(2), 4);
+        checkAdds(getChangesJson(2), 4,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", "TDP-C"));
+
+        checkAssignees(getChangesJson(3), 4, "jason");
+        checkUpdates(getChangesJson(3), 4,
+                new IssueData("TDP-8", null, null, null, "jason", "TDP-C"));
+        checkAdds(getChangesJson(3), 4);
+
+        //This will not appear in change sets including the create, it becomes a noop
+        JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
+        boardManager.handleEvent(delete);
+        checkViewId(5);
+        checkAssignees(getChangesJson(0), 5);
+        checkUpdates(getChangesJson(0), 5,
+                new IssueData("TDP-7", null, null, "Seven-1", null, null),
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkAdds(getChangesJson(0), 5);
+
+        checkAssignees(getChangesJson(1), 5);
+        checkUpdates(getChangesJson(1), 5,
+                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkAdds(getChangesJson(1), 5);
+
+        checkAssignees(getChangesJson(2), 5);
+        checkUpdates(getChangesJson(2), 5);
+        checkAdds(getChangesJson(2), 5);
+
+        checkAssignees(getChangesJson(3), 5);
+        checkUpdates(getChangesJson(3), 5);
+        checkAdds(getChangesJson(3), 5);
+
+        checkAssignees(getChangesJson(4), 5);
+        checkUpdates(getChangesJson(4), 5);
+        checkAdds(getChangesJson(4), 5);
     }
 
     private void checkNoChanges(ModelNode changesNode, int expectedView) {
