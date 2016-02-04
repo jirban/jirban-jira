@@ -46,6 +46,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        checkNoMissing(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -73,7 +74,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
 
-        ModelNode boardNode = boardNode = getJsonCheckingViewIdAndUsers(0, "jason", "kabir");
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "jason", "kabir");
+        checkNoMissing(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -106,6 +108,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        checkNoMissing(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -153,6 +156,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
+        checkNoMissing(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 10);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -181,6 +185,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        checkNoMissing(boardNode);
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -208,6 +213,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
+        checkNoMissing(boardNode);
 
         allIssues = getIssuesCheckingSize(boardNode, 8);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -234,6 +240,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
         boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
+        checkNoMissing(boardNode);
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -273,6 +280,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Five", "kabir", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
+        checkNoMissing(boardNode);
 
         checkUsers(boardNode, "brian", "kabir");
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
@@ -300,6 +308,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Four", null, "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
+        checkNoMissing(boardNode);
 
         checkUsers(boardNode, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 9);
@@ -341,6 +350,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Five", "james", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
+        checkNoMissing(boardNode);
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
@@ -366,6 +376,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Four", "stuart", "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
+        checkNoMissing(boardNode);
 
         checkUsers(boardNode, "brian", "james", "kabir", "stuart");
         allIssues = getIssuesCheckingSize(boardNode, 9);
@@ -406,6 +417,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Four-1", "kabir", false, "TDP-B", true);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
+        checkNoMissing(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
@@ -434,6 +446,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", IssueType.FEATURE, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", 0, -1);
 
@@ -441,6 +454,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, Priority.LOW, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", 0, -1);
 
@@ -448,6 +462,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, "One-1", null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
@@ -455,6 +470,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, "brian", false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
@@ -462,6 +478,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
@@ -469,6 +486,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
@@ -476,6 +494,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, "TDP-D", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3, -1);
 
@@ -483,6 +502,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", "kabir", false, "TBG-Y", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
+        checkNoMissing(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1, 1);
 
@@ -525,6 +545,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TBG-3", null, null, null, "james", false, null, false);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
+        checkNoMissing(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -613,5 +634,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         } else {
             Assert.assertEquals(assignee, issue.get("assignee").asInt());
         }
+    }
+
+    private void checkNoMissing(ModelNode boardNode) {
+        Assert.assertFalse(boardNode.has("missing"));
     }
 }
