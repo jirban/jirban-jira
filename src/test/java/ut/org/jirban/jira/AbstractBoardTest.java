@@ -85,13 +85,18 @@ public class AbstractBoardTest {
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
                                                                  IssueType issueType, Priority priority, String summary, String username, String state) {
+        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, state);
+    }
+
+    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
+                                                                 String issueType, String priority, String summary, String username, String state) {
         CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
         User user = userBridge.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
-        JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType.name, priority.name,
+        JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
                 summary, user, state);
 
-        issueRegistry.addIssue(projectCode, issueType.name, priority.name, summary, username, state);
+        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, state);
         return create;
     }
 

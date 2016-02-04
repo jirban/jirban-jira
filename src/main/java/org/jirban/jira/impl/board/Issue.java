@@ -120,7 +120,9 @@ public abstract class Issue {
     }
 
     /**
-     * Creates a new issue
+     * Creates a new issue. If the issue is for a state, priority or issue type not configured,
+     * {@code null} will be returned, having updated the 'missing' maps in Board.
+     *
      * @param project the project the issue belongs to
      * @param issueKey the issue's key
      * @param state the issue's state id
@@ -128,7 +130,7 @@ public abstract class Issue {
      * @param issueType the issue's type
      * @param priority the priority
      * @param assignee the assignee
-     * @return
+     * @return the issue
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
                                              String summary, String issueType, String priority, Assignee assignee) {
@@ -147,7 +149,9 @@ public abstract class Issue {
      * Creates a new issue based on an {@code exisiting} one. The data is then updated with the results of
      * {@code issueType}, {@code priority}, {@code summary}, {@code issueAssignee}, {@code rankOrStateChanged}
      * {@code state} if they are different from the current issue detail. Note that the update event might be raised
-     * for fields we are not interested in, in which case we don't care about the change, and return {@code null}.
+     * for fields we are not interested in, in which case we don't care about the change, and return {@code null}.If
+     * the issue is for a state, priority or issue type not configured, {@code null} will be returned, having
+     * updated the 'missing' maps in Board.
      *
      * @param project the project the issue belongs to
      * @param existing the issue to update
@@ -156,7 +160,7 @@ public abstract class Issue {
      * @param summary the new issue summary
      * @param issueAssignee the new issue assignee
      * @param state the state of the issue
-     * @return the new issue, or {@code null} if no relevant change was made
+     * @return the new issue
      */
     static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
                                     String summary, Assignee issueAssignee, String state) {

@@ -582,8 +582,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
-
-        //Check the missing issues
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
         Map<String, String> missing = getMissingForStates(boardNode);
         Assert.assertEquals(2, missing.size());
         Assert.assertEquals("BAD", missing.get("TDP-1"));
@@ -594,19 +596,199 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Add another issue to the same bad state to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.TASK, Priority.HIGHEST, "Three", null, "BAD");
         boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
         missing = getMissingForStates(boardNode);
-        Assert.assertEquals(2, missing.size());
+        Assert.assertEquals(3, missing.size());
         Assert.assertEquals("BAD", missing.get("TDP-1"));
         Assert.assertEquals("BAD", missing.get("TBG-1"));
         Assert.assertEquals("BAD", missing.get("TDP-3"));
         Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
         Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
-        //Add another issue to another bad state
 
-        //Move an issue from a
+        //Add another issue to another bad state
+        event = createCreateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.HIGH, "Four", null, "BADDER");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        missing = getMissingForStates(boardNode);
+        Assert.assertEquals(4, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals("BADDER", missing.get("TDP-4"));
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+
+        //Perhaps the following isn't that important? If the board is badly configured, it is badly configured
+        //Saying what is wrong, and adding to that seems more important than removing stuff from it
+        //But we should handle this situation gracefully if an issue is bad and cannot be found
+        //Perhaps with a blacklist, and not updating the board once trying to update something in the blacklist
+        //TODO test the below with the above adjustment
+        /*
+        //Move an issue from a bad state to a good state
+        event = createUpdateEventAndAddToRegistry("TDP-4", null, null, null, null, false, "TDP-A", false);
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        Assert.assertEquals(3, missing.size());
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkIssue(allIssues, "TDP-4", IssueType.BUG, Priority.HIGH, "Four", 0, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-4"}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        missing = getMissingForStates(boardNode);
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+
+        //Delete a bad state issue
+        */
+    }
+
+    @Test
+    public void testMissingIssueType() throws SearchException {
+        issueRegistry.addIssue("TDP", "BAD", "highest", "One", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TBG", "BAD", "highest", "One", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "bug", "low", "Two", "kabir", "TBG-Y");
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        Map<String, String> missing = getMissingForIssueTypes(boardNode);
+        Assert.assertEquals(2, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+
+        //Add another issue to the same bad state to check that this works on updating
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", "BAD", Priority.HIGHEST.name, "Three", null, "TDP-C");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        missing = getMissingForIssueTypes(boardNode);
+        Assert.assertEquals(3, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+
+        //Add another issue to another bad state
+        event = createCreateEventAndAddToRegistry("TDP-4", "BADDER", Priority.HIGH.name, "Four", null, "TDP-C");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        missing = getMissingForIssueTypes(boardNode);
+        Assert.assertEquals(4, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals("BADDER", missing.get("TDP-4"));
+        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+
+        //TODO See testMissingState()
+    }
+
+
+    @Test
+    public void testMissingPriority() throws SearchException {
+        issueRegistry.addIssue("TDP", "feature", "BAD", "One", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", "TDP-B");
+        issueRegistry.addIssue("TBG", "bug", "BAD", "One", "kabir", "TBG-Y");
+        issueRegistry.addIssue("TBG", "bug", "low", "Two", "kabir", "TBG-Y");
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        Map<String, String> missing = getMissingForPriorities(boardNode);
+        Assert.assertEquals(2, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+
+        //Add another issue to the same bad state to check that this works on updating
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.FEATURE.name, "BAD", "Three", null, "TDP-C");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        missing = getMissingForPriorities(boardNode);
+        Assert.assertEquals(3, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+
+        //Add another issue to another bad state
+        event = createCreateEventAndAddToRegistry("TDP-4", IssueType.TASK.name, "BADDER", "Four", null, "TDP-C");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        missing = getMissingForPriorities(boardNode);
+        Assert.assertEquals(4, missing.size());
+        Assert.assertEquals("BAD", missing.get("TDP-1"));
+        Assert.assertEquals("BAD", missing.get("TBG-1"));
+        Assert.assertEquals("BAD", missing.get("TDP-3"));
+        Assert.assertEquals("BADDER", missing.get("TDP-4"));
+        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+
+        //TODO See testMissingState()
     }
 
     private Map<String, String> getMissingForStates(ModelNode boardNode) {

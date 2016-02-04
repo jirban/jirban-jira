@@ -473,6 +473,7 @@ public class Board {
             final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner);
             final Issue newIssue;
             final Issue existing;
+
             if (create) {
                 existing = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
@@ -485,40 +486,44 @@ public class Board {
                 newIssue = projectUpdater.updateIssue(existing, evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                         evtDetail.isRankOrStateChanged(), evtDetail.getState());
-                if (newIssue == null) {
-                    return null;
-                }
             }
+
+
             //This will replace the old issue
-            allIssuesCopy = copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new);
+            allIssuesCopy = newIssue != null ?
+                    copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new) :
+                    board.allIssues;
 
-            //The project's issue tables will be updated if needed
-            BoardProject projectCopy = projectUpdater.update();
-            final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
-            projectsCopy.put(event.getProjectCode(), projectCopy);
+            if (newIssue != null || missingUpdated()) {
+                //The project's issue tables will be updated if needed
+                BoardProject projectCopy = projectUpdater.update();
+                final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
+                projectsCopy.put(event.getProjectCode(), projectCopy);
 
+                //TODO for the change registry include the state table
+                //Include the assignee if it was new
+                //Include the project state table if recalculated
 
-            //TODO for the change registry include the state table
-            //Include the assignee if it was new
-            //Include the project state table if recalculated
+                //TODO recalculate the missingXXXs maps (if an update we will need to remove the old ones)
 
-            //TODO recalculate the missingXXXs maps (if an update we will need to remove the old ones)
+                Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
+                        assigneesCopy == null ? board.assignees : assigneesCopy,
+                        assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
+                        allIssuesCopy,
+                        Collections.unmodifiableMap(projectsCopy),
+                        calclulateMissing(board.missingIssueTypes, missingIssueTypes),
+                        calclulateMissing(board.missingPriorities, missingPriorities),
+                        calclulateMissing(board.missingStates, missingStates));
 
-            Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
-                    assigneesCopy == null ? board.assignees : assigneesCopy,
-                    assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
-                    allIssuesCopy,
-                    Collections.unmodifiableMap(projectsCopy),
-                    calclulateMissing(board.missingIssueTypes, missingIssueTypes),
-                    calclulateMissing(board.missingPriorities, missingPriorities),
-                    calclulateMissing(board.missingStates, missingStates));
-            boardCopy.updateBoardInProjects();
-            BoardChange.Builder changeBuilder =  changeRegistry.addChange(boardCopy.currentView, event);
-            if (newAssignee != null) {
-                changeBuilder.addNewAssignee(newAssignee);
+                boardCopy.updateBoardInProjects();
+                BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
+                if (newAssignee != null) {
+                    changeBuilder.addNewAssignee(newAssignee);
+                }
+                changeBuilder.buildAndRegister();
+                return boardCopy;
             }
-            changeBuilder.buildAndRegister();
-            return boardCopy;
+            return null;
         }
 
         Assignee getAssignee(User assigneeUser) {
@@ -550,6 +555,10 @@ public class Board {
         @Override
         Map<String, Set<String>> initialiseMissingIssueTypes() {
             return new TreeMap<>(board.missingIssueTypes);
+        }
+
+        private boolean missingUpdated() {
+            return missingIssueTypes != null || missingPriorities != null || missingStates != null;
         }
 
         private Assignee createAssigneeIfNeeded(JirbanIssueEvent.Detail evtDetail) {

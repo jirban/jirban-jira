@@ -245,7 +245,7 @@ class BoardProject {
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
                           Assignee assignee, String state) {
             newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee);
-            updatedState = true;
+            updatedState = newIssue != null;
             return newIssue;
         }
 
@@ -253,7 +253,7 @@ class BoardProject {
                                  Assignee issueAssignee, boolean rankOrStateChanged, String state) {
             this.existing = existing;
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, state);
-            this.updatedState = rankOrStateChanged;
+            this.updatedState = rankOrStateChanged && newIssue != null;
             return newIssue;
         }
 
@@ -270,7 +270,7 @@ class BoardProject {
 
             final List<String> toStateIssues;
             final int toIndex;
-            if (!updatedState) {
+            if (!updatedState || newIssue == null) {
                 toIndex = -1;
                 toStateIssues = null;
             } else {
