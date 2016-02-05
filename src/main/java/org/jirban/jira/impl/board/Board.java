@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
@@ -67,32 +66,26 @@ public class Board {
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
 
-    private final Map<String, Set<String>> missingIssueTypes;
-    private final Map<String, Set<String>> missingPriorities;
-    private final Map<String, Set<String>> missingStates;
+    private final Blacklist blacklist;
 
     private Board(int currentView, BoardConfig boardConfig,
-                 Map<String, Assignee> assignees,
-                  Map<String, Integer> assigneeIndices,
-                 Map<String, Issue> allIssues,
-                 Map<String, BoardProject> projects,
-                 Map<String, Set<String>> missingIssueTypes,
-                 Map<String, Set<String>> missingPriorities,
-                 Map<String, Set<String>> missingStates) {
+                    Map<String, Assignee> assignees,
+                    Map<String, Integer> assigneeIndices,
+                    Map<String, Issue> allIssues,
+                    Map<String, BoardProject> projects,
+                    Blacklist blacklist) {
         this.currentView = currentView;
         this.boardConfig = boardConfig;
         this.assignees = assignees;
         this.assigneeIndices = assigneeIndices;
         this.allIssues = allIssues;
         this.projects = projects;
-        this.missingIssueTypes = missingIssueTypes;
-        this.missingPriorities = missingPriorities;
-        this.missingStates = missingStates;
+        this.blacklist = blacklist;
     }
 
     public static Builder builder(SearchService searchService, AvatarService avatarService,
                                   IssueLinkManager issueLinkManager, UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
-        return new Builder(searchService, avatarService, issueLinkManager, userManager,boardConfig, boardOwner);
+        return new Builder(searchService, avatarService, issueLinkManager, boardConfig, boardOwner);
     }
 
     public Board handleEvent(SearchService searchService, AvatarService avatarService,
@@ -128,9 +121,7 @@ public class Board {
             projectEntry.getValue().serialize(project);
         }
 
-        serializeMissing(outputNode, "priorities", missingPriorities);
-        serializeMissing(outputNode, "issue-types", missingIssueTypes);
-        serializeMissing(outputNode, "states", missingStates);
+        blacklist.serialize(outputNode);
 
         return outputNode;
     }
@@ -214,10 +205,6 @@ public class Board {
         protected final IssueLinkManager issueLinkManager;
         protected final ApplicationUser boardOwner;
 
-        protected Map<String, Set<String>> missingIssueTypes;
-        protected Map<String, Set<String>> missingPriorities;
-        protected Map<String, Set<String>> missingStates;
-
 
         Accessor(IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
             this.issueLinkManager = issueLinkManager;
@@ -232,10 +219,7 @@ public class Board {
         Integer getIssueTypeIndexRecordingMissing(String issueKey, String issueTypeName) {
             final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueTypeName);
             if (issueTypeIndex == null) {
-                if (missingIssueTypes == null) {
-                    missingIssueTypes = initialiseMissingIssueTypes();
-                }
-                addMissing(missingIssueTypes, issueTypeName, issueKey);
+                getBlacklist().addMissingIssueType(issueKey, issueTypeName);
             }
             return issueTypeIndex;
         }
@@ -243,19 +227,13 @@ public class Board {
         Integer getPriorityIndexRecordingMissing(String issueKey, String priorityName) {
             final Integer priorityIndex = boardConfig.getPriorityIndex(priorityName);
             if (priorityIndex == null) {
-                if (missingPriorities == null) {
-                    missingPriorities = initialiseMissingPriorities();
-                }
-                addMissing(missingPriorities, priorityName, issueKey);
+                getBlacklist().addMissingPriority(issueKey, priorityName);
             }
             return priorityIndex;
         }
 
         void addMissingState(String issueKey, String stateName) {
-            if (missingStates == null) {
-                missingStates = initialiseMissingStates();
-            }
-            addMissing(missingStates, stateName, issueKey);
+            getBlacklist().addMissingState(issueKey, stateName);
         }
 
 
@@ -279,14 +257,7 @@ public class Board {
         abstract Accessor addIssue(Issue issue);
         abstract Assignee getAssignee(User assigneeUser);
         abstract Issue getIssue(String issueKey);
-        abstract Map<String,Set<String>> initialiseMissingPriorities();
-        abstract Map<String,Set<String>> initialiseMissingStates();
-        abstract Map<String,Set<String>> initialiseMissingIssueTypes();
-
-        private void addMissing(Map<String, Set<String>> missingMap, String mapKey, String issueKey) {
-            Set<String> missingIssues = missingMap.computeIfAbsent(mapKey, l -> new TreeSet<>());
-            missingIssues.add(issueKey);
-        }
+        abstract Blacklist.Accessor getBlacklist();
     }
 
     private static Map<String, Integer> getAssigneeIndices(Map<String, Assignee> assignees) {
@@ -307,9 +278,10 @@ public class Board {
         private final Map<String, Assignee> assignees = new TreeMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
         private final Map<String, BoardProject.Builder> projects = new HashMap<>();
+        private final Blacklist.Builder blacklist = new Blacklist.Builder();
 
         public Builder(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
-                       UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
+                       BoardConfig boardConfig, ApplicationUser boardOwner) {
             super(issueLinkManager, boardConfig, boardOwner);
             this.searchService = searchService;
             this.avatarService = avatarService;
@@ -351,18 +323,8 @@ public class Board {
         }
 
         @Override
-        Map<String, Set<String>> initialiseMissingPriorities() {
-            return new TreeMap<>();
-        }
-
-        @Override
-        Map<String, Set<String>> initialiseMissingStates() {
-            return new TreeMap<>();
-        }
-
-        @Override
-        Map<String, Set<String>> initialiseMissingIssueTypes() {
-            return new TreeMap<>();
+        Blacklist.Accessor getBlacklist() {
+            return blacklist;
         }
 
         public Board build() {
@@ -379,9 +341,7 @@ public class Board {
 
             Board board = new Board(0, boardConfig, Collections.unmodifiableMap(assignees), Collections.unmodifiableMap(getAssigneeIndices(assignees)),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
-                    Collections.unmodifiableMap(missingIssueTypes != null ? missingIssueTypes : Collections.emptyMap()),
-                    Collections.unmodifiableMap(missingPriorities != null ? missingPriorities : Collections.emptyMap()),
-                    Collections.unmodifiableMap(missingStates != null ? missingStates : Collections.emptyMap()));
+                    blacklist.build());
             for (BoardProject project : projects.values()) {
                 project.setBoard(board);
             }
@@ -397,6 +357,8 @@ public class Board {
         private final AvatarService avatarService;
         private final BoardChangeRegistry changeRegistry;
         private final SearchService searchService;
+        private final Blacklist.Updater blacklist;
+
         //Will only be populated if a new assignee is brought in
         private Map<String, Assignee> assigneesCopy;
         Map<String, Issue> allIssuesCopy;
@@ -408,6 +370,8 @@ public class Board {
             this.searchService = searchService;
             this.avatarService = avatarService;
             this.changeRegistry = changeRegistry;
+            this.blacklist = new Blacklist.Updater(board.blacklist);
+
         }
 
         Board handleEvent(JirbanIssueEvent event) throws SearchException {
@@ -450,9 +414,7 @@ public class Board {
                     board.assignees, board.assigneeIndices,
                     Collections.unmodifiableMap(allIssuesCopy),
                     Collections.unmodifiableMap(projectsCopy),
-                    board.missingIssueTypes,
-                    board.missingPriorities,
-                    board.missingStates);
+                    board.blacklist);
             boardCopy.updateBoardInProjects();
             changeRegistry.addChange(boardCopy.currentView, event).buildAndRegister();
             return boardCopy;
@@ -494,7 +456,7 @@ public class Board {
                     copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new) :
                     board.allIssues;
 
-            if (newIssue != null || missingUpdated()) {
+            if (newIssue != null || blacklist.isUpdated()) {
                 //The project's issue tables will be updated if needed
                 BoardProject projectCopy = projectUpdater.update();
                 final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
@@ -511,9 +473,7 @@ public class Board {
                         assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
-                        calclulateMissing(board.missingIssueTypes, missingIssueTypes),
-                        calclulateMissing(board.missingPriorities, missingPriorities),
-                        calclulateMissing(board.missingStates, missingStates));
+                        blacklist.update());
 
                 boardCopy.updateBoardInProjects();
                 BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
@@ -543,22 +503,8 @@ public class Board {
         }
 
         @Override
-        Map<String, Set<String>> initialiseMissingPriorities() {
-            return new TreeMap<>(board.missingPriorities);
-        }
-
-        @Override
-        Map<String, Set<String>> initialiseMissingStates() {
-            return new TreeMap<>(board.missingStates);
-        }
-
-        @Override
-        Map<String, Set<String>> initialiseMissingIssueTypes() {
-            return new TreeMap<>(board.missingIssueTypes);
-        }
-
-        private boolean missingUpdated() {
-            return missingIssueTypes != null || missingPriorities != null || missingStates != null;
+        Blacklist.Accessor getBlacklist() {
+            return blacklist;
         }
 
         private Assignee createAssigneeIfNeeded(JirbanIssueEvent.Detail evtDetail) {
@@ -590,10 +536,6 @@ public class Board {
             copy.putAll(map);
             copy.put(key, value);
             return Collections.unmodifiableMap(copy);
-        }
-
-        private Map<String, Set<String>> calclulateMissing(Map<String, Set<String>> existing, Map<String, Set<String>> updated) {
-            return updated == null ? existing : updated;
         }
     }
 }

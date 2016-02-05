@@ -21,10 +21,10 @@
  */
 package ut.org.jirban.jira;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -49,7 +49,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -78,7 +78,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -111,7 +111,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", "TBG-Y");
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
@@ -159,7 +159,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 10);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -188,7 +188,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -216,7 +216,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         allIssues = getIssuesCheckingSize(boardNode, 8);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -243,7 +243,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
         boardManager.handleEvent(delete);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -283,7 +283,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Five", "kabir", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         checkUsers(boardNode, "brian", "kabir");
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
@@ -311,7 +311,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Four", null, "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         checkUsers(boardNode, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 9);
@@ -353,7 +353,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Five", "james", "TDP-B");
         boardManager.handleEvent(create);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 2);
@@ -379,7 +379,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Four", "stuart", "TBG-X");
         boardManager.handleEvent(create);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         checkUsers(boardNode, "brian", "james", "kabir", "stuart");
         allIssues = getIssuesCheckingSize(boardNode, 9);
@@ -420,7 +420,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 "Four-1", "kabir", false, "TDP-B", true);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, -1);
@@ -449,7 +449,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", IssueType.FEATURE, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", 0, -1);
 
@@ -457,7 +457,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, Priority.LOW, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", 0, -1);
 
@@ -465,7 +465,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, "One-1", null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
@@ -473,7 +473,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, "brian", false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
@@ -481,7 +481,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
@@ -489,7 +489,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
@@ -497,7 +497,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, "TDP-D", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3, -1);
 
@@ -505,7 +505,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", "kabir", false, "TBG-Y", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
         allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1, 1);
 
@@ -548,7 +548,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TBG-3", null, null, null, "james", false, null, false);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
-        checkNoMissing(boardNode);
+        checkNoBlacklist(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, 2);
@@ -586,12 +586,8 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        Map<String, String> missing = getMissingForStates(boardNode);
-        Assert.assertEquals(2, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+
+        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-1", "TBG-1");
 
         //Add another issue to the same bad state to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.TASK, Priority.HIGHEST, "Three", null, "BAD");
@@ -604,13 +600,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForStates(boardNode);
-        Assert.assertEquals(3, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-1", "TBG-1", "TDP-3");
 
         //Add another issue to another bad state
         event = createCreateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.HIGH, "Four", null, "BADDER");
@@ -623,14 +613,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForStates(boardNode);
-        Assert.assertEquals(4, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals("BADDER", missing.get("TDP-4"));
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+        checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
         //Perhaps the following isn't that important? If the board is badly configured, it is badly configured
         //Saying what is wrong, and adding to that seems more important than removing stuff from it
@@ -677,12 +660,8 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        Map<String, String> missing = getMissingForIssueTypes(boardNode);
-        Assert.assertEquals(2, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
-        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+
+        checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1");
 
         //Add another issue to the same bad state to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", "BAD", Priority.HIGHEST.name, "Three", null, "TDP-C");
@@ -695,13 +674,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForIssueTypes(boardNode);
-        Assert.assertEquals(3, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals(0, getMissingForStates(boardNode).size());
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+        checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1", "TDP-3");
 
         //Add another issue to another bad state
         event = createCreateEventAndAddToRegistry("TDP-4", "BADDER", Priority.HIGH.name, "Four", null, "TDP-C");
@@ -714,18 +687,10 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForIssueTypes(boardNode);
-        Assert.assertEquals(4, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals("BADDER", missing.get("TDP-4"));
-        Assert.assertEquals(0, getMissingForStates(boardNode).size());
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
+        checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
         //TODO See testMissingState()
     }
-
 
     @Test
     public void testMissingPriority() throws SearchException {
@@ -742,12 +707,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        Map<String, String> missing = getMissingForPriorities(boardNode);
-        Assert.assertEquals(2, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
-        Assert.assertEquals(0, getMissingForStates(boardNode).size());
+        checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1");
 
         //Add another issue to the same bad state to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.FEATURE.name, "BAD", "Three", null, "TDP-C");
@@ -760,13 +720,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForPriorities(boardNode);
-        Assert.assertEquals(3, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals(0, getMissingForStates(boardNode).size());
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1", "TDP-3");
 
         //Add another issue to another bad state
         event = createCreateEventAndAddToRegistry("TDP-4", IssueType.TASK.name, "BADDER", "Four", null, "TDP-C");
@@ -779,42 +733,9 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForPriorities(boardNode);
-        Assert.assertEquals(4, missing.size());
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals("BADDER", missing.get("TDP-4"));
-        Assert.assertEquals(0, getMissingForStates(boardNode).size());
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
+        checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
         //TODO See testMissingState()
-    }
-
-    private Map<String, String> getMissingForStates(ModelNode boardNode) {
-        return getMissingIssues(boardNode, "states");
-    }
-
-    private Map<String, String> getMissingForPriorities(ModelNode boardNode) {
-        return getMissingIssues(boardNode, "priorities");
-    }
-
-    private Map<String, String> getMissingForIssueTypes(ModelNode boardNode) {
-        return getMissingIssues(boardNode, "issue-types");
-    }
-
-    private Map<String, String> getMissingIssues(ModelNode boardNode, String type) {
-        if (!boardNode.hasDefined("missing", type)){
-            return Collections.emptyMap();
-        }
-        ModelNode missing = boardNode.get("missing", type);
-        Map<String, String> issues = new HashMap<>();
-        for (String key : missing.keys()) {
-            for (ModelNode issue : missing.get(key, "issues").asList()) {
-                Assert.assertNull(issues.put(issue.asString(), key));
-            }
-        }
-        return issues;
     }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
@@ -885,7 +806,29 @@ public class BoardManagerTest extends AbstractBoardTest {
         }
     }
 
-    private void checkNoMissing(ModelNode boardNode) {
-        Assert.assertFalse(boardNode.has("missing"));
+    private void checkBlacklist(ModelNode boardNode, String[] states, String[] issueTypes, String[] priorities, String... issues) {
+        Assert.assertTrue(boardNode.hasDefined("blacklist"));
+        ModelNode blacklist = boardNode.get("blacklist");
+        checkBlacklistEntry(blacklist, "states", states);
+        checkBlacklistEntry(blacklist, "issue-types", issueTypes);
+        checkBlacklistEntry(blacklist, "priorities", priorities);
+        checkBlacklistEntry(blacklist, "issues", issues);
+    }
+
+    private void checkBlacklistEntry(ModelNode blacklist, String key, String[] entries) {
+        if (entries == null || entries.length == 0) {
+            Assert.assertFalse(blacklist.hasDefined(key));
+        } else {
+            List<ModelNode> entryList = blacklist.get(key).asList();
+            Assert.assertEquals(entries.length, entryList.size());
+            Set<String> expectedSet = new HashSet<>(Arrays.asList(entries));
+            for (ModelNode entry : entryList) {
+                Assert.assertTrue(expectedSet.contains(entry.asString()));
+            }
+        }
+    }
+
+    private void checkNoBlacklist(ModelNode boardNode) {
+        Assert.assertFalse(boardNode.has("blacklist"));
     }
 }
