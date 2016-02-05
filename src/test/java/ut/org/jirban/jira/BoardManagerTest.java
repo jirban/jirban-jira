@@ -615,34 +615,24 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {}, {"TBG-2"}, {}});
         checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
-        //Perhaps the following isn't that important? If the board is badly configured, it is badly configured
-        //Saying what is wrong, and adding to that seems more important than removing stuff from it
-        //But we should handle this situation gracefully if an issue is bad and cannot be found
-        //Perhaps with a blacklist, and not updating the board once trying to update something in the blacklist
-        //TODO test the below with the above adjustment
-        /*
         //Move an issue from a bad state to a good state
         event = createUpdateEventAndAddToRegistry("TDP-4", null, null, null, null, false, "TDP-A", false);
         boardManager.handleEvent(event);
+        //Since the issue has been blacklisted the view id is the same
+        getJsonCheckingViewIdAndUsers(2, "kabir");
+
+        //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
+        //bad configuration notices though so the bad state remains in the list
+        event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
+        boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        allIssues = getIssuesCheckingSize(boardNode, 2);
-        Assert.assertEquals(3, missing.size());
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
-        checkIssue(allIssues, "TDP-4", IssueType.BUG, Priority.HIGH, "Four", 0, 0);
         checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-4"}, {"TDP-2"}, {}, {}});
+                {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        missing = getMissingForStates(boardNode);
-        Assert.assertEquals("BAD", missing.get("TDP-1"));
-        Assert.assertEquals("BAD", missing.get("TBG-1"));
-        Assert.assertEquals("BAD", missing.get("TDP-3"));
-        Assert.assertEquals(0, getMissingForIssueTypes(boardNode).size());
-        Assert.assertEquals(0, getMissingForPriorities(boardNode).size());
-
-        //Delete a bad state issue
-        */
+        checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3");
     }
 
     @Test
@@ -663,7 +653,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1");
 
-        //Add another issue to the same bad state to check that this works on updating
+        //Add another issue to the same bad issue type to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", "BAD", Priority.HIGHEST.name, "Three", null, "TDP-C");
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
@@ -676,7 +666,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {}, {"TBG-2"}, {}});
         checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1", "TDP-3");
 
-        //Add another issue to another bad state
+        //Add another issue to another bad issue type
         event = createCreateEventAndAddToRegistry("TDP-4", "BADDER", Priority.HIGH.name, "Four", null, "TDP-C");
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
@@ -689,7 +679,24 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {}, {"TBG-2"}, {}});
         checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
-        //TODO See testMissingState()
+        //Move an issue from a bad issue type to a good issue type
+        event = createUpdateEventAndAddToRegistry("TDP-4", IssueType.TASK, null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        //Since the issue has been blacklisted the view id is the same
+        getJsonCheckingViewIdAndUsers(2, "kabir");
+
+        //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
+        //bad configuration notices though so the bad issue type remains in the list
+        event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3");
     }
 
     @Test
@@ -709,7 +716,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {}, {"TBG-2"}, {}});
         checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1");
 
-        //Add another issue to the same bad state to check that this works on updating
+        //Add another issue to the same bad priority to check that this works on updating
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.FEATURE.name, "BAD", "Three", null, "TDP-C");
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
@@ -722,7 +729,7 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {}, {"TBG-2"}, {}});
         checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1", "TDP-3");
 
-        //Add another issue to another bad state
+        //Add another issue to another bad priority
         event = createCreateEventAndAddToRegistry("TDP-4", IssueType.TASK.name, "BADDER", "Four", null, "TDP-C");
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
@@ -735,8 +742,25 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {}, {"TBG-2"}, {}});
         checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
-        //TODO See testMissingState()
-    }
+
+        //Move an issue from a bad priority to a good priority
+        event = createUpdateEventAndAddToRegistry("TDP-4", null, Priority.HIGH, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        //Since the issue has been blacklisted the view id is the same
+        getJsonCheckingViewIdAndUsers(2, "kabir");
+
+        //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
+        //bad configuration notices though so the bad priority remains in the list
+        event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {}, {"TDP-2"}, {}, {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {}, {}, {"TBG-2"}, {}});
+        checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3");    }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);

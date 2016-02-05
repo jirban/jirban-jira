@@ -82,11 +82,16 @@ public class Blacklist {
         }
     }
 
+    public boolean isBlacklisted(String issueKey) {
+        return issues.contains(issueKey);
+    }
+
     abstract static class Accessor {
         abstract void addMissingState(String issueKey, String state);
         abstract void addMissingIssueType(String issueKey, String issueType);
         abstract void addMissingPriority(String issueKey, String priority);
         abstract boolean isUpdated();
+        public abstract void deleteIssue(String issueKey);
     }
 
     static class Builder extends Accessor {
@@ -123,16 +128,23 @@ public class Blacklist {
             blacklistIssue(issueKey);
         }
 
+
+        @Override
+        boolean isUpdated() {
+            return issues != null;
+        }
+
+        @Override
+        public void deleteIssue(String issueKey) {
+            //Should not happen with this code path
+            throw new IllegalStateException();
+        }
+
         private void blacklistIssue(String issueKey) {
             if (issues == null) {
                 issues = new TreeSet<>();
             }
             issues.add(issueKey);
-        }
-
-        @Override
-        boolean isUpdated() {
-            return issues != null;
         }
 
         Blacklist build() {
@@ -191,6 +203,15 @@ public class Blacklist {
             return updated;
         }
 
+        @Override
+        public void deleteIssue(String issueKey) {
+            if (issues == null) {
+                issues = new TreeSet<>(original.issues);
+            }
+            issues.remove(issueKey);
+            updated = true;
+        }
+
         private void blacklistIssue(String issueKey) {
             if (issues == null) {
                 issues = new TreeSet<>(original.issues);
@@ -198,7 +219,7 @@ public class Blacklist {
             issues.add(issueKey);
         }
 
-        Blacklist update() {
+        Blacklist build() {
             if (!updated) {
                 return original;
             }

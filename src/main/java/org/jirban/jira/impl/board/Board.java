@@ -68,13 +68,13 @@ public class Board {
 
     private final Blacklist blacklist;
 
-    private Board(int currentView, BoardConfig boardConfig,
+    private Board(Board old, BoardConfig boardConfig,
                     Map<String, Assignee> assignees,
                     Map<String, Integer> assigneeIndices,
                     Map<String, Issue> allIssues,
                     Map<String, BoardProject> projects,
                     Blacklist blacklist) {
-        this.currentView = currentView;
+        this.currentView = old == null ? 0 : old.currentView + 1;
         this.boardConfig = boardConfig;
         this.assignees = assignees;
         this.assigneeIndices = assigneeIndices;
@@ -82,6 +82,7 @@ public class Board {
         this.projects = projects;
         this.blacklist = blacklist;
     }
+
 
     public static Builder builder(SearchService searchService, AvatarService avatarService,
                                   IssueLinkManager issueLinkManager, UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
@@ -339,7 +340,7 @@ public class Board {
                 }
             });
 
-            Board board = new Board(0, boardConfig, Collections.unmodifiableMap(assignees), Collections.unmodifiableMap(getAssigneeIndices(assignees)),
+            Board board = new Board(null, boardConfig, Collections.unmodifiableMap(assignees), Collections.unmodifiableMap(getAssigneeIndices(assignees)),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
                     blacklist.build());
             for (BoardProject project : projects.values()) {
@@ -393,34 +394,53 @@ public class Board {
                 throw new IllegalArgumentException("Can't find project " + event.getProjectCode() +
                         " in board " + board.boardConfig.getId());
             }
-            final Issue issue = board.allIssues.get(event.getIssueKey());
-            if (issue == null) {
-                throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() +
-                        " in board " + board.boardConfig.getId());
+
+            final Map<String, BoardProject> projectsCopy;
+            final Map<String, Issue> allIssuesCopy;
+            if (board.blacklist.isBlacklisted(event.getIssueKey())) {
+                //For a delete of an issue that has been blacklisted we simply remove the issue from the blacklist.
+                //It is not part of any of the issue tables so just use the old projects
+                projectsCopy = board.projects;
+                allIssuesCopy = board.allIssues;
+
+                //We still need to update the board somewhat though to include the new blacklist (we only remove the
+                // issue and not the bad state/issue-type/priority)
+                blacklist.deleteIssue(event.getIssueKey());
+            } else {
+                final Issue issue = board.allIssues.get(event.getIssueKey());
+                if (issue == null) {
+                    throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() +
+                            " in board " + board.boardConfig.getId());
+                }
+                final BoardProject projectCopy = project.copyAndDeleteIssue(issue);
+                projectsCopy = copyAndPut(board.projects, event.getProjectCode(), projectCopy, HashMap::new);
+
+                Map<String, Issue> allIssues = new HashMap<>(board.allIssues);
+                allIssues.remove(issue.getKey());
+                allIssuesCopy = Collections.unmodifiableMap(allIssues);
             }
-            final BoardProject projectCopy = project.copyAndDeleteIssue(issue);
 
-            final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
-            projectsCopy.put(event.getProjectCode(), projectCopy);
-
-            final Map<String, Issue> allIssuesCopy = new HashMap<>(board.allIssues);
-            allIssuesCopy.remove(issue.getKey());
-
-            //TODO delete the issue from the missing
-
-            //TODO put the event in some wrapper with the view id on the 'update registry'
-
-            Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
+            Board boardCopy = new Board(board, board.boardConfig,
                     board.assignees, board.assigneeIndices,
                     Collections.unmodifiableMap(allIssuesCopy),
-                    Collections.unmodifiableMap(projectsCopy),
-                    board.blacklist);
+                    projectsCopy,
+                    blacklist.build());
             boardCopy.updateBoardInProjects();
-            changeRegistry.addChange(boardCopy.currentView, event).buildAndRegister();
+
+            //Register the event
+            changeRegistry.addChange(boardCopy.currentView, event)
+                    .buildAndRegister();
             return boardCopy;
         }
 
         Board handleCreateOrUpdateIssue(JirbanIssueEvent event, boolean create) throws SearchException {
+
+            if (!create && board.blacklist.isBlacklisted(event.getIssueKey())) {
+                //For an update of an issue that has been blacklisted we will not be able to figure out the state
+                //So just return the original board
+                return board;
+            }
+
             final BoardProject project = board.projects.get(event.getProjectCode());
             if (project == null) {
                 throw new IllegalArgumentException("Can't find project " + event.getProjectCode()
@@ -466,21 +486,22 @@ public class Board {
                 //Include the assignee if it was new
                 //Include the project state table if recalculated
 
-                //TODO recalculate the missingXXXs maps (if an update we will need to remove the old ones)
-
-                Board boardCopy = new Board(board.currentView + 1, board.boardConfig,
+                Board boardCopy = new Board(board, board.boardConfig,
                         assigneesCopy == null ? board.assignees : assigneesCopy,
                         assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
-                        blacklist.update());
+                        blacklist.build());
 
+                //Register the event
                 boardCopy.updateBoardInProjects();
                 BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
                 if (newAssignee != null) {
                     changeBuilder.addNewAssignee(newAssignee);
                 }
+                //TODO propagate the new state somehow
                 changeBuilder.buildAndRegister();
+
                 return boardCopy;
             }
             return null;
