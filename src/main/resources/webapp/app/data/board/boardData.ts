@@ -14,6 +14,7 @@ import {LinkedProject} from "./project";
 import {BoardProject} from "./project";
 import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
+import {BlacklistData} from "./blacklist";
 
 
 export class BoardData {
@@ -26,8 +27,7 @@ export class BoardData {
 
     private _projects:Projects;
 
-    //TODO refactor this
-    public missing:any;
+    public blacklist:BlacklistData;
 
     public initialized = false;
 
@@ -93,7 +93,7 @@ export class BoardData {
     private internalDeserialize(input:any, first:boolean = false) {
         this.jiraUrl = RestUrlUtil.calculateJiraUrl();
 
-        this.missing = input.missing;
+        this.blacklist = input.blacklist ? new BlacklistData(input.blacklist) : null;
 
         this._projects = new ProjectDeserializer().deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);

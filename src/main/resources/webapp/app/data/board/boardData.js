@@ -1,5 +1,5 @@
-System.register(['./assignee', './priority', './issueType', './boardFilters', "./project", "./issueTable", "../../common/RestUrlUtil"], function(exports_1) {
-    var assignee_1, priority_1, issueType_1, boardFilters_1, project_1, issueTable_1, RestUrlUtil_1;
+System.register(['./assignee', './priority', './issueType', './boardFilters', "./project", "./issueTable", "../../common/RestUrlUtil", "./blacklist"], function(exports_1) {
+    var assignee_1, priority_1, issueType_1, boardFilters_1, project_1, issueTable_1, RestUrlUtil_1, blacklist_1;
     var BoardData;
     return {
         setters:[
@@ -23,6 +23,9 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
             },
             function (RestUrlUtil_1_1) {
                 RestUrlUtil_1 = RestUrlUtil_1_1;
+            },
+            function (blacklist_1_1) {
+                blacklist_1 = blacklist_1_1;
             }],
         execute: function() {
             BoardData = (function () {
@@ -74,7 +77,7 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 BoardData.prototype.internalDeserialize = function (input, first) {
                     if (first === void 0) { first = false; }
                     this.jiraUrl = RestUrlUtil_1.RestUrlUtil.calculateJiraUrl();
-                    this.missing = input.missing;
+                    this.blacklist = input.blacklist ? new blacklist_1.BlacklistData(input.blacklist) : null;
                     this._projects = new project_1.ProjectDeserializer().deserialize(input);
                     this._assignees = new assignee_1.AssigneeDeserializer().deserialize(input);
                     this._priorities = new priority_1.PriorityDeserializer().deserialize(input);

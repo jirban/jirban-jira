@@ -10,61 +10,37 @@ import {BoardData} from '../../../data/board/boardData';
     styleUrls: ['app/components/board/healthPanel/healthPanel.css'],
 })
 export class HealthPanelComponent {
-    private _states : string[];
-    private _issueTypes : string[];
-    private _priorities : string[];
-
     private closeHealthPanel:EventEmitter<any> = new EventEmitter();
 
     constructor(private boardData:BoardData) {
     }
 
     private get states() : string[] {
-        if (!this._states) {
-            this._states = this.getNames("states");
+        if (!this.boardData.blacklist) {
+            return [];
         }
-        return this._states;
+        return this.boardData.blacklist.states;
     }
 
     private get issueTypes() : string[] {
-        if (!this._issueTypes) {
-            this._issueTypes = this.getNames("issue-types");
+        if (!this.boardData.blacklist) {
+            return [];
         }
-        return this._issueTypes;
+        return this.boardData.blacklist.issueTypes;
     }
 
     private get priorities() : string[] {
-        if (!this._priorities) {
-            this._priorities = this.getNames("priorities");
+        if (!this.boardData.blacklist) {
+            return [];
         }
-        return this._priorities;
+        return this.boardData.blacklist.priorities;
     }
 
-    private getIssuesForState(name:string) : string[] {
-        return this.getIssues("states", name);
-    }
-
-
-    private getIssuesForIssueType(name:string) : string[] {
-        return this.getIssues("issue-types", name);
-    }
-
-    private getIssuesForPriority(name:string) : string[] {
-        return this.getIssues("priorities", name);
-    }
-
-    private getNames(type:string) : string[] {
-        let arr : string[] = [];
-        if (this.boardData.missing) {
-            for (let name in this.boardData.missing[type]) {
-                arr.push(name);
-            }
+    private get issues() : string[] {
+        if (!this.boardData.blacklist) {
+            return [];
         }
-        return arr;
-    }
-
-    private getIssues(type:string, name:string) : string[]{
-        return this.boardData.missing[type][name].issues;
+        return this.boardData.blacklist.issues;
     }
 
     private formatUrl(issue:string) {

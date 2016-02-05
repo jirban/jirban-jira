@@ -26,55 +26,44 @@ System.register(['angular2/core', '../../../data/board/boardData'], function(exp
                 }
                 Object.defineProperty(HealthPanelComponent.prototype, "states", {
                     get: function () {
-                        if (!this._states) {
-                            this._states = this.getNames("states");
+                        if (!this.boardData.blacklist) {
+                            return [];
                         }
-                        return this._states;
+                        return this.boardData.blacklist.states;
                     },
                     enumerable: true,
                     configurable: true
                 });
                 Object.defineProperty(HealthPanelComponent.prototype, "issueTypes", {
                     get: function () {
-                        if (!this._issueTypes) {
-                            this._issueTypes = this.getNames("issue-types");
+                        if (!this.boardData.blacklist) {
+                            return [];
                         }
-                        return this._issueTypes;
+                        return this.boardData.blacklist.issueTypes;
                     },
                     enumerable: true,
                     configurable: true
                 });
                 Object.defineProperty(HealthPanelComponent.prototype, "priorities", {
                     get: function () {
-                        if (!this._priorities) {
-                            this._priorities = this.getNames("priorities");
+                        if (!this.boardData.blacklist) {
+                            return [];
                         }
-                        return this._priorities;
+                        return this.boardData.blacklist.priorities;
                     },
                     enumerable: true,
                     configurable: true
                 });
-                HealthPanelComponent.prototype.getIssuesForState = function (name) {
-                    return this.getIssues("states", name);
-                };
-                HealthPanelComponent.prototype.getIssuesForIssueType = function (name) {
-                    return this.getIssues("issue-types", name);
-                };
-                HealthPanelComponent.prototype.getIssuesForPriority = function (name) {
-                    return this.getIssues("priorities", name);
-                };
-                HealthPanelComponent.prototype.getNames = function (type) {
-                    var arr = [];
-                    if (this.boardData.missing) {
-                        for (var name_1 in this.boardData.missing[type]) {
-                            arr.push(name_1);
+                Object.defineProperty(HealthPanelComponent.prototype, "issues", {
+                    get: function () {
+                        if (!this.boardData.blacklist) {
+                            return [];
                         }
-                    }
-                    return arr;
-                };
-                HealthPanelComponent.prototype.getIssues = function (type, name) {
-                    return this.boardData.missing[type][name].issues;
-                };
+                        return this.boardData.blacklist.issues;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 HealthPanelComponent.prototype.formatUrl = function (issue) {
                     return this.boardData.jiraUrl + "/browse/" + issue;
                 };
