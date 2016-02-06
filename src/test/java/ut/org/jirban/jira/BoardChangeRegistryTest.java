@@ -326,6 +326,14 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(getChangesJson(4), 5);
     }
 
+    @Test
+    public void testBlacklist() throws SearchException {
+        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-6", null, null, null, null, false, "BAD-STATE", false);
+        boardManager.handleEvent(event);
+        checkViewId(1);
+        checkUpdates(getChangesJson(0), 1);
+    }
+
     private void checkNoChanges(ModelNode changesNode, int expectedView) {
         Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
         Assert.assertEquals(1, changesNode.keys().size());

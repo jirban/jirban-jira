@@ -138,6 +138,7 @@ public class BoardChangeRegistry {
     private static class ChangeSetCollector {
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
+        private final Map<String, Set<String>> blacklistChanges = new HashMap<>();
 
         public ChangeSetCollector(int endView) {
             this.view = endView;
@@ -155,9 +156,25 @@ public class BoardChangeRegistry {
                     issueChanges.remove(issueChange.issueKey);
                 }
             }
+            addBlacklistInfo("states", boardChange.getAddedBlacklistState());
+            addBlacklistInfo("priorities", boardChange.getAddedBlacklistPriority());
+            addBlacklistInfo("issue-types", boardChange.getAddedBlacklistIssueType());
+            addBlacklistInfo("issues", boardChange.getAddedBlacklistIssue());
+            if (boardChange.getDeletedBlacklistIssue() != null) {
+                Set<String> issues = blacklistChanges.get("issues");
+                if (issues != null) {
+                    issues.remove(issueKey);
+                }
+            }
+
             if (boardChange.getView() > view) {
                 view = boardChange.getView();
             }
+        }
+
+        private void addBlacklistInfo(String key, String value) {
+            Set<String> states = blacklistChanges.computeIfAbsent(key, x-> new HashSet<>());
+            states.add(value);
         }
 
         ModelNode serialize() {

@@ -428,8 +428,11 @@ public class Board {
             boardCopy.updateBoardInProjects();
 
             //Register the event
-            changeRegistry.addChange(boardCopy.currentView, event)
-                    .buildAndRegister();
+            BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
+            if (blacklist.isUpdated()) {
+                changeBuilder.deleteBlacklist(blacklist.getDeletedIssue());
+            }
+            changeBuilder.buildAndRegister();
             return boardCopy;
         }
 
@@ -454,14 +457,11 @@ public class Board {
             final Assignee issueAssignee = getIssueAssignee(newAssignee, evtDetail);
             final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner);
             final Issue newIssue;
-            final Issue existing;
-
             if (create) {
-                existing = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, evtDetail.getState());
             } else {
-                existing = board.allIssues.get(event.getIssueKey());
+                Issue existing = board.allIssues.get(event.getIssueKey());
                 if (existing == null) {
                     throw new IllegalArgumentException("Can't find issue to update " + event.getIssueKey() + " in board " + board.boardConfig.getId());
                 }
@@ -498,6 +498,10 @@ public class Board {
                 BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
                 if (newAssignee != null) {
                     changeBuilder.addNewAssignee(newAssignee);
+                }
+                if (blacklist.isUpdated()) {
+                    changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
+                            blacklist.getAddedPriority(), blacklist.getAddedIssue());
                 }
                 //TODO propagate the new state somehow
                 changeBuilder.buildAndRegister();

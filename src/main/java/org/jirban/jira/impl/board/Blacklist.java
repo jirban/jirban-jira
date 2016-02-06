@@ -22,6 +22,7 @@
 package org.jirban.jira.impl.board;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -163,6 +164,7 @@ public class Blacklist {
         private Set<String> missingIssueTypes;
         private Set<String> missingPriorities;
         private Set<String> issues;
+        private String deletedIssue;
 
         public Updater(Blacklist original) {
             this.original = original;
@@ -209,7 +211,12 @@ public class Blacklist {
                 issues = new TreeSet<>(original.issues);
             }
             issues.remove(issueKey);
+            deletedIssue = issueKey;
             updated = true;
+        }
+
+        String getDeletedIssue() {
+            return deletedIssue;
         }
 
         private void blacklistIssue(String issueKey) {
@@ -229,6 +236,37 @@ public class Blacklist {
                 missingIssueTypes == null ? original.missingIssueTypes : Collections.unmodifiableSet(missingIssueTypes),
                 missingPriorities == null ? original.missingPriorities : Collections.unmodifiableSet(missingPriorities),
                 issues == null ? original.issues : Collections.unmodifiableSet(issues));
+        }
+
+        String getAddedState() {
+            return getAddition(original.missingStates, missingStates);
+        }
+
+        String getAddedIssueType() {
+            return getAddition(original.missingIssueTypes, missingIssueTypes);
+        }
+
+        String getAddedPriority() {
+            return getAddition(original.missingPriorities, missingPriorities);
+        }
+
+        String getAddedIssue() {
+            return getAddition(original.issues, issues);
+
+        }
+
+        private String getAddition(Set<String> original, Set<String> current) {
+            if (current == null) {
+                return null;
+            }
+            Set<String> tmp = new HashSet<>(current);
+            tmp.removeAll(original);
+            if (tmp.size() == 0) {
+                //Should not really be the case, but just in case
+                return null;
+            }
+            //Can only be one atm
+            return tmp.iterator().next();
         }
     }
 }

@@ -31,11 +31,23 @@ public class BoardChange {
     private final int view;
     private final JirbanIssueEvent event;
     private final Assignee newAssignee;
+    private final String addedBlacklistState;
+    private final String addedBlacklistPriority;
+    private final String addedBlacklistIssueType;
+    private final String addedBlacklistIssue;
+    private final String deletedBlacklistIssue;
 
-    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee) {
+    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, String addedBlacklistState,
+                        String addedBlacklistPriority, String addedBlacklistIssueType,
+                        String addedBlacklistIssue, String deletedBlacklistIssue) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
+        this.addedBlacklistState = addedBlacklistState;
+        this.addedBlacklistPriority = addedBlacklistPriority;
+        this.addedBlacklistIssueType = addedBlacklistIssueType;
+        this.addedBlacklistIssue = addedBlacklistIssue;
+        this.deletedBlacklistIssue = deletedBlacklistIssue;
     }
 
     long getTime() {
@@ -54,11 +66,36 @@ public class BoardChange {
         return newAssignee;
     }
 
+    public String getAddedBlacklistState() {
+        return addedBlacklistState;
+    }
+
+    public String getAddedBlacklistPriority() {
+        return addedBlacklistPriority;
+    }
+
+    public String getAddedBlacklistIssueType() {
+        return addedBlacklistIssueType;
+    }
+
+    public String getAddedBlacklistIssue() {
+        return addedBlacklistIssue;
+    }
+
+    public String getDeletedBlacklistIssue() {
+        return deletedBlacklistIssue;
+    }
+
     public static class Builder {
         private final BoardChangeRegistry registry;
         private final int view;
         private final JirbanIssueEvent event;
         private Assignee newAssignee;
+        private String addedBlacklistState;
+        private String addedBlacklistPriority;
+        private String addedBlacklistIssueType;
+        private String addedBlacklistIssue;
+        private String deletedBlacklistIssue;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -71,9 +108,23 @@ public class BoardChange {
             return this;
         }
 
+        public Builder addBlacklist(String addedState, String addedIssueType, String addedPriority, String addedIssue) {
+            addedBlacklistState = addedState;
+            addedBlacklistIssueType = addedIssueType;
+            addedBlacklistPriority = addedPriority;
+            addedBlacklistIssue = addedIssue;
+            return this;
+        }
+
+        public Builder deleteBlacklist(String deletedIssue) {
+            deletedBlacklistIssue = deletedIssue;
+            return this;
+        }
+
         public void buildAndRegister() {
-            BoardChange change = new BoardChange(view, event, newAssignee);
+            BoardChange change = new BoardChange(view, event, newAssignee, addedBlacklistState, addedBlacklistPriority, addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue);
             registry.registerChange(change);
         }
+
     }
 }
