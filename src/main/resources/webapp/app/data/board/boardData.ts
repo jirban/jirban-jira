@@ -19,6 +19,7 @@ import {BlacklistData} from "./blacklist";
 
 export class BoardData {
     public boardName:string;
+    private _view:string;
     private _swimlane:string;
     private _issueTable:IssueTable;
     private _visibleColumns:boolean[] = [];
@@ -91,6 +92,7 @@ export class BoardData {
 
 
     private internalDeserialize(input:any, first:boolean = false) {
+        this._view = input.view;
         this.jiraUrl = RestUrlUtil.calculateJiraUrl();
 
         this.blacklist = input.blacklist ? new BlacklistData(input.blacklist) : null;
@@ -114,6 +116,10 @@ export class BoardData {
 
     toggleSwimlaneVisibility(swimlaneIndex:number) {
         this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
+    }
+
+    get view():string {
+        return this._view;
     }
 
     get visibleColumns() : boolean[] {

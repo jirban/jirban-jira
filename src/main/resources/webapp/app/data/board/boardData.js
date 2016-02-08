@@ -76,6 +76,7 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 };
                 BoardData.prototype.internalDeserialize = function (input, first) {
                     if (first === void 0) { first = false; }
+                    this._view = input.view;
                     this.jiraUrl = RestUrlUtil_1.RestUrlUtil.calculateJiraUrl();
                     this.blacklist = input.blacklist ? new blacklist_1.BlacklistData(input.blacklist) : null;
                     this._projects = new project_1.ProjectDeserializer().deserialize(input);
@@ -96,6 +97,13 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 BoardData.prototype.toggleSwimlaneVisibility = function (swimlaneIndex) {
                     this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
                 };
+                Object.defineProperty(BoardData.prototype, "view", {
+                    get: function () {
+                        return this._view;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 Object.defineProperty(BoardData.prototype, "visibleColumns", {
                     get: function () {
                         return this._visibleColumns;

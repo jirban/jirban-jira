@@ -1,15 +1,66 @@
 import {BoardData} from "./boardData";
+import {TestBoardData} from "./test-data/test-board-data";
+import {Assignee} from "./assignee";
+import {Priority} from "./priority";
+import {Indexed} from "../../common/indexed";
+import {IssueType} from "./issueType";
 
 //Tests for the BoardData component which is so central to the display of the board
 
-//var fs = require("fs");
+describe('Load Board Test', () => {
+    let boardData:BoardData;
+    beforeEach(() => {
+        boardData = new BoardData();
+        boardData.deserialize(1, JSON.parse(TestBoardData.BASE_BOARD));
+    });
 
-//All this can go, it is examples which seem useful for reference
-describe('BoardData sample', () => {
     it('Initial Testing', () => {
-        expect(true).toEqual(true);
+        expect(boardData.view).toEqual(0);
+
+        let assignees:Indexed<Assignee> = boardData.assignees;
+        expect(assignees.array.length).toEqual(2);
+        checkBoardAssignee(assignees.array[0], "brian", "Brian Stansberry");
+        checkBoardAssignee(assignees.array[1], "kabir", "Kabir Khan");
+
+        let priorities:Indexed<Priority> = boardData.priorities;
+        expect(priorities.array.length).toEqual(4);
+        checkBoardPriority(priorities.array[0], "highest");
+        checkBoardPriority(priorities.array[1], "high");
+        checkBoardPriority(priorities.array[2], "low");
+        checkBoardPriority(priorities.array[3], "lowest");
+
+        let issueTypes:Indexed<IssueType> = boardData.issueTypes;
+        expect(issueTypes.array.length).toEqual(3);
+        checkBoardIssueType(issueTypes.array[0], "task");
+        checkBoardIssueType(issueTypes.array[1], "bug");
+        checkBoardIssueType(issueTypes.array[2], "feature");
+
+        expect(boardData.owner).toBe("TDP");
+
+        fail("TODO More");
+
     });
 });
+
+function checkBoardAssignee(assignee:Assignee, key:string, name:String) {
+    expect(assignee.key).toEqual(key);
+    expect(assignee.avatar).toEqual("/avatars/" + key + ".png");
+    expect(assignee.email).toEqual(key + "@example.com");
+    expect(assignee.name).toEqual(name);
+}
+
+function checkBoardPriority(priority:Priority, name:string) {
+    expect(priority.name).toEqual(name);
+    expect(priority.icon).toEqual("/icons/priorities/" + name + ".png");
+}
+
+function checkBoardIssueType(type:IssueType, name:string) {
+    expect(type.name).toEqual(name);
+    expect(type.icon).toEqual("/icons/issue-types/" + name + ".png");
+}
+
+
+//All this can go, it is examples which seem useful for reference
 
 describe('Test JSON', () => {
     //let fileJson:any;

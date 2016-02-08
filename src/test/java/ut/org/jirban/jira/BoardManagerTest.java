@@ -49,6 +49,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, "TDP-C");
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        System.out.println(boardNode.toJSONString(false));
+
         checkNoBlacklist(boardNode);
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");

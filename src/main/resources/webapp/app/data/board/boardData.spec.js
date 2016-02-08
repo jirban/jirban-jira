@@ -1,15 +1,57 @@
-System.register([], function(exports_1) {
+System.register(["./boardData", "./test-data/test-board-data"], function(exports_1) {
+    var boardData_1, test_board_data_1;
+    function checkBoardAssignee(assignee, key, name) {
+        expect(assignee.key).toEqual(key);
+        expect(assignee.avatar).toEqual("/avatars/" + key + ".png");
+        expect(assignee.email).toEqual(key + "@example.com");
+        expect(assignee.name).toEqual(name);
+    }
+    function checkBoardPriority(priority, name) {
+        expect(priority.name).toEqual(name);
+        expect(priority.icon).toEqual("/icons/priorities/" + name + ".png");
+    }
+    function checkBoardIssueType(type, name) {
+        expect(type.name).toEqual(name);
+        expect(type.icon).toEqual("/icons/issue-types/" + name + ".png");
+    }
     return {
-        setters:[],
+        setters:[
+            function (boardData_1_1) {
+                boardData_1 = boardData_1_1;
+            },
+            function (test_board_data_1_1) {
+                test_board_data_1 = test_board_data_1_1;
+            }],
         execute: function() {
             //Tests for the BoardData component which is so central to the display of the board
-            //var fs = require("fs");
-            //All this can go, it is examples which seem useful for reference
-            describe('BoardData sample', function () {
+            describe('Load Board Test', function () {
+                var boardData;
+                beforeEach(function () {
+                    boardData = new boardData_1.BoardData();
+                    boardData.deserialize(1, JSON.parse(test_board_data_1.TestBoardData.BASE_BOARD));
+                });
                 it('Initial Testing', function () {
-                    expect(true).toEqual(true);
+                    expect(boardData.view).toEqual(0);
+                    var assignees = boardData.assignees;
+                    expect(assignees.array.length).toEqual(2);
+                    checkBoardAssignee(assignees.array[0], "brian", "Brian Stansberry");
+                    checkBoardAssignee(assignees.array[1], "kabir", "Kabir Khan");
+                    var priorities = boardData.priorities;
+                    expect(priorities.array.length).toEqual(4);
+                    checkBoardPriority(priorities.array[0], "highest");
+                    checkBoardPriority(priorities.array[1], "high");
+                    checkBoardPriority(priorities.array[2], "low");
+                    checkBoardPriority(priorities.array[3], "lowest");
+                    var issueTypes = boardData.issueTypes;
+                    expect(issueTypes.array.length).toEqual(3);
+                    checkBoardIssueType(issueTypes.array[0], "task");
+                    checkBoardIssueType(issueTypes.array[1], "bug");
+                    checkBoardIssueType(issueTypes.array[2], "feature");
+                    expect(boardData.owner).toBe("TDP");
+                    fail("TODO More");
                 });
             });
+            //All this can go, it is examples which seem useful for reference
             describe('Test JSON', function () {
                 //let fileJson:any;
                 //beforeEach(() => {
