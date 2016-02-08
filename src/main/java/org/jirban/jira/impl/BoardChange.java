@@ -66,24 +66,28 @@ public class BoardChange {
         return newAssignee;
     }
 
-    public String getAddedBlacklistState() {
+    String getAddedBlacklistState() {
         return addedBlacklistState;
     }
 
-    public String getAddedBlacklistPriority() {
+    String getAddedBlacklistPriority() {
         return addedBlacklistPriority;
     }
 
-    public String getAddedBlacklistIssueType() {
+    String getAddedBlacklistIssueType() {
         return addedBlacklistIssueType;
     }
 
-    public String getAddedBlacklistIssue() {
+    String getAddedBlacklistIssue() {
         return addedBlacklistIssue;
     }
 
-    public String getDeletedBlacklistIssue() {
+    String getDeletedBlacklistIssue() {
         return deletedBlacklistIssue;
+    }
+
+    boolean isBlacklistEvent() {
+        return addedBlacklistIssue != null || deletedBlacklistIssue != null;
     }
 
     public static class Builder {

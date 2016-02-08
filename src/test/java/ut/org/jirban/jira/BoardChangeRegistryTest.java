@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -56,13 +57,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");    //3
 
         checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
+        checkNoIssueChanges(0, 0);
+        checkNoBlacklistChanges(0, 0);
     }
 
     @Test
     public void testFullRefreshOnTooHighView() throws Exception {
         ModelNode changes = getChangesJson(1);
         Assert.assertFalse(changes.hasDefined("changes"));
+        Assert.assertFalse(changes.hasDefined("blacklist"));
         //Check that the top-level fields of the board are there
         Assert.assertTrue(changes.hasDefined("view"));
         Assert.assertTrue(changes.hasDefined("assignees"));
@@ -83,6 +86,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(0, 1);
         checkUpdates(0, 1);
         checkDeletes(0, 1, "TDP-3");
+        checkNoBlacklistChanges(0, 1);
 
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete);
@@ -92,6 +96,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(0, 2);
         checkDeletes(0, 2, "TDP-3", "TDP-7");
         checkDeletes(1, 2, "TDP-7");
+        checkNoBlacklistChanges(0, 2);
 
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete);
@@ -102,7 +107,9 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(0, 3, "TDP-3", "TDP-7", "TBG-1");
         checkDeletes(1, 3, "TDP-7", "TBG-1");
         checkDeletes(2, 3, "TBG-1");
-        checkNoChanges(getChangesJson(3), 3);
+        checkNoIssueChanges(3, 3);
+        checkNoBlacklistChanges(0, 3);
+
     }
 
     @Test
@@ -115,6 +122,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(0, 1);
         checkUpdates(0, 1);
         checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"));
+        checkNoBlacklistChanges(0, 1);
 
         //Now add an issue which brings in new assignees
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X");
@@ -130,6 +138,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(1, 2);
         checkAdds(1, 2,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
+        checkNoBlacklistChanges(0, 2);
 
         //Add another one not bringing in new assignees
         create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D");
@@ -153,23 +162,25 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkNoBlacklistChanges(0, 3);
     }
 
     @Test
     public void testUpdateSameIssueNonAssignees() throws Exception {
         //Do a noop update
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, null, false, null, false);
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(0);
-        checkNoChanges(getChangesJson(0), 0);
+        checkNoIssueChanges(0, 0);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", null, null, "Seven-1", null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(1);
         //Check assignees and deletes extra well here so we don't have to in the other tests
         checkAssignees(0, 1);
         checkDeletes(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, "Seven-1", null, null));
+        checkNoBlacklistChanges(0, 1);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", IssueType.BUG, null, null, null, false, null, false);
         boardManager.handleEvent(update);
@@ -180,6 +191,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(1, 2);
         checkDeletes(1, 2);
         checkUpdates(1, 2, new IssueData("TDP-7", IssueType.BUG, null, null, null, null));
+        checkNoBlacklistChanges(0, 2);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", null, Priority.HIGHEST, null, null, false, null, false);
         boardManager.handleEvent(update);
@@ -193,6 +205,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(2, 3);
         checkDeletes(2, 3);
         checkUpdates(2, 3, new IssueData("TDP-7", null, Priority.HIGHEST, null, null, null));
+        checkNoBlacklistChanges(0, 3);
 
         //TODO States
     }
@@ -201,21 +214,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testSameIssueAssignees() throws Exception {
         //Do a noop update
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, "kabir", false, null, false);
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "kabir", false, null, false);
         boardManager.handleEvent(update);
         checkViewId(1);
         checkAssignees(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, null, "kabir", null));
+        checkNoBlacklistChanges(0, 1);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, null, true, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
         checkViewId(2);
         checkAssignees(0, 2);
         checkUpdates(0, 2, new IssueData("TDP-7", null, null, null, null, true, null));
         checkAssignees(1, 2);
         checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, true, null));
+        checkNoBlacklistChanges(0, 2);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, "jason", false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "jason", false, null, false);
         boardManager.handleEvent(update);
         checkViewId(3);
         checkAssignees(0, 3, "jason");
@@ -224,8 +239,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(1, 3, new IssueData("TDP-7", null, null, null, "jason", false, null));
         checkAssignees(2, 3, "jason");
         checkUpdates(2, 3, new IssueData("TDP-7", null, null, null, "jason", false, null));
+        checkNoBlacklistChanges(0, 3);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", null, null, null, "brian", false, null, false);
+
+        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "brian", false, null, false);
         boardManager.handleEvent(update);
         checkViewId(4);
         checkAssignees(0, 4);
@@ -236,15 +253,17 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(2, 4, new IssueData("TDP-7", null, null, null, "brian", false, null));
         checkAssignees(3, 4);
         checkUpdates(3, 4, new IssueData("TDP-7", null, null, null, "brian", false, null));
+        checkNoBlacklistChanges(0, 4);
     }
 
 
     @Test
     public void testUpdateSeveralIssues() throws Exception {
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", null, null, "Seven-1", null, false, null, false);
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, "Seven-1", null, null));
+        checkNoBlacklistChanges(0, 1);
 
         update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, null, null, "kabir", false, null, false);
         boardManager.handleEvent(update);
@@ -252,6 +271,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(0, 2,
                 new IssueData("TDP-7", null, null, "Seven-1", null, null),
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
+        checkNoBlacklistChanges(0, 2);
 
         //Create, update and delete one to make sure that does not affect the others
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D");
@@ -269,10 +289,11 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkNoBlacklistChanges(0, 3);
 
         //This should appear as an add for change sets including its previous create, and an update for change
         //sets not including the create
-        update = createUpdateEventAndAddToRegistry("TDP-8", null, null, null, "jason", false, "TDP-C", false);
+        update = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, null, "jason", false, "TDP-C", false);
         boardManager.handleEvent(update);
         checkViewId(4);
         checkAssignees(0, 4, "jason");
@@ -297,6 +318,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(3, 4,
                 new IssueData("TDP-8", null, null, null, "jason", "TDP-C"));
         checkAdds(3, 4);
+        checkNoBlacklistChanges(0, 4);
+
 
         //This will not appear in change sets including the create, it becomes a noop
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
@@ -324,21 +347,175 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(4, 5);
         checkUpdates(4, 5);
         checkAdds(4, 5);
+        checkNoBlacklistChanges(0, 5);
+
     }
 
     @Test
-    public void testBlacklist() throws SearchException {
-        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-6", null, null, null, null, false, "BAD-STATE", false);
+    public void testBlacklistBadCreatedState() throws SearchException {
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.FEATURE, Priority.HIGH, "Eight", null, "BadState");
         boardManager.handleEvent(event);
         checkViewId(1);
-        System.out.println(getChangesJson(0));
-        checkUpdates(0, 1);
+        checkNoIssueChanges(0, 1);
+        checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-8"}, null);
+
+        event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = createUpdateEventAndAddToRegistry("TDP-8", "NewBadType", null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
+        boardManager.handleEvent(event);
+        checkViewId(2);
+        checkNoIssueChanges(0, 2);
+        checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-8"});
+        checkNoIssueChanges(1, 2);
+        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
     }
 
-    private void checkNoChanges(ModelNode changesNode, int expectedView) {
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
-        Assert.assertEquals(1, changesNode.keys().size());
+    @Test
+    public void testBlacklistBadUpdatedState() throws SearchException {
+        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType)null, null, null, null, false, "BadState", false);
+        boardManager.handleEvent(event);
+        checkViewId(1);
+        checkNoIssueChanges(0, 1);
+        checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-7"}, null);
+
+        event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = createUpdateEventAndAddToRegistry("TDP-7", "NewBadType", null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
+        boardManager.handleEvent(event);
+        checkViewId(2);
+        checkNoIssueChanges(0, 2);
+        checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-7"});
+        checkNoIssueChanges(1, 2);
+        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
     }
+
+
+    @Test
+    public void testBlacklistBadCreatedIssueType() throws SearchException {
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", "BadType", Priority.HIGH.name, "Eight", null, "TDP-C");
+        boardManager.handleEvent(event);
+        checkViewId(1);
+        checkNoIssueChanges(0, 1);
+        checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-8"}, null);
+
+        event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = createUpdateEventAndAddToRegistry("TDP-8", "NewBadType", null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
+        boardManager.handleEvent(event);
+        checkViewId(2);
+        checkNoIssueChanges(0, 2);
+        checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-8"});
+        checkNoIssueChanges(1, 2);
+        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
+    }
+
+    @Test
+    public void testBlacklistBadUpdatedIssueType() throws SearchException {
+        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", "BadType", null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1);
+        checkNoIssueChanges(0, 1);
+        checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-7"}, null);
+
+        event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = createUpdateEventAndAddToRegistry("TDP-7", "NewBadType", null, null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
+        boardManager.handleEvent(event);
+        checkViewId(2);
+        checkNoIssueChanges(0, 2);
+        checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-7"});
+        checkNoIssueChanges(1, 2);
+        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
+    }
+
+    @Test
+    public void testBlacklistBadCreatedPriority() throws SearchException {
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.FEATURE.name, "BadPriority", "Eight", null, "TDP-C");
+        boardManager.handleEvent(event);
+        checkViewId(1);
+        checkNoIssueChanges(0, 1);
+        checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-8"}, null);
+
+        event = createUpdateEventAndAddToRegistry("TDP-8", null, (Priority)null, "Eight-1", null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = createUpdateEventAndAddToRegistry("TDP-8", null, "NewBadPriority", null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
+        boardManager.handleEvent(event);
+        checkViewId(2);
+        checkNoIssueChanges(0, 2);
+        checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-8"});
+        checkNoIssueChanges(1, 2);
+        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
+    }
+
+    @Test
+    public void testBlacklistBadUpdatedPriority() throws SearchException {
+        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", null, "BadPriority", null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1);
+        checkNoIssueChanges(0, 1);
+        checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-7"}, null);
+
+        event = createUpdateEventAndAddToRegistry("TDP-7", null, (Priority)null, "Eight-1", null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = createUpdateEventAndAddToRegistry("TDP-7", null, "NewBadPriority", null, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1); //No change, it was blacklisted already
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
+        boardManager.handleEvent(event);
+        checkViewId(2);
+        checkNoIssueChanges(0, 2);
+        checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-7"});
+        checkNoIssueChanges(1, 2);
+        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
+    }
+
+    private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView);
+
+        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertFalse(changesNode.hasDefined("changes", "issues"));
+    }
+
+    private void checkNoBlacklistChanges(int fromView, int expectedView) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView);
+
+        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertFalse(changesNode.hasDefined("changes", "blacklist"));
+    }
+
 
 
     private void checkDeletes(int fromView, int expectedView, String...expectedKeys) throws SearchException {
@@ -438,14 +615,37 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
+    private void checkBlacklist(int fromView, int expectedView, String[] states, String[] issueTypes, String[] priorities, String[] issueKeys, String[] removedIssueKeys) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView);
+
+        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        ModelNode blacklistNode = changesNode.get("changes", "blacklist");
+        checkEntries(blacklistNode, "states", states);
+        checkEntries(blacklistNode, "issue-types", issueTypes);
+        checkEntries(blacklistNode, "priorities", priorities);
+        checkEntries(blacklistNode, "issues", issueKeys);
+        checkEntries(blacklistNode, "removed-issues", removedIssueKeys);
+    }
+
+    private void checkEntries(ModelNode parent, String key, String... entries) {
+        if (entries == null) {
+            Assert.assertFalse(parent.hasDefined(key));
+        } else {
+            List<ModelNode> list = parent.get(key).asList();
+            Assert.assertEquals(entries.length, list.size());
+            Set<String> entrySet = list.stream().map(node -> node.asString()).collect(Collectors.toSet());
+            for (String entry : entries) {
+                Assert.assertTrue(entrySet.contains(entry));
+            }
+        }
+    }
+
     String nullOrString(ModelNode node) {
         if (node.isDefined()) {
             return node.asString();
         }
         return null;
     }
-
-
 
     private void checkViewId(int expectedViewId) throws SearchException {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);

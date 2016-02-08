@@ -102,6 +102,13 @@ public class AbstractBoardTest {
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
                                                                  Priority priority, String summary, String username, boolean unassigned, String state, boolean rank) {
+        String issueTypeName = issueType == null ? null : issueType.name;
+        String priorityName = priority == null ? null : priority.name;
+        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned, state, rank);
+    }
+
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
+                                                                 String priorityName, String summary, String username, boolean unassigned, String state, boolean rank) {
         Assert.assertFalse(username != null && unassigned);
 
         User user;
@@ -111,8 +118,6 @@ public class AbstractBoardTest {
             CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
             user = userBridge.getUserByKey(username);
         }
-        String issueTypeName = issueType == null ? null : issueType.name;
-        String priorityName = priority == null ? null : priority.name;
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
                 priorityName, summary, user, state, rank);
@@ -120,7 +125,6 @@ public class AbstractBoardTest {
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, state);
         return update;
     }
-
     protected enum IssueType {
         TASK(0),
         BUG(1),

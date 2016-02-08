@@ -464,7 +464,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", 0, -1);
 
         //summary
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, "One-1", null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, "One-1", null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
         checkNoBlacklist(boardNode);
@@ -472,7 +472,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
         //assign
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, "brian", false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, "brian", false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
         checkNoBlacklist(boardNode);
@@ -480,7 +480,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
         //No updated assignee, nor unassigned - and nothing else changed so the event is a noop and the view does not change
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
         checkNoBlacklist(boardNode);
@@ -488,7 +488,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, 0);
 
         //Unassign
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, true, null, false);
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
         checkNoBlacklist(boardNode);
@@ -496,7 +496,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0, -1);
 
         //Change state
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, null, false, "TDP-D", true);
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, "TDP-D", true);
         boardManager.handleEvent(update);
         boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
         checkNoBlacklist(boardNode);
@@ -543,11 +543,11 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, "TBG-X");
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", null, null, null, "jason", false, null, false);
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, "jason", false, null, false);
         boardManager.handleEvent(update);
         getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
 
-        update = createUpdateEventAndAddToRegistry("TBG-3", null, null, null, "james", false, null, false);
+        update = createUpdateEventAndAddToRegistry("TBG-3", (IssueType) null, null, null, "james", false, null, false);
         boardManager.handleEvent(update);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
         checkNoBlacklist(boardNode);
@@ -618,7 +618,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
 
         //Move an issue from a bad state to a good state
-        event = createUpdateEventAndAddToRegistry("TDP-4", null, null, null, null, false, "TDP-A", false);
+        event = createUpdateEventAndAddToRegistry("TDP-4", (IssueType) null, null, null, null, false, "TDP-A", false);
         boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
         getJsonCheckingViewIdAndUsers(2, "kabir");

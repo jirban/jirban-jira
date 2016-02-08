@@ -138,7 +138,7 @@ public class BoardChangeRegistry {
     private static class ChangeSetCollector {
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
-        private final Map<String, Set<String>> blacklistChanges = new HashMap<>();
+        private final BlacklistChange blacklistChange = new BlacklistChange();
 
         public ChangeSetCollector(int endView) {
             this.view = endView;
@@ -146,35 +146,25 @@ public class BoardChangeRegistry {
 
         void addChange(BoardChange boardChange) {
             final String issueKey = boardChange.getEvent().getIssueKey();
-            IssueChange issueChange = issueChanges.get(issueKey);
-            if (issueChange == null) {
-                issueChange = IssueChange.create(boardChange);
-                issueChanges.put(issueKey, issueChange);
+
+            if (!boardChange.isBlacklistEvent()) {
+                IssueChange issueChange = issueChanges.get(issueKey);
+                if (issueChange == null) {
+                    issueChange = IssueChange.create(boardChange);
+                    issueChanges.put(issueKey, issueChange);
+                } else {
+                    issueChange.merge(boardChange);
+                    if (issueChange.type == null) {
+                        issueChanges.remove(issueChange.issueKey);
+                    }
+                }
             } else {
-                issueChange.merge(boardChange);
-                if (issueChange.type == null) {
-                    issueChanges.remove(issueChange.issueKey);
-                }
-            }
-            addBlacklistInfo("states", boardChange.getAddedBlacklistState());
-            addBlacklistInfo("priorities", boardChange.getAddedBlacklistPriority());
-            addBlacklistInfo("issue-types", boardChange.getAddedBlacklistIssueType());
-            addBlacklistInfo("issues", boardChange.getAddedBlacklistIssue());
-            if (boardChange.getDeletedBlacklistIssue() != null) {
-                Set<String> issues = blacklistChanges.get("issues");
-                if (issues != null) {
-                    issues.remove(issueKey);
-                }
+                blacklistChange.populate(boardChange);
             }
 
             if (boardChange.getView() > view) {
                 view = boardChange.getView();
             }
-        }
-
-        private void addBlacklistInfo(String key, String value) {
-            Set<String> states = blacklistChanges.computeIfAbsent(key, x-> new HashSet<>());
-            states.add(value);
         }
 
         ModelNode serialize() {
@@ -195,6 +185,8 @@ public class BoardChangeRegistry {
             }
 
             serializeAssignees(changes, newAssignees);
+
+            serializeBlacklist(changes);
             return output;
         }
 
@@ -223,7 +215,7 @@ public class BoardChangeRegistry {
             }
         }
 
-        void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees) {
+        private void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees) {
             for (IssueChange change : issueChanges.values()) {
                 Assignee newAssignee = null;
                 if (change.type == CREATE) {
@@ -239,6 +231,13 @@ public class BoardChangeRegistry {
                 if (newAssignee != null) {
                     newAssignees.put(newAssignee.getKey(), newAssignee);
                 }
+            }
+        }
+
+        private void serializeBlacklist(ModelNode changes) {
+            ModelNode blacklistNode = blacklistChange.serialize();
+            if (blacklistNode.isDefined()) {
+                changes.get("blacklist").set(blacklistNode);
             }
         }
     }
@@ -386,6 +385,75 @@ public class BoardChangeRegistry {
                     break;
             }
             return output;
+        }
+    }
+
+    private static class BlacklistChange {
+        Set<String> states;
+        Set<String> issueTypes;
+        Set<String> priorities;
+        Set<String> issues;
+        Set<String> removedIssues;
+
+        private BlacklistChange() {
+        }
+
+        void populate(BoardChange change) {
+            if (change.getAddedBlacklistState() != null) {
+                if (states == null) {
+                    states = new HashSet<>();
+                }
+                states.add(change.getAddedBlacklistState());
+            }
+            if (change.getAddedBlacklistIssueType() != null) {
+                if (issueTypes == null) {
+                    issueTypes = new HashSet<>();
+                }
+                issueTypes.add(change.getAddedBlacklistIssueType());
+            }
+            if (change.getAddedBlacklistPriority() != null) {
+                if (priorities == null) {
+                    priorities = new HashSet<>();
+                }
+                priorities.add(change.getAddedBlacklistPriority());
+            }
+            if (change.getAddedBlacklistIssue() != null) {
+                if (issues == null) {
+                    issues = new HashSet<>();
+                }
+                issues.add(change.getAddedBlacklistIssue());
+            }
+            if (change.getDeletedBlacklistIssue() != null) {
+                if (issues != null) {
+                    issues.remove(change.getDeletedBlacklistIssue());
+                }
+                //It was not added to this change set, so add it to the deleted issues set
+                if (removedIssues == null) {
+                    removedIssues = new HashSet<>();
+                }
+                removedIssues.add(change.getDeletedBlacklistIssue());
+            }
+        }
+
+        ModelNode serialize() {
+            ModelNode modelNode = new ModelNode();
+            if (states != null) {
+                states.forEach(state -> modelNode.get("states").add(state));
+            }
+            if (issueTypes != null) {
+                issueTypes.forEach(type -> modelNode.get("issue-types").add(type));
+            }
+            if (priorities != null) {
+                priorities.forEach(priority -> modelNode.get("priorities").add(priority));
+            }
+            if (issues != null && issues.size() > 0) { //Check size here as well since removes can happen in populate()
+                issues.forEach(issue -> modelNode.get("issues").add(issue));
+            }
+            if (removedIssues != null) {
+                removedIssues.forEach(issue -> modelNode.get("removed-issues").add(issue));
+            }
+
+            return modelNode;
         }
     }
 
