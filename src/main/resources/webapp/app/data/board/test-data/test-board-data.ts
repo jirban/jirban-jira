@@ -108,58 +108,19 @@ export class TestBoardData {
         ]}}
     },
     "issues" : {
-        "TBG-2" : {
-            "key" : "TBG-2",
+        "TDP-1" : {
+            "key" : "TDP-1",
+            "state" : 0,
+            "summary" : "One",
+            "priority" : 0,
+            "type" : 0
+        },
+        "TDP-2" : {
+            "key" : "TDP-2",
             "state" : 1,
             "summary" : "Two",
             "priority" : 1,
             "type" : 1,
-            "assignee" : 1
-        },
-        "TBG-3" : {
-            "key" : "TBG-3",
-            "state" : 0,
-            "summary" : "Three",
-            "priority" : 2,
-            "type" : 2
-        },
-        "TBG-1" : {
-            "key" : "TBG-1",
-            "state" : 0,
-            "summary" : "One",
-            "priority" : 0,
-            "type" : 0,
-            "assignee" : 1
-        },
-        "TDP-7" : {
-            "key" : "TDP-7",
-            "state" : 2,
-            "summary" : "Seven",
-            "priority" : 2,
-            "type" : 2
-        },
-        "TDP-6" : {
-            "key" : "TDP-6",
-            "state" : 1,
-            "summary" : "Six",
-            "priority" : 1,
-            "type" : 1,
-            "assignee" : 1
-        },
-        "TDP-5" : {
-            "key" : "TDP-5",
-            "state" : 0,
-            "summary" : "Five",
-            "priority" : 0,
-            "type" : 0,
-            "assignee" : 1
-        },
-        "TDP-4" : {
-            "key" : "TDP-4",
-            "state" : 3,
-            "summary" : "Four",
-            "priority" : 3,
-            "type" : 0,
             "assignee" : 0
         },
         "TDP-3" : {
@@ -167,24 +128,59 @@ export class TestBoardData {
             "state" : 2,
             "summary" : "Three",
             "priority" : 2,
+            "type" : 2
+        },
+        "TDP-4" : {
+            "key" : "TDP-4",
+            "state" : 3,
+            "summary" : "Four",
+            "priority" : 3,
             "type" : 0,
             "assignee" : 1
         },
-        "TDP-2" : {
-            "key" : "TDP-2",
+        "TDP-5" : {
+            "key" : "TDP-5",
+            "state" : 0,
+            "summary" : "Five",
+            "priority" : 0,
+            "type" : 1
+        },
+        "TDP-6" : {
+            "key" : "TDP-6",
             "state" : 1,
-            "summary" : "Two",
+            "summary" : "Six",
             "priority" : 1,
-            "type" : 0,
-            "assignee" : 1
+            "type" : 2,
+            "assignee" : 0
         },
-        "TDP-1" : {
-            "key" : "TDP-1",
+        "TDP-7" : {
+            "key" : "TDP-7",
+            "state" : 2,
+            "summary" : "Seven",
+            "priority" : 2,
+            "type" : 0
+        },
+        "TBG-1" : {
+            "key" : "TBG-1",
             "state" : 0,
             "summary" : "One",
             "priority" : 0,
-            "type" : 0,
-            "assignee" : 1
+            "type" : 0
+        },
+        "TBG-2" : {
+            "key" : "TBG-2",
+            "state" : 1,
+            "summary" : "Two",
+            "priority" : 1,
+            "type" : 1,
+            "assignee" : 0
+        },
+        "TBG-3" : {
+            "key" : "TBG-3",
+            "state" : 0,
+            "summary" : "Three",
+            "priority" : 2,
+            "type" : 2
         },
         "TBG-4" : {
             "key" : "TBG-4",
