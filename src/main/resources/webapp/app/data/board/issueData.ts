@@ -15,6 +15,7 @@ export class IssueData {
     private _assignee:Assignee;
     private _priority:Priority;
     private _type:IssueType;
+    //The index within the issue's project's own states
     private _statusIndex:number;
     private _linked:IssueData[];
     private _filtered:boolean = false;
@@ -146,7 +147,7 @@ export class IssueData {
     }
 
     get priorityUrl():string {
-        return this._boardData.jiraUrl + "/" + this._priority.icon;
+        return this._boardData.jiraUrl + this._priority.icon;
     }
 
     get typeName():string {
@@ -154,7 +155,7 @@ export class IssueData {
     }
 
     get typeUrl():string {
-        return this._boardData.jiraUrl + "/" + this._type.icon;
+        return this._boardData.jiraUrl + this._type.icon;
     }
 
     get linkedProject() : Project {

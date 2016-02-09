@@ -46,7 +46,12 @@ export class TestBoardData {
         {
             "name" : "feature",
             "icon" : "/icons/issue-types/feature.png"
+        },
+        {
+            "name" : "issue",
+            "icon" : "/icons/issue-types/issue.png"
         }
+
     ],
     "projects" : {
         "owner" : "TDP",
@@ -113,7 +118,8 @@ export class TestBoardData {
             "state" : 0,
             "summary" : "One",
             "priority" : 0,
-            "type" : 0
+            "type" : 0,
+            "assignee" : 0
         },
         "TDP-2" : {
             "key" : "TDP-2",
@@ -121,7 +127,7 @@ export class TestBoardData {
             "summary" : "Two",
             "priority" : 1,
             "type" : 1,
-            "assignee" : 0
+            "assignee" : 1
         },
         "TDP-3" : {
             "key" : "TDP-3",
@@ -135,37 +141,38 @@ export class TestBoardData {
             "state" : 3,
             "summary" : "Four",
             "priority" : 3,
-            "type" : 0,
-            "assignee" : 1
+            "type" : 3
         },
         "TDP-5" : {
             "key" : "TDP-5",
             "state" : 0,
             "summary" : "Five",
             "priority" : 0,
-            "type" : 1
+            "type" : 0,
+            "assignee" : 0
         },
         "TDP-6" : {
             "key" : "TDP-6",
             "state" : 1,
             "summary" : "Six",
             "priority" : 1,
-            "type" : 2,
-            "assignee" : 0
+            "type" : 1,
+            "assignee" : 1
         },
         "TDP-7" : {
             "key" : "TDP-7",
             "state" : 2,
             "summary" : "Seven",
             "priority" : 2,
-            "type" : 0
+            "type" : 2
         },
         "TBG-1" : {
             "key" : "TBG-1",
             "state" : 0,
             "summary" : "One",
             "priority" : 0,
-            "type" : 0
+            "type" : 0,
+            "assignee" : 0
         },
         "TBG-2" : {
             "key" : "TBG-2",
@@ -173,7 +180,7 @@ export class TestBoardData {
             "summary" : "Two",
             "priority" : 1,
             "type" : 1,
-            "assignee" : 0
+            "assignee" : 1
         },
         "TBG-3" : {
             "key" : "TBG-3",
@@ -187,17 +194,16 @@ export class TestBoardData {
             "state" : 1,
             "summary" : "Four",
             "priority" : 3,
-            "type" : 0,
-            "assignee" : 1
+            "type" : 3
         }
     }
 }`;
 
 public static EXPECTED_BASE_BOARD:string[][] =
     [
-    ["TDP-1", "TDP-5"],
-    ["TDP-2", "TDP-6", "TBG-1", "TBG-3"],
-    ["TDP-3", "TDP-7", "TBG-2", "TBG-4"],
-    ["TDP-4"]];
-
+        ["TDP-1", "TDP-5"],
+        ["TDP-2", "TDP-6", "TBG-1", "TBG-3"],
+        ["TDP-3", "TDP-7", "TBG-2", "TBG-4"],
+        ["TDP-4"]
+    ];
 }
