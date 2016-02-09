@@ -1,5 +1,16 @@
 System.register(["./boardData", "./test-data/test-board-data"], function(exports_1) {
     var boardData_1, test_board_data_1;
+    function checkEntries(value) {
+        var expected = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            expected[_i - 1] = arguments[_i];
+        }
+        expect(value.length).toBe(expected.length);
+        for (var _a = 0; _a < expected.length; _a++) {
+            var ex = expected[_a];
+            expect(value).toContain(ex);
+        }
+    }
     function checkIssueDatas(boardData, layout) {
         for (var i = 0; i < layout.length; i++) {
             for (var j = 0; j < layout[i].length; j++) {
@@ -169,13 +180,12 @@ System.register(["./boardData", "./test-data/test-board-data"], function(exports
         execute: function() {
             //Tests for the BoardData component which is so central to the display of the board
             describe('Load Board Test', function () {
-                var boardData;
                 beforeEach(function () {
                     console.log("==== " + new Date().toLocaleTimeString() + " ====");
-                    boardData = new boardData_1.BoardData();
-                    boardData.deserialize(1, JSON.parse(test_board_data_1.TestBoardData.BASE_BOARD));
                 });
-                it('Initial load - full checks', function () {
+                it('Initial load - full checks; no blacklist', function () {
+                    var boardData = new boardData_1.BoardData();
+                    boardData.deserialize(1, test_board_data_1.TestBoardData.create(test_board_data_1.TestBoardData.FULL_BASE_BOARD_PROJECTS, test_board_data_1.TestBoardData.FULL_BASE_BOARD_ISSUES));
                     expect(boardData.view).toEqual(0);
                     checkAssignees(boardData, "brian", "kabir");
                     checkStandardPriorities(boardData);
@@ -186,6 +196,30 @@ System.register(["./boardData", "./test-data/test-board-data"], function(exports
                     expect(boardData.boardStates.length).toBe(4);
                     checkBoardLayout(boardData, test_board_data_1.TestBoardData.EXPECTED_BASE_BOARD);
                     checkIssueDatas(boardData, test_board_data_1.TestBoardData.EXPECTED_BASE_BOARD);
+                    expect(boardData.blacklist).toBeNull();
+                });
+                it('Initial load - missing data; blacklist', function () {
+                    var bd = new test_board_data_1.TestBoardData();
+                    bd.projects = test_board_data_1.TestBoardData.FULL_BASE_BOARD_PROJECTS;
+                    bd.issues = test_board_data_1.TestBoardData.FULL_BASE_BOARD_ISSUES;
+                    bd.blacklist = test_board_data_1.TestBoardData.STANDARD_BLACKLIST;
+                    var boardData = new boardData_1.BoardData();
+                    boardData.deserialize(1, bd.build());
+                    expect(boardData.view).toEqual(0);
+                    checkAssignees(boardData, "brian", "kabir");
+                    checkStandardPriorities(boardData);
+                    checkStandardIssueTypes(boardData);
+                    expect(boardData.swimlane).not.toBeDefined();
+                    expect(boardData.swimlaneTable).toBeNull();
+                    checkStandardProjects(boardData);
+                    expect(boardData.boardStates.length).toBe(4);
+                    checkBoardLayout(boardData, test_board_data_1.TestBoardData.EXPECTED_BASE_BOARD);
+                    checkIssueDatas(boardData, test_board_data_1.TestBoardData.EXPECTED_BASE_BOARD);
+                    expect(boardData.blacklist).toBeDefined();
+                    checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101");
+                    checkEntries(boardData.blacklist.issueTypes, "BadIssueType");
+                    checkEntries(boardData.blacklist.priorities, "BadPriority");
+                    checkEntries(boardData.blacklist.states, "BadState");
                 });
             });
         }

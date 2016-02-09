@@ -10,14 +10,44 @@ import {IssueData} from "./issueData";
 //Tests for the BoardData component which is so central to the display of the board
 
 describe('Load Board Test', () => {
-    let boardData:BoardData;
+
     beforeEach(() => {
         console.log("==== " + new Date().toLocaleTimeString() + " ====");
-        boardData = new BoardData();
-        boardData.deserialize(1, JSON.parse(TestBoardData.BASE_BOARD));
     });
 
-    it('Initial load - full checks', () => {
+    it('Initial load - full checks; no blacklist', () => {
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1,
+            TestBoardData.create(TestBoardData.FULL_BASE_BOARD_PROJECTS, TestBoardData.FULL_BASE_BOARD_ISSUES));
+
+        expect(boardData.view).toEqual(0);
+        checkAssignees(boardData, "brian", "kabir");
+        checkStandardPriorities(boardData);
+        checkStandardIssueTypes(boardData);
+
+        expect(boardData.swimlane).not.toBeDefined();
+        expect(boardData.swimlaneTable).toBeNull();
+
+        checkStandardProjects(boardData);
+
+        expect(boardData.boardStates.length).toBe(4);
+        checkBoardLayout(boardData, TestBoardData.EXPECTED_BASE_BOARD);
+
+        checkIssueDatas(boardData, TestBoardData.EXPECTED_BASE_BOARD);
+
+        expect(boardData.blacklist).toBeNull();
+    });
+
+    it('Initial load - missing data; blacklist', () => {
+
+        let bd:TestBoardData = new TestBoardData();
+        bd.projects = TestBoardData.FULL_BASE_BOARD_PROJECTS;
+        bd.issues = TestBoardData.FULL_BASE_BOARD_ISSUES;
+        bd.blacklist = TestBoardData.STANDARD_BLACKLIST;
+
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1, bd.build());
+
         expect(boardData.view).toEqual(0);
 
         checkAssignees(boardData, "brian", "kabir");
@@ -35,8 +65,20 @@ describe('Load Board Test', () => {
 
         checkIssueDatas(boardData, TestBoardData.EXPECTED_BASE_BOARD);
 
+        expect(boardData.blacklist).toBeDefined();
+        checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101");
+        checkEntries(boardData.blacklist.issueTypes, "BadIssueType");
+        checkEntries(boardData.blacklist.priorities, "BadPriority");
+        checkEntries(boardData.blacklist.states, "BadState");
     });
 });
+
+function checkEntries(value:string[], ...expected:string[]) {
+    expect(value.length).toBe(expected.length);
+    for (let ex of expected) {
+        expect(value).toContain(ex);
+    }
+}
 
 
 function checkIssueDatas(boardData:BoardData, layout:string[][]) {

@@ -1,59 +1,120 @@
 export class TestBoardData {
-    public static BASE_BOARD:string = `
-{
-    "view" : 0,
-    "assignees" : [
-        {
+
+    public view:number = 0;
+    public assignees:string[] = TestBoardData.STANDARD_ASSIGNEES;
+    public priorities:string[] = TestBoardData.STANDARD_PRIORITIES;
+    public issueTypes:string[] = TestBoardData.STANDARD_ISSUE_TYPES;
+    public projects:string;
+    public issues:string;
+    public blacklist:string;
+
+    public build() : any {
+        let json:any = {};
+        json["view"] = this.view;
+        json["assignees"] = TestBoardData.parseArray(this.assignees);
+        json["priorities"] = TestBoardData.parseArray(this.priorities);
+        json["issue-types"] = TestBoardData.parseArray(this.issueTypes);
+        json["projects"] = JSON.parse(this.projects);
+        json["issues"] = JSON.parse(this.issues);
+        if (this.blacklist) {
+            json["blacklist"] = JSON.parse(this.blacklist);
+        }
+        console.log(JSON.stringify(json, null, 2));
+        return json;
+    }
+
+    public static create(projects:string, issues:string) : any {
+        let bd:TestBoardData = new TestBoardData();
+        bd.projects = projects;
+        bd.issues = issues;
+        return bd.build();
+    }
+
+    private static parseArray(arr:string[]) : any[] {
+        let ret:any[] = [];
+        for (let s of arr) {
+            ret.push(JSON.parse(s));
+        }
+        return ret;
+    }
+
+    public static STANDARD_ASSIGNEES:string[] = [
+        `{
             "key" : "brian",
             "email" : "brian@example.com",
             "avatar" : "/avatars/brian.png",
             "name" : "Brian Stansberry"
-        },
-        {
+        }`,
+        `{
             "key" : "kabir",
             "email" : "kabir@example.com",
             "avatar" : "/avatars/kabir.png",
             "name" : "Kabir Khan"
-        }
-    ],
-    "priorities" : [
-        {
+        }`];
+
+    public static STANDARD_PRIORITIES:string[] = [
+        `{
             "name" : "highest",
             "icon" : "/icons/priorities/highest.png"
-        },
-        {
+        }`,
+        `{
             "name" : "high",
             "icon" : "/icons/priorities/high.png"
-        },
-        {
+        }`,
+        `{
             "name" : "low",
             "icon" : "/icons/priorities/low.png"
-        },
-        {
+        }`,
+        `{
             "name" : "lowest",
             "icon" : "/icons/priorities/lowest.png"
-        }
-    ],
-    "issue-types" : [
-        {
+        }`];
+
+    public static STANDARD_ISSUE_TYPES:string[] = [
+        `{
             "name" : "task",
             "icon" : "/icons/issue-types/task.png"
-        },
-        {
+        }`,
+        `{
             "name" : "bug",
             "icon" : "/icons/issue-types/bug.png"
-        },
-        {
+        }`,
+        `{
             "name" : "feature",
             "icon" : "/icons/issue-types/feature.png"
-        },
-        {
+        }`,
+        `{
             "name" : "issue",
             "icon" : "/icons/issue-types/issue.png"
-        }
+        }`];
 
-    ],
-    "projects" : {
+    public static STANDARD_BLACKLIST:string = `
+        {
+            "states": [
+              "BadState"
+            ],
+            "priorities": [
+              "BadPriority"
+            ],
+            "issue-types": [
+              "BadIssueType"
+            ],
+            "issues": [
+              "TDP-100",
+              "TBG-101"
+            ]
+        }`;
+
+    public static EXPECTED_BASE_BOARD:string[][] =
+    [
+        ["TDP-1", "TDP-5"],
+        ["TDP-2", "TDP-6", "TBG-1", "TBG-3"],
+        ["TDP-3", "TDP-7", "TBG-2", "TBG-4"],
+        ["TDP-4"]
+    ];
+
+    public static FULL_BASE_BOARD_PROJECTS:string = `
+    {
         "owner" : "TDP",
         "main" : {
             "TDP" : {
@@ -111,8 +172,10 @@ export class TestBoardData {
             "TUP-B",
             "TUP-C"
         ]}}
-    },
-    "issues" : {
+    }`;
+
+    public static FULL_BASE_BOARD_ISSUES:string =`
+    {
         "TDP-1" : {
             "key" : "TDP-1",
             "state" : 0,
@@ -196,14 +259,9 @@ export class TestBoardData {
             "priority" : 3,
             "type" : 3
         }
-    }
-}`;
+    }`;
 
-public static EXPECTED_BASE_BOARD:string[][] =
-    [
-        ["TDP-1", "TDP-5"],
-        ["TDP-2", "TDP-6", "TBG-1", "TBG-3"],
-        ["TDP-3", "TDP-7", "TBG-2", "TBG-4"],
-        ["TDP-4"]
-    ];
 }
+
+
+
