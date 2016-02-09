@@ -1,24 +1,20 @@
-import {BoardData} from "./boardData";
-import {TestBoardData} from "./test-data/test-board-data";
-import {Assignee} from "./assignee";
-import {Priority} from "./priority";
-import {Indexed} from "../../common/indexed";
-import {IssueType} from "./issueType";
-import {IssueTable} from "./issueTable";
-import {IssueData} from "./issueData";
+import {BoardData} from "./../boardData";
+import {TestBoardData} from "./testData";
+import {Assignee} from "./../assignee";
+import {Priority} from "./../priority";
+import {Indexed} from "../../../common/indexed";
+import {IssueType} from "./../issueType";
+import {IssueTable} from "./../issueTable";
+import {IssueData} from "./../issueData";
 
 //Tests for the BoardData component which is so central to the display of the board
 
 describe('Load Board Test', () => {
 
-    beforeEach(() => {
-        console.log("==== " + new Date().toLocaleTimeString() + " ====");
-    });
-
     it('Initial load - full checks; no blacklist', () => {
         let boardData:BoardData = new BoardData();
         boardData.deserialize(1,
-            TestBoardData.create(TestBoardData.FULL_BASE_BOARD_PROJECTS, TestBoardData.FULL_BASE_BOARD_ISSUES));
+            TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
 
         expect(boardData.view).toEqual(0);
         checkAssignees(boardData, "brian", "kabir");
@@ -31,18 +27,17 @@ describe('Load Board Test', () => {
         checkStandardProjects(boardData);
 
         expect(boardData.boardStates.length).toBe(4);
-        checkBoardLayout(boardData, TestBoardData.EXPECTED_BASE_BOARD);
+        checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
-        checkIssueDatas(boardData, TestBoardData.EXPECTED_BASE_BOARD);
+        checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
         expect(boardData.blacklist).toBeNull();
     });
 
-    it('Initial load - missing data; blacklist', () => {
-
+    it('Initial load - full checks; blacklist', () => {
         let bd:TestBoardData = new TestBoardData();
-        bd.projects = TestBoardData.FULL_BASE_BOARD_PROJECTS;
-        bd.issues = TestBoardData.FULL_BASE_BOARD_ISSUES;
+        bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+        bd.issues = TestBoardData.FULL_BOARD_ISSUES;
         bd.blacklist = TestBoardData.STANDARD_BLACKLIST;
 
         let boardData:BoardData = new BoardData();
@@ -61,9 +56,9 @@ describe('Load Board Test', () => {
         checkStandardProjects(boardData);
 
         expect(boardData.boardStates.length).toBe(4);
-        checkBoardLayout(boardData, TestBoardData.EXPECTED_BASE_BOARD);
+        checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
-        checkIssueDatas(boardData, TestBoardData.EXPECTED_BASE_BOARD);
+        checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
         expect(boardData.blacklist).toBeDefined();
         checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101");
@@ -71,6 +66,58 @@ describe('Load Board Test', () => {
         checkEntries(boardData.blacklist.priorities, "BadPriority");
         checkEntries(boardData.blacklist.states, "BadState");
     });
+
+
+    it('Initial load - full checks; no blacklist - owner only', () => {
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1,
+            TestBoardData.create(TestBoardData.OWNER_ONLY_BOARD_PROJECTS, TestBoardData.OWNER_ONLY_BOARD_ISSUES));
+
+        expect(boardData.view).toEqual(0);
+        checkAssignees(boardData, "brian", "kabir");
+        checkStandardPriorities(boardData);
+        checkStandardIssueTypes(boardData);
+
+        expect(boardData.swimlane).not.toBeDefined();
+        expect(boardData.swimlaneTable).toBeNull();
+
+        checkProjects(boardData, null, "TDP");
+
+        expect(boardData.boardStates.length).toBe(4);
+        checkBoardLayout(boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
+
+        checkIssueDatas(boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
+
+        expect(boardData.blacklist).toBeNull();
+    });
+
+    it('Initial load - full checks; no blacklist - non-owner issues only', () => {
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1,
+            TestBoardData.create(TestBoardData.NON_OWNER_ONLY_BOARD_PROJECTS, TestBoardData.NON_OWNER_ONLY_BOARD_ISSUES));
+
+        expect(boardData.view).toEqual(0);
+        checkAssignees(boardData, "brian", "kabir");
+        checkStandardPriorities(boardData);
+        checkStandardIssueTypes(boardData);
+
+        expect(boardData.swimlane).not.toBeDefined();
+        expect(boardData.swimlaneTable).toBeNull();
+
+        checkProjects(boardData, null, "TDP", "TBG");
+
+        expect(boardData.boardStates.length).toBe(4);
+        checkBoardLayout(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
+
+        checkIssueDatas(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
+
+        expect(boardData.blacklist).toBeNull();
+    });
+
+    //it('New issue - main project; empty column'), () => {
+    //    let bd:TestBoardData = new TestBoardData();
+    //    bd.projects = TestBoardData.
+    //});
 });
 
 function checkEntries(value:string[], ...expected:string[]) {
@@ -207,13 +254,23 @@ function checkBoardAssignee(assignee:Assignee, key:string) {
 }
 
 function checkStandardProjects(boardData:BoardData) {
-    expect(boardData.owner).toBe("TDP");
-    expect(boardData.boardProjects).not.toBeNull();
-    expect(boardData.boardProjectCodes).toContain("TDP", "TBG");
-
-    expect(boardData.linkedProjects).not.toBeNull();
-    expect(boardData.linkedProjects["TUP"]).not.toBeNull();
+    checkProjects(boardData, "TUP", "TDP", "TBG");
 }
+
+function checkProjects(boardData:BoardData, linkedProject:string, ...mainProjects:string[]) {
+    expect(boardData.owner).toBe(mainProjects[0]);
+    expect(boardData.boardProjects).not.toBeNull();
+    expect(boardData.boardProjectCodes.length).toBe(mainProjects.length);
+    for (let code of mainProjects) {
+        expect(boardData.boardProjectCodes).toContain(code);
+    }
+
+    if (linkedProject) {
+        expect(boardData.linkedProjects).toEqual(jasmine.anything());
+        expect(boardData.linkedProjects[linkedProject]).toEqual(jasmine.anything());
+    }
+}
+
 
 function checkBoardPriority(priority:Priority, name:string) {
     expect(priority.name).toEqual(name);
