@@ -81,45 +81,11 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     if (changeSet.view != this.view) {
                         if (changeSet.blacklistChanges) {
                             if (!this.blacklist) {
-                                this.blacklist = blacklist_1.BlacklistData.fromChangeSet(changeSet);
+                                this.blacklist = new blacklist_1.BlacklistData();
                             }
-                            else {
-                                if (changeSet.blacklistStates) {
-                                    for (var _i = 0, _a = changeSet.blacklistStates; _i < _a.length; _i++) {
-                                        var state = _a[_i];
-                                        this.blacklist.states.push(state);
-                                    }
-                                }
-                                if (changeSet.blacklistPriorities) {
-                                    for (var _b = 0, _c = changeSet.blacklistPriorities; _b < _c.length; _b++) {
-                                        var priority = _c[_b];
-                                        this.blacklist.priorities.push(priority);
-                                    }
-                                }
-                                if (changeSet.blacklistTypes) {
-                                    for (var _d = 0, _e = changeSet.blacklistTypes; _d < _e.length; _d++) {
-                                        var type = _e[_d];
-                                        this.blacklist.issueTypes.push(type);
-                                    }
-                                }
-                                if (changeSet.blacklistIssues) {
-                                    this._issueTable.deleteIssues(changeSet.blacklistIssues);
-                                    for (var _f = 0, _g = changeSet.blacklistIssues; _f < _g.length; _f++) {
-                                        var issueKey = _g[_f];
-                                        this.blacklist.issues.push(issueKey);
-                                    }
-                                }
-                                if (changeSet.blacklistClearedIssues) {
-                                    for (var _h = 0, _j = changeSet.blacklistClearedIssues; _h < _j.length; _h++) {
-                                        var issueKey = _j[_h];
-                                        var keys = this.blacklist.issues;
-                                        for (var i = 0; i < keys.length; i++) {
-                                            if (keys[i] === issueKey) {
-                                                keys.splice(i, 1);
-                                            }
-                                        }
-                                    }
-                                }
+                            this.blacklist.addChangeSet(changeSet);
+                            if (changeSet.blacklistIssues) {
+                                this._issueTable.deleteIssues(changeSet.blacklistIssues);
                             }
                         }
                         //TODO Process the issue changes

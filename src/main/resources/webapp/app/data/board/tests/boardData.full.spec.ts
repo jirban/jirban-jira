@@ -8,7 +8,6 @@ import {IssueTable} from "./../issueTable";
 import {IssueData} from "./../issueData";
 
 //Tests for the BoardData component which is so central to the display of the board
-
 describe('Load Board', () => {
 
     it('Full board; No blacklist', () => {
@@ -134,8 +133,8 @@ describe('No Change', () => {
     });
 });
 
-describe('Blacklist only ', () => {
-
+describe('New Blacklist ', () => {
+//TODO add similar for board with existing blacklist
     it('Board unaffected', () => {
         let boardData:BoardData = new BoardData();
         boardData.deserialize(1,
@@ -163,6 +162,36 @@ describe('Blacklist only ', () => {
         checkEntries(boardData.blacklist.issues, "TDP-50", "TBG-100");
 
         let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+        checkBoardLayout(boardData, layout);
+        checkIssueDatas(boardData, layout);
+    });
+
+    it ('Affects board issues', () => {
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1,
+            TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        expect(boardData.blacklist).toBeNull();
+
+        //These issues are not part of the board
+        let changes:any = {
+            changes : {
+                view : 5,
+                blacklist: {
+                    issues: ["TDP-1", "TBG-1"],
+                    states: ["BadState"],
+                    priorities: ["BadPriority"]
+                }
+            }
+        };
+
+        boardData.processChanges(changes);
+        expect(boardData.view).toBe(5);
+        expect(boardData.blacklist.issueTypes.length).toBe(0);
+        checkEntries(boardData.blacklist.priorities, "BadPriority");
+        checkEntries(boardData.blacklist.states, "BadState");
+        checkEntries(boardData.blacklist.issues, "TDP-1", "TBG-1");
+
+        let layout:any = [[], ["TDP-2"], [], []];
         checkBoardLayout(boardData, layout);
         checkIssueDatas(boardData, layout);
     });
@@ -214,10 +243,18 @@ function checkBoardLayout(boardData:BoardData, layout:string[][]) {
     for (let i:number = 0 ; i < layout.length ; i++) {
         let columnData:IssueData[] = issueTable[i];
         let columnLayout:string[] = layout[i];
+        console.log(columnData);
+        console.log(columnLayout);
+        console.log(columnData.length);
+        console.log(columnLayout.length);
 
-        expect(boardData.totalIssuesByState[i]).toBe(columnLayout.length);
+        //expect(boardData.totalIssuesByState[i]).toBe(columnLayout.length);
 
-        expect(columnData.length).toBe(columnLayout.length);
+        expect(columnData.length).toBe(columnLayout.length, "The length of column is different " + i);
+        //console.log(columnData.length === columnLayout.length);
+        //expect(columnData.length).toEqual(columnLayout.length);
+        //expect(columnData.length === columnLayout.length).toBe(true);
+
         for (let j:number = 0 ; j < columnLayout.length ; j++) {
             expect(columnData[j].key).toBe(columnLayout[j]);
 

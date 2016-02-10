@@ -93,29 +93,14 @@ export class BoardData {
         if (changeSet.view != this.view) {
             if (changeSet.blacklistChanges) {
                 if (!this.blacklist) {
-                    this.blacklist = BlacklistData.fromChangeSet(changeSet);
-                } else {
-                    if (changeSet.blacklistStates) {
-                        for (let state of changeSet.blacklistStates) {
-                            this.blacklist.states.push(state);
-                        }
-                    }
-                    if (changeSet.blacklistPriorities) {
-                        for (let priority of changeSet.blacklistPriorities) {
-                            this.blacklist.priorities.push(priority);
-                        }
-                    }
-                    if (changeSet.blacklistTypes) {
-                        for (let type of changeSet.blacklistTypes) {
-                            this.blacklist.issueTypes.push(type);
-                        }
-                    }
-                    if (changeSet.blacklistIssues) {
-                        this._issueTable.deleteIssues(changeSet.blacklistIssues);
-                        for (let issueKey of changeSet.blacklistIssues) {
-                            this.blacklist.issues.push(issueKey);
-                        }
-                    }
+                    this.blacklist = new BlacklistData();
+                }
+                this.blacklist.addChangeSet(changeSet);
+
+                if (changeSet.blacklistIssues) {
+                    this._issueTable.deleteIssues(changeSet.blacklistIssues);
+                }
+                /* TODO Deal with this
                     if (changeSet.blacklistClearedIssues) {
                         for (let issueKey of changeSet.blacklistClearedIssues) {
                             let keys:string[] = this.blacklist.issues;
@@ -126,7 +111,7 @@ export class BoardData {
                             }
                         }
                     }
-                }
+                */
             }
 
 

@@ -11,7 +11,7 @@ System.register([], function(exports_1) {
                     this._issues = [];
                 }
                 BlacklistData.fromInput = function (input) {
-                    if (input) {
+                    if (!input) {
                         return null;
                     }
                     var bd = new BlacklistData();
@@ -29,21 +29,20 @@ System.register([], function(exports_1) {
                     }
                     return bd;
                 };
-                BlacklistData.fromChangeSet = function (changeSet) {
-                    var bd = new BlacklistData();
+                BlacklistData.prototype.addChangeSet = function (changeSet) {
+                    //Use slice to copy the arrays here to avoid side-effects
                     if (changeSet.blacklistStates) {
-                        bd._states = changeSet.blacklistStates;
+                        this._states = changeSet.blacklistStates.slice();
                     }
                     if (changeSet.blacklistPriorities) {
-                        bd._priorities = changeSet.blacklistPriorities;
+                        this._priorities = changeSet.blacklistPriorities.slice();
                     }
                     if (changeSet.blacklistTypes) {
-                        bd._issueTypes = changeSet.blacklistTypes;
+                        this._issueTypes = changeSet.blacklistTypes.slice();
                     }
                     if (changeSet.blacklistIssues) {
-                        bd._issues = changeSet.blacklistIssues;
+                        this._issues = changeSet.blacklistIssues.slice();
                     }
-                    return bd;
                 };
                 Object.defineProperty(BlacklistData.prototype, "states", {
                     get: function () {
