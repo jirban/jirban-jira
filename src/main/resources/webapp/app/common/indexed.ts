@@ -1,4 +1,5 @@
 import {IMap} from './map';
+import {isNumber} from "angular2/src/facade/lang";
 
 /**
  * Container for an array, and a lookup of the array index by key
@@ -53,26 +54,42 @@ export class Indexed<T> {
     /**
      * Deletes the entries with the selected keys
      * @param keys the keys to remove
+     * @return the entries that were deleted
      */
-    deleteKeys(keys:string[]) {
-        let deleted:string[] = [];
-        let indices:number[] = [];
-        for (let key of keys) {
+    deleteKeys(keys:string[]) : T[] {
+        if (keys.length == 0) {
+            return [];
+        }
+        //Map the indices to keys
+        let indicesToKeys:string[] = new Array<string>(this.array.length);
+        for (let key in this._indices) {
             let index:number = this._indices[key];
-            if (index) {
-                delete this._indices[key];
-                indices.push(index);
-                keys.push(key);
-            }
+            indicesToKeys[index] = key;
         }
 
-        if (deleted.length > 0) {
-            indices.sort();
-            for (let i:number = indices.length - 1; i >= 0; i--) {
-                this.array.splice(indices[i], 1);
-            }
-            return deleted;
+        //Index the keys we want to delete
+        let deleteKeys:IMap<boolean> = {};
+        for (let key of keys) {
+            deleteKeys[key] = true;
         }
+
+        let deleted:T[] = [];
+        let newArray:T[] = [];
+        let newIndices:IMap<number> = {};
+        let currentIndex:number = 0;
+        for (let i:number = 0 ; i < this._array.length ; i++) {
+            let key:string = indicesToKeys[i];
+            if (deleteKeys[key]) {
+                deleted.push(this._array[i]);
+                continue;
+            }
+            newArray.push(this._array[i]);
+            newIndices[key] = currentIndex++;
+        }
+        this._array = newArray;
+        this._indices = newIndices;
+
+        return deleted;
     }
 
     get array():T[] {
@@ -81,15 +98,5 @@ export class Indexed<T> {
 
     get indices():IMap<number> {
         return this._indices;
-    }
-}
-
-class KeyAndIndex {
-    index:number;
-    key:string;
-
-    constructor(index:number, key:string) {
-        this.index = index;
-        this.key = key;
     }
 }
