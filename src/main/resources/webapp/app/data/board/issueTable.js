@@ -92,37 +92,39 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                 IssueTable.prototype.getIssue = function (issueKey) {
                     return this._allIssues.forKey(issueKey);
                 };
-                IssueTable.prototype.moveIssue = function (issueKey, toState, beforeIssueKey) {
-                    var issue = this._allIssues.forKey(issueKey);
-                    if (!issue) {
-                        return;
-                    }
-                    var project = this._boardData.boardProjects.forKey(issue.projectCode);
-                    var affectedStateIndices = project.moveIssueAndGetAffectedStateIndices(this._projects, issue, toState, beforeIssueKey);
-                    if (!this._swimlane) {
-                        for (var _i = 0; _i < affectedStateIndices.length; _i++) {
-                            var stateIndex = affectedStateIndices[_i];
-                            var counter = new StateIssueCounter();
-                            var stateColumn = this.createIssueTableStateColumn(stateIndex, counter);
-                            this._issueTable[stateIndex] = stateColumn;
-                            this._totalIssuesByState[stateIndex] = counter.count;
-                        }
-                    }
-                    else {
-                        var indexer = this.createSwimlaneIndexer();
-                        for (var _a = 0; _a < affectedStateIndices.length; _a++) {
-                            var stateIndex = affectedStateIndices[_a];
-                            //Reset the state column of the swimlane table
-                            for (var _b = 0, _c = this._swimlaneTable; _b < _c.length; _b++) {
-                                var data = _c[_b];
-                                data.resetState(stateIndex);
-                            }
-                            var counter = new StateIssueCounter();
-                            this.createSwimlaneTableStateColumn(indexer, this._swimlaneTable, stateIndex, counter);
-                            this._totalIssuesByState[stateIndex] = counter.count;
-                        }
-                    }
+                IssueTable.prototype.deleteIssues = function (issueKeys) {
+                    this._allIssues.deleteKeys(issueKeys);
                 };
+                //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
+                //    let issue:IssueData = this._allIssues.forKey(issueKey);
+                //    if (!issue) {
+                //        return;
+                //    }
+                //
+                //    let project:BoardProject = this._boardData.boardProjects.forKey(issue.projectCode);
+                //    let affectedStateIndices:number[] =
+                //        project.moveIssueAndGetAffectedStateIndices(this._projects, issue, toState, beforeIssueKey);
+                //
+                //    if (!this._swimlane) {
+                //        for (let stateIndex of affectedStateIndices) {
+                //            let counter:StateIssueCounter = new StateIssueCounter();
+                //            let stateColumn:IssueData[] = this.createIssueTableStateColumn(stateIndex, counter);
+                //            this._issueTable[stateIndex] = stateColumn;
+                //            this._totalIssuesByState[stateIndex] = counter.count;
+                //        }
+                //    } else {
+                //        let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
+                //        for (let stateIndex of affectedStateIndices) {
+                //            //Reset the state column of the swimlane table
+                //            for (let data of this._swimlaneTable) {
+                //                data.resetState(stateIndex);
+                //            }
+                //            let counter:StateIssueCounter = new StateIssueCounter();
+                //            this.createSwimlaneTableStateColumn(indexer, this._swimlaneTable, stateIndex, counter);
+                //            this._totalIssuesByState[stateIndex] = counter.count;
+                //        }
+                //    }
+                //}
                 IssueTable.prototype.internalFullRefresh = function (input, initial) {
                     var _this = this;
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(initial);

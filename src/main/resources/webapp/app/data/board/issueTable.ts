@@ -76,40 +76,44 @@ export class IssueTable {
         }
     }
 
-    getIssue(issueKey:string) {
+    getIssue(issueKey:string) : IssueData {
         return this._allIssues.forKey(issueKey);
     }
 
-    moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
-        let issue:IssueData = this._allIssues.forKey(issueKey);
-        if (!issue) {
-            return;
-        }
-
-        let project:BoardProject = this._boardData.boardProjects.forKey(issue.projectCode);
-        let affectedStateIndices:number[] =
-            project.moveIssueAndGetAffectedStateIndices(this._projects, issue, toState, beforeIssueKey);
-
-        if (!this._swimlane) {
-            for (let stateIndex of affectedStateIndices) {
-                let counter:StateIssueCounter = new StateIssueCounter();
-                let stateColumn:IssueData[] = this.createIssueTableStateColumn(stateIndex, counter);
-                this._issueTable[stateIndex] = stateColumn;
-                this._totalIssuesByState[stateIndex] = counter.count;
-            }
-        } else {
-            let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
-            for (let stateIndex of affectedStateIndices) {
-                //Reset the state column of the swimlane table
-                for (let data of this._swimlaneTable) {
-                    data.resetState(stateIndex);
-                }
-                let counter:StateIssueCounter = new StateIssueCounter();
-                this.createSwimlaneTableStateColumn(indexer, this._swimlaneTable, stateIndex, counter);
-                this._totalIssuesByState[stateIndex] = counter.count;
-            }
-        }
+    deleteIssues(issueKeys:string[]) {
+        this._allIssues.deleteKeys(issueKeys);
     }
+
+    //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
+    //    let issue:IssueData = this._allIssues.forKey(issueKey);
+    //    if (!issue) {
+    //        return;
+    //    }
+    //
+    //    let project:BoardProject = this._boardData.boardProjects.forKey(issue.projectCode);
+    //    let affectedStateIndices:number[] =
+    //        project.moveIssueAndGetAffectedStateIndices(this._projects, issue, toState, beforeIssueKey);
+    //
+    //    if (!this._swimlane) {
+    //        for (let stateIndex of affectedStateIndices) {
+    //            let counter:StateIssueCounter = new StateIssueCounter();
+    //            let stateColumn:IssueData[] = this.createIssueTableStateColumn(stateIndex, counter);
+    //            this._issueTable[stateIndex] = stateColumn;
+    //            this._totalIssuesByState[stateIndex] = counter.count;
+    //        }
+    //    } else {
+    //        let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
+    //        for (let stateIndex of affectedStateIndices) {
+    //            //Reset the state column of the swimlane table
+    //            for (let data of this._swimlaneTable) {
+    //                data.resetState(stateIndex);
+    //            }
+    //            let counter:StateIssueCounter = new StateIssueCounter();
+    //            this.createSwimlaneTableStateColumn(indexer, this._swimlaneTable, stateIndex, counter);
+    //            this._totalIssuesByState[stateIndex] = counter.count;
+    //        }
+    //    }
+    //}
 
     private internalFullRefresh(input:any, initial:boolean) {
         let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(initial);

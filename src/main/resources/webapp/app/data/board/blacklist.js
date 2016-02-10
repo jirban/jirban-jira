@@ -4,27 +4,47 @@ System.register([], function(exports_1) {
         setters:[],
         execute: function() {
             BlacklistData = (function () {
-                function BlacklistData(input) {
+                function BlacklistData() {
                     this._states = [];
                     this._issueTypes = [];
                     this._priorities = [];
                     this._issues = [];
-                    if (!input) {
-                        return;
+                }
+                BlacklistData.fromInput = function (input) {
+                    if (input) {
+                        return null;
                     }
+                    var bd = new BlacklistData();
                     if (input.states) {
-                        this._states = input.states;
+                        bd._states = input.states;
                     }
                     if (input.priorities) {
-                        this._priorities = input.priorities;
+                        bd._priorities = input.priorities;
                     }
                     if (input["issue-types"]) {
-                        this._issueTypes = input["issue-types"];
+                        bd._issueTypes = input["issue-types"];
                     }
                     if (input.issues) {
-                        this._issues = input.issues;
+                        bd._issues = input.issues;
                     }
-                }
+                    return bd;
+                };
+                BlacklistData.fromChangeSet = function (changeSet) {
+                    var bd = new BlacklistData();
+                    if (changeSet.blacklistStates) {
+                        bd._states = changeSet.blacklistStates;
+                    }
+                    if (changeSet.blacklistPriorities) {
+                        bd._priorities = changeSet.blacklistPriorities;
+                    }
+                    if (changeSet.blacklistTypes) {
+                        bd._issueTypes = changeSet.blacklistTypes;
+                    }
+                    if (changeSet.blacklistIssues) {
+                        bd._issues = changeSet.blacklistIssues;
+                    }
+                    return bd;
+                };
                 Object.defineProperty(BlacklistData.prototype, "states", {
                     get: function () {
                         return this._states;

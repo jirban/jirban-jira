@@ -1,26 +1,47 @@
 
+import {ChangeSet} from "./change";
 
 export class BlacklistData {
     private _states:string[] = [];
     private _issueTypes:string[] = [];
     private _priorities:string[] = [];
     private _issues:string[] = [];
-    constructor(input:any) {
-        if (!input) {
-            return;
+
+    static fromInput(input:any) : BlacklistData {
+        if (input) {
+            return null;
         }
+        let bd:BlacklistData = new BlacklistData();
         if (input.states) {
-            this._states = input.states;
+            bd._states = input.states;
         }
         if (input.priorities) {
-            this._priorities = input.priorities;
+            bd._priorities = input.priorities;
         }
         if (input["issue-types"]) {
-            this._issueTypes = input["issue-types"];
+            bd._issueTypes = input["issue-types"];
         }
         if (input.issues) {
-            this._issues = input.issues;
+            bd._issues = input.issues;
         }
+        return bd;
+    }
+
+    static fromChangeSet(changeSet:ChangeSet) : BlacklistData {
+        let bd:BlacklistData = new BlacklistData();
+        if (changeSet.blacklistStates) {
+            bd._states = changeSet.blacklistStates;
+        }
+        if (changeSet.blacklistPriorities) {
+            bd._priorities = changeSet.blacklistPriorities;
+        }
+        if (changeSet.blacklistTypes) {
+            bd._issueTypes = changeSet.blacklistTypes;
+        }
+        if (changeSet.blacklistIssues) {
+            bd._issues = changeSet.blacklistIssues;
+        }
+        return bd;
     }
 
     get states():string[] {

@@ -15,11 +15,12 @@ import {BoardProject} from "./project";
 import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
+import {ChangeSet} from "./change";
 
 
 export class BoardData {
     public boardName:string;
-    private _view:string;
+    private _view:number;
     private _swimlane:string;
     private _issueTable:IssueTable;
     private _visibleColumns:boolean[] = [];
@@ -72,14 +73,70 @@ export class BoardData {
         this.internalDeserialize(input);
     }
 
-    /**
-     * Called when an issue is moved on the server's board
-     * @param input the json containing the details of the issue move
-     */
-    messageIssueMove(input:any) {
-        console.log(input);
-        this._issueTable.moveIssue(input.issueKey, input.toState, input.beforeIssue);
+    ///**
+    // * Called when an issue is moved on the server's board
+    // * @param input the json containing the details of the issue move
+    // */
+    //messageIssueMove(input:any) {
+    //    console.log(input);
+    //    this._issueTable.moveIssue(input.issueKey, input.toState, input.beforeIssue);
+    //
+    //}
 
+    /**
+     * Called when we receive a change set from the server
+     *
+     * @param input the json containing the details of the board change set
+     */
+    processChanges(input:any) {
+        let changeSet:ChangeSet = new ChangeSet(input);
+        if (changeSet.view != this.view) {
+            if (changeSet.blacklistChanges) {
+                if (!this.blacklist) {
+                    this.blacklist = BlacklistData.fromChangeSet(changeSet);
+                } else {
+                    if (changeSet.blacklistStates) {
+                        for (let state of changeSet.blacklistStates) {
+                            this.blacklist.states.push(state);
+                        }
+                    }
+                    if (changeSet.blacklistPriorities) {
+                        for (let priority of changeSet.blacklistPriorities) {
+                            this.blacklist.priorities.push(priority);
+                        }
+                    }
+                    if (changeSet.blacklistTypes) {
+                        for (let type of changeSet.blacklistTypes) {
+                            this.blacklist.issueTypes.push(type);
+                        }
+                    }
+                    if (changeSet.blacklistIssues) {
+                        this._issueTable.deleteIssues(changeSet.blacklistIssues);
+                        for (let issueKey of changeSet.blacklistIssues) {
+                            this.blacklist.issues.push(issueKey);
+                        }
+                    }
+                    if (changeSet.blacklistClearedIssues) {
+                        for (let issueKey of changeSet.blacklistClearedIssues) {
+                            let keys:string[] = this.blacklist.issues;
+                            for (let i:number = 0 ; i < keys.length ; i++) {
+                                if (keys[i] === issueKey) {
+                                    keys.splice(i, 1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            //TODO Process the issue changes
+
+
+
+            //Finally bump the view
+            this._view = changeSet.view;
+        }
     }
 
     /**
@@ -95,7 +152,7 @@ export class BoardData {
         this._view = input.view;
         this.jiraUrl = RestUrlUtil.calculateJiraUrl();
 
-        this.blacklist = input.blacklist ? new BlacklistData(input.blacklist) : null;
+        this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
         this._projects = new ProjectDeserializer().deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);
@@ -118,7 +175,7 @@ export class BoardData {
         this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
     }
 
-    get view():string {
+    get view():number {
         return this._view;
     }
 

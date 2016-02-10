@@ -145,47 +145,6 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                     }
                     return validIssues;
                 };
-                BoardProject.prototype.moveIssueAndGetAffectedStateIndices = function (projects, issue, toState, beforeIssueKey) {
-                    console.log("---> Move Issue to " + toState + ": " + issue.key + " " + issue.ownStatus + "(" + issue.statusIndex + ") - " + issue.boardStatus);
-                    var fromIndex = this.getMoveFromBoardStateIndex(projects, issue);
-                    var toIndex = projects.boardStates.indices[toState];
-                    console.log("---> fromIndex " + fromIndex + " ; toIndex " + toIndex);
-                    //Remove the issue from the from states
-                    var fromIssues = this._issueKeys[fromIndex];
-                    console.log("From issues " + fromIssues);
-                    console.log("From issues length " + fromIssues.length);
-                    for (var i = 0; i < fromIssues.length; i++) {
-                        if (fromIssues[i] == issue.key) {
-                            console.log("Deleted");
-                            fromIssues.splice(i, 1);
-                            break;
-                        }
-                    }
-                    //Add the issue to the to states
-                    var toIssues = this._issueKeys[toIndex];
-                    if (!beforeIssueKey || toIssues.length == 0) {
-                        toIssues.push(issue.key);
-                        console.log("Added");
-                    }
-                    else {
-                        for (var i = 0; i < toIssues.length; i++) {
-                            if (toIssues[i] == beforeIssueKey) {
-                                toIssues.splice(i, 0, issue.key);
-                                console.log("Inserted");
-                                break;
-                            }
-                        }
-                    }
-                    //Return the affected state indices
-                    var affectedStateIndices = [fromIndex];
-                    if (toIndex != fromIndex) {
-                        //Update the issue _own_ state
-                        issue.statusIndex = this.mapBoardStateIndexToOwnIndex(projects, toIndex);
-                        console.log("---> Moved Issue " + issue.key + " " + issue.ownStatus + "(" + issue.statusIndex + ") - " + issue.boardStatus);
-                        affectedStateIndices.push(toIndex);
-                    }
-                    return affectedStateIndices;
-                };
                 return BoardProject;
             })(Project);
             exports_1("BoardProject", BoardProject);
@@ -203,12 +162,6 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                 };
                 OwnerProject.prototype.mapStateStringToBoard = function (state) {
                     return state;
-                };
-                OwnerProject.prototype.getMoveFromBoardStateIndex = function (projects, issue) {
-                    return issue.statusIndex;
-                };
-                OwnerProject.prototype.mapBoardStateIndexToOwnIndex = function (projects, boardStateIndex) {
-                    return boardStateIndex;
                 };
                 return OwnerProject;
             })(BoardProject);
@@ -230,17 +183,6 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                 };
                 OtherMainProject.prototype.mapStateStringToBoard = function (state) {
                     return this._projectStatesToBoardState[state];
-                };
-                OtherMainProject.prototype.getMoveFromBoardStateIndex = function (projects, issue) {
-                    //Convert the issue's own state into a board state
-                    var boardStatus = issue.boardStatus;
-                    var index = projects.boardStates.indices[boardStatus];
-                    return index;
-                };
-                OtherMainProject.prototype.mapBoardStateIndexToOwnIndex = function (projects, boardStateIndex) {
-                    var boardState = projects.boardStates.forIndex(boardStateIndex);
-                    var myState = this._boardStatesToProjectState[boardState];
-                    return this._states.indices[myState];
                 };
                 return OtherMainProject;
             })(BoardProject);

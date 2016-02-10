@@ -50,11 +50,46 @@ export class Indexed<T> {
         return this._array[index];
     }
 
+    /**
+     * Deletes the entries with the selected keys
+     * @param keys the keys to remove
+     */
+    deleteKeys(keys:string[]) {
+        let deleted:string[] = [];
+        let indices:number[] = [];
+        for (let key of keys) {
+            let index:number = this._indices[key];
+            if (index) {
+                delete this._indices[key];
+                indices.push(index);
+                keys.push(key);
+            }
+        }
+
+        if (deleted.length > 0) {
+            indices.sort();
+            for (let i:number = indices.length - 1; i >= 0; i--) {
+                this.array.splice(indices[i], 1);
+            }
+            return deleted;
+        }
+    }
+
     get array():T[] {
         return this._array;
     }
 
     get indices():IMap<number> {
         return this._indices;
+    }
+}
+
+class KeyAndIndex {
+    index:number;
+    key:string;
+
+    constructor(index:number, key:string) {
+        this.index = index;
+        this.key = key;
     }
 }

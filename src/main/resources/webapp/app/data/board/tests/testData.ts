@@ -19,7 +19,7 @@ export class TestBoardData {
         if (this.blacklist) {
             json["blacklist"] = JSON.parse(this.blacklist);
         }
-        //console.log(JSON.stringify(json, null, 2));
+        console.log(JSON.stringify(json, null, 2));
         return json;
     }
 
@@ -502,6 +502,79 @@ export class TestBoardData {
             "type" : 3
         }
     }`;
+
+    // Less data in boards for change tests //////////
+
+    public static PRE_CHANGE_BOARD_PROJECTS:string = `
+    {
+        "owner" : "TDP",
+        "main" : {
+            "TDP" : {
+                "states" : [
+                    "TDP-A",
+                    "TDP-B",
+                    "TDP-C",
+                    "TDP-D"
+                ],
+                "colour" : "#4667CA",
+                "issues" : [
+                    ["TDP-1"],
+                    ["TDP-2"],
+                    [],
+                    []
+                ]
+            },
+            "TBG" : {
+                "states" : [
+                    "TBG-X",
+                    "TBG-Y"
+                ],
+                "colour" : "#CA6746",
+                "state-links" : {
+                    "TDP-A" : null,
+                    "TDP-B" : "TBG-X",
+                    "TDP-C" : "TBG-Y",
+                    "TDP-D" : null
+                },
+                "issues" : [
+                    [],
+                    ["TBG-1"],
+                    [],
+                    []
+                ]
+            }
+        }
+    }`;
+
+    public static PRE_CHANGE_BOARD_ISSUES:string =`
+    {
+        "TDP-1" : {
+            "key" : "TDP-1",
+            "state" : 0,
+            "summary" : "One",
+            "priority" : 0,
+            "type" : 0,
+            "assignee" : 0
+        },
+        "TDP-2" : {
+            "key" : "TDP-2",
+            "state" : 1,
+            "summary" : "Two",
+            "priority" : 1,
+            "type" : 1,
+            "assignee" : 1
+        },
+        "TBG-1" : {
+            "key" : "TBG-1",
+            "state" : 0,
+            "summary" : "One",
+            "priority" : 0,
+            "type" : 0,
+            "assignee" : 0
+        }
+    }`;
+
+
 }
 
 

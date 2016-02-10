@@ -113,59 +113,59 @@ export abstract class BoardProject extends Project {
         return validIssues;
     }
 
-    moveIssueAndGetAffectedStateIndices(projects:Projects, issue:IssueData, toState:string, beforeIssueKey:string) : number[] {
-
-        console.log("---> Move Issue to " + toState + ": "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
-
-        let fromIndex = this.getMoveFromBoardStateIndex(projects, issue);
-        let toIndex = projects.boardStates.indices[toState];
-
-        console.log("---> fromIndex " + fromIndex + " ; toIndex "  + toIndex);
-
-        //Remove the issue from the from states
-        let fromIssues:string[] = this._issueKeys[fromIndex];
-        console.log("From issues " + fromIssues);
-        console.log("From issues length " + fromIssues.length);
-        for (let i:number = 0 ; i < fromIssues.length ; i++) {
-            if (fromIssues[i] == issue.key) {
-                console.log("Deleted");
-                fromIssues.splice(i, 1);
-                break;
-            }
-        }
-        //Add the issue to the to states
-        let toIssues:string[] = this._issueKeys[toIndex];
-        if (!beforeIssueKey || toIssues.length == 0) {
-            toIssues.push(issue.key);
-            console.log("Added");
-        } else {
-            for (let i:number = 0 ; i < toIssues.length ; i++) {
-                if (toIssues[i] == beforeIssueKey) {
-                    toIssues.splice(i, 0, issue.key);
-                    console.log("Inserted");
-                    break;
-                }
-            }
-        }
-        //Return the affected state indices
-        let affectedStateIndices:number[] = [fromIndex];
-        if (toIndex != fromIndex) {
-            //Update the issue _own_ state
-            issue.statusIndex = this.mapBoardStateIndexToOwnIndex(projects, toIndex);
-            console.log("---> Moved Issue "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
-
-            affectedStateIndices.push(toIndex);
-        }
-        return affectedStateIndices;
-    }
+    //moveIssueAndGetAffectedStateIndices(projects:Projects, issue:IssueData, toState:string, beforeIssueKey:string) : number[] {
+    //
+    //    console.log("---> Move Issue to " + toState + ": "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
+    //
+    //    let fromIndex = this.getMoveFromBoardStateIndex(projects, issue);
+    //    let toIndex = projects.boardStates.indices[toState];
+    //
+    //    console.log("---> fromIndex " + fromIndex + " ; toIndex "  + toIndex);
+    //
+    //    //Remove the issue from the from states
+    //    let fromIssues:string[] = this._issueKeys[fromIndex];
+    //    console.log("From issues " + fromIssues);
+    //    console.log("From issues length " + fromIssues.length);
+    //    for (let i:number = 0 ; i < fromIssues.length ; i++) {
+    //        if (fromIssues[i] == issue.key) {
+    //            console.log("Deleted");
+    //            fromIssues.splice(i, 1);
+    //            break;
+    //        }
+    //    }
+    //    //Add the issue to the to states
+    //    let toIssues:string[] = this._issueKeys[toIndex];
+    //    if (!beforeIssueKey || toIssues.length == 0) {
+    //        toIssues.push(issue.key);
+    //        console.log("Added");
+    //    } else {
+    //        for (let i:number = 0 ; i < toIssues.length ; i++) {
+    //            if (toIssues[i] == beforeIssueKey) {
+    //                toIssues.splice(i, 0, issue.key);
+    //                console.log("Inserted");
+    //                break;
+    //            }
+    //        }
+    //    }
+    //    //Return the affected state indices
+    //    let affectedStateIndices:number[] = [fromIndex];
+    //    if (toIndex != fromIndex) {
+    //        //Update the issue _own_ state
+    //        issue.statusIndex = this.mapBoardStateIndexToOwnIndex(projects, toIndex);
+    //        console.log("---> Moved Issue "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
+    //
+    //        affectedStateIndices.push(toIndex);
+    //    }
+    //    return affectedStateIndices;
+    //}
 
     abstract isValidState(state:string) : boolean;
 
     abstract mapStateStringToBoard(state:string) : string;
 
-    abstract getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number;
+    //abstract getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number;
 
-    abstract mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number;
+    //abstract mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number;
 
 }
 
@@ -188,13 +188,13 @@ class OwnerProject extends BoardProject {
         return state;
     }
 
-    getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number {
-        return issue.statusIndex;
-    }
-
-    mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number {
-        return boardStateIndex;
-    }
+    //getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number {
+    //    return issue.statusIndex;
+    //}
+    //
+    //mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number {
+    //    return boardStateIndex;
+    //}
 }
 
 /**
@@ -220,18 +220,18 @@ class OtherMainProject extends BoardProject {
         return this._projectStatesToBoardState[state];
     }
 
-    getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number {
-        //Convert the issue's own state into a board state
-        let boardStatus:string = issue.boardStatus;
-        let index = projects.boardStates.indices[boardStatus];
-        return index;
-    }
-
-    mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number {
-        let boardState:string = projects.boardStates.forIndex(boardStateIndex);
-        let myState = this._boardStatesToProjectState[boardState];
-        return this._states.indices[myState];
-    }
+    //getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number {
+    //    //Convert the issue's own state into a board state
+    //    let boardStatus:string = issue.boardStatus;
+    //    let index = projects.boardStates.indices[boardStatus];
+    //    return index;
+    //}
+    //
+    //mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number {
+    //    let boardState:string = projects.boardStates.forIndex(boardStateIndex);
+    //    let myState = this._boardStatesToProjectState[boardState];
+    //    return this._states.indices[myState];
+    //}
 }
 
 

@@ -1,5 +1,5 @@
-System.register(['./assignee', './priority', './issueType', './boardFilters', "./project", "./issueTable", "../../common/RestUrlUtil", "./blacklist"], function(exports_1) {
-    var assignee_1, priority_1, issueType_1, boardFilters_1, project_1, issueTable_1, RestUrlUtil_1, blacklist_1;
+System.register(['./assignee', './priority', './issueType', './boardFilters', "./project", "./issueTable", "../../common/RestUrlUtil", "./blacklist", "./change"], function(exports_1) {
+    var assignee_1, priority_1, issueType_1, boardFilters_1, project_1, issueTable_1, RestUrlUtil_1, blacklist_1, change_1;
     var BoardData;
     return {
         setters:[
@@ -26,6 +26,9 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
             },
             function (blacklist_1_1) {
                 blacklist_1 = blacklist_1_1;
+            },
+            function (change_1_1) {
+                change_1 = change_1_1;
             }],
         execute: function() {
             BoardData = (function () {
@@ -59,13 +62,70 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 BoardData.prototype.messageFullRefresh = function (input) {
                     this.internalDeserialize(input);
                 };
+                ///**
+                // * Called when an issue is moved on the server's board
+                // * @param input the json containing the details of the issue move
+                // */
+                //messageIssueMove(input:any) {
+                //    console.log(input);
+                //    this._issueTable.moveIssue(input.issueKey, input.toState, input.beforeIssue);
+                //
+                //}
                 /**
-                 * Called when an issue is moved on the server's board
-                 * @param input the json containing the details of the issue move
+                 * Called when we receive a change set from the server
+                 *
+                 * @param input the json containing the details of the board change set
                  */
-                BoardData.prototype.messageIssueMove = function (input) {
-                    console.log(input);
-                    this._issueTable.moveIssue(input.issueKey, input.toState, input.beforeIssue);
+                BoardData.prototype.processChanges = function (input) {
+                    var changeSet = new change_1.ChangeSet(input);
+                    if (changeSet.view != this.view) {
+                        if (changeSet.blacklistChanges) {
+                            if (!this.blacklist) {
+                                this.blacklist = blacklist_1.BlacklistData.fromChangeSet(changeSet);
+                            }
+                            else {
+                                if (changeSet.blacklistStates) {
+                                    for (var _i = 0, _a = changeSet.blacklistStates; _i < _a.length; _i++) {
+                                        var state = _a[_i];
+                                        this.blacklist.states.push(state);
+                                    }
+                                }
+                                if (changeSet.blacklistPriorities) {
+                                    for (var _b = 0, _c = changeSet.blacklistPriorities; _b < _c.length; _b++) {
+                                        var priority = _c[_b];
+                                        this.blacklist.priorities.push(priority);
+                                    }
+                                }
+                                if (changeSet.blacklistTypes) {
+                                    for (var _d = 0, _e = changeSet.blacklistTypes; _d < _e.length; _d++) {
+                                        var type = _e[_d];
+                                        this.blacklist.issueTypes.push(type);
+                                    }
+                                }
+                                if (changeSet.blacklistIssues) {
+                                    this._issueTable.deleteIssues(changeSet.blacklistIssues);
+                                    for (var _f = 0, _g = changeSet.blacklistIssues; _f < _g.length; _f++) {
+                                        var issueKey = _g[_f];
+                                        this.blacklist.issues.push(issueKey);
+                                    }
+                                }
+                                if (changeSet.blacklistClearedIssues) {
+                                    for (var _h = 0, _j = changeSet.blacklistClearedIssues; _h < _j.length; _h++) {
+                                        var issueKey = _j[_h];
+                                        var keys = this.blacklist.issues;
+                                        for (var i = 0; i < keys.length; i++) {
+                                            if (keys[i] === issueKey) {
+                                                keys.splice(i, 1);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        //TODO Process the issue changes
+                        //Finally bump the view
+                        this._view = changeSet.view;
+                    }
                 };
                 /**
                  * Called when changes are made to the issue detail to display in the control panel
@@ -78,7 +138,7 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     if (first === void 0) { first = false; }
                     this._view = input.view;
                     this.jiraUrl = RestUrlUtil_1.RestUrlUtil.calculateJiraUrl();
-                    this.blacklist = input.blacklist ? new blacklist_1.BlacklistData(input.blacklist) : null;
+                    this.blacklist = input.blacklist ? blacklist_1.BlacklistData.fromInput(input.blacklist) : null;
                     this._projects = new project_1.ProjectDeserializer().deserialize(input);
                     this._assignees = new assignee_1.AssigneeDeserializer().deserialize(input);
                     this._priorities = new priority_1.PriorityDeserializer().deserialize(input);

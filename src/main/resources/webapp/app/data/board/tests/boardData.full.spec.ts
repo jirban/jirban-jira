@@ -9,9 +9,9 @@ import {IssueData} from "./../issueData";
 
 //Tests for the BoardData component which is so central to the display of the board
 
-describe('Load Board Test', () => {
+describe('Load Board', () => {
 
-    it('Initial load - full checks; no blacklist', () => {
+    it('Full board; No blacklist', () => {
         let boardData:BoardData = new BoardData();
         boardData.deserialize(1,
             TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
@@ -34,7 +34,7 @@ describe('Load Board Test', () => {
         expect(boardData.blacklist).toBeNull();
     });
 
-    it('Initial load - full checks; blacklist', () => {
+    it('Full board; Blacklist', () => {
         let bd:TestBoardData = new TestBoardData();
         bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
         bd.issues = TestBoardData.FULL_BOARD_ISSUES;
@@ -68,7 +68,7 @@ describe('Load Board Test', () => {
     });
 
 
-    it('Initial load - full checks; no blacklist - owner only', () => {
+    it('Owner Project Only; No blacklist', () => {
         let boardData:BoardData = new BoardData();
         boardData.deserialize(1,
             TestBoardData.create(TestBoardData.OWNER_ONLY_BOARD_PROJECTS, TestBoardData.OWNER_ONLY_BOARD_ISSUES));
@@ -91,7 +91,7 @@ describe('Load Board Test', () => {
         expect(boardData.blacklist).toBeNull();
     });
 
-    it('Initial load - full checks; no blacklist - non-owner issues only', () => {
+    it('Non-owner issues only; No blacklist', () => {
         let boardData:BoardData = new BoardData();
         boardData.deserialize(1,
             TestBoardData.create(TestBoardData.NON_OWNER_ONLY_BOARD_PROJECTS, TestBoardData.NON_OWNER_ONLY_BOARD_ISSUES));
@@ -113,11 +113,59 @@ describe('Load Board Test', () => {
 
         expect(boardData.blacklist).toBeNull();
     });
+});
 
-    //it('New issue - main project; empty column'), () => {
-    //    let bd:TestBoardData = new TestBoardData();
-    //    bd.projects = TestBoardData.
-    //});
+describe('No Change', () => {
+    it('No change', () =>{
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1,
+            TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        let changes:any = {
+            changes : {
+                view : 0
+            }
+        };
+        boardData.processChanges(changes);
+
+        expect(boardData.blacklist).toBeNull();
+        let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+        checkBoardLayout(boardData, layout);
+        checkIssueDatas(boardData, layout);
+    });
+});
+
+describe('Blacklist only ', () => {
+
+    it('Board unaffected', () => {
+        let boardData:BoardData = new BoardData();
+        boardData.deserialize(1,
+            TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        expect(boardData.blacklist).toBeNull();
+
+        //These issues are not part of the board
+        let changes:any = {
+            changes : {
+                view : 5,
+                blacklist: {
+                    issues: ["TDP-50", "TBG-100"],
+                    states: ["BadState1", "BadState2"],
+                    priorities: ["BadPriority1", "BadPriority2"],
+                    "issue-types": ["BadType1", "BadType2"]
+                }
+            }
+        };
+
+        boardData.processChanges(changes);
+        expect(boardData.view).toBe(5);
+        checkEntries(boardData.blacklist.issueTypes, "BadType1", "BadType2");
+        checkEntries(boardData.blacklist.priorities, "BadPriority1", "BadPriority2");
+        checkEntries(boardData.blacklist.states, "BadState1", "BadState2");
+        checkEntries(boardData.blacklist.issues, "TDP-50", "TBG-100");
+
+        let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+        checkBoardLayout(boardData, layout);
+        checkIssueDatas(boardData, layout);
+    });
 });
 
 function checkEntries(value:string[], ...expected:string[]) {
@@ -126,7 +174,6 @@ function checkEntries(value:string[], ...expected:string[]) {
         expect(value).toContain(ex);
     }
 }
-
 
 function checkIssueDatas(boardData:BoardData, layout:string[][]) {
     for (let i:number = 0 ; i < layout.length ; i++) {
@@ -160,7 +207,6 @@ function checkIssueDatas(boardData:BoardData, layout:string[][]) {
         }
     }
 }
-
 
 function checkBoardLayout(boardData:BoardData, layout:string[][]) {
     let issueTable:IssueData[][] = boardData.issueTable;

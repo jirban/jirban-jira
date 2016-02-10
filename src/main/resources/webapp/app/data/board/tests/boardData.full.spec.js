@@ -192,8 +192,8 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
             }],
         execute: function() {
             //Tests for the BoardData component which is so central to the display of the board
-            describe('Load Board Test', function () {
-                it('Initial load - full checks; no blacklist', function () {
+            describe('Load Board', function () {
+                it('Full board; No blacklist', function () {
                     var boardData = new boardData_1.BoardData();
                     boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.FULL_BOARD_PROJECTS, testData_1.TestBoardData.FULL_BOARD_ISSUES));
                     expect(boardData.view).toEqual(0);
@@ -208,7 +208,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     checkIssueDatas(boardData, testData_1.TestBoardData.EXPECTED_FULL_BOARD);
                     expect(boardData.blacklist).toBeNull();
                 });
-                it('Initial load - full checks; blacklist', function () {
+                it('Full board; Blacklist', function () {
                     var bd = new testData_1.TestBoardData();
                     bd.projects = testData_1.TestBoardData.FULL_BOARD_PROJECTS;
                     bd.issues = testData_1.TestBoardData.FULL_BOARD_ISSUES;
@@ -231,7 +231,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     checkEntries(boardData.blacklist.priorities, "BadPriority");
                     checkEntries(boardData.blacklist.states, "BadState");
                 });
-                it('Initial load - full checks; no blacklist - owner only', function () {
+                it('Owner Project Only; No blacklist', function () {
                     var boardData = new boardData_1.BoardData();
                     boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.OWNER_ONLY_BOARD_PROJECTS, testData_1.TestBoardData.OWNER_ONLY_BOARD_ISSUES));
                     expect(boardData.view).toEqual(0);
@@ -246,7 +246,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     checkIssueDatas(boardData, testData_1.TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
                     expect(boardData.blacklist).toBeNull();
                 });
-                it('Initial load - full checks; no blacklist - non-owner issues only', function () {
+                it('Non-owner issues only; No blacklist', function () {
                     var boardData = new boardData_1.BoardData();
                     boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.NON_OWNER_ONLY_BOARD_PROJECTS, testData_1.TestBoardData.NON_OWNER_ONLY_BOARD_ISSUES));
                     expect(boardData.view).toEqual(0);
@@ -261,10 +261,50 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     checkIssueDatas(boardData, testData_1.TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
                     expect(boardData.blacklist).toBeNull();
                 });
-                //it('New issue - main project; empty column'), () => {
-                //    let bd:TestBoardData = new TestBoardData();
-                //    bd.projects = TestBoardData.
-                //});
+            });
+            describe('No Change', function () {
+                it('No change', function () {
+                    var boardData = new boardData_1.BoardData();
+                    boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+                    var changes = {
+                        changes: {
+                            view: 0
+                        }
+                    };
+                    boardData.processChanges(changes);
+                    expect(boardData.blacklist).toBeNull();
+                    var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+                    checkBoardLayout(boardData, layout);
+                    checkIssueDatas(boardData, layout);
+                });
+            });
+            describe('Blacklist only ', function () {
+                it('Board unaffected', function () {
+                    var boardData = new boardData_1.BoardData();
+                    boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+                    expect(boardData.blacklist).toBeNull();
+                    //These issues are not part of the board
+                    var changes = {
+                        changes: {
+                            view: 5,
+                            blacklist: {
+                                issues: ["TDP-50", "TBG-100"],
+                                states: ["BadState1", "BadState2"],
+                                priorities: ["BadPriority1", "BadPriority2"],
+                                "issue-types": ["BadType1", "BadType2"]
+                            }
+                        }
+                    };
+                    boardData.processChanges(changes);
+                    expect(boardData.view).toBe(5);
+                    checkEntries(boardData.blacklist.issueTypes, "BadType1", "BadType2");
+                    checkEntries(boardData.blacklist.priorities, "BadPriority1", "BadPriority2");
+                    checkEntries(boardData.blacklist.states, "BadState1", "BadState2");
+                    checkEntries(boardData.blacklist.issues, "TDP-50", "TBG-100");
+                    var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+                    checkBoardLayout(boardData, layout);
+                    checkIssueDatas(boardData, layout);
+                });
             });
         }
     }

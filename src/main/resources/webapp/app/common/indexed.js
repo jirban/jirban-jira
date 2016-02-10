@@ -1,5 +1,5 @@
 System.register([], function(exports_1) {
-    var Indexed;
+    var Indexed, KeyAndIndex;
     return {
         setters:[],
         execute: function() {
@@ -51,6 +51,30 @@ System.register([], function(exports_1) {
                 Indexed.prototype.forIndex = function (index) {
                     return this._array[index];
                 };
+                /**
+                 * Deletes the entries with the selected keys
+                 * @param keys the keys to remove
+                 */
+                Indexed.prototype.deleteKeys = function (keys) {
+                    var deleted = [];
+                    var indices = [];
+                    for (var _i = 0; _i < keys.length; _i++) {
+                        var key = keys[_i];
+                        var index = this._indices[key];
+                        if (index) {
+                            delete this._indices[key];
+                            indices.push(index);
+                            keys.push(key);
+                        }
+                    }
+                    if (deleted.length > 0) {
+                        indices.sort();
+                        for (var i = indices.length - 1; i >= 0; i--) {
+                            this.array.splice(indices[i], 1);
+                        }
+                        return deleted;
+                    }
+                };
                 Object.defineProperty(Indexed.prototype, "array", {
                     get: function () {
                         return this._array;
@@ -68,6 +92,13 @@ System.register([], function(exports_1) {
                 return Indexed;
             })();
             exports_1("Indexed", Indexed);
+            KeyAndIndex = (function () {
+                function KeyAndIndex(index, key) {
+                    this.index = index;
+                    this.key = key;
+                }
+                return KeyAndIndex;
+            })();
         }
     }
 });
