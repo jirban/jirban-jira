@@ -13,6 +13,8 @@ System.register([], function(exports_1) {
                 TestBoardData.prototype.build = function () {
                     var json = {};
                     json["view"] = this.view;
+                    //This parse/stringify stuff is to make sure that we use a clone of the objects
+                    //Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
                     json["assignees"] = JSON.parse(JSON.stringify(this.assignees));
                     json["priorities"] = JSON.parse(JSON.stringify(this.priorities));
                     json["issue-types"] = JSON.parse(JSON.stringify(this.issueTypes));

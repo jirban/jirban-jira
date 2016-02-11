@@ -156,7 +156,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                             changes: {
                                 view: 4,
                                 blacklist: {
-                                    "removed-issues": ["TDP-2", "TBG-1"]
+                                    "removed-issues": ["TDP-2", "TBG-1", "TBG-1000"]
                                 }
                             }
                         };
@@ -170,9 +170,27 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
                     });
-                    xit('Remove from and add to blacklist', function () {
+                    it('Remove from and add to blacklist', function () {
                         //Combine the two above tests to make sure everything gets removed from the issue table
-                        fail("NYI");
+                        var changes = {
+                            changes: {
+                                view: 4,
+                                blacklist: {
+                                    "issue-types": ["BadType"],
+                                    issues: ["TDP-1"],
+                                    "removed-issues": ["TBG-1"]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(4);
+                        expect(boardData.blacklist.priorities.length).toBe(0);
+                        expect(boardData.blacklist.states.length).toBe(0);
+                        checkEntries(boardData.blacklist.issueTypes, "BadType");
+                        checkEntries(boardData.blacklist.issues, "TDP-1");
+                        var layout = [[], ["TDP-2"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        checkIssueDatas(boardData, layout);
                     });
                 });
                 function checkEntries(value) {
