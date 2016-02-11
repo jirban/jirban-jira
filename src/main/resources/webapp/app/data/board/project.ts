@@ -49,6 +49,33 @@ export class Projects {
         let toStateIndex:number = this.boardStates.indices[toState];
         return project.getValidMoveBeforeIssues(issueTable, swimlane, moveIssue, toStateIndex);
     }
+
+    deleteIssues(deletedIssues:IssueData[]) {
+        let issuesByProjectAndBoardState:IMap<IMap<IMap<IssueData>>> = {};
+        for (let issue of deletedIssues) {
+            let issuesByBoardState:IMap<IMap<IssueData>> = issuesByProjectAndBoardState[issue.projectCode];
+            if (!issuesByBoardState) {
+                issuesByBoardState = {};
+                issuesByProjectAndBoardState[issue.projectCode] = issuesByBoardState;
+            }
+
+            let issues:IMap<IssueData> = issuesByBoardState[issue.boardStatus];
+            if (!issues) {
+                issues = {};
+                issuesByBoardState[issue.boardStatus] = issues;
+            }
+            issues[issue.key] = issue;
+        }
+
+        for (let projectCode in issuesByProjectAndBoardState) {
+            this._boardProjects.forKey(projectCode).deleteIssues(issuesByProjectAndBoardState[projectCode]);
+        }
+    }
+
+    getBoardStateIndex(boardState:string) : number {
+        let owner:BoardProject = this._boardProjects.forKey(this._owner);
+        return owner.getOwnStateIndex(boardState);
+    }
 }
 
 /**
@@ -84,7 +111,10 @@ export abstract class Project {
  */
 export abstract class BoardProject extends Project {
     private _colour:string;
+    //The table of issue keys uses the board states. This means that for non-owner projects there may be some empty
+    //columns where the states are not mapped. It is simpler this way :)
     private _issueKeys:string[][];
+    private _projects:Projects;
 
     constructor(code:string, colour:string, states:Indexed<string>, issueKeys:string[][]) {
         super(code, states);
@@ -100,6 +130,10 @@ export abstract class BoardProject extends Project {
         return this._issueKeys;
     }
 
+    set projects(projects:Projects) {
+        this._projects = projects;
+    }
+
     getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toStateIndex:number) : IssueData[] {
         let issueKeys:string[] = this._issueKeys[toStateIndex];
         let validIssues:IssueData[] = [];
@@ -113,6 +147,24 @@ export abstract class BoardProject extends Project {
         return validIssues;
     }
 
+    getOwnStateIndex(state:string) : number {
+        return this._states.indices[state];
+    }
+
+    deleteIssues(deletedIssuesByBoardState:IMap<IMap<IssueData>>) {
+        for (let boardState in deletedIssuesByBoardState) {
+            let issueTableIndex:number = this._projects.getBoardStateIndex(boardState);
+            let deletedIssues:IMap<IssueData> = deletedIssuesByBoardState[boardState];
+            let issueKeysForState:string[] = this._issueKeys[issueTableIndex];
+            for (let i:number = 0 ; i < issueKeysForState.length ; ) {
+                if (deletedIssues[issueKeysForState[i]]) {
+                    issueKeysForState.splice(0, 1);
+                } else {
+                    i++;
+                }
+            }
+        }
+    }
     //moveIssueAndGetAffectedStateIndices(projects:Projects, issue:IssueData, toState:string, beforeIssueKey:string) : number[] {
     //
     //    console.log("---> Move Issue to " + toState + ": "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
@@ -163,9 +215,11 @@ export abstract class BoardProject extends Project {
 
     abstract mapStateStringToBoard(state:string) : string;
 
+
     //abstract getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number;
 
     //abstract mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number;
+
 
 }
 
@@ -253,7 +307,11 @@ export class ProjectDeserializer {
         let mainProjectsInput:any = projectsInput.main;
         let boardProjects:Indexed<BoardProject> = this.deserializeBoardProjects(owner, mainProjectsInput);
         let linkedProjects:IMap<LinkedProject> = this.deserializeLinkedProjects(projectsInput);
-        return new Projects(owner, boardProjects, linkedProjects);
+        let projects:Projects = new Projects(owner, boardProjects, linkedProjects);
+        for (let project of boardProjects.array) {
+            project.projects = projects;
+        }
+        return projects;
     }
 
     private deserializeLinkedProjects(projectsInput:any) : IMap<LinkedProject> {

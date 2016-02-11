@@ -93,7 +93,11 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                     return this._allIssues.forKey(issueKey);
                 };
                 IssueTable.prototype.deleteIssues = function (issueKeys) {
-                    this._allIssues.deleteKeys(issueKeys);
+                    var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
+                    var deletedIssues = this._allIssues.deleteKeys(issueKeys);
+                    this._projects.deleteIssues(deletedIssues);
+                    this.createTable();
+                    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
                 };
                 //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
                 //    let issue:IssueData = this._allIssues.forKey(issueKey);

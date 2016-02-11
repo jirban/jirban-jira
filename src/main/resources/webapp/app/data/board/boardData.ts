@@ -98,6 +98,8 @@ export class BoardData {
                 this.blacklist.addChangeSet(changeSet);
 
                 if (changeSet.blacklistIssues) {
+                    //TODO Since the delete is slightly costly, we should recalculate the tables once
+                    //when we have a better idea of how the changes happen
                     this._issueTable.deleteIssues(changeSet.blacklistIssues);
                 }
                 /* TODO Deal with this

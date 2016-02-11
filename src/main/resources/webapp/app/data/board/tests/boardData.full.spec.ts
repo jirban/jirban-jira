@@ -134,7 +134,6 @@ describe('No Change', () => {
 });
 
 describe('New Blacklist ', () => {
-//TODO add similar for board with existing blacklist
     it('Board unaffected', () => {
         let boardData:BoardData = new BoardData();
         boardData.deserialize(1,

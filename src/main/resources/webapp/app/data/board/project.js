@@ -70,6 +70,30 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                     var toStateIndex = this.boardStates.indices[toState];
                     return project.getValidMoveBeforeIssues(issueTable, swimlane, moveIssue, toStateIndex);
                 };
+                Projects.prototype.deleteIssues = function (deletedIssues) {
+                    var issuesByProjectAndBoardState = {};
+                    for (var _i = 0; _i < deletedIssues.length; _i++) {
+                        var issue = deletedIssues[_i];
+                        var issuesByBoardState = issuesByProjectAndBoardState[issue.projectCode];
+                        if (!issuesByBoardState) {
+                            issuesByBoardState = {};
+                            issuesByProjectAndBoardState[issue.projectCode] = issuesByBoardState;
+                        }
+                        var issues = issuesByBoardState[issue.boardStatus];
+                        if (!issues) {
+                            issues = {};
+                            issuesByBoardState[issue.boardStatus] = issues;
+                        }
+                        issues[issue.key] = issue;
+                    }
+                    for (var projectCode in issuesByProjectAndBoardState) {
+                        this._boardProjects.forKey(projectCode).deleteIssues(issuesByProjectAndBoardState[projectCode]);
+                    }
+                };
+                Projects.prototype.getBoardStateIndex = function (boardState) {
+                    var owner = this._boardProjects.forKey(this._owner);
+                    return owner.getOwnStateIndex(boardState);
+                };
                 return Projects;
             })();
             exports_1("Projects", Projects);
@@ -132,6 +156,13 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(BoardProject.prototype, "projects", {
+                    set: function (projects) {
+                        this._projects = projects;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 BoardProject.prototype.getValidMoveBeforeIssues = function (issueTable, swimlane, moveIssue, toStateIndex) {
                     var issueKeys = this._issueKeys[toStateIndex];
                     var validIssues = [];
@@ -144,6 +175,24 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                         }
                     }
                     return validIssues;
+                };
+                BoardProject.prototype.getOwnStateIndex = function (state) {
+                    return this._states.indices[state];
+                };
+                BoardProject.prototype.deleteIssues = function (deletedIssuesByBoardState) {
+                    for (var boardState in deletedIssuesByBoardState) {
+                        var issueTableIndex = this._projects.getBoardStateIndex(boardState);
+                        var deletedIssues = deletedIssuesByBoardState[boardState];
+                        var issueKeysForState = this._issueKeys[issueTableIndex];
+                        for (var i = 0; i < issueKeysForState.length;) {
+                            if (deletedIssues[issueKeysForState[i]]) {
+                                issueKeysForState.splice(0, 1);
+                            }
+                            else {
+                                i++;
+                            }
+                        }
+                    }
                 };
                 return BoardProject;
             })(Project);
@@ -206,7 +255,12 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                     var mainProjectsInput = projectsInput.main;
                     var boardProjects = this.deserializeBoardProjects(owner, mainProjectsInput);
                     var linkedProjects = this.deserializeLinkedProjects(projectsInput);
-                    return new Projects(owner, boardProjects, linkedProjects);
+                    var projects = new Projects(owner, boardProjects, linkedProjects);
+                    for (var _i = 0, _a = boardProjects.array; _i < _a.length; _i++) {
+                        var project = _a[_i];
+                        project.projects = projects;
+                    }
+                    return projects;
                 };
                 ProjectDeserializer.prototype.deserializeLinkedProjects = function (projectsInput) {
                     var linkedProjects = {};

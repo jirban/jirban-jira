@@ -81,7 +81,14 @@ export class IssueTable {
     }
 
     deleteIssues(issueKeys:string[]) {
-        this._allIssues.deleteKeys(issueKeys);
+        let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
+
+        let deletedIssues:IssueData[] = this._allIssues.deleteKeys(issueKeys);
+        this._projects.deleteIssues(deletedIssues);
+
+        this.createTable();
+        this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+
     }
 
     //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {

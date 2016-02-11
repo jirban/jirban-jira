@@ -286,7 +286,6 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                 });
             });
             describe('New Blacklist ', function () {
-                //TODO add similar for board with existing blacklist
                 it('Board unaffected', function () {
                     var boardData = new boardData_1.BoardData();
                     boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
