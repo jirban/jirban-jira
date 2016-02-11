@@ -79,24 +79,31 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 BoardData.prototype.processChanges = function (input) {
                     var changeSet = new change_1.ChangeSet(input);
                     if (changeSet.view != this.view) {
+                        var deleteKeys = [];
                         if (changeSet.blacklistChanges) {
                             if (!this.blacklist) {
                                 this.blacklist = new blacklist_1.BlacklistData();
                             }
                             this.blacklist.addChangeSet(changeSet);
                             if (changeSet.blacklistIssues || changeSet.blacklistClearedIssues) {
-                                //TODO Since the delete is slightly costly, we should recalculate the tables once when we have a better idea of how the other changes happen
-                                var deleteKeys = [];
                                 if (changeSet.blacklistIssues) {
                                     deleteKeys = deleteKeys.concat(changeSet.blacklistIssues);
                                 }
                                 if (changeSet.blacklistClearedIssues) {
                                     deleteKeys = deleteKeys.concat(changeSet.blacklistClearedIssues);
                                 }
-                                this._issueTable.deleteIssues(deleteKeys);
                             }
                         }
-                        //TODO Process the issue changes
+                        if (changeSet.issueChanges) {
+                            if (changeSet.issueDeletes) {
+                                var deletes = changeSet.issueDeletes;
+                                for (var _i = 0; _i < deletes.length; _i++) {
+                                    var issueDelete = deletes[_i];
+                                    deleteKeys.push(issueDelete.key);
+                                }
+                            }
+                        }
+                        this._issueTable.deleteIssues(deleteKeys);
                         //Finally bump the view
                         this._view = changeSet.view;
                     }

@@ -285,6 +285,86 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkIssueDatas(boardData, layout);
                     });
                 });
+                describe('Delete issues', function () {
+                    var boardData;
+                    beforeEach(function () {
+                        boardData = new boardData_1.BoardData();
+                        boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+                    });
+                    it('Delete issue', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "delete": ["TDP-1"]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        var layout = [[], ["TDP-2", "TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        checkIssueDatas(boardData, layout);
+                    });
+                    it('Delete issues', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "delete": ["TDP-2", "TBG-1"]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        var layout = [["TDP-1"], [], [], []];
+                        checkBoardLayout(boardData, layout);
+                        checkIssueDatas(boardData, layout);
+                    });
+                    it('Delete issue and add to backlog', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "delete": ["TDP-2"]
+                                },
+                                blacklist: {
+                                    "issue-types": ["BadTypeA"],
+                                    issues: ["TDP-1"]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist.states.length).toBe(0);
+                        expect(boardData.blacklist.priorities.length).toBe(0);
+                        checkEntries(boardData.blacklist.issueTypes, "BadTypeA");
+                        var layout = [[], ["TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        checkIssueDatas(boardData, layout);
+                    });
+                    it('Delete issue and remove from backlog', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "delete": ["TDP-2"]
+                                },
+                                blacklist: {
+                                    "removed-issues": ["TBG-1"]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        var layout = [["TDP-1"], [], [], []];
+                        checkBoardLayout(boardData, layout);
+                        checkIssueDatas(boardData, layout);
+                    });
+                });
                 function checkEntries(value) {
                     var expected = [];
                     for (var _i = 1; _i < arguments.length; _i++) {

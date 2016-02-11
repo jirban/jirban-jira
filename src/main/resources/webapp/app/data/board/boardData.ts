@@ -16,6 +16,7 @@ import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
+import {IssueDelete} from "./change";
 
 
 export class BoardData {
@@ -91,6 +92,8 @@ export class BoardData {
     processChanges(input:any) {
         let changeSet:ChangeSet = new ChangeSet(input);
         if (changeSet.view != this.view) {
+            let deleteKeys:string[] = [];
+
             if (changeSet.blacklistChanges) {
                 if (!this.blacklist) {
                     this.blacklist = new BlacklistData();
@@ -98,20 +101,26 @@ export class BoardData {
                 this.blacklist.addChangeSet(changeSet);
 
                 if (changeSet.blacklistIssues || changeSet.blacklistClearedIssues) {
-                    //TODO Since the delete is slightly costly, we should recalculate the tables once when we have a better idea of how the other changes happen
-                    let deleteKeys:string[] = [];
                     if (changeSet.blacklistIssues) {
                         deleteKeys = deleteKeys.concat(changeSet.blacklistIssues);
                     }
                     if (changeSet.blacklistClearedIssues) {
                         deleteKeys = deleteKeys.concat(changeSet.blacklistClearedIssues);
                     }
-                    this._issueTable.deleteIssues(deleteKeys);
+                }
+            }
+
+            if (changeSet.issueChanges) {
+                if (changeSet.issueDeletes) {
+                    let deletes:IssueDelete[] = changeSet.issueDeletes;
+                    for (let issueDelete of deletes) {
+                        deleteKeys.push(issueDelete.key);
+                    }
                 }
             }
 
 
-            //TODO Process the issue changes
+            this._issueTable.deleteIssues(deleteKeys);
 
 
 

@@ -30,9 +30,7 @@ System.register([], function(exports_1) {
                     var bd = new TestBoardData();
                     bd.projects = projects;
                     bd.issues = issues;
-                    console.log("BL " + blacklist);
                     if (blacklist) {
-                        console.log("Adding bl");
                         bd.blacklist = blacklist;
                     }
                     return bd.build();

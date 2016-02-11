@@ -18,21 +18,21 @@ System.register([], function(exports_1) {
                         var updatedIssues = issues.update;
                         var deletedIssues = issues.delete;
                         if (newIssues) {
-                            this._issueAdds = new IssueAdd[newIssues.length];
+                            this._issueAdds = new Array(newIssues.length);
                             for (var i = 0; i < newIssues.length; i++) {
                                 this._issueAdds[i] = IssueAdd.deserialize(newIssues[i]);
                             }
                         }
                         if (updatedIssues) {
-                            this._issueUpdates = new IssueUpdate[updatedIssues.length];
+                            this._issueUpdates = new Array(updatedIssues.length);
                             for (var i = 0; i < updatedIssues.length; i++) {
                                 this._issueUpdates[i] = IssueUpdate.deserialize(newIssues[i]);
                             }
                         }
                         if (deletedIssues) {
-                            this._issueDeletes = new IssueDelete[deletedIssues.length];
+                            this._issueDeletes = new Array(deletedIssues.length);
                             for (var i = 0; i < deletedIssues.length; i++) {
-                                this._issueDeletes[i] = IssueDelete.deserialize(deletedIssues[i]);
+                                this._issueDeletes[i] = new IssueDelete(deletedIssues[i]);
                             }
                         }
                     }
@@ -129,6 +129,16 @@ System.register([], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(ChangeSet.prototype, "issueChanges", {
+                    get: function () {
+                        if (this.issueAdds || this.issueUpdates || this.issueDeletes) {
+                            return true;
+                        }
+                        return false;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 return ChangeSet;
             })();
             exports_1("ChangeSet", ChangeSet);
@@ -215,9 +225,6 @@ System.register([], function(exports_1) {
                 function IssueDelete(key) {
                     _super.call(this, key);
                 }
-                IssueDelete.deserialize = function (input) {
-                    return new IssueDelete(input.key);
-                };
                 return IssueDelete;
             })(IssueChange);
             exports_1("IssueDelete", IssueDelete);

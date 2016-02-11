@@ -21,21 +21,21 @@ export class ChangeSet {
             let updatedIssues:any[] = issues.update;
             let deletedIssues:any[] = issues.delete;
             if (newIssues) {
-                this._issueAdds = new IssueAdd[newIssues.length];
+                this._issueAdds = new Array<IssueAdd>(newIssues.length);
                 for (let i:number = 0 ; i < newIssues.length ; i++) {
                     this._issueAdds[i] = IssueAdd.deserialize(newIssues[i]);
                 }
             }
             if (updatedIssues) {
-                this._issueUpdates = new IssueUpdate[updatedIssues.length];
+                this._issueUpdates = new Array<IssueUpdate>(updatedIssues.length);
                 for (let i:number = 0 ; i < updatedIssues.length ; i++) {
                     this._issueUpdates[i] = IssueUpdate.deserialize(newIssues[i]);
                 }
             }
             if (deletedIssues) {
-                this._issueDeletes = new IssueDelete[deletedIssues.length];
+                this._issueDeletes = new Array<IssueDelete>(deletedIssues.length);
                 for (let i:number = 0 ; i < deletedIssues.length ; i++) {
-                    this._issueDeletes[i] = IssueDelete.deserialize(deletedIssues[i]);
+                    this._issueDeletes[i] = new IssueDelete(deletedIssues[i]);
                 }
             }
         }
@@ -100,6 +100,13 @@ export class ChangeSet {
     get blacklistChanges() : boolean {
         if (this._blacklistClearedIssues || this._blacklistIssues || this._blacklistPriorities ||
                 this._blacklistStates || this._blacklistTypes ) {
+            return true;
+        }
+        return false;
+    }
+
+    get issueChanges() : boolean {
+        if (this.issueAdds || this.issueUpdates || this.issueDeletes) {
             return true;
         }
         return false;
@@ -174,9 +181,5 @@ export class IssueUpdate extends IssueDetailChange {
 export class IssueDelete extends IssueChange {
     constructor(key:string) {
         super(key);
-    }
-
-    static deserialize(input:any) : IssueDelete {
-        return new IssueDelete(input.key);
     }
 }

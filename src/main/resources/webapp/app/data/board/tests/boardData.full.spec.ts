@@ -246,7 +246,7 @@ describe('BoardData tests', ()=> {
     });
 
     describe('Exisiting Blacklist', () => {
-        var boardData:BoardData;
+        let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
             boardData.deserialize(1,
@@ -358,6 +358,103 @@ describe('BoardData tests', ()=> {
             checkIssueDatas(boardData, layout);
         });
     });
+
+    describe('Delete issues', () => {
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        });
+
+        it('Delete issue', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-1"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [[], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+
+        it('Delete issues', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-2", "TBG-1"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], [], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+        it('Delete issue and add to backlog', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-2"]
+                    },
+                    blacklist: {
+                        "issue-types" : ["BadTypeA"],
+                        issues: ["TDP-1"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist.states.length).toBe(0);
+            expect(boardData.blacklist.priorities.length).toBe(0);
+            checkEntries(boardData.blacklist.issueTypes, "BadTypeA");
+
+            let layout:any = [[], ["TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+        it('Delete issue and remove from backlog', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-2"]
+                    },
+                    blacklist: {
+                        "removed-issues": ["TBG-1"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], [], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+    });
+
+
 
     function checkEntries(value:string[], ...expected:string[]) {
         expect(value.length).toBe(expected.length);
