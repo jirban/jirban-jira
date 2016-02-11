@@ -84,10 +84,16 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                                 this.blacklist = new blacklist_1.BlacklistData();
                             }
                             this.blacklist.addChangeSet(changeSet);
-                            if (changeSet.blacklistIssues) {
-                                //TODO Since the delete is slightly costly, we should recalculate the tables once
-                                //when we have a better idea of how the changes happen
-                                this._issueTable.deleteIssues(changeSet.blacklistIssues);
+                            if (changeSet.blacklistIssues || changeSet.blacklistClearedIssues) {
+                                //TODO Since the delete is slightly costly, we should recalculate the tables once when we have a better idea of how the other changes happen
+                                var deleteKeys = [];
+                                if (changeSet.blacklistIssues) {
+                                    deleteKeys = deleteKeys.concat(changeSet.blacklistIssues);
+                                }
+                                if (changeSet.blacklistClearedIssues) {
+                                    deleteKeys = deleteKeys.concat(changeSet.blacklistClearedIssues);
+                                }
+                                this._issueTable.deleteIssues(deleteKeys);
                             }
                         }
                         //TODO Process the issue changes

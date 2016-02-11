@@ -97,23 +97,17 @@ export class BoardData {
                 }
                 this.blacklist.addChangeSet(changeSet);
 
-                if (changeSet.blacklistIssues) {
-                    //TODO Since the delete is slightly costly, we should recalculate the tables once
-                    //when we have a better idea of how the changes happen
-                    this._issueTable.deleteIssues(changeSet.blacklistIssues);
-                }
-                /* TODO Deal with this
-                    if (changeSet.blacklistClearedIssues) {
-                        for (let issueKey of changeSet.blacklistClearedIssues) {
-                            let keys:string[] = this.blacklist.issues;
-                            for (let i:number = 0 ; i < keys.length ; i++) {
-                                if (keys[i] === issueKey) {
-                                    keys.splice(i, 1);
-                                }
-                            }
-                        }
+                if (changeSet.blacklistIssues || changeSet.blacklistClearedIssues) {
+                    //TODO Since the delete is slightly costly, we should recalculate the tables once when we have a better idea of how the other changes happen
+                    let deleteKeys:string[] = [];
+                    if (changeSet.blacklistIssues) {
+                        deleteKeys = deleteKeys.concat(changeSet.blacklistIssues);
                     }
-                */
+                    if (changeSet.blacklistClearedIssues) {
+                        deleteKeys = deleteKeys.concat(changeSet.blacklistClearedIssues);
+                    }
+                    this._issueTable.deleteIssues(deleteKeys);
+                }
             }
 
 

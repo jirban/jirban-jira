@@ -135,13 +135,17 @@ describe('BoardData tests', ()=> {
     });
 
     describe('New Blacklist', () => {
-        it('Board unaffected', () => {
-            let boardData:BoardData = new BoardData();
+        var boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
             boardData.deserialize(1,
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
             expect(boardData.blacklist).toBeNull();
+        });
 
-            //These issues are not part of the board
+        it('Board unaffected', () => {
+            //The blacklist change contains issues not on the board (this should not happen in real life, but it is easy to test)
+
             let changes:any = {
                 changes: {
                     view: 5,
@@ -166,13 +170,9 @@ describe('BoardData tests', ()=> {
             checkIssueDatas(boardData, layout);
         });
 
-        it('Affects board issues', () => {
-            let boardData:BoardData = new BoardData();
-            boardData.deserialize(1,
-                TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
-            expect(boardData.blacklist).toBeNull();
+        it('Add to blacklist', () => {
+            //Issues added to the blacklist should be removed from the issue table
 
-            //These issues are not part of the board
             let changes:any = {
                 changes: {
                     view: 5,
@@ -194,6 +194,36 @@ describe('BoardData tests', ()=> {
             let layout:any = [[], ["TDP-2"], [], []];
             checkBoardLayout(boardData, layout);
             checkIssueDatas(boardData, layout);
+        });
+
+        it('Remove from blacklist', () => {
+            //Issues removed from the blacklist should be removed from the issue table if they exist
+            //This can happen if the change set includes adding the issue to the black list, and then the issue is deleted
+
+            let changes:any = {
+                changes: {
+                    view: 4,
+                    blacklist: {
+                        "removed-issues": ["TDP-2", "TBG-1"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(4);
+            expect(boardData.blacklist.issueTypes.length).toBe(0);
+            expect(boardData.blacklist.priorities.length).toBe(0);
+            expect(boardData.blacklist.states.length).toBe(0);
+            expect(boardData.blacklist.issues.length).toBe(0);
+
+            let layout:any = [["TDP-1"], [], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+        xit('Remove from and add to blacklist', () => {
+            //Combine the two above tests to make sure everything gets removed from the issue table
+            fail("NYI");
         });
     });
 
@@ -243,10 +273,6 @@ describe('BoardData tests', ()=> {
         for (let i:number = 0; i < layout.length; i++) {
             let columnData:IssueData[] = issueTable[i];
             let columnLayout:string[] = layout[i];
-            console.log(columnData);
-            console.log(columnLayout);
-            console.log(columnData.length);
-            console.log(columnLayout.length);
 
             expect(boardData.totalIssuesByState[i]).toBe(columnLayout.length);
 

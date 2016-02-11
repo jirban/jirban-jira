@@ -98,11 +98,14 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     });
                 });
                 describe('New Blacklist', function () {
-                    it('Board unaffected', function () {
-                        var boardData = new boardData_1.BoardData();
+                    var boardData;
+                    beforeEach(function () {
+                        boardData = new boardData_1.BoardData();
                         boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
                         expect(boardData.blacklist).toBeNull();
-                        //These issues are not part of the board
+                    });
+                    it('Board unaffected', function () {
+                        //The blacklist change contains issues not on the board (this should not happen in real life, but it is easy to test)
                         var changes = {
                             changes: {
                                 view: 5,
@@ -124,11 +127,8 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
                     });
-                    it('Affects board issues', function () {
-                        var boardData = new boardData_1.BoardData();
-                        boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
-                        expect(boardData.blacklist).toBeNull();
-                        //These issues are not part of the board
+                    it('Add to blacklist', function () {
+                        //Issues added to the blacklist should be removed from the issue table
                         var changes = {
                             changes: {
                                 view: 5,
@@ -148,6 +148,31 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         var layout = [[], ["TDP-2"], [], []];
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
+                    });
+                    it('Remove from blacklist', function () {
+                        //Issues removed from the blacklist should be removed from the issue table if they exist
+                        //This can happen if the change set includes adding the issue to the black list, and then the issue is deleted
+                        var changes = {
+                            changes: {
+                                view: 4,
+                                blacklist: {
+                                    "removed-issues": ["TDP-2", "TBG-1"]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(4);
+                        expect(boardData.blacklist.issueTypes.length).toBe(0);
+                        expect(boardData.blacklist.priorities.length).toBe(0);
+                        expect(boardData.blacklist.states.length).toBe(0);
+                        expect(boardData.blacklist.issues.length).toBe(0);
+                        var layout = [["TDP-1"], [], [], []];
+                        checkBoardLayout(boardData, layout);
+                        checkIssueDatas(boardData, layout);
+                    });
+                    xit('Remove from and add to blacklist', function () {
+                        //Combine the two above tests to make sure everything gets removed from the issue table
+                        fail("NYI");
                     });
                 });
                 function checkEntries(value) {
@@ -199,10 +224,6 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     for (var i = 0; i < layout.length; i++) {
                         var columnData = issueTable[i];
                         var columnLayout = layout[i];
-                        console.log(columnData);
-                        console.log(columnLayout);
-                        console.log(columnData.length);
-                        console.log(columnLayout.length);
                         expect(boardData.totalIssuesByState[i]).toBe(columnLayout.length);
                         expect(columnData.length).toBe(columnLayout.length, "The length of column is different " + i);
                         for (var j = 0; j < columnLayout.length; j++) {

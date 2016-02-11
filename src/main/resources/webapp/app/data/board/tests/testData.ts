@@ -11,15 +11,15 @@ export class TestBoardData {
     public build() : any {
         let json:any = {};
         json["view"] = this.view;
-        json["assignees"] = this.assignees;
-        json["priorities"] = this.priorities;
-        json["issue-types"] = this.issueTypes;
-        json["projects"] = this.projects;
-        json["issues"] = this.issues;
+        json["assignees"] = JSON.parse(JSON.stringify(this.assignees));
+        json["priorities"] = JSON.parse(JSON.stringify(this.priorities));
+        json["issue-types"] = JSON.parse(JSON.stringify(this.issueTypes));
+        json["projects"] = JSON.parse(JSON.stringify(this.projects));
+        json["issues"] = JSON.parse(JSON.stringify(this.issues));
         if (this.blacklist) {
-            json["blacklist"] = this.blacklist;
+            json["blacklist"] = JSON.parse(JSON.stringify(this.blacklist));
         }
-        console.log(JSON.stringify(json, null, 2));
+        //console.log(JSON.stringify(json, null, 2));
         return json;
     }
 
