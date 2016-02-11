@@ -7,6 +7,7 @@ import {SwimlaneIndexer, SwimlaneIndexerFactory} from './swimlaneIndexer';
 import {Indexed} from "../../common/indexed";
 import {BoardProject} from "./project";
 import {stat} from "fs";
+import {IssueUpdate} from "./change";
 
 export class IssueTable {
     private _allIssues:Indexed<IssueData>;
@@ -81,11 +82,32 @@ export class IssueTable {
     }
 
     deleteIssues(issueKeys:string[]) {
+        //TODO don't duplicate this across all the update functions
         let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
 
         let deletedIssues:IssueData[] = this._allIssues.deleteKeys(issueKeys);
         this._projects.deleteIssues(deletedIssues);
 
+        //TODO don't duplicate this across all the update functions
+        this.createTable();
+        this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+
+    }
+
+    applyUpdates(issueUpdates:IssueUpdate[]) {
+        //TODO don't duplicate this across all the update functions
+        let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
+
+        for (let update of issueUpdates) {
+            let issue = this._allIssues.forKey(update.key);
+            if (!issue) {
+                console.log("Could not find issue to update " + update.key);
+                return;
+            }
+            issue.applyUpdate(update);
+        }
+
+        //TODO don't duplicate this across all the update functions
         this.createTable();
         this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
 

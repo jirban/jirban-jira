@@ -1,12 +1,16 @@
-System.register([], function(exports_1) {
+System.register(["./assignee"], function(exports_1) {
     var __extends = (this && this.__extends) || function (d, b) {
         for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
         function __() { this.constructor = d; }
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
+    var assignee_1;
     var ChangeSet, IssueChange, IssueDetailChange, IssueAdd, IssueUpdate, IssueDelete;
     return {
-        setters:[],
+        setters:[
+            function (assignee_1_1) {
+                assignee_1 = assignee_1_1;
+            }],
         execute: function() {
             ChangeSet = (function () {
                 function ChangeSet(input) {
@@ -26,7 +30,7 @@ System.register([], function(exports_1) {
                         if (updatedIssues) {
                             this._issueUpdates = new Array(updatedIssues.length);
                             for (var i = 0; i < updatedIssues.length; i++) {
-                                this._issueUpdates[i] = IssueUpdate.deserialize(newIssues[i]);
+                                this._issueUpdates[i] = IssueUpdate.deserialize(updatedIssues[i]);
                             }
                         }
                         if (deletedIssues) {
@@ -35,6 +39,9 @@ System.register([], function(exports_1) {
                                 this._issueDeletes[i] = new IssueDelete(deletedIssues[i]);
                             }
                         }
+                    }
+                    if (changes.assignees) {
+                        this._addedAssignees = new assignee_1.AssigneeDeserializer().deserialize(changes).array;
                     }
                     var blacklist = changes.blacklist;
                     if (blacklist) {
@@ -139,6 +146,13 @@ System.register([], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(ChangeSet.prototype, "addedAssignees", {
+                    get: function () {
+                        return this._addedAssignees;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 return ChangeSet;
             })();
             exports_1("ChangeSet", ChangeSet);
@@ -158,12 +172,13 @@ System.register([], function(exports_1) {
             exports_1("IssueChange", IssueChange);
             IssueDetailChange = (function (_super) {
                 __extends(IssueDetailChange, _super);
-                function IssueDetailChange(key, type, priority, summary, state) {
+                function IssueDetailChange(key, type, priority, summary, state, assignee) {
                     _super.call(this, key);
                     this._type = type;
                     this._priority = priority;
                     this._summary = summary;
                     this._state = state;
+                    this._assignee = assignee;
                 }
                 Object.defineProperty(IssueDetailChange.prototype, "type", {
                     get: function () {
@@ -193,29 +208,36 @@ System.register([], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(IssueDetailChange.prototype, "assignee", {
+                    get: function () {
+                        return this._assignee;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 return IssueDetailChange;
             })(IssueChange);
             exports_1("IssueDetailChange", IssueDetailChange);
             IssueAdd = (function (_super) {
                 __extends(IssueAdd, _super);
-                function IssueAdd(key, type, priority, summary, state) {
-                    _super.call(this, key, type, priority, summary, state);
+                function IssueAdd(key, type, priority, summary, state, assignee) {
+                    _super.call(this, key, type, priority, summary, state, assignee);
                 }
                 IssueAdd.deserialize = function (input) {
                     //TODO state!!!
-                    return new IssueAdd(input.key, input.type, input.priority, input.summary, input.state);
+                    return new IssueAdd(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
                 };
                 return IssueAdd;
             })(IssueDetailChange);
             exports_1("IssueAdd", IssueAdd);
             IssueUpdate = (function (_super) {
                 __extends(IssueUpdate, _super);
-                function IssueUpdate(key, type, priority, summary, state) {
-                    _super.call(this, key, type, priority, summary, state);
+                function IssueUpdate(key, type, priority, summary, state, assignee) {
+                    _super.call(this, key, type, priority, summary, state, assignee);
                 }
                 IssueUpdate.deserialize = function (input) {
                     //TODO state!!!
-                    return new IssueUpdate(input.key, input.type, input.priority, input.summary, input.state);
+                    return new IssueUpdate(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
                 };
                 return IssueUpdate;
             })(IssueDetailChange);

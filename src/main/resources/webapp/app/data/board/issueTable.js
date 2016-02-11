@@ -93,9 +93,27 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                     return this._allIssues.forKey(issueKey);
                 };
                 IssueTable.prototype.deleteIssues = function (issueKeys) {
+                    //TODO don't duplicate this across all the update functions
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
                     var deletedIssues = this._allIssues.deleteKeys(issueKeys);
                     this._projects.deleteIssues(deletedIssues);
+                    //TODO don't duplicate this across all the update functions
+                    this.createTable();
+                    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+                };
+                IssueTable.prototype.applyUpdates = function (issueUpdates) {
+                    //TODO don't duplicate this across all the update functions
+                    var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
+                    for (var _i = 0; _i < issueUpdates.length; _i++) {
+                        var update = issueUpdates[_i];
+                        var issue = this._allIssues.forKey(update.key);
+                        if (!issue) {
+                            console.log("Could not find issue to update " + update.key);
+                            return;
+                        }
+                        issue.applyUpdate(update);
+                    }
+                    //TODO don't duplicate this across all the update functions
                     this.createTable();
                     this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
                 };

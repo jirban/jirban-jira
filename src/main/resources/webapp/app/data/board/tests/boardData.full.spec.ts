@@ -454,6 +454,172 @@ describe('BoardData tests', ()=> {
         });
     });
 
+    describe('Update issues - no state change', () => {
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        });
+
+        it ('Update issue type', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TDP-1",
+                            type: "bug"
+                        }]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssue.key).toBe("TDP-1");
+            checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+
+        });
+
+        it ('Update priority', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TDP-2",
+                            priority: "low"
+                        }]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-2");
+            expect(updatedIssue.key).toBe("TDP-2");
+            checkBoardIssue(updatedIssue, "TDP-1", "bug", "low", "kabir", "Two");
+        });
+
+        it ('Update summary', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TBG-1",
+                            summary: "Uno"
+                        }]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssue.key).toBe("TBG-1");
+            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", "Uno");
+        });
+
+        it ('Unassign', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TBG-1",
+                            unassigned: true
+                        }]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssue.key).toBe("TBG-1");
+            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", null, "One");
+        });
+
+        it ('Update assignee (not new on board)', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TBG-1",
+                            assignee: "kabir"
+                        }]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssue.key).toBe("TBG-1");
+            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "kabir", "One");
+        });
+
+        it('Update assignee (new on board)', () => {
+
+            checkAssignees(boardData, "brian", "kabir");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TBG-1",
+                            assignee: "jason"
+                        }]
+                    },
+                    assignees : [{
+                        key : "jason",
+                        email : "jason@example.com",
+                        avatar : "/avatars/jason.png",
+                        name : "Jason Greene"
+                    }]
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            checkAssignees(boardData, "brian", "kabir", "jason");
+
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssue.key).toBe("TBG-1");
+            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", "One");
+        });
+
+
+    });
 
 
     function checkEntries(value:string[], ...expected:string[]) {
@@ -463,38 +629,55 @@ describe('BoardData tests', ()=> {
         }
     }
 
-    function checkIssueDatas(boardData:BoardData, layout:string[][]) {
+    function checkIssueDatas(boardData:BoardData, layout:string[][], skipKey?:string) : IssueData {
+        //If 'skipKey' is set, we return the matching issue for manual checks
+        let skippedIssue:IssueData;
         for (let i:number = 0; i < layout.length; i++) {
             for (let j:number = 0; j < layout[i].length; j++) {
                 let issue:IssueData = boardData.getIssue(layout[i][j]);
+                if (skipKey && skipKey == issue.key) {
+                    skippedIssue = issue;
+                    continue;
+                }
                 let id:number = getIdFromKey(issue.key);
                 let mod4 = (id - 1) % 4;
                 switch (mod4) {
                     case 0:
-                        checkBoardIssueType(issue.type, "task");
-                        checkBoardPriority(issue.priority, "highest");
-                        checkBoardAssignee(issue.assignee, "brian");
+                        checkBoardIssue(issue, issue.key, "task", "highest", "brian");
                         break;
                     case 1:
-                        checkBoardIssueType(issue.type, "bug");
-                        checkBoardPriority(issue.priority, "high");
-                        checkBoardAssignee(issue.assignee, "kabir");
+                        checkBoardIssue(issue, issue.key, "bug", "high", "kabir");
                         break;
                     case 2:
-                        checkBoardIssueType(issue.type, "feature");
-                        checkBoardPriority(issue.priority, "low");
-                        expect(issue.assignee).not.toBeDefined();
+                        checkBoardIssue(issue, issue.key, "feature", "low", null);
                         break;
                     case 3:
-                        checkBoardIssueType(issue.type, "issue");
-                        checkBoardPriority(issue.priority, "lowest");
-                        expect(issue.assignee).not.toBeDefined();
+                        checkBoardIssue(issue, issue.key, "issue", "lowest", null);
                         break;
                 }
                 checkIssueConvenienceMethods(issue);
             }
         }
+        return skippedIssue;
     }
+
+    function checkBoardIssue(issue:IssueData, key:string, type:string, priority:string, assignee:string, summary?:string) {
+        checkBoardIssueType(issue.type, type);
+        checkBoardPriority(issue.priority, priority);
+        if (assignee) {
+            checkBoardAssignee(issue.assignee, assignee);
+        } else {
+            expect(issue.assignee).not.toBe(jasmine.anything);
+        }
+
+        if (summary) {
+            expect(issue.summary).toEqual(summary);
+        }
+        checkIssueConvenienceMethods(issue);
+        checkIssueConvenienceMethods(issue);
+    }
+
+
 
     function checkBoardLayout(boardData:BoardData, layout:string[][]) {
         let issueTable:IssueData[][] = boardData.issueTable;

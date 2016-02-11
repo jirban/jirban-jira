@@ -222,6 +222,25 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
+                //Update functions
+                IssueData.prototype.applyUpdate = function (update) {
+                    if (update.type) {
+                        this._type = this._boardData.issueTypes.forKey(update.type);
+                    }
+                    if (update.priority) {
+                        this._priority = this._boardData.priorities.forKey(update.priority);
+                    }
+                    if (update.summary) {
+                        this._summary = update.summary;
+                    }
+                    if (update.state) {
+                        var project = this.boardProject;
+                        this._statusIndex = project.getOwnStateIndex(update.state);
+                    }
+                    if (update.assignee) {
+                        this._assignee = this.boardData.assignees.forKey(update.assignee);
+                    }
+                };
                 return IssueData;
             })();
             exports_1("IssueData", IssueData);

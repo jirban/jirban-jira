@@ -92,6 +92,13 @@ export class BoardData {
     processChanges(input:any) {
         let changeSet:ChangeSet = new ChangeSet(input);
         if (changeSet.view != this.view) {
+
+            if (changeSet.addedAssignees) {
+                for (let assignee of changeSet.addedAssignees) {
+                    this._assignees.add(assignee.key, assignee);
+                }
+            }
+
             let deleteKeys:string[] = [];
 
             if (changeSet.blacklistChanges) {
@@ -117,10 +124,16 @@ export class BoardData {
                         deleteKeys.push(issueDelete.key);
                     }
                 }
+
+                //TODO if an update is changing state, need to remove it from the old state here
             }
 
 
             this._issueTable.deleteIssues(deleteKeys);
+
+            if (changeSet.issueUpdates) {
+                this._issueTable.applyUpdates(changeSet.issueUpdates);
+            }
 
 
 

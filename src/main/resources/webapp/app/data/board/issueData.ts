@@ -4,6 +4,8 @@ import {Priority} from "./priority";
 import {IssueType} from "./issueType";
 import {isNumber} from "angular2/src/facade/lang";
 import {BoardProject, Project} from "./project";
+import {IssueChange} from "./change";
+import {IssueUpdate} from "./change";
 
 
 export class IssueData {
@@ -174,5 +176,25 @@ export class IssueData {
 
     private get boardProject() : BoardProject {
         return this._boardData.boardProjects.forKey(this._projectCode);
+    }
+
+    //Update functions
+    applyUpdate(update:IssueUpdate) {
+        if (update.type) {
+            this._type = this._boardData.issueTypes.forKey(update.type);
+        }
+        if (update.priority) {
+            this._priority = this._boardData.priorities.forKey(update.priority);
+        }
+        if (update.summary) {
+            this._summary = update.summary;
+        }
+        if (update.state) {
+            let project:BoardProject = this.boardProject;
+            this._statusIndex = project.getOwnStateIndex(update.state);
+        }
+        if (update.assignee) {
+            this._assignee = this.boardData.assignees.forKey(update.assignee);
+        }
     }
 }

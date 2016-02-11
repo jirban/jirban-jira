@@ -92,6 +92,15 @@ export class Indexed<T> {
         return deleted;
     }
 
+    add(key:string, value:T) {
+        if (!this._indices[key]) {
+            let index = this.array.length;
+            this.array.push(value);
+            this.indices[key] = index;
+        }
+    }
+
+
     get array():T[] {
         return this._array;
     }

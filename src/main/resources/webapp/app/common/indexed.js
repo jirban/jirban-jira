@@ -89,6 +89,13 @@ System.register([], function(exports_1) {
                     this._indices = newIndices;
                     return deleted;
                 };
+                Indexed.prototype.add = function (key, value) {
+                    if (!this._indices[key]) {
+                        var index = this.array.length;
+                        this.array.push(value);
+                        this.indices[key] = index;
+                    }
+                };
                 Object.defineProperty(Indexed.prototype, "array", {
                     get: function () {
                         return this._array;

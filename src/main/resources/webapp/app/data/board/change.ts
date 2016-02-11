@@ -1,9 +1,14 @@
+import {Assignee} from "./assignee";
+import {AssigneeDeserializer} from "./assignee";
+import {Indexed} from "../../common/indexed";
 export class ChangeSet {
     private _view:number;
 
     private _issueAdds:IssueAdd[];
     private _issueUpdates:IssueUpdate[];
     private _issueDeletes:IssueDelete[];
+
+    private _addedAssignees:Assignee[];
 
     private _blacklistStates:string[];
     private _blacklistTypes:string[];
@@ -29,7 +34,7 @@ export class ChangeSet {
             if (updatedIssues) {
                 this._issueUpdates = new Array<IssueUpdate>(updatedIssues.length);
                 for (let i:number = 0 ; i < updatedIssues.length ; i++) {
-                    this._issueUpdates[i] = IssueUpdate.deserialize(newIssues[i]);
+                    this._issueUpdates[i] = IssueUpdate.deserialize(updatedIssues[i]);
                 }
             }
             if (deletedIssues) {
@@ -38,6 +43,10 @@ export class ChangeSet {
                     this._issueDeletes[i] = new IssueDelete(deletedIssues[i]);
                 }
             }
+        }
+
+        if (changes.assignees) {
+            this._addedAssignees = new AssigneeDeserializer().deserialize(changes).array;
         }
 
         let blacklist:any = changes.blacklist;
@@ -111,6 +120,10 @@ export class ChangeSet {
         }
         return false;
     }
+
+    get addedAssignees() : Assignee[] {
+        return this._addedAssignees;
+    }
 }
 
 export abstract class IssueChange {
@@ -130,13 +143,15 @@ export abstract class IssueDetailChange extends IssueChange {
     private _priority:string;
     private _summary:string;
     private _state:string;
+    private _assignee:string;
 
-    constructor(key:string, type:string, priority:string, summary:string, state:string) {
+    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
         super(key);
         this._type = type;
         this._priority = priority;
         this._summary = summary;
         this._state = state;
+        this._assignee = assignee;
     }
 
     get type():string {
@@ -154,27 +169,31 @@ export abstract class IssueDetailChange extends IssueChange {
     get state():string {
         return this._state;
     }
+
+    get assignee():string {
+        return this._assignee;
+    }
 }
 
 export class IssueAdd extends IssueDetailChange {
-    constructor(key:string, type:string, priority:string, summary:string, state:string) {
-        super(key, type, priority, summary, state);
+    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
+        super(key, type, priority, summary, state, assignee);
     }
 
     static deserialize(input:any) : IssueAdd {
         //TODO state!!!
-        return new IssueAdd(input.key, input.type, input.priority, input.summary, input.state);
+        return new IssueAdd(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
     }
 }
 
 export class IssueUpdate extends IssueDetailChange {
-    constructor(key:string, type:string, priority:string, summary:string, state:string) {
-        super(key, type, priority, summary, state);
+    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
+        super(key, type, priority, summary, state, assignee);
     }
 
     static deserialize(input:any) : IssueAdd {
         //TODO state!!!
-        return new IssueUpdate(input.key, input.type, input.priority, input.summary, input.state);
+        return new IssueUpdate(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
     }
 }
 

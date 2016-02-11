@@ -79,6 +79,12 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 BoardData.prototype.processChanges = function (input) {
                     var changeSet = new change_1.ChangeSet(input);
                     if (changeSet.view != this.view) {
+                        if (changeSet.addedAssignees) {
+                            for (var _i = 0, _a = changeSet.addedAssignees; _i < _a.length; _i++) {
+                                var assignee = _a[_i];
+                                this._assignees.add(assignee.key, assignee);
+                            }
+                        }
                         var deleteKeys = [];
                         if (changeSet.blacklistChanges) {
                             if (!this.blacklist) {
@@ -97,13 +103,16 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                         if (changeSet.issueChanges) {
                             if (changeSet.issueDeletes) {
                                 var deletes = changeSet.issueDeletes;
-                                for (var _i = 0; _i < deletes.length; _i++) {
-                                    var issueDelete = deletes[_i];
+                                for (var _b = 0; _b < deletes.length; _b++) {
+                                    var issueDelete = deletes[_b];
                                     deleteKeys.push(issueDelete.key);
                                 }
                             }
                         }
                         this._issueTable.deleteIssues(deleteKeys);
+                        if (changeSet.issueUpdates) {
+                            this._issueTable.applyUpdates(changeSet.issueUpdates);
+                        }
                         //Finally bump the view
                         this._view = changeSet.view;
                     }
