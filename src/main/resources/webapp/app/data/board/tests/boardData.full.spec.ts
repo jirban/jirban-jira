@@ -35,13 +35,9 @@ describe('BoardData tests', ()=> {
         });
 
         it('Full board; Blacklist', () => {
-            let bd:TestBoardData = new TestBoardData();
-            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
-            bd.issues = TestBoardData.FULL_BOARD_ISSUES;
-            bd.blacklist = TestBoardData.STANDARD_BLACKLIST;
-
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1, bd.build());
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES, TestBoardData.STANDARD_BLACKLIST));
 
             expect(boardData.view).toEqual(0);
 
@@ -241,6 +237,120 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist.states.length).toBe(0);
             checkEntries(boardData.blacklist.issueTypes, "BadType");
             checkEntries(boardData.blacklist.issues, "TDP-1");
+
+
+            let layout:any = [[], ["TDP-2"], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+    });
+
+    describe('Exisiting Blacklist', () => {
+        var boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES, TestBoardData.STANDARD_BLACKLIST));
+            expect(boardData.blacklist).toEqual(jasmine.anything());
+        });
+
+        it('Board unaffected', () => {
+            //The blacklist change contains issues not on the board (this should not happen in real life, but it is easy to test)
+
+            let changes:any = {
+                changes: {
+                    view: 5,
+                    blacklist: {
+                        issues: ["TDP-200", "TBG-200"],
+                        states: ["BadState1", "BadState2"],
+                        priorities: ["BadPriority1", "BadPriority2"],
+                        "issue-types": ["BadType1", "BadType2"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(5);
+            checkEntries(boardData.blacklist.issueTypes, "BadIssueType", "BadType1", "BadType2");
+            checkEntries(boardData.blacklist.priorities, "BadPriority", "BadPriority1", "BadPriority2");
+            checkEntries(boardData.blacklist.states, "BadState", "BadState1", "BadState2");
+            checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101", "TDP-200", "TBG-200");
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+        it('Add to blacklist', () => {
+            //Issues added to the blacklist should be removed from the issue table
+
+            let changes:any = {
+                changes: {
+                    view: 5,
+                    blacklist: {
+                        issues: ["TDP-1", "TBG-1"],
+                        states: ["BadStateA"],
+                        priorities: ["BadPriorityA"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(5);
+            checkEntries(boardData.blacklist.issueTypes, "BadIssueType");
+            checkEntries(boardData.blacklist.priorities, "BadPriority", "BadPriorityA");
+            checkEntries(boardData.blacklist.states, "BadState", "BadStateA");
+            checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101", "TDP-1", "TBG-1");
+
+            let layout:any = [[], ["TDP-2"], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+        it('Remove from blacklist', () => {
+            //Issues removed from the blacklist should be removed from the issue table if they exist
+            //This can happen if the change set includes adding the issue to the black list, and then the issue is deleted
+
+            let changes:any = {
+                changes: {
+                    view: 4,
+                    blacklist: {
+                        "removed-issues": ["TDP-2", "TBG-1", "TBG-1000"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(4);
+            checkEntries(boardData.blacklist.issueTypes, "BadIssueType");
+            checkEntries(boardData.blacklist.priorities, "BadPriority");
+            checkEntries(boardData.blacklist.states, "BadState");
+            checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101");
+
+            let layout:any = [["TDP-1"], [], [], []];
+            checkBoardLayout(boardData, layout);
+            checkIssueDatas(boardData, layout);
+        });
+
+        it('Remove from and add to blacklist', () => {
+            //Combine the two above tests to make sure everything gets removed from the issue table
+            let changes:any = {
+                changes: {
+                    view: 4,
+                    blacklist: {
+                        "issue-types" : ["BadTypeA"],
+                        issues: ["TDP-1"],
+                        "removed-issues": ["TBG-1", "TBG-1000"]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(4);
+            checkEntries(boardData.blacklist.issueTypes, "BadIssueType", "BadTypeA");
+            checkEntries(boardData.blacklist.priorities, "BadPriority");
+            checkEntries(boardData.blacklist.states, "BadState");
+            checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101", "TDP-1");
 
 
             let layout:any = [[], ["TDP-2"], [], []];

@@ -26,10 +26,15 @@ System.register([], function(exports_1) {
                     //console.log(JSON.stringify(json, null, 2));
                     return json;
                 };
-                TestBoardData.create = function (projects, issues) {
+                TestBoardData.create = function (projects, issues, blacklist) {
                     var bd = new TestBoardData();
                     bd.projects = projects;
                     bd.issues = issues;
+                    console.log("BL " + blacklist);
+                    if (blacklist) {
+                        console.log("Adding bl");
+                        bd.blacklist = blacklist;
+                    }
                     return bd.build();
                 };
                 TestBoardData.STANDARD_ASSIGNEES = [

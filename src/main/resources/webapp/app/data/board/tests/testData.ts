@@ -25,10 +25,15 @@ export class TestBoardData {
         return json;
     }
 
-    public static create(projects:any, issues:any) : any {
+    public static create(projects:any, issues:any, blacklist?:any) : any {
         let bd:TestBoardData = new TestBoardData();
         bd.projects = projects;
         bd.issues = issues;
+        console.log("BL " + blacklist);
+        if (blacklist) {
+            console.log("Adding bl");
+            bd.blacklist = blacklist;
+        }
         return bd.build();
     }
 

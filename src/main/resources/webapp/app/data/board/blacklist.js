@@ -30,18 +30,17 @@ System.register([], function(exports_1) {
                     return bd;
                 };
                 BlacklistData.prototype.addChangeSet = function (changeSet) {
-                    //Use slice to copy the arrays here to avoid side-effects
                     if (changeSet.blacklistStates) {
-                        this._states = changeSet.blacklistStates.slice();
+                        this._states = this._states.concat(changeSet.blacklistStates.slice());
                     }
                     if (changeSet.blacklistPriorities) {
-                        this._priorities = changeSet.blacklistPriorities.slice();
+                        this._priorities = this._priorities.concat(changeSet.blacklistPriorities.slice());
                     }
                     if (changeSet.blacklistTypes) {
-                        this._issueTypes = changeSet.blacklistTypes.slice();
+                        this._issueTypes = this._issueTypes.concat(changeSet.blacklistTypes.slice());
                     }
                     if (changeSet.blacklistIssues) {
-                        this._issues = changeSet.blacklistIssues.slice();
+                        this._issues = this._issues.concat(changeSet.blacklistIssues.slice());
                     }
                 };
                 Object.defineProperty(BlacklistData.prototype, "states", {
