@@ -20,6 +20,14 @@
 
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.LINKED_ISSUES;
+import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.STATE;
+import static org.jirban.jira.impl.Constants.SUMMARY;
+import static org.jirban.jira.impl.Constants.TYPE;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -90,9 +98,9 @@ public abstract class Issue {
 
     private ModelNode getBaseModelNode() {
         ModelNode issueNode = new ModelNode();
-        issueNode.get("key").set(key);
-        issueNode.get("state").set(project.getStateIndex(state));
-        issueNode.get("summary").set(summary);
+        issueNode.get(KEY).set(key);
+        issueNode.get(STATE).set(project.getStateIndex(state));
+        issueNode.get(SUMMARY).set(summary);
         return issueNode;
     }
 
@@ -257,18 +265,18 @@ public abstract class Issue {
         ModelNode getModelNodeForFullRefresh(Board board) {
             BoardProject boardProject = board.getBoardProject(getProjectCode());
             ModelNode issueNode = super.getModelNodeForFullRefresh(board);
-            issueNode.get("priority").set(priorityIndex);
-            issueNode.get("type").set(issueTypeIndex);
+            issueNode.get(PRIORITY).set(priorityIndex);
+            issueNode.get(TYPE).set(issueTypeIndex);
             if (assignee != null) {
                 //This map will always be populated
                 try {
-                    issueNode.get("assignee").set(boardProject.getAssigneeIndex(assignee));
+                    issueNode.get(ASSIGNEE).set(boardProject.getAssigneeIndex(assignee));
                 } catch (Exception e) {
                     boardProject.getAssigneeIndex(assignee);
                 }
             }
             if (hasLinkedIssues()) {
-                ModelNode linkedIssuesNode = issueNode.get("linked-issues");
+                ModelNode linkedIssuesNode = issueNode.get(LINKED_ISSUES);
                 for (Issue linkedIssue : linkedIssues) {
                     ModelNode linkedIssueNode = linkedIssue.getModelNodeForFullRefresh(board);
                     linkedIssuesNode.add(linkedIssueNode);

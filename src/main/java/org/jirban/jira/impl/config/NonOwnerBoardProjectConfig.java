@@ -21,6 +21,9 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.COLOUR;
+import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.STATE_LINKS;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
 import java.util.Collections;
@@ -53,9 +56,9 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
     }
 
     static NonOwnerBoardProjectConfig load(final String projectCode, ModelNode project) {
-        String colour = getRequiredChild(project, "Project", projectCode, "colour").asString();
-        ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, "state-links");
-        if (project.hasDefined("states")) {
+        String colour = getRequiredChild(project, "Project", projectCode, COLOUR).asString();
+        ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, STATE_LINKS);
+        if (project.hasDefined(STATES)) {
             throw new IllegalStateException("The non-main projects should not have states, only a state-links entry mapping its states to those of the main project");
         }
 
@@ -86,7 +89,7 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
     @Override
     ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
         ModelNode projectNode = super.serializeModelNodeForBoard(boardConfig, parent);
-        ModelNode stateLinksNode = projectNode.get("state-links");
+        ModelNode stateLinksNode = projectNode.get(STATE_LINKS);
         for (String state : boardConfig.getOwningProject().getStateNames()) {
             String myState = mapBoardStateOntoOwnState(state);
             stateLinksNode.get(state).set(myState == null ? new ModelNode() : new ModelNode(myState));
@@ -97,7 +100,7 @@ public class NonOwnerBoardProjectConfig extends BoardProjectConfig {
     @Override
     ModelNode serializeModelNodeForConfig() {
         final ModelNode projectsNode = super.serializeModelNodeForConfig();
-        final ModelNode stateLinksNode = projectsNode.get("state-links");
+        final ModelNode stateLinksNode = projectsNode.get(STATE_LINKS);
         stateLinksNode.setEmptyObject();
         for (Map.Entry<String, String> entry : ownToBoardStates.entrySet()) {
             stateLinksNode.get(entry.getKey()).set(entry.getValue());

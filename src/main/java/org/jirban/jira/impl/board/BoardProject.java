@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.ISSUES;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -71,7 +73,7 @@ class BoardProject {
     }
 
     void serialize(ModelNode parent) {
-        ModelNode projectIssues = parent.get("issues");
+        ModelNode projectIssues = parent.get(ISSUES);
         for (List<String> issuesForState : issueKeysByState) {
             ModelNode issuesForStateNode = new ModelNode();
             issuesForStateNode.setEmptyList();

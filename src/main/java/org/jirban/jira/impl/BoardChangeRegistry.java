@@ -21,6 +21,22 @@
  */
 package org.jirban.jira.impl;
 
+import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.BLACKLIST;
+import static org.jirban.jira.impl.Constants.CHANGES;
+import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
+import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.NEW;
+import static org.jirban.jira.impl.Constants.PRIORITIES;
+import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.REMOVED_ISSUES;
+import static org.jirban.jira.impl.Constants.STATE;
+import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.SUMMARY;
+import static org.jirban.jira.impl.Constants.TYPE;
+import static org.jirban.jira.impl.Constants.UNASSIGNED;
+import static org.jirban.jira.impl.Constants.VIEW;
 import static org.jirban.jira.impl.JirbanIssueEvent.Type.CREATE;
 import static org.jirban.jira.impl.JirbanIssueEvent.Type.DELETE;
 import static org.jirban.jira.impl.JirbanIssueEvent.Type.UPDATE;
@@ -169,8 +185,8 @@ public class BoardChangeRegistry {
 
         ModelNode serialize() {
             ModelNode output = new ModelNode();
-            ModelNode changes = output.get("changes");
-            changes.get("view").set(view);
+            ModelNode changes = output.get(CHANGES);
+            changes.get(VIEW).set(view);
 
             Set<IssueChange> newIssues = new HashSet<>();
             Set<IssueChange> updatedIssues = new HashSet<>();
@@ -181,7 +197,7 @@ public class BoardChangeRegistry {
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
             if (issues.isDefined()) {
-                changes.get("issues").set(issues);
+                changes.get(ISSUES).set(issues);
             }
 
             serializeAssignees(changes, newAssignees);
@@ -191,9 +207,9 @@ public class BoardChangeRegistry {
         }
 
         private void serializeIssues(ModelNode parent, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues) {
-            serializeIssues(parent, "new", newIssues);
-            serializeIssues(parent, "update", updatedIssues);
-            serializeIssues(parent, "delete", deletedIssues);
+            serializeIssues(parent, NEW, newIssues);
+            serializeIssues(parent, Constants.UPDATE, updatedIssues);
+            serializeIssues(parent, Constants.DELETE, deletedIssues);
         }
 
         private void serializeIssues(ModelNode parent, String key, Set<IssueChange> issues) {
@@ -237,7 +253,7 @@ public class BoardChangeRegistry {
         private void serializeBlacklist(ModelNode changes) {
             ModelNode blacklistNode = blacklistChange.serialize();
             if (blacklistNode.isDefined()) {
-                changes.get("blacklist").set(blacklistNode);
+                changes.get(BLACKLIST).set(blacklistNode);
             }
         }
     }
@@ -349,34 +365,34 @@ public class BoardChangeRegistry {
             ModelNode output = new ModelNode();
             switch (type) {
                 case CREATE:
-                    output.get("key").set(issueKey);
-                    output.get("type").set(issueType);
-                    output.get("priority").set(priority);
-                    output.get("summary").set(summary);
+                    output.get(KEY).set(issueKey);
+                    output.get(TYPE).set(issueType);
+                    output.get(PRIORITY).set(priority);
+                    output.get(SUMMARY).set(summary);
                     if (assignee != null) {
-                        output.get("assignee").set(assignee);
+                        output.get(ASSIGNEE).set(assignee);
                     }
-                    output.get("state").set(state);
+                    output.get(STATE).set(state);
                     break;
                 case UPDATE:
-                    output.get("key").set(issueKey);
+                    output.get(KEY).set(issueKey);
                     if (issueType != null) {
-                        output.get("type").set(issueType);
+                        output.get(TYPE).set(issueType);
                     }
                     if (priority != null) {
-                        output.get("priority").set(priority);
+                        output.get(PRIORITY).set(priority);
                     }
                     if (summary != null) {
-                        output.get("summary").set(summary);
+                        output.get(SUMMARY).set(summary);
                     }
                     if (assignee != null) {
-                        output.get("assignee").set(assignee);
+                        output.get(ASSIGNEE).set(assignee);
                     }
                     if (state != null) {
-                        output.get("state").set(state);
+                        output.get(STATE).set(state);
                     }
                     if (unassigned) {
-                        output.get("unassigned").set(true);
+                        output.get(UNASSIGNED).set(true);
                     }
                     break;
                 case DELETE:
@@ -438,19 +454,19 @@ public class BoardChangeRegistry {
         ModelNode serialize() {
             ModelNode modelNode = new ModelNode();
             if (states != null) {
-                states.forEach(state -> modelNode.get("states").add(state));
+                states.forEach(state -> modelNode.get(STATES).add(state));
             }
             if (issueTypes != null) {
-                issueTypes.forEach(type -> modelNode.get("issue-types").add(type));
+                issueTypes.forEach(type -> modelNode.get(ISSUE_TYPES).add(type));
             }
             if (priorities != null) {
-                priorities.forEach(priority -> modelNode.get("priorities").add(priority));
+                priorities.forEach(priority -> modelNode.get(PRIORITIES).add(priority));
             }
             if (issues != null && issues.size() > 0) { //Check size here as well since removes can happen in populate()
-                issues.forEach(issue -> modelNode.get("issues").add(issue));
+                issues.forEach(issue -> modelNode.get(ISSUES).add(issue));
             }
             if (removedIssues != null) {
-                removedIssues.forEach(issue -> modelNode.get("removed-issues").add(issue));
+                removedIssues.forEach(issue -> modelNode.get(REMOVED_ISSUES).add(issue));
             }
 
             return modelNode;

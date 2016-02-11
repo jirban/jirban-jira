@@ -21,6 +21,24 @@
  */
 package ut.org.jirban.jira;
 
+import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.ASSIGNEES;
+import static org.jirban.jira.impl.Constants.AVATAR;
+import static org.jirban.jira.impl.Constants.BLACKLIST;
+import static org.jirban.jira.impl.Constants.EMAIL;
+import static org.jirban.jira.impl.Constants.ICON;
+import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
+import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.MAIN;
+import static org.jirban.jira.impl.Constants.PRIORITIES;
+import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.STATE;
+import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.SUMMARY;
+import static org.jirban.jira.impl.Constants.TYPE;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -774,7 +792,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
-        List<ModelNode> issues = boardNode.get("projects", "main", project, "issues").asList();
+        List<ModelNode> issues = boardNode.get(PROJECTS, MAIN, project, ISSUES).asList();
         Assert.assertEquals(issueTable.length, issues.size());
         for (int i = 0 ; i < issueTable.length ; i++) {
             List<ModelNode> issuesForState = issues.get(i).asList();
@@ -787,13 +805,13 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkUsers(ModelNode board, String...users) {
-        List<ModelNode> assignees = board.get("assignees").asList();
+        List<ModelNode> assignees = board.get(ASSIGNEES).asList();
         Assert.assertEquals(assignees.size(), users.length);
         for (int i = 0 ; i < users.length ; i++) {
             ModelNode assignee = assignees.get(i);
             Assert.assertNotNull(assignee);
-            Assert.assertEquals(users[i] + "@example.com", assignee.get("email").asString());
-            Assert.assertEquals("/avatars/" + users[i] + ".png", assignee.get("avatar").asString());
+            Assert.assertEquals(users[i] + "@example.com", assignee.get(EMAIL).asString());
+            Assert.assertEquals("/avatars/" + users[i] + ".png", assignee.get(AVATAR).asString());
 
             String displayName = assignee.get("name").toString().toLowerCase();
             Assert.assertTrue(displayName.length() > users[i].length());
@@ -807,12 +825,12 @@ public class BoardManagerTest extends AbstractBoardTest {
         for (int i = 0 ; i < names.length ; i++) {
             ModelNode entry = entries.get(i);
             Assert.assertEquals(names[i], entry.get("name").asString());
-            Assert.assertEquals("/icons/" + type + "/" + names[i] + ".png", entry.get("icon").asString());
+            Assert.assertEquals("/icons/" + type + "/" + names[i] + ".png", entry.get(ICON).asString());
         }
     }
 
     private ModelNode getIssuesCheckingSize(ModelNode board, int expectedLength) {
-        ModelNode issues = board.get("issues");
+        ModelNode issues = board.get(ISSUES);
         Assert.assertEquals(expectedLength, issues.keys().size());
         return issues;
     }
@@ -820,25 +838,25 @@ public class BoardManagerTest extends AbstractBoardTest {
     private void checkIssue(ModelNode issues, String key, IssueType type, Priority priority, String summary, int state, int assignee) {
         ModelNode issue = issues.get(key);
         Assert.assertNotNull(issue);
-        Assert.assertEquals(key, issue.get("key").asString());
-        Assert.assertEquals(type.index, issue.get("type").asInt());
-        Assert.assertEquals(priority.index, issue.get("priority").asInt());
-        Assert.assertEquals(summary, issue.get("summary").asString());
-        Assert.assertEquals(state, issue.get("state").asInt());
+        Assert.assertEquals(key, issue.get(KEY).asString());
+        Assert.assertEquals(type.index, issue.get(TYPE).asInt());
+        Assert.assertEquals(priority.index, issue.get(PRIORITY).asInt());
+        Assert.assertEquals(summary, issue.get(SUMMARY).asString());
+        Assert.assertEquals(state, issue.get(STATE).asInt());
         if (assignee < 0) {
-            Assert.assertFalse(issue.get("assignee").isDefined());
+            Assert.assertFalse(issue.get(ASSIGNEE).isDefined());
         } else {
-            Assert.assertEquals(assignee, issue.get("assignee").asInt());
+            Assert.assertEquals(assignee, issue.get(ASSIGNEE).asInt());
         }
     }
 
     private void checkBlacklist(ModelNode boardNode, String[] states, String[] issueTypes, String[] priorities, String... issues) {
-        Assert.assertTrue(boardNode.hasDefined("blacklist"));
-        ModelNode blacklist = boardNode.get("blacklist");
-        checkBlacklistEntry(blacklist, "states", states);
-        checkBlacklistEntry(blacklist, "issue-types", issueTypes);
-        checkBlacklistEntry(blacklist, "priorities", priorities);
-        checkBlacklistEntry(blacklist, "issues", issues);
+        Assert.assertTrue(boardNode.hasDefined(BLACKLIST));
+        ModelNode blacklist = boardNode.get(BLACKLIST);
+        checkBlacklistEntry(blacklist, STATES, states);
+        checkBlacklistEntry(blacklist, ISSUE_TYPES, issueTypes);
+        checkBlacklistEntry(blacklist, PRIORITIES, priorities);
+        checkBlacklistEntry(blacklist, ISSUES, issues);
     }
 
     private void checkBlacklistEntry(ModelNode blacklist, String key, String[] entries) {
@@ -855,6 +873,6 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkNoBlacklist(ModelNode boardNode) {
-        Assert.assertFalse(boardNode.has("blacklist"));
+        Assert.assertFalse(boardNode.has(BLACKLIST));
     }
 }

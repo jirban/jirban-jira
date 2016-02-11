@@ -20,7 +20,10 @@
 
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.NAME;
+
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 
 /**
  * @author Kabir Khan
@@ -36,8 +39,8 @@ public class NameAndUrl {
 
     public void serialize(ModelNode parent) {
         ModelNode modelNode = new ModelNode();
-        modelNode.get("name").set(name);
-        modelNode.get("icon").set(iconUrl);
+        modelNode.get(NAME).set(name);
+        modelNode.get(Constants.ICON).set(iconUrl);
         parent.add(modelNode);
     }
 

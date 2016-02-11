@@ -20,7 +20,12 @@
 
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.AVATAR;
+import static org.jirban.jira.impl.Constants.EMAIL;
+import static org.jirban.jira.impl.Constants.NAME;
+
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 
 import com.atlassian.crowd.embedded.api.User;
 
@@ -52,10 +57,10 @@ public class Assignee {
 
     public void serialize(ModelNode parent) {
         ModelNode modelNode = new ModelNode();
-        modelNode.get("key").set(key);
-        modelNode.get("email").set(email);
-        modelNode.get("avatar").set(avatarUrl);
-        modelNode.get("name").set(displayName);
+        modelNode.get(Constants.KEY).set(key);
+        modelNode.get(EMAIL).set(email);
+        modelNode.get(AVATAR).set(avatarUrl);
+        modelNode.get(NAME).set(displayName);
         parent.add(modelNode);
     }
 

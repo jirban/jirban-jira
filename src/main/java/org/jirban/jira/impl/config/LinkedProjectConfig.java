@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 
 /**
  * Project which does not appear on the board as a card, but is linked to from the cards.
@@ -36,12 +37,13 @@ import org.jboss.dmr.ModelNode;
  * @author Kabir Khan
  */
 public class LinkedProjectConfig extends ProjectConfig {
+
     public LinkedProjectConfig(final String code, final Map<String, Integer> states) {
         super(code, states);
     }
 
     static LinkedProjectConfig load(final String projectCode, final ModelNode project) {
-        List<ModelNode> statesList = getRequiredChild(project, "Project", projectCode, "states").asList();
+        List<ModelNode> statesList = getRequiredChild(project, "Project", projectCode, Constants.STATES).asList();
         Map<String, Integer> statesMap = getStringIntegerMap(statesList);
         return new LinkedProjectConfig(projectCode, Collections.unmodifiableMap(statesMap));
     }
@@ -56,7 +58,7 @@ public class LinkedProjectConfig extends ProjectConfig {
 
     ModelNode serializeModelNodeForConfig() {
         final ModelNode projectNode = new ModelNode();
-        final ModelNode statesNode = projectNode.get("states");
+        final ModelNode statesNode = projectNode.get(Constants.STATES);
         statesNode.setEmptyList();
         for (String state : states.keySet()) {
             statesNode.add(state);

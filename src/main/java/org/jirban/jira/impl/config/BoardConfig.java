@@ -20,6 +20,16 @@
 
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
+import static org.jirban.jira.impl.Constants.LINKED;
+import static org.jirban.jira.impl.Constants.LINKED_PROJECTS;
+import static org.jirban.jira.impl.Constants.MAIN;
+import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.OWNER;
+import static org.jirban.jira.impl.Constants.OWNING_PROJECT;
+import static org.jirban.jira.impl.Constants.PRIORITIES;
+import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
 import java.util.Collection;
@@ -92,11 +102,11 @@ public class BoardConfig {
 
     private static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
                                     int id, String owningUserKey, ModelNode boardNode) {
-        String projectGroupName = getRequiredChild(boardNode, "Group", null, "name").asString();
-        String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, "owning-project").asString();
-        int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, "rank-custom-field-id").asInt();
+        String projectGroupName = getRequiredChild(boardNode, "Group", null, NAME).asString();
+        String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, OWNING_PROJECT).asString();
+        int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, RANK_CUSTOM_FIELD_ID).asInt();
 
-        ModelNode projects = getRequiredChild(boardNode, "Group", projectGroupName, "projects");
+        ModelNode projects = getRequiredChild(boardNode, "Group", projectGroupName, PROJECTS);
         ModelNode mainProject = projects.remove(owningProjectName);
         if (mainProject == null || !mainProject.isDefined()) {
             throw new IllegalStateException("Project group '" + projectGroupName + "' specifies '" + owningProjectName + "' as its main project but it does not exist");
@@ -111,7 +121,7 @@ public class BoardConfig {
             mainProjects.put(projectName, NonOwnerBoardProjectConfig.load(projectName, project));
         }
 
-        ModelNode linked = boardNode.get("linked-projects");
+        ModelNode linked = boardNode.get(LINKED_PROJECTS);
         Map<String, LinkedProjectConfig> linkedProjects = new LinkedHashMap<>();
         if (linked.isDefined()) {
             for (String projectName : linked.keys()) {
@@ -124,8 +134,8 @@ public class BoardConfig {
                 rankCustomFieldId,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
-                Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get("priorities").asList())),
-                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get("issue-types").asList())));
+                Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get(PRIORITIES).asList())),
+                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get(ISSUE_TYPES).asList())));
         for (BoardProjectConfig cfg : mainProjects.values()) {
             cfg.setBoardConfig(boardConfig);
         }
@@ -203,24 +213,24 @@ public class BoardConfig {
     }
 
     public void serializeModelNodeForBoard(ModelNode boardNode) {
-        ModelNode prioritiesNode = boardNode.get("priorities");
+        ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {
             priority.serialize(prioritiesNode);
         }
 
-        ModelNode issueTypesNode = boardNode.get("issue-types");
+        ModelNode issueTypesNode = boardNode.get(ISSUE_TYPES);
         for (NameAndUrl issueType : issueTypes.values()) {
             issueType.serialize(issueTypesNode);
         }
 
-        final ModelNode projects = boardNode.get("projects");
-        projects.get("owner").set(ownerProjectCode);
+        final ModelNode projects = boardNode.get(PROJECTS);
+        projects.get(OWNER).set(ownerProjectCode);
 
-        final ModelNode main = projects.get("main");
+        final ModelNode main = projects.get(MAIN);
         for (BoardProjectConfig project : boardProjects.values()) {
             project.serializeModelNodeForBoard(this, main);
         }
-        final ModelNode linked = projects.get("linked");
+        final ModelNode linked = projects.get(LINKED);
         linked.setEmptyObject();
         for (LinkedProjectConfig project : linkedProjects.values()) {
             project.serializeModelNodeForBoard(this, linked);
@@ -229,26 +239,26 @@ public class BoardConfig {
 
     private ModelNode serializeModelNodeForConfig() {
         ModelNode boardNode = new ModelNode();
-        boardNode.get("name").set(name);
-        boardNode.get("owning-project").set(ownerProjectCode);
-        boardNode.get("rank-custom-field-id").set(rankCustomFieldId);
+        boardNode.get(NAME).set(name);
+        boardNode.get(OWNING_PROJECT).set(ownerProjectCode);
+        boardNode.get(RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
 
-        ModelNode prioritiesNode = boardNode.get("priorities");
+        ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {
             prioritiesNode.add(priority.getName());
         }
 
-        ModelNode issueTypesNode = boardNode.get("issue-types");
+        ModelNode issueTypesNode = boardNode.get(ISSUE_TYPES);
         for (NameAndUrl issueType : issueTypes.values()) {
             issueTypesNode.add(issueType.getName());
         }
 
-        final ModelNode projectsNode = boardNode.get("projects");
+        final ModelNode projectsNode = boardNode.get(PROJECTS);
         for (BoardProjectConfig project : boardProjects.values()) {
             projectsNode.get(project.getCode()).set(project.serializeModelNodeForConfig());
         }
 
-        final ModelNode linkedProjectsNode = boardNode.get("linked-projects");
+        final ModelNode linkedProjectsNode = boardNode.get(LINKED_PROJECTS);
         linkedProjectsNode.setEmptyObject();
         for (LinkedProjectConfig project : linkedProjects.values()) {
             linkedProjectsNode.get(project.getCode()).set(project.serializeModelNodeForConfig());

@@ -21,6 +21,12 @@
  */
 package org.jirban.jira.impl;
 
+import static org.jirban.jira.impl.Constants.CONFIG;
+import static org.jirban.jira.impl.Constants.EDIT;
+import static org.jirban.jira.impl.Constants.ID;
+import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.PROJECTS;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -99,14 +105,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         ModelNode output = new ModelNode();
         for (BoardCfg config : configs) {
             ModelNode configNode = new ModelNode();
-            configNode.get("id").set(config.getID());
-            configNode.get("name").set(config.getName());
+            configNode.get(ID).set(config.getID());
+            configNode.get(NAME).set(config.getName());
             ModelNode configJson = ModelNode.fromJSONString(config.getConfigJson());
             if (forConfig) {
                 if (canEditBoard(user, configJson)) {
-                    configNode.get("edit").set(true);
+                    configNode.get(EDIT).set(true);
                 }
-                configNode.get("config").set(configJson);
+                configNode.get(CONFIG).set(configJson);
                 output.add(configNode);
             } else {
                 //Just a wild guess at what is needed to view the boards
@@ -145,7 +151,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     @Override
     public void saveBoard(ApplicationUser user, final int id, final ModelNode config) {
-        final String name = config.get("name").asString();
+        final String name = config.get(NAME).asString();
 
         //Validate it, and serialize it so that the order of fields is always the same
         final ModelNode validConfig;
@@ -161,10 +167,10 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (!canEditBoard(user, validConfig)) {
                     if (id >= 0) {
                         throw new JirbanPermissionException("Insufficient permissions to edit board '" +
-                                validConfig.get("name") + "' (" + id + ")");
+                                validConfig.get(NAME) + "' (" + id + ")");
                     } else {
                         throw new JirbanPermissionException("Insufficient permissions to create board '" +
-                                validConfig.get("name") + "'");
+                                validConfig.get(NAME) + "'");
                     }
                 }
 
@@ -203,7 +209,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 final ModelNode boardConfig = ModelNode.fromJSONString(cfg.getConfigJson());
                 if (!canEditBoard(user, boardConfig)) {
                     throw new JirbanPermissionException("Insufficient permissions to delete board '" +
-                            boardConfig.get("name") + "' (" + id + ")");
+                            boardConfig.get(NAME) + "' (" + id + ")");
                 }
                 activeObjects.delete(cfg);
                 return null;
@@ -265,11 +271,11 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
 
     private boolean hasPermissionBoard(ApplicationUser user, ModelNode boardConfig, ProjectPermissionKey...permissions) {
-        if (!boardConfig.hasDefined("projects")) {
+        if (!boardConfig.hasDefined(PROJECTS)) {
             //The project is empty, start checking once they add something
             return true;
         }
-        for (String projectCode : boardConfig.get("projects").keys()) {
+        for (String projectCode : boardConfig.get(PROJECTS).keys()) {
             if (!hasPermission(user, projectCode, permissions)) {
                 return false;
             }

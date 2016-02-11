@@ -163,7 +163,7 @@ public class JirbanIssueEvent {
         }
 
         public String getDisplayName() {
-            return "unassigned";
+            return Constants.UNASSIGNED;
         }
 
         public int compareTo(User user) {
@@ -171,7 +171,7 @@ public class JirbanIssueEvent {
         }
 
         public String getName() {
-            return "unassigned";
+            return Constants.UNASSIGNED;
         }
     };
 }

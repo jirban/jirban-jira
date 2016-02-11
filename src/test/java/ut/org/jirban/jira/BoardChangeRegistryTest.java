@@ -21,6 +21,26 @@
  */
 package ut.org.jirban.jira;
 
+import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.ASSIGNEES;
+import static org.jirban.jira.impl.Constants.AVATAR;
+import static org.jirban.jira.impl.Constants.BLACKLIST;
+import static org.jirban.jira.impl.Constants.CHANGES;
+import static org.jirban.jira.impl.Constants.DELETE;
+import static org.jirban.jira.impl.Constants.EMAIL;
+import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
+import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.NEW;
+import static org.jirban.jira.impl.Constants.PRIORITIES;
+import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.REMOVED_ISSUES;
+import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.SUMMARY;
+import static org.jirban.jira.impl.Constants.TYPE;
+import static org.jirban.jira.impl.Constants.VIEW;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,15 +84,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testFullRefreshOnTooHighView() throws Exception {
         ModelNode changes = getChangesJson(1);
-        Assert.assertFalse(changes.hasDefined("changes"));
+        Assert.assertFalse(changes.hasDefined(CHANGES));
         Assert.assertFalse(changes.hasDefined("blacklist"));
         //Check that the top-level fields of the board are there
-        Assert.assertTrue(changes.hasDefined("view"));
+        Assert.assertTrue(changes.hasDefined(VIEW));
         Assert.assertTrue(changes.hasDefined("assignees"));
         Assert.assertTrue(changes.hasDefined("priorities"));
         Assert.assertTrue(changes.hasDefined("issue-types"));
         Assert.assertTrue(changes.hasDefined("projects"));
-        Assert.assertTrue(changes.hasDefined("issues"));
+        Assert.assertTrue(changes.hasDefined(ISSUES));
 
         //TODO should check the same when passing in an old view id that has been reaped after being too old
     }
@@ -505,15 +525,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
-        Assert.assertFalse(changesNode.hasDefined("changes", "issues"));
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+        Assert.assertFalse(changesNode.hasDefined(CHANGES, ISSUES));
     }
 
     private void checkNoBlacklistChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
-        Assert.assertFalse(changesNode.hasDefined("changes", "blacklist"));
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+        Assert.assertFalse(changesNode.hasDefined(CHANGES, BLACKLIST));
     }
 
 
@@ -521,13 +541,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     private void checkDeletes(int fromView, int expectedView, String...expectedKeys) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedKeys.length == 0) {
-            Assert.assertFalse(changesNode.get("changes", "issues").hasDefined("delete"));
+            Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined(DELETE));
         } else {
             Set<String> expectedKeysSet = new HashSet<>(Arrays.asList(expectedKeys));
-            List<ModelNode> list = changesNode.get("changes", "issues", "delete").asList();
+            List<ModelNode> list = changesNode.get(CHANGES, ISSUES, DELETE).asList();
             Assert.assertEquals(expectedKeys.length, list.size());
             for (ModelNode node : list) {
                 Assert.assertTrue(expectedKeysSet.contains(node.asString()));
@@ -538,23 +558,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     private void checkAdds(int fromView, int expectedView, IssueData...expectedIssues) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedIssues.length == 0) {
-            Assert.assertFalse(changesNode.get("changes", "issues").hasDefined("new"));
+            Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined(NEW));
         } else {
             Map<String, IssueData> expectedIssuesMap = new HashMap<>();
             Arrays.asList(expectedIssues).forEach(ei -> expectedIssuesMap.put(ei.key, ei));
-            List<ModelNode> list = changesNode.get("changes", "issues", "new").asList();
+            List<ModelNode> list = changesNode.get(CHANGES, ISSUES, NEW).asList();
             Assert.assertEquals(expectedIssuesMap.size(), list.size());
             for (ModelNode node : list) {
-                final String key = node.get("key").asString();
+                final String key = node.get(KEY).asString();
                 IssueData expected = expectedIssuesMap.get(key);
                 Assert.assertNotNull(expected);
-                Assert.assertEquals(expected.type.name, nullOrString(node.get("type")));
-                Assert.assertEquals(expected.priority.name, nullOrString(node.get("priority")));
-                Assert.assertEquals(expected.summary, nullOrString(node.get("summary")));
-                Assert.assertEquals(expected.assignee, nullOrString(node.get("assignee")));
+                Assert.assertEquals(expected.type.name, nullOrString(node.get(TYPE)));
+                Assert.assertEquals(expected.priority.name, nullOrString(node.get(PRIORITY)));
+                Assert.assertEquals(expected.summary, nullOrString(node.get(SUMMARY)));
+                Assert.assertEquals(expected.assignee, nullOrString(node.get(ASSIGNEE)));
                 Assert.assertEquals(expected.state, nullOrString(node.get("state")));
             }
         }
@@ -563,25 +583,25 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     private void checkUpdates(int fromView, int expectedView, IssueData...expectedIssues) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedIssues.length == 0) {
-            Assert.assertFalse(changesNode.get("changes", "issues").hasDefined("update"));
+            Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined("update"));
         } else {
             Map<String, IssueData> expectedIssuesMap = new HashMap<>();
             Arrays.asList(expectedIssues).forEach(ei -> expectedIssuesMap.put(ei.key, ei));
-            List<ModelNode> list = changesNode.get("changes", "issues", "update").asList();
+            List<ModelNode> list = changesNode.get(CHANGES, ISSUES, "update").asList();
             Assert.assertEquals(expectedIssuesMap.size(), list.size());
             for (ModelNode node : list) {
-                final String key = node.get("key").asString();
+                final String key = node.get(KEY).asString();
                 IssueData expected = expectedIssuesMap.get(key);
                 Assert.assertNotNull(expected);
                 Assert.assertEquals(expected.type == null ? null : expected.type.name,
-                        nullOrString(node.get("type")));
+                        nullOrString(node.get(TYPE)));
                 Assert.assertEquals(expected.priority == null ? null : expected.priority.name,
-                        nullOrString(node.get("priority")));
-                Assert.assertEquals(expected.summary, nullOrString(node.get("summary")));
-                Assert.assertEquals(expected.assignee, nullOrString(node.get("assignee")));
+                        nullOrString(node.get(PRIORITY)));
+                Assert.assertEquals(expected.summary, nullOrString(node.get(SUMMARY)));
+                Assert.assertEquals(expected.assignee, nullOrString(node.get(ASSIGNEE)));
                 Assert.assertEquals(expected.state, nullOrString(node.get("state")));
                 if (expected.unassigned) {
                     Assert.assertTrue(node.get("unassigned").asBoolean());
@@ -595,20 +615,20 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     private void checkAssignees(int fromView, int expectedView, String...expectedAssignees) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedAssignees.length == 0) {
-            Assert.assertFalse(changesNode.get("changes").hasDefined("assignees"));
+            Assert.assertFalse(changesNode.get(CHANGES).hasDefined(ASSIGNEES));
         } else {
-            List<ModelNode> list = changesNode.get("changes", "assignees").asList();
+            List<ModelNode> list = changesNode.get(CHANGES, ASSIGNEES).asList();
             Assert.assertEquals(expectedAssignees.length, list.size());
             Set<String> assignees = new HashSet<>(Arrays.asList(expectedAssignees));
             for (ModelNode assigneeNode : list) {
-                String key = assigneeNode.get("key").asString();
+                String key = assigneeNode.get(KEY).asString();
                 Assert.assertTrue(assignees.contains(key));
-                Assert.assertEquals(key + "@example.com", assigneeNode.get("email").asString());
-                Assert.assertEquals("/avatars/" + key + ".png", assigneeNode.get("avatar").asString());
-                String displayName = assigneeNode.get("name").toString().toLowerCase();
+                Assert.assertEquals(key + "@example.com", assigneeNode.get(EMAIL).asString());
+                Assert.assertEquals("/avatars/" + key + ".png", assigneeNode.get(AVATAR).asString());
+                String displayName = assigneeNode.get(NAME).toString().toLowerCase();
                 Assert.assertTrue(displayName.length() > key.length());
                 Assert.assertTrue(displayName.contains(key));
             }
@@ -618,13 +638,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     private void checkBlacklist(int fromView, int expectedView, String[] states, String[] issueTypes, String[] priorities, String[] issueKeys, String[] removedIssueKeys) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
-        Assert.assertEquals(expectedView, changesNode.get("changes", "view").asInt());
-        ModelNode blacklistNode = changesNode.get("changes", "blacklist");
-        checkEntries(blacklistNode, "states", states);
-        checkEntries(blacklistNode, "issue-types", issueTypes);
-        checkEntries(blacklistNode, "priorities", priorities);
-        checkEntries(blacklistNode, "issues", issueKeys);
-        checkEntries(blacklistNode, "removed-issues", removedIssueKeys);
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+        ModelNode blacklistNode = changesNode.get(CHANGES, BLACKLIST);
+        checkEntries(blacklistNode, STATES, states);
+        checkEntries(blacklistNode, ISSUE_TYPES, issueTypes);
+        checkEntries(blacklistNode, PRIORITIES, priorities);
+        checkEntries(blacklistNode, ISSUES, issueKeys);
+        checkEntries(blacklistNode, REMOVED_ISSUES, removedIssueKeys);
     }
 
     private void checkEntries(ModelNode parent, String key, String... entries) {
@@ -651,7 +671,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
-        Assert.assertEquals(expectedViewId, boardNode.get("view").asInt());
+        Assert.assertEquals(expectedViewId, boardNode.get(VIEW).asInt());
     }
 
     private ModelNode getChangesJson(int fromView) throws SearchException {

@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.COLOUR;
+import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
 import java.util.List;
@@ -40,8 +42,8 @@ public class OwnerBoardProjectConfig extends BoardProjectConfig {
     }
 
     static OwnerBoardProjectConfig load(String projectCode, ModelNode project) {
-        String colour = getRequiredChild(project, "Project", projectCode, "colour").asString();
-        List<ModelNode> statesList = getRequiredChild(project, "Project", projectCode, "states").asList();
+        String colour = getRequiredChild(project, "Project", projectCode, COLOUR).asString();
+        List<ModelNode> statesList = getRequiredChild(project, "Project", projectCode, STATES).asList();
         if (project.hasDefined("state-links")) {
             throw new IllegalStateException("The main project should not have state-links, only a states array");
         }
@@ -67,7 +69,7 @@ public class OwnerBoardProjectConfig extends BoardProjectConfig {
     @Override
     ModelNode serializeModelNodeForConfig() {
         final ModelNode projectNode = super.serializeModelNodeForConfig();
-        final ModelNode statesNode = projectNode.get("states");
+        final ModelNode statesNode = projectNode.get(STATES);
         statesNode.setEmptyList();
         for (String state : states.keySet()) {
             statesNode.add(state);

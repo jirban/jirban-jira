@@ -21,6 +21,12 @@
  */
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.ASSIGNEES;
+import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.MAIN;
+import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.VIEW;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,8 +104,8 @@ public class Board {
     public ModelNode serialize() {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
-        outputNode.get("view").set(currentView);
-        ModelNode assigneesNode = outputNode.get("assignees");
+        outputNode.get(VIEW).set(currentView);
+        ModelNode assigneesNode = outputNode.get(ASSIGNEES);
         assigneesNode.setEmptyList();
         List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
         Collections.sort(assigneeNames, (a1, a2) -> a1.getDisplayName().compareTo(a2.getDisplayName()));
@@ -109,12 +115,12 @@ public class Board {
 
         boardConfig.serializeModelNodeForBoard(outputNode);
 
-        ModelNode allIssues = outputNode.get("issues");
+        ModelNode allIssues = outputNode.get(ISSUES);
         this.allIssues.forEach((code, issue) -> {
             allIssues.get(code).set(issue.getModelNodeForFullRefresh(this));
         });
 
-        ModelNode mainProjectsParent = outputNode.get("projects", "main");
+        ModelNode mainProjectsParent = outputNode.get(PROJECTS, MAIN);
 
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
@@ -127,42 +133,29 @@ public class Board {
         return outputNode;
     }
 
-    private void serializeMissing(ModelNode root, String key, Map<String, Set<String>> missing) {
-        if (missing.size() == 0) {
-            return;
-        }
-        ModelNode missingNode = root.get("missing", key);
-        for (Map.Entry<String, Set<String>> entry : missing.entrySet()) {
-            ModelNode issues = missingNode.get(entry.getKey(), "issues");
-            for (String issue : entry.getValue()) {
-                issues.add(issue);
-            }
-        }
-    }
-
-    public boolean isDataSame(Board that) {
-        //I don't want to do a standard equals() since I am not comparing all the data
-        if (that == null) return false;
-
-        if (assignees.size() != that.assignees.size()) {
-            return false;
-        }
-        for (Map.Entry<String, Assignee> entry : assignees.entrySet()) {
-            if (!entry.getValue().isDataSame(that.assignees.get(entry.getKey()))) {
-                return false;
-            }
-        }
-
-        if (projects.size() != that.projects.size()) {
-            return false;
-        }
-        for (Map.Entry<String, BoardProject> entry : projects.entrySet()) {
-            if (!entry.getValue().isDataSame(that.projects.get(entry.getKey()))) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    public boolean isDataSame(Board that) {
+//        //I don't want to do a standard equals() since I am not comparing all the data
+//        if (that == null) return false;
+//
+//        if (assignees.size() != that.assignees.size()) {
+//            return false;
+//        }
+//        for (Map.Entry<String, Assignee> entry : assignees.entrySet()) {
+//            if (!entry.getValue().isDataSame(that.assignees.get(entry.getKey()))) {
+//                return false;
+//            }
+//        }
+//
+//        if (projects.size() != that.projects.size()) {
+//            return false;
+//        }
+//        for (Map.Entry<String, BoardProject> entry : projects.entrySet()) {
+//            if (!entry.getValue().isDataSame(that.projects.get(entry.getKey()))) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     public Issue getIssue(String key) {
         return allIssues.get(key);

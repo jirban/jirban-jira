@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.STATES;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -62,7 +64,7 @@ public abstract class ProjectConfig {
 
     private ModelNode getModelNodeWithStates(ModelNode parent) {
         ModelNode projectNode = parent.get(code);
-        ModelNode statesNode = projectNode.get("states");
+        ModelNode statesNode = projectNode.get(STATES);
         this.states.keySet().forEach(statesNode::add);
         return projectNode;
     }

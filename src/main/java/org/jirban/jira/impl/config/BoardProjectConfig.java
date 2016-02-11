@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 
 /** Abstract base class for project configurations of projects whose issues should appear as cards on the board.
  * @author Kabir Khan
@@ -51,10 +52,10 @@ public abstract class BoardProjectConfig extends ProjectConfig {
     }
 
     static String loadQueryFilter(ModelNode project) {
-        if (!project.hasDefined("query-filter")) {
+        if (!project.hasDefined(Constants.QUERY_FILTER)) {
             return null;
         }
-        String filter = project.get("query-filter").asString().trim();
+        String filter = project.get(Constants.QUERY_FILTER).asString().trim();
         if (filter.length() == 0) {
             return null;
         }
@@ -76,7 +77,7 @@ public abstract class BoardProjectConfig extends ProjectConfig {
     @Override
     ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
         ModelNode projectNode = super.serializeModelNodeForBoard(boardConfig, parent);
-        projectNode.get("colour").set(colour);
+        projectNode.get(Constants.COLOUR).set(colour);
         return projectNode;
     }
 
@@ -93,8 +94,8 @@ public abstract class BoardProjectConfig extends ProjectConfig {
 
     ModelNode serializeModelNodeForConfig() {
         final ModelNode projectNode = new ModelNode();
-        projectNode.get("query-filter").set(queryFilter == null ? new ModelNode() : new ModelNode(queryFilter));
-        projectNode.get("colour").set(colour);
+        projectNode.get(Constants.QUERY_FILTER).set(queryFilter == null ? new ModelNode() : new ModelNode(queryFilter));
+        projectNode.get(Constants.COLOUR).set(colour);
         return projectNode;
     }
 }

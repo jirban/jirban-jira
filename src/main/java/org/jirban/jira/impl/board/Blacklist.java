@@ -21,12 +21,17 @@
  */
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
+import static org.jirban.jira.impl.Constants.PRIORITIES;
+import static org.jirban.jira.impl.Constants.STATES;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 
 /**
  * Keeps track of states, issue types and priorities that affected issues belong to, but have not been
@@ -65,10 +70,10 @@ public class Blacklist {
 
     void serialize(ModelNode parent) {
         ModelNode blacklist = new ModelNode();
-        serializeSet(blacklist, "states", missingStates);
-        serializeSet(blacklist, "issue-types", missingIssueTypes);
-        serializeSet(blacklist, "priorities", missingPriorities);
-        serializeSet(blacklist, "issues", issues);
+        serializeSet(blacklist, STATES, missingStates);
+        serializeSet(blacklist, ISSUE_TYPES, missingIssueTypes);
+        serializeSet(blacklist, PRIORITIES, missingPriorities);
+        serializeSet(blacklist, Constants.ISSUES, issues);
         if (blacklist.isDefined()) {
             parent.get("blacklist").set(blacklist);
         }
