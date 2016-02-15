@@ -62,4 +62,7 @@ public class Constants {
     public static final String UPDATE = "update";
     public static final String UNASSIGNED = "unassigned";
     public static final String VIEW = "view";
+    public static final String VERSION = "version";
+    public static final String BOARDS = "boards";
+    public static final String UPDATES = "updates";
 }

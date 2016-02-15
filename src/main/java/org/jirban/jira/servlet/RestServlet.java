@@ -1,5 +1,10 @@
 package org.jirban.jira.servlet;
 
+import static org.jirban.jira.impl.Constants.BOARDS;
+import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.UPDATES;
+import static org.jirban.jira.impl.Constants.VERSION;
+
 import java.io.IOException;
 
 import javax.inject.Inject;
@@ -23,6 +28,11 @@ import com.atlassian.jira.user.ApplicationUser;
 public class RestServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(RestServlet.class);
 
+    /**
+     * If we change anything in the payloads etc. we should bump this so that the client can take action
+     */
+    private static final int API_VERSION = 1;
+
     private final JiraFacade jiraFacade;
 
     @Inject
@@ -37,7 +47,11 @@ public class RestServlet extends HttpServlet{
         System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("GET", pathInfo);
-            if (pathAndId.isPath("boards")) {
+            if (pathAndId.isPath(VERSION)) {
+                pathAndId.validateId(false);
+                ModelNode versionNode = new ModelNode();
+                versionNode.get(VERSION).set(API_VERSION);
+            }if (pathAndId.isPath(BOARDS)) {
                 pathAndId.validateId(false);
                 System.out.println("Getting boards");
                 boolean full = req.getParameter("full") != null;
@@ -49,7 +63,7 @@ public class RestServlet extends HttpServlet{
                 }
                 Util.sendResponseJson(resp, json);
                 return;
-            } else if (pathAndId.isPath("issues")) {
+            } else if (pathAndId.isPath(ISSUES)) {
                 pathAndId.validateId(true);
                 PathAndId next = pathAndId.getNext();
                 if (next == null) {
@@ -63,7 +77,7 @@ public class RestServlet extends HttpServlet{
                     return;
                 } else {
                     next.validateId(true);
-                    if (next.isPath("updates")) {
+                    if (next.isPath(UPDATES)) {
                         try {
                             String json = jiraFacade.getChangesJson(user, pathAndId.getId(), next.getId());
                             Util.sendResponseJson(resp, json);
@@ -91,7 +105,7 @@ public class RestServlet extends HttpServlet{
         System.out.println("Rest servlet DELETE " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
-            if (pathAndId.isPath("boards")) {
+            if (pathAndId.isPath(BOARDS)) {
                 pathAndId.validateId(true);
                 jiraFacade.deleteBoardConfiguration(user, pathAndId.getId());
                 String json = jiraFacade.getBoardConfigurations(user);
@@ -114,7 +128,7 @@ public class RestServlet extends HttpServlet{
         System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("POST", pathInfo);
-            if (pathAndId.isPath("boards")) {
+            if (pathAndId.isPath(BOARDS)) {
                 pathAndId.validateId(false);
                 final ModelNode config = Util.getRequestBodyNode(req);
                 jiraFacade.saveBoardConfiguration(user, -1, Util.getDeployedUrl(req), config);
@@ -138,7 +152,7 @@ public class RestServlet extends HttpServlet{
         System.out.println("Rest servlet PUT " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("PUT", pathInfo);
-            if (pathAndId.isPath("boards")) {
+            if (pathAndId.isPath(BOARDS)) {
                 pathAndId.validateId(true);
                 final ModelNode config = Util.getRequestBodyNode(req);
                 jiraFacade.saveBoardConfiguration(user, pathAndId.getId(), Util.getDeployedUrl(req), config);
