@@ -320,7 +320,7 @@ class BoardProject {
 
         private List<String> updateState() throws SearchException {
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
-            queryBuilder.where().project(projectConfig.getCode()).status(newIssue.getState());
+            queryBuilder.where().project(projectConfig.getCode()).and().status(newIssue.getState());
             if (projectConfig.getQueryFilter() != null) {
                 queryBuilder.where().addCondition(projectConfig.getQueryFilter());
             }

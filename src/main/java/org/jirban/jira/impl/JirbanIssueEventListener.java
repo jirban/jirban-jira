@@ -39,11 +39,19 @@ import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
+import com.atlassian.jira.issue.index.IndexException;
+import com.atlassian.jira.issue.index.IssueIndexManager;
+import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.issue.search.SearchResults;
+import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.user.ApplicationUsers;
+import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -74,6 +82,13 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     @ComponentImport
     private final ProjectManager projectManager;
 
+    @ComponentImport
+    private final SearchService searchService;
+
+
+    @ComponentImport
+    private final IssueIndexManager issueIndexManager;
+
     private final BoardManager boardManager;
 
     /**
@@ -83,10 +98,13 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
      * @param boardManager injected {@code BoardManager} implementation.
      */
     @Autowired
-    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager, BoardManager boardManager) {
+    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager,
+                                    IssueIndexManager issueIndexManager, SearchService searchService, BoardManager boardManager) {
         this.eventPublisher = eventPublisher;
         this.projectManager = projectManager;
+        this.issueIndexManager = issueIndexManager;
         this.boardManager = boardManager;
+        this.searchService = searchService;
     }
 
     /**
@@ -114,7 +132,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
      * @param issueEvent the IssueEvent passed to us
      */
     @EventListener
-    public void onIssueEvent(IssueEvent issueEvent) {
+    public void onIssueEvent(IssueEvent issueEvent) throws IndexException {
         long eventTypeId = issueEvent.getEventTypeId();
         // if it's an event we're interested in, log it
         System.out.println("-----> Event " + issueEvent);
@@ -161,7 +179,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         }
     }
 
-    private void onCreateEvent(IssueEvent issueEvent) {
+    private void onCreateEvent(IssueEvent issueEvent) throws IndexException {
         final Issue issue = issueEvent.getIssue();
         if (!isAffectedProject(issue.getProjectObject().getKey())) {
             return;
@@ -170,22 +188,22 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), issue.getStatusObject().getName());
-        passEventToBoardManager(event);
+        passEventToBoardManager(issueEvent, event);
 
         //TODO there could be linked issues
     }
 
-    private void onDeleteEvent(IssueEvent issueEvent) {
+    private void onDeleteEvent(IssueEvent issueEvent) throws IndexException {
         final Issue issue = issueEvent.getIssue();
         if (!isAffectedProject(issue.getProjectObject().getKey())) {
             return;
         }
 
         final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(issue.getKey(), issue.getProjectObject().getKey());
-        passEventToBoardManager(event);
+        passEventToBoardManager(issueEvent, event);
     }
 
-    private void onWorklogEvent(IssueEvent issueEvent) {
+    private void onWorklogEvent(IssueEvent issueEvent) throws IndexException {
         final Issue issue = issueEvent.getIssue();
         if (!isAffectedProject(issue.getProjectObject().getKey())) {
             return;
@@ -224,10 +242,10 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
                 issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
                 summary, assignee, state, rankOrStateChanged);
-        passEventToBoardManager(event);
+        passEventToBoardManager(issueEvent, event);
     }
 
-    private void onMoveEvent(IssueEvent issueEvent) {
+    private void onMoveEvent(IssueEvent issueEvent) throws IndexException {
         //This is kind of the same as the 'onWorklogEvent' but we also need to take into account the old value of the project
         //and remove from there if it is a board project. Also, if the new value is a board project we need to add it there.
         //So, it is a bit like a delete (although we need the worklog for that), and a create.
@@ -252,7 +270,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
 
         if (isAffectedProject(oldProjectCode)) {
             final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(oldIssueKey, oldProjectCode);
-            passEventToBoardManager(event);
+            passEventToBoardManager(issueEvent, event);
         }
 
         //2) Then we can do a create on the project with the issue in the event
@@ -268,7 +286,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), newState);
-        passEventToBoardManager(event);
+        passEventToBoardManager(issueEvent, event);
 
     }
 
@@ -288,11 +306,45 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         return changeItems;
     }
 
-    private void passEventToBoardManager(JirbanIssueEvent event) {
+    private void passEventToBoardManager(IssueEvent original, JirbanIssueEvent event) throws IndexException {
+        if (event.getDetails().isRankOrStateChanged()) {
+//            ImportUtils.
+//            issueIndexManager.reIndex(original.getIssue());
+        }
+        testSearching(original);
         boardManager.handleEvent(event);
     }
 
     private boolean isAffectedProject(String projectCode) {
         return boardManager.hasBoardsForProjectCode(projectCode);
+    }
+
+    private void testSearching(IssueEvent issueEvent) {
+        Issue issue = issueEvent.getIssue();
+
+        System.out.println("------> " + issue.getKey() + " " + issue.getStatusObject().getName() + " " + issue.getPriorityObject().getName());
+
+        doSearch(issue);
+        try {
+            issueIndexManager.reIndex(issue);
+        } catch (IndexException e) {
+            e.printStackTrace();
+        }
+        doSearch(issue);
+    }
+
+    private void doSearch(Issue issue) {
+        JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
+        queryBuilder.where().issue(issue.getKey());
+        try {
+
+            SearchResults results = searchService.search(ApplicationUsers.byKey("admin").getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+            List<Issue> list = results.getIssues();
+            for (Issue li : list) {
+                System.out.println("------> " + li.getKey() + " " + li.getStatusObject().getName() + " " + li.getPriorityObject().getName());
+            }
+        } catch (SearchException e) {
+            e.printStackTrace();
+        }
     }
 }

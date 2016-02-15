@@ -90,6 +90,7 @@ public class SearchServiceBuilder {
                 searchProject = (String) invocation.getArguments()[0];
                 return jqlClauseBuilder;
             });
+            when(jqlClauseBuilder.and()).then(invocation -> jqlClauseBuilder);
             when(jqlClauseBuilder.status(anyString())).then(invocation -> {
                 searchStatus = (String) invocation.getArguments()[0];
                 return jqlClauseBuilder;
