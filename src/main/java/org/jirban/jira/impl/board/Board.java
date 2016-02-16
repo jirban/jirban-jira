@@ -469,7 +469,7 @@ public class Board {
                     copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new) :
                     board.allIssues;
 
-            if (newIssue != null || blacklist.isUpdated()) {
+            if (newIssue != null || blacklist.isUpdated() || evtDetail.isRankOrStateChanged()) {
                 //The project's issue tables will be updated if needed
                 BoardProject projectCopy = projectUpdater.update();
                 final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);

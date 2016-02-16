@@ -255,6 +255,9 @@ class BoardProject {
                                  Assignee issueAssignee, boolean rankOrStateChanged, String state) {
             this.existing = existing;
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, state);
+            if (newIssue == null && rankOrStateChanged) {
+                newIssue = existing;
+            }
             this.updatedState = rankOrStateChanged && newIssue != null;
             return newIssue;
         }
