@@ -21,7 +21,12 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+
 import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
 
 /**
  * @author Kabir Khan
@@ -87,14 +92,14 @@ public class JirbanIssueEvent {
     }
 
     public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                              String summary,  User assignee, String state) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, state, true);
+                                              String summary,  User assignee, Collection<ProjectComponent> components, String state) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, state, true);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                              String summary, User assignee, String state, boolean rankOrStateChanged) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, state, rankOrStateChanged);
+                                                     String summary, User assignee, Collection<ProjectComponent> components, String state, boolean rankOrStateChanged) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, state, rankOrStateChanged);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
@@ -114,13 +119,15 @@ public class JirbanIssueEvent {
         private final String priority;
         private final String summary;
         private final User assignee;
+        private final Collection<ProjectComponent> components;
         private final String state;
         private final boolean rankOrStateChanged;
 
-        private Detail(String issueType, String priority, String summary, User assignee,
-                      String state, boolean rankOrStateChanged) {
+        private Detail(String issueType, String priority, String summary, User assignee, Collection<ProjectComponent> components,
+                       String state, boolean rankOrStateChanged) {
             this.summary = summary;
             this.assignee = assignee;
+            this.components = components;
             this.issueType = issueType;
             this.priority = priority;
             this.state = state;
@@ -141,6 +148,10 @@ public class JirbanIssueEvent {
 
         public User getAssignee() {
             return assignee;
+        }
+
+        public Collection<ProjectComponent> getComponents() {
+            return components;
         }
 
         public String getState() {
@@ -185,4 +196,7 @@ public class JirbanIssueEvent {
             return Constants.UNASSIGNED;
         }
     };
+
+    public static final Collection<ProjectComponent> NO_COMPONENT = Collections.unmodifiableSet(new HashSet<>());
+
 }

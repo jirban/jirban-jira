@@ -17,6 +17,7 @@ import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {IssuesService} from "../../services/issuesService";
+import {Component, ComponentDeserializer} from "./component";
 
 
 export class BoardData {
@@ -37,6 +38,8 @@ export class BoardData {
 
     /** All the assignees */
     private _assignees:Indexed<Assignee>;
+    /** All the components */
+    private _components:Indexed<Component>;
     /** All the priorities */
     private _priorities:Indexed<Priority>;
     /** All the issue types */
@@ -51,6 +54,9 @@ export class BoardData {
 
     /** Flag to only recalculate the assignees in the control panel when they have been changed */
     private _hasNewAssignees:boolean = false;
+
+    /** Flag to only recalculate the components in the control panel when they have been changed */
+    private _hasNewComponents:boolean = false;
 
     /**
      * Called on loading the board the first time
@@ -84,14 +90,24 @@ export class BoardData {
             if (changeSet.view != this.view) {
 
                 if (changeSet.addedAssignees) {
-                    //Make sure that the added assignees are in the correct order for the control panel list
+                    //Make sure that the added assignees are in alphabetical order for the control panel list
                     for (let assignee of changeSet.addedAssignees) {
                         this._assignees.add(assignee.key, assignee);
                     }
-                    let assignees:Assignee[] = this.assignees.array;
+                    let assignees:Assignee[] = this._assignees.array;
                     assignees.sort((a1:Assignee, a2:Assignee) => {return a1.name.localeCompare(a2.name)});
                     this._assignees.reorder(assignees, (assignee:Assignee) => assignee.key);
                     this._hasNewAssignees = true;
+                }
+                if (changeSet.addedComponents) {
+                    //Make sure that the added components are in alphabetical order for the control panel list
+                    for (let component of changeSet.addedComponents) {
+                        this._components.add(component.name, component);
+                    }
+                    let components:Component[] = this._components.array;
+                    components.sort((c1:Component, c2:Component) => {return c1.name.localeCompare(c2.name)});
+                    this._components.reorder(components, (component:Component) => component.name);
+                    this._hasNewComponents = true;
                 }
 
 
@@ -120,6 +136,15 @@ export class BoardData {
         return ret;
     }
 
+    getAndClearHasNewComponents() : boolean {
+        //TODO look into an Observable instead
+        let ret:boolean = this._hasNewComponents;
+        if (ret) {
+            this._hasNewComponents = false;
+        }
+        return ret;
+    }
+
     /**
      * Called when changes are made to the issue detail to display in the control panel
      * @param issueDisplayDetails
@@ -140,6 +165,7 @@ export class BoardData {
 
         this._projects = new ProjectDeserializer().deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);
+        this._components = new ComponentDeserializer().deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
         this._issueTypes = new IssueTypeDeserializer().deserialize(input);
 
@@ -181,6 +207,10 @@ export class BoardData {
 
     get assignees():Indexed<Assignee> {
         return this._assignees;
+    }
+
+    get components():Indexed<Component> {
+        return this._components;
     }
 
     get priorities():Indexed<Priority> {

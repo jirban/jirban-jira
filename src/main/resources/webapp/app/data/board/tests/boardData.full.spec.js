@@ -22,6 +22,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.FULL_BOARD_PROJECTS, testData_1.TestBoardData.FULL_BOARD_ISSUES));
                         expect(boardData.view).toEqual(0);
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         checkStandardPriorities(boardData);
                         checkStandardIssueTypes(boardData);
                         expect(boardData.swimlane).not.toBeDefined();
@@ -37,6 +38,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.FULL_BOARD_PROJECTS, testData_1.TestBoardData.FULL_BOARD_ISSUES, testData_1.TestBoardData.STANDARD_BLACKLIST));
                         expect(boardData.view).toEqual(0);
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         checkStandardPriorities(boardData);
                         checkStandardIssueTypes(boardData);
                         expect(boardData.swimlane).not.toBeDefined();
@@ -56,6 +58,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.OWNER_ONLY_BOARD_PROJECTS, testData_1.TestBoardData.OWNER_ONLY_BOARD_ISSUES));
                         expect(boardData.view).toEqual(0);
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         checkStandardPriorities(boardData);
                         checkStandardIssueTypes(boardData);
                         expect(boardData.swimlane).not.toBeDefined();
@@ -71,6 +74,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.NON_OWNER_ONLY_BOARD_PROJECTS, testData_1.TestBoardData.NON_OWNER_ONLY_BOARD_ISSUES));
                         expect(boardData.view).toEqual(0);
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         checkStandardPriorities(boardData);
                         checkStandardIssueTypes(boardData);
                         expect(boardData.swimlane).not.toBeDefined();
@@ -307,7 +311,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [[], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
@@ -323,7 +327,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], [], [], []];
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
@@ -364,13 +368,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
                         var layout = [["TDP-1"], [], [], []];
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
                     });
                 });
-                describe('Update issues - no state change', function () {
+                describe('Update issues - no state change ; ', function () {
                     var boardData;
                     beforeEach(function () {
                         boardData = new boardData_1.BoardData();
@@ -390,12 +393,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TDP-1");
                         expect(updatedIssue.key).toBe("TDP-1");
-                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
                     });
                     it('Update priority', function () {
                         var changes = {
@@ -411,12 +414,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TDP-2");
                         expect(updatedIssue.key).toBe("TDP-2");
-                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "low", "kabir", "Two");
+                        checkBoardIssue(updatedIssue, "TDP-2", "bug", "low", "kabir", ["Second"], "Two");
                     });
                     it('Update summary', function () {
                         var changes = {
@@ -432,12 +435,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
                         expect(updatedIssue.key).toBe("TBG-1");
-                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", "Uno");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["First"], "Uno");
                     });
                     it('Unassign', function () {
                         var changes = {
@@ -453,12 +456,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
                         expect(updatedIssue.key).toBe("TBG-1");
-                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", null, "One");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", null, ["First"], "One");
                     });
                     it('Update assignee (not new on board)', function () {
                         var changes = {
@@ -474,12 +477,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
                         expect(updatedIssue.key).toBe("TBG-1");
-                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "kabir", "One");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "kabir", ["First"], "One");
                     });
                     it('Update assignee (new on board)', function () {
                         checkAssignees(boardData, "brian", "kabir");
@@ -502,13 +505,84 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
-                        checkAssignees(boardData, "brian", "kabir", "jason");
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                        checkAssignees(boardData, "brian", "jason", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
                         expect(updatedIssue.key).toBe("TBG-1");
-                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", "One");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", ["First"], "One");
+                    });
+                    it('Clear component', function () {
+                        checkComponents(boardData, "First", "Second");
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "update": [{
+                                            key: "TBG-1",
+                                            "clear-components": true
+                                        }]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                        var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
+                        expect(updatedIssue.key).toBe("TBG-1");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", null, "One");
+                        checkComponents(boardData, "First", "Second");
+                    });
+                    it('Update components (not new on board)', function () {
+                        checkComponents(boardData, "First", "Second");
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "update": [{
+                                            key: "TBG-1",
+                                            components: ["Second"]
+                                        }]
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                        var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
+                        expect(updatedIssue.key).toBe("TBG-1");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["Second"], "One");
+                        checkComponents(boardData, "First", "Second");
+                    });
+                    it('Update components (new on board)', function () {
+                        checkComponents(boardData, "First", "Second");
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "update": [{
+                                            key: "TBG-1",
+                                            components: ["Third", "Fourth"]
+                                        }]
+                                },
+                                components: ["Third", "Fourth"]
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                        checkComponents(boardData, "First", "Fourth", "Second", "Third");
+                        var layout = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
+                        expect(updatedIssue.key).toBe("TBG-1");
+                        checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["Third", "Fourth"], "One");
                     });
                 });
                 describe('Update issues - state change', function () {
@@ -537,12 +611,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [[], ["TDP-1", "TDP-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TDP-1");
                         expect(updatedIssue.key).toBe("TDP-1");
-                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
                     });
                     it('Update main project to unpopulated state', function () {
                         var changes = {
@@ -564,12 +638,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [[], ["TDP-2", "TBG-1"], ["TDP-1"], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TDP-1");
                         expect(updatedIssue.key).toBe("TDP-1");
-                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
                     });
                     it('Update other project', function () {
                         var changes = {
@@ -591,12 +665,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         var layout = [["TDP-1"], ["TDP-2"], ["TBG-1"], []];
                         checkBoardLayout(boardData, layout);
                         var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
                         expect(updatedIssue.key).toBe("TBG-1");
-                        checkBoardIssue(updatedIssue, "TBG-1", "bug", "highest", "brian", "One");
+                        checkBoardIssue(updatedIssue, "TBG-1", "bug", "highest", "brian", ["First"], "One");
                     });
                 });
                 describe("Create issue", function () {
@@ -607,6 +681,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     });
                     it("Main project to populated state - no new assignee", function () {
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var changes = {
                             changes: {
                                 view: 1,
@@ -629,16 +704,17 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         checkAssignees(boardData, "brian", "kabir");
                         var layout = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var createdIssue = checkIssueDatas(boardData, layout, "TDP-3");
                         expect(createdIssue.key).toBe("TDP-3");
-                        checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", "Three");
+                        checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", null, "Three");
                     });
                     it("Main project to unpopulated state  - new assignee", function () {
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var changes = {
                             changes: {
                                 view: 1,
@@ -667,16 +743,18 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
-                        checkAssignees(boardData, "brian", "kabir", "jason");
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                        checkAssignees(boardData, "brian", "jason", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], []];
                         checkBoardLayout(boardData, layout);
                         var createdIssue = checkIssueDatas(boardData, layout, "TDP-3");
                         expect(createdIssue.key).toBe("TDP-3");
-                        checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "jason", "Three");
+                        checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "jason", null, "Three");
                     });
                     it("Other project populated state", function () {
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var changes = {
                             changes: {
                                 view: 1,
@@ -699,16 +777,18 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var layout = [["TDP-1"], ["TDP-2", "TBG-2", "TBG-1"], [], []];
                         checkBoardLayout(boardData, layout);
                         var createdIssue = checkIssueDatas(boardData, layout, "TBG-2");
                         expect(createdIssue.key).toBe("TBG-2");
-                        checkBoardIssue(createdIssue, "TBG-2", "bug", "high", "kabir", "Two");
+                        checkBoardIssue(createdIssue, "TBG-2", "bug", "high", "kabir", null, "Two");
                     });
                     it("Other project unpopulated state", function () {
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var changes = {
                             changes: {
                                 view: 1,
@@ -731,13 +811,14 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         };
                         boardData.processChanges(changes);
                         expect(boardData.view).toBe(1);
-                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        expect(boardData.blacklist).not.toEqual(jasmine.anything());
                         checkAssignees(boardData, "brian", "kabir");
+                        checkComponents(boardData, "First", "Second");
                         var layout = [["TDP-1"], ["TDP-2", "TBG-1"], ["TBG-2"], []];
                         checkBoardLayout(boardData, layout);
                         var createdIssue = checkIssueDatas(boardData, layout, "TBG-2");
                         expect(createdIssue.key).toBe("TBG-2");
-                        checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", "Two");
+                        checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", null, "Two");
                     });
                 });
                 //TODO a test involving several updates, deletes and state changes
@@ -776,16 +857,16 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                             var mod4 = (id - 1) % 4;
                             switch (mod4) {
                                 case 0:
-                                    checkBoardIssue(issue, issue.key, "task", "highest", "brian");
+                                    checkBoardIssue(issue, issue.key, "task", "highest", "brian", ["First"]);
                                     break;
                                 case 1:
-                                    checkBoardIssue(issue, issue.key, "bug", "high", "kabir");
+                                    checkBoardIssue(issue, issue.key, "bug", "high", "kabir", ["Second"]);
                                     break;
                                 case 2:
-                                    checkBoardIssue(issue, issue.key, "feature", "low", null);
+                                    checkBoardIssue(issue, issue.key, "feature", "low", null, null);
                                     break;
                                 case 3:
-                                    checkBoardIssue(issue, issue.key, "issue", "lowest", null);
+                                    checkBoardIssue(issue, issue.key, "issue", "lowest", null, null);
                                     break;
                             }
                             checkIssueConvenienceMethods(issue);
@@ -793,14 +874,21 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     }
                     return skippedIssue;
                 }
-                function checkBoardIssue(issue, key, type, priority, assignee, summary) {
+                function checkBoardIssue(issue, key, type, priority, assignee, components, summary) {
+                    expect(issue.key).toEqual(key);
                     checkBoardIssueType(issue.type, type);
                     checkBoardPriority(issue.priority, priority);
                     if (assignee) {
                         checkBoardAssignee(issue.assignee, assignee);
                     }
                     else {
-                        expect(issue.assignee).not.toBe(jasmine.anything);
+                        expect(issue.assignee).not.toEqual(jasmine.anything());
+                    }
+                    if (components) {
+                        checkBoardComponents(issue.components, components);
+                    }
+                    else {
+                        expect(issue.components).not.toEqual(jasmine.anything());
                     }
                     if (summary) {
                         expect(issue.summary).toEqual(summary);
@@ -878,6 +966,16 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkBoardAssignee(boardData.assignees.forIndex(i), assignees[i]);
                     }
                 }
+                function checkComponents(boardData) {
+                    var components = [];
+                    for (var _i = 1; _i < arguments.length; _i++) {
+                        components[_i - 1] = arguments[_i];
+                    }
+                    expect(boardData.components.array.length).toBe(components.length);
+                    for (var i = 0; i < components.length; i++) {
+                        expect(boardData.components.forIndex(i).name).toEqual(components[i]);
+                    }
+                }
                 function checkStandardPriorities(boardData) {
                     var priorities = boardData.priorities;
                     expect(priorities.array.length).toEqual(4);
@@ -899,6 +997,12 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                     expect(assignee.avatar).toEqual("/avatars/" + key + ".png");
                     expect(assignee.email).toEqual(key + "@example.com");
                     expect(assignee.name.toLowerCase()).toContain(key.toLowerCase());
+                }
+                function checkBoardComponents(components, keys) {
+                    expect(components.length).toEqual(keys.length);
+                    for (var i = 0; i < keys.length; i++) {
+                        expect(keys).toContain(components[i].name);
+                    }
                 }
                 function checkStandardProjects(boardData) {
                     checkProjects(boardData, "TUP", "TDP", "TBG");

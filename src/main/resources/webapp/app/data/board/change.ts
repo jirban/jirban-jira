@@ -2,6 +2,7 @@ import {Assignee} from "./assignee";
 import {AssigneeDeserializer} from "./assignee";
 import {Indexed} from "../../common/indexed";
 import {BlacklistData} from "./blacklist";
+import {Component, ComponentDeserializer} from "./component";
 export class ChangeSet {
     private _view:number;
 
@@ -10,6 +11,7 @@ export class ChangeSet {
     private _issueDeletes:string[];
 
     private _addedAssignees:Assignee[];
+    private _addedComponents:Component[];
 
     private _blacklistChange:BlacklistData;
     private _blacklistClearedIssues:string[];
@@ -45,6 +47,9 @@ export class ChangeSet {
 
         if (changes.assignees) {
             this._addedAssignees = new AssigneeDeserializer().deserialize(changes).array;
+        }
+        if (changes.components) {
+            this._addedComponents = new ComponentDeserializer().deserialize(changes).array;
         }
 
         let blacklist:any = changes.blacklist;
@@ -107,6 +112,10 @@ export class ChangeSet {
         return this._addedAssignees;
     }
 
+    get addedComponents():Component[] {
+        return this._addedComponents;
+    }
+
     addToBlacklist(blacklist:BlacklistData) {
         blacklist.addChanges(this._blacklistChange);
     }
@@ -123,14 +132,18 @@ export class IssueChange {
     private _summary:string;
     private _state:string;
     private _assignee:string;
+    private _unassigned:boolean = false;
+    private _components:string[];
+    private _clearedComponents:boolean = false;
 
-    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
+    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string, components:string[]) {
         this._key = key;
         this._type = type;
         this._priority = priority;
         this._summary = summary;
         this._state = state;
         this._assignee = assignee;
+        this._components = components;
     }
 
     get key():string {
@@ -157,16 +170,30 @@ export class IssueChange {
         return this._assignee;
     }
 
+    get components():string[] {
+        return this._components;
+    }
+
+    get unassigned():boolean {
+        return this._unassigned;
+    }
+
+    get clearedComponents():boolean {
+        return this._clearedComponents;
+    }
+
     static deserializeAdd(input:any) : IssueChange {
-        //TODO state!!!
-        return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
+        return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee, input.components);
     }
 
     static deserializeUpdate(input:any) : IssueChange {
-        return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
-    }
-
-    static createDelete(input:any) : IssueChange {
-        return null;
+        let change:IssueChange = new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee, input.components);
+        if (input.unassigned) {
+            change._unassigned = true;
+        }
+        if (input["clear-components"]) {
+            change._clearedComponents = true;
+        }
+        return change;
     }
 }

@@ -7,6 +7,7 @@ System.register([], function(exports_1) {
                 function TestBoardData() {
                     this.view = 0;
                     this.assignees = TestBoardData.STANDARD_ASSIGNEES;
+                    this.components = TestBoardData.STANDARD_COMPONENTS;
                     this.priorities = TestBoardData.STANDARD_PRIORITIES;
                     this.issueTypes = TestBoardData.STANDARD_ISSUE_TYPES;
                 }
@@ -16,6 +17,7 @@ System.register([], function(exports_1) {
                     //This parse/stringify stuff is to make sure that we use a clone of the objects
                     //Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
                     json["assignees"] = JSON.parse(JSON.stringify(this.assignees));
+                    json["components"] = JSON.parse(JSON.stringify(this.components));
                     json["priorities"] = JSON.parse(JSON.stringify(this.priorities));
                     json["issue-types"] = JSON.parse(JSON.stringify(this.issueTypes));
                     json["projects"] = JSON.parse(JSON.stringify(this.projects));
@@ -48,6 +50,7 @@ System.register([], function(exports_1) {
                         avatar: "/avatars/kabir.png",
                         name: "Kabir Khan"
                     }];
+                TestBoardData.STANDARD_COMPONENTS = ["First", "Second"];
                 TestBoardData.STANDARD_PRIORITIES = [
                     {
                         name: "highest",
@@ -170,7 +173,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-2": {
                         key: "TDP-2",
@@ -178,7 +182,8 @@ System.register([], function(exports_1) {
                         summary: "Two",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TDP-3": {
                         key: "TDP-3",
@@ -200,7 +205,8 @@ System.register([], function(exports_1) {
                         summary: "Five",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-6": {
                         key: "TDP-6",
@@ -208,7 +214,8 @@ System.register([], function(exports_1) {
                         summary: "Six",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TDP-7": {
                         key: "TDP-7",
@@ -223,7 +230,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TBG-2": {
                         key: "TBG-2",
@@ -231,7 +239,8 @@ System.register([], function(exports_1) {
                         summary: "Two",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TBG-3": {
                         key: "TBG-3",
@@ -291,7 +300,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-2": {
                         key: "TDP-2",
@@ -299,7 +309,8 @@ System.register([], function(exports_1) {
                         summary: "Two",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TDP-3": {
                         key: "TDP-3",
@@ -321,7 +332,8 @@ System.register([], function(exports_1) {
                         summary: "Five",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-6": {
                         key: "TDP-6",
@@ -329,7 +341,8 @@ System.register([], function(exports_1) {
                         summary: "Six",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TDP-7": {
                         key: "TDP-7",
@@ -398,7 +411,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-2": {
                         key: "TDP-2",
@@ -406,7 +420,8 @@ System.register([], function(exports_1) {
                         summary: "Two",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TDP-3": {
                         key: "TDP-3",
@@ -428,7 +443,8 @@ System.register([], function(exports_1) {
                         summary: "Five",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-6": {
                         key: "TDP-6",
@@ -436,7 +452,8 @@ System.register([], function(exports_1) {
                         summary: "Six",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TDP-7": {
                         key: "TDP-7",
@@ -451,7 +468,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TBG-2": {
                         key: "TBG-2",
@@ -459,7 +477,8 @@ System.register([], function(exports_1) {
                         summary: "Two",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TBG-3": {
                         key: "TBG-3",
@@ -523,7 +542,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     },
                     "TDP-2": {
                         key: "TDP-2",
@@ -531,7 +551,8 @@ System.register([], function(exports_1) {
                         summary: "Two",
                         priority: 1,
                         type: 1,
-                        assignee: 1
+                        assignee: 1,
+                        components: [1]
                     },
                     "TBG-1": {
                         key: "TBG-1",
@@ -539,7 +560,8 @@ System.register([], function(exports_1) {
                         summary: "One",
                         priority: 0,
                         type: 0,
-                        assignee: 0
+                        assignee: 0,
+                        components: [0]
                     }
                 };
                 return TestBoardData;

@@ -27,9 +27,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
@@ -119,14 +122,24 @@ public class SearchServiceBuilder {
         final User assignee = mock(User.class);
 
         public IssueDetail(String key, String issueType, String priority, String summary,
-                           String state, String assignee) {
+                           String state, String assignee, String[] components) {
             //Do the nested mocks first
             this.issueType = MockIssueType.create(issueType);
             this.priority = MockPriority.create(priority);
             this.state = MockStatus.create(state);
             when(this.assignee.getName()).thenReturn(assignee);
 
-            this.issue = new MockIssue(key, this.issueType, this.priority, summary, this.assignee, this.state);
+            Set<ProjectComponent> componentSet = null;
+            if (components != null && components.length > 0) {
+                componentSet = new HashSet<>();
+                for (String componentName : components) {
+                    ProjectComponent component = mock(ProjectComponent.class);
+                    when(component.getName()).thenReturn(componentName);
+                    componentSet.add(component);
+                }
+            }
+
+            this.issue = new MockIssue(key, this.issueType, this.priority, summary, this.assignee, componentSet, this.state);
         }
     }
 }

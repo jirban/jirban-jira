@@ -29,8 +29,12 @@ public class Constants {
     public static final String ASSIGNEES = "assignees";
     public static final String AVATAR = "avatar";
     public static final String BLACKLIST = "blacklist";
+    public static final String BOARDS = "boards";
     public static final String CHANGES = "changes";
+    public static final String CLEAR_COMPONENTS = "clear-components";
     public static final String COLOUR = "colour";
+    public static final String COMPONENT = "component";
+    public static final String COMPONENTS = "components";
     public static final String CONFIG = "config";
     public static final String DELETE = "delete";
     public static final String EDIT = "edit";
@@ -60,9 +64,9 @@ public class Constants {
     public static final String SUMMARY = "summary";
     public static final String TYPE = "type";
     public static final String UPDATE = "update";
+    public static final String UPDATES = "updates";
     public static final String UNASSIGNED = "unassigned";
     public static final String VIEW = "view";
     public static final String VERSION = "version";
-    public static final String BOARDS = "boards";
-    public static final String UPDATES = "updates";
+
 }

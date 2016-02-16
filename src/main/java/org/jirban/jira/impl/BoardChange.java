@@ -22,8 +22,10 @@
 package org.jirban.jira.impl;
 
 import java.util.List;
+import java.util.Set;
 
 import org.jirban.jira.impl.board.Assignee;
+import org.jirban.jira.impl.board.Component;
 
 /**
  * Contains the details of a change to the board, which the clients will apply when polling for changes since their
@@ -44,6 +46,9 @@ public class BoardChange {
     //The new assignee, if the change brings in an assignee not currently on the board
     private final Assignee newAssignee;
 
+    //The new components, if the change brings in some not currently on the board
+    private final Set<Component> newComponents;
+
     //If the blacklist was modified. We are mainly interested in if a new unmapped state/priority/type pops up, and
     //its associated issue. Also, if an issue is deleted, it should be removed from the blacklist.
     private final String addedBlacklistState;
@@ -57,12 +62,13 @@ public class BoardChange {
     private final List<String> changedStateIssues;
 
 
-    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, String addedBlacklistState,
+    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
                         String addedBlacklistIssue, String deletedBlacklistIssue, String changedState, List<String> changedStateIssues) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
+        this.newComponents = newComponents;
         this.addedBlacklistState = addedBlacklistState;
         this.addedBlacklistPriority = addedBlacklistPriority;
         this.addedBlacklistIssueType = addedBlacklistIssueType;
@@ -86,6 +92,10 @@ public class BoardChange {
 
     Assignee getNewAssignee() {
         return newAssignee;
+    }
+
+    Set<Component> getNewComponents() {
+        return newComponents;
     }
 
     String getAddedBlacklistState() {
@@ -120,6 +130,7 @@ public class BoardChange {
         return changedStateIssues;
     }
 
+
     public static class Builder {
         private final BoardChangeRegistry registry;
         private final int view;
@@ -127,6 +138,9 @@ public class BoardChange {
 
         //The new assignee if one was brought in
         private Assignee newAssignee;
+
+        //The new components if any were brought in
+        private Set<Component> newComponents;
 
         //If the blacklist was changed
         private String addedBlacklistState;
@@ -163,15 +177,21 @@ public class BoardChange {
             return this;
         }
 
-        public void buildAndRegister() {
-            BoardChange change = new BoardChange(view, event, newAssignee, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, changedStateIssues);
-            registry.registerChange(change);
-        }
-
-        public void addStateRecalculation(String state, List<String> changedStateIssues) {
+        public Builder addStateRecalculation(String state, List<String> changedStateIssues) {
             changedState = state;
             this.changedStateIssues = changedStateIssues;
+            return this;
+        }
+
+        public Builder addNewComponents(Set<Component> newComponents) {
+            this.newComponents = newComponents;
+            return this;
+        }
+
+        public void buildAndRegister() {
+            BoardChange change = new BoardChange(view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, changedStateIssues);
+            registry.registerChange(change);
         }
     }
 }

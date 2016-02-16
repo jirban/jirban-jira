@@ -1,5 +1,5 @@
-System.register(['./assignee', './priority', './issueType', './boardFilters', "./project", "./issueTable", "../../common/RestUrlUtil", "./blacklist", "./change"], function(exports_1) {
-    var assignee_1, priority_1, issueType_1, boardFilters_1, project_1, issueTable_1, RestUrlUtil_1, blacklist_1, change_1;
+System.register(['./assignee', './priority', './issueType', './boardFilters', "./project", "./issueTable", "../../common/RestUrlUtil", "./blacklist", "./change", "./component"], function(exports_1) {
+    var assignee_1, priority_1, issueType_1, boardFilters_1, project_1, issueTable_1, RestUrlUtil_1, blacklist_1, change_1, component_1;
     var BoardData;
     return {
         setters:[
@@ -29,6 +29,9 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
             },
             function (change_1_1) {
                 change_1 = change_1_1;
+            },
+            function (component_1_1) {
+                component_1 = component_1_1;
             }],
         execute: function() {
             BoardData = (function () {
@@ -41,6 +44,8 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     this.hideables = [];
                     /** Flag to only recalculate the assignees in the control panel when they have been changed */
                     this._hasNewAssignees = false;
+                    /** Flag to only recalculate the components in the control panel when they have been changed */
+                    this._hasNewComponents = false;
                 }
                 /**
                  * Called on loading the board the first time
@@ -71,15 +76,26 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                         var changeSet = new change_1.ChangeSet(input);
                         if (changeSet.view != this.view) {
                             if (changeSet.addedAssignees) {
-                                //Make sure that the added assignees are in the correct order for the control panel list
+                                //Make sure that the added assignees are in alphabetical order for the control panel list
                                 for (var _i = 0, _a = changeSet.addedAssignees; _i < _a.length; _i++) {
                                     var assignee = _a[_i];
                                     this._assignees.add(assignee.key, assignee);
                                 }
-                                var assignees = this.assignees.array;
+                                var assignees = this._assignees.array;
                                 assignees.sort(function (a1, a2) { return a1.name.localeCompare(a2.name); });
                                 this._assignees.reorder(assignees, function (assignee) { return assignee.key; });
                                 this._hasNewAssignees = true;
+                            }
+                            if (changeSet.addedComponents) {
+                                //Make sure that the added components are in alphabetical order for the control panel list
+                                for (var _b = 0, _c = changeSet.addedComponents; _b < _c.length; _b++) {
+                                    var component = _c[_b];
+                                    this._components.add(component.name, component);
+                                }
+                                var components = this._components.array;
+                                components.sort(function (c1, c2) { return c1.name.localeCompare(c2.name); });
+                                this._components.reorder(components, function (component) { return component.name; });
+                                this._hasNewComponents = true;
                             }
                             if (changeSet.blacklistChanges) {
                                 if (!this.blacklist) {
@@ -101,6 +117,14 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     }
                     return ret;
                 };
+                BoardData.prototype.getAndClearHasNewComponents = function () {
+                    //TODO look into an Observable instead
+                    var ret = this._hasNewComponents;
+                    if (ret) {
+                        this._hasNewComponents = false;
+                    }
+                    return ret;
+                };
                 /**
                  * Called when changes are made to the issue detail to display in the control panel
                  * @param issueDisplayDetails
@@ -118,6 +142,7 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     this.blacklist = input.blacklist ? blacklist_1.BlacklistData.fromInput(input.blacklist) : null;
                     this._projects = new project_1.ProjectDeserializer().deserialize(input);
                     this._assignees = new assignee_1.AssigneeDeserializer().deserialize(input);
+                    this._components = new component_1.ComponentDeserializer().deserialize(input);
                     this._priorities = new priority_1.PriorityDeserializer().deserialize(input);
                     this._issueTypes = new issueType_1.IssueTypeDeserializer().deserialize(input);
                     if (first) {
@@ -172,6 +197,13 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 Object.defineProperty(BoardData.prototype, "assignees", {
                     get: function () {
                         return this._assignees;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(BoardData.prototype, "components", {
+                    get: function () {
+                        return this._components;
                     },
                     enumerable: true,
                     configurable: true

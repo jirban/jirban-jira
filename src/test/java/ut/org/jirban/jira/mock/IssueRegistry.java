@@ -49,16 +49,17 @@ public class IssueRegistry {
     }
 
     public IssueRegistry addIssue(String projectCode, String issueType, String priority, String summary,
-                                  String assignee, String state) {
+                                  String assignee, String[] components, String state) {
         Map<String, Issue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
         String issueKey = projectCode + "-" + (issues.size() + 1);
         issues.put(issueKey, new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
-                userBridge.getUserByKey(assignee), MockStatus.create(state)));
+                userBridge.getUserByKey(assignee), MockProjectComponent.createProjectComponents(components), MockStatus.create(state)));
         return this;
     }
 
 
-    public void updateIssue(String issueKey, String projectCode, String issueTypeName, String priorityName, String summary, String assignee, String state) {
+    public void updateIssue(String issueKey, String projectCode, String issueTypeName, String priorityName,
+                            String summary, String assignee, String[] components, String state) {
         Map<String, Issue> issues = issuesByProject.get(projectCode);
         Assert.assertNotNull(issues);
         Issue issue = issues.get(issueKey);
@@ -70,8 +71,8 @@ public class IssueRegistry {
         User assigneeUser = assignee == null ? issue.getAssignee() : userBridge.getUserByKey(assignee);
         Status status = state == null ? issue.getStatusObject() : MockStatus.create(state);
 
-        Issue newIssue = new MockIssue(issueKey, issueType, priority, summ,
-                assigneeUser, status);
+        Issue newIssue = new MockIssue(issueKey, issueType, priority, summary,
+                assigneeUser, MockProjectComponent.createProjectComponents(components), status);
         issues.put(issueKey, newIssue);
     }
 
@@ -92,26 +93,5 @@ public class IssueRegistry {
             ret.add(issue);
         }
         return ret;
-    }
-
-    private class IssueDetail {
-        final Issue issue;
-
-        final IssueType issueType;
-        final Priority priority;
-        final Status state;
-
-        @SuppressWarnings("deprecation")
-        public IssueDetail(String key, String issueType, String priority, String summary,
-                           String state, String assignee) {
-            //Do the nested mocks first
-            this.issueType = MockIssueType.create(issueType);
-            this.priority = MockPriority.create(priority);
-            this.state = MockStatus.create(state);
-
-            this.issue = new MockIssue(key, this.issueType, this.priority, summary, userBridge.getUserByKey(assignee), this.state);
-        }
-
-
     }
 }

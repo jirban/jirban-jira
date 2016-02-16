@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,6 +40,7 @@ import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
@@ -86,6 +88,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     private static final String CHANGE_LOG_PROJECT = "project";
     private static final String CHANGE_LOG_OLD_VALUE = "oldvalue";
     private static final String CHANGE_LOG_ISSUE_KEY = "Key";
+    private static final String CHANGE_LOG_COMPONENT = "Component";
 
     @ComponentImport
     private final EventPublisher eventPublisher;
@@ -195,7 +198,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
-                issue.getAssignee(), issue.getStatusObject().getName());
+                issue.getAssignee(), issue.getComponentObjects(), issue.getStatusObject().getName());
         passEventToBoardManagerOrDelay(event);
 
         //TODO there could be linked issues
@@ -223,7 +226,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         String priority = null;
         String summary = null;
         User assignee = null;
-        boolean unassigned = false;
+        Collection<ProjectComponent> components = null;
         String state = null;
         boolean rankOrStateChanged = false;
         List<GenericValue> changeItems = getWorkLog(issueEvent);
@@ -245,11 +248,13 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 state = issue.getStatusObject().getName();
             } else if (field.equals(CHANGE_LOG_RANK)) {
                 rankOrStateChanged = true;
+            } else if (field.equals(CHANGE_LOG_COMPONENT)) {
+                components = issue.getComponentObjects();
             }
         }
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
                 issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
-                summary, assignee, state, rankOrStateChanged);
+                summary, assignee, components, state, rankOrStateChanged);
         passEventToBoardManagerOrDelay(event);
     }
 
@@ -293,9 +298,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
-                issue.getAssignee(), newState);
+                issue.getAssignee(), issue.getComponentObjects(), newState);
         passEventToBoardManagerOrDelay(event);
-
     }
 
     private List<GenericValue> getWorkLog(IssueEvent issueEvent) {

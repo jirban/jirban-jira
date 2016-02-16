@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 import org.jirban.jira.impl.config.ProjectConfig;
@@ -138,23 +139,25 @@ public abstract class Issue {
      * @param issueType the issue's type
      * @param priority the priority
      * @param assignee the assignee
+     * @param components the component
      * @return the issue
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
-                                             String summary, String issueType, String priority, Assignee assignee) {
+                                      String summary, String issueType, String priority, Assignee assignee, Set<Component> components) {
         Builder builder = new Builder(project, issueKey);
         builder.setState(state);
         builder.setSummary(summary);
         builder.setIssueType(issueType);
         builder.setPriority(priority);
         builder.setAssignee(assignee);
+        builder.setComponents(components);
 
         //TODO linked issues
         return builder.build();
     }
 
     /**
-     * Creates a new issue based on an {@code exisiting} one. The data is then updated with the results of
+     * Creates a new issue based on an {@code existing} one. The data is then updated with the results of
      * {@code issueType}, {@code priority}, {@code summary}, {@code issueAssignee}, {@code rankOrStateChanged}
      * {@code state} if they are different from the current issue detail. Note that the update event might be raised
      * for fields we are not interested in, in which case we don't care about the change, and return {@code null}.If
@@ -167,19 +170,19 @@ public abstract class Issue {
      * @param priority the new issue priority
      * @param summary the new issue summary
      * @param issueAssignee the new issue assignee
-     * @param state the state of the issue
-     * @return the new issue
+     * @param issueComponents the new issue components
+     *@param state the state of the issue  @return the new issue
      */
     static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
-                                    String summary, Assignee issueAssignee, String state) {
+                                    String summary, Assignee issueAssignee, Set<Component> issueComponents, String state) {
         if (existing instanceof BoardIssue == false) {
             return null;
         }
-        return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority, summary, issueAssignee, state);
+        return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority, summary, issueAssignee, issueComponents, state);
     }
 
     private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
-                                    String summary, Assignee issueAssignee, String state) {
+                                    String summary, Assignee issueAssignee, Set<Component> issueComponents, String state) {
         Builder builder = new Builder(project, existing);
         boolean changed = false;
         if (issueType != null) {
@@ -204,6 +207,16 @@ public abstract class Issue {
                 changed = true;
             }
         }
+        if (issueComponents != null) {
+            //A non-null component means it was updated.
+            if (issueComponents.size() == 0) {
+                builder.setComponents(null);
+                changed = true;
+            } else {
+                builder.setComponents(issueComponents);
+                changed = true;
+            }
+        }
         if (state != null) {
             changed = true;
             builder.setState(state);
@@ -216,17 +229,21 @@ public abstract class Issue {
 
     private static class BoardIssue extends Issue {
         private final Assignee assignee;
+        private final Set<Component> components;
         /** The index of the issue type in the owning board config */
         private final Integer issueTypeIndex;
         /** The index of the priority in the owning board config */
         private final Integer priorityIndex;
         private final List<LinkedIssue> linkedIssues;
 
-        public BoardIssue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary, Integer issueTypeIndex, Integer priorityIndex, Assignee assignee, List<LinkedIssue> linkedIssues) {
+        public BoardIssue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary,
+                          Integer issueTypeIndex, Integer priorityIndex, Assignee assignee,
+                          Set<Component> components, List<LinkedIssue> linkedIssues) {
             super(project, key, state, stateIndex, summary);
             this.issueTypeIndex = issueTypeIndex;
             this.priorityIndex = priorityIndex;
             this.assignee = assignee;
+            this.components = components;
             this.linkedIssues = linkedIssues;
         }
 
@@ -269,10 +286,12 @@ public abstract class Issue {
             issueNode.get(TYPE).set(issueTypeIndex);
             if (assignee != null) {
                 //This map will always be populated
-                try {
-                    issueNode.get(ASSIGNEE).set(boardProject.getAssigneeIndex(assignee));
-                } catch (Exception e) {
-                    boardProject.getAssigneeIndex(assignee);
+                issueNode.get(ASSIGNEE).set(boardProject.getAssigneeIndex(assignee));
+            }
+            if (components != null) {
+                for (Component component : components) {
+                    //This map will always be populated
+                    issueNode.get(Constants.COMPONENTS).add(boardProject.getComponentIndex(component));
                 }
             }
             if (hasLinkedIssues()) {
@@ -302,6 +321,7 @@ public abstract class Issue {
         String issueKey;
         String summary;
         Assignee assignee;
+        Set<Component> components;
         Integer issueTypeIndex;
         Integer priorityIndex;
         String state;
@@ -324,6 +344,7 @@ public abstract class Issue {
             this.issueKey = existing.getKey();
             this.summary = existing.getSummary();
             this.assignee = existing.assignee;
+            this.components = existing.components;
             this.issueTypeIndex = existing.issueTypeIndex;
             this.priorityIndex = existing.priorityIndex;
             this.state = existing.getState();
@@ -341,6 +362,7 @@ public abstract class Issue {
             issueKey = issue.getKey();
             summary = issue.getSummary();
             assignee = project.getAssignee(issue.getAssignee());
+            components = project.getComponents(issue.getComponentObjects());
             setIssueType(issue.getIssueTypeObject().getName());
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
@@ -350,32 +372,41 @@ public abstract class Issue {
             addLinkedIssues(issueLinkManager.getInwardLinks(issue.getId()), false);
         }
 
-        Builder setIssueKey(String issueKey) {
+        private Builder setIssueKey(String issueKey) {
             this.issueKey = issueKey;
             return this;
         }
 
-        Builder setSummary(String summary) {
+        private Builder setSummary(String summary) {
             this.summary = summary;
             return this;
         }
 
-        Builder setAssignee(Assignee assignee) {
+        private Builder setAssignee(Assignee assignee) {
             this.assignee = assignee == Assignee.UNASSIGNED ? null : assignee;
             return this;
         }
 
-        Builder setIssueType(String issueTypeName) {
+        private Builder setComponents(Set<Component> components) {
+            if (components == null || components.size() == 0) {
+                this.components = null;
+            } else {
+                this.components = components;
+            }
+            return this;
+        }
+
+        private Builder setIssueType(String issueTypeName) {
             this.issueTypeIndex = project.getIssueTypeIndexRecordingMissing(issueKey, issueTypeName);
             return this;
         }
 
-        Builder setPriority(String priorityName) {
+        private Builder setPriority(String priorityName) {
             this.priorityIndex = project.getPriorityIndexRecordingMissing(issueKey, priorityName);
             return this;
         }
 
-        Builder setState(String stateName) {
+        private Builder setState(String stateName) {
             state = stateName;
             stateIndex = project.getStateIndexRecordingMissing(issueKey, state);
             return this;
@@ -420,7 +451,7 @@ public abstract class Issue {
         Issue build() {
             if (issueTypeIndex != null && priorityIndex != null && stateIndex != null) {
                 List<LinkedIssue> linkedList = linkedIssues == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
-                return new BoardIssue(project.getConfig(), issueKey, state, stateIndex, summary, issueTypeIndex, priorityIndex, assignee, linkedList);
+                return new BoardIssue(project.getConfig(), issueKey, state, stateIndex, summary, issueTypeIndex, priorityIndex, assignee, components, linkedList);
             }
             return null;
         }

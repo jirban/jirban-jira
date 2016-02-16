@@ -55,14 +55,17 @@ public class MockIssue implements Issue {
     private final Priority priority;
     private final String summary;
     private final User assignee;
+    private final Set<ProjectComponent> components;
     private final Status state;
 
-    public MockIssue(String key, IssueType issueType, Priority priority, String summary, User assignee, Status state) {
+    public MockIssue(String key, IssueType issueType, Priority priority, String summary, User assignee,
+                     Set<ProjectComponent> components, Status state) {
         this.key = key;
         this.issueType = issueType;
         this.priority = priority;
         this.summary = summary;
         this.assignee = assignee;
+        this.components = components;
         this.state = state;
     }
 
@@ -128,7 +131,7 @@ public class MockIssue implements Issue {
 
     @Override
     public Collection<ProjectComponent> getComponentObjects() {
-        return null;
+        return components;
     }
 
     @Override

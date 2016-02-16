@@ -1,5 +1,5 @@
-System.register(["./assignee", "../../common/indexed", "./blacklist"], function(exports_1) {
-    var assignee_1, indexed_1, blacklist_1;
+System.register(["./assignee", "../../common/indexed", "./blacklist", "./component"], function(exports_1) {
+    var assignee_1, indexed_1, blacklist_1, component_1;
     var ChangeSet, IssueChange;
     return {
         setters:[
@@ -11,6 +11,9 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
             },
             function (blacklist_1_1) {
                 blacklist_1 = blacklist_1_1;
+            },
+            function (component_1_1) {
+                component_1 = component_1_1;
             }],
         execute: function() {
             ChangeSet = (function () {
@@ -40,6 +43,9 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                     }
                     if (changes.assignees) {
                         this._addedAssignees = new assignee_1.AssigneeDeserializer().deserialize(changes).array;
+                    }
+                    if (changes.components) {
+                        this._addedComponents = new component_1.ComponentDeserializer().deserialize(changes).array;
                     }
                     var blacklist = changes.blacklist;
                     if (blacklist) {
@@ -116,6 +122,13 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(ChangeSet.prototype, "addedComponents", {
+                    get: function () {
+                        return this._addedComponents;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 ChangeSet.prototype.addToBlacklist = function (blacklist) {
                     blacklist.addChanges(this._blacklistChange);
                 };
@@ -130,13 +143,16 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
             })();
             exports_1("ChangeSet", ChangeSet);
             IssueChange = (function () {
-                function IssueChange(key, type, priority, summary, state, assignee) {
+                function IssueChange(key, type, priority, summary, state, assignee, components) {
+                    this._unassigned = false;
+                    this._clearedComponents = false;
                     this._key = key;
                     this._type = type;
                     this._priority = priority;
                     this._summary = summary;
                     this._state = state;
                     this._assignee = assignee;
+                    this._components = components;
                 }
                 Object.defineProperty(IssueChange.prototype, "key", {
                     get: function () {
@@ -180,15 +196,39 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(IssueChange.prototype, "components", {
+                    get: function () {
+                        return this._components;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(IssueChange.prototype, "unassigned", {
+                    get: function () {
+                        return this._unassigned;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(IssueChange.prototype, "clearedComponents", {
+                    get: function () {
+                        return this._clearedComponents;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 IssueChange.deserializeAdd = function (input) {
-                    //TODO state!!!
-                    return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
+                    return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee, input.components);
                 };
                 IssueChange.deserializeUpdate = function (input) {
-                    return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
-                };
-                IssueChange.createDelete = function (input) {
-                    return null;
+                    var change = new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee, input.components);
+                    if (input.unassigned) {
+                        change._unassigned = true;
+                    }
+                    if (input["clear-components"]) {
+                        change._clearedComponents = true;
+                    }
+                    return change;
                 };
                 return IssueChange;
             })();

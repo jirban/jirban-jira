@@ -25,6 +25,8 @@ import static org.jirban.jira.impl.Constants.ASSIGNEE;
 import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.CHANGES;
+import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
+import static org.jirban.jira.impl.Constants.COMPONENTS;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
@@ -53,6 +55,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent.Type;
 import org.jirban.jira.impl.board.Assignee;
+import org.jirban.jira.impl.board.Component;
 
 /**
  * Since Jira 6.4.x does not support web sockets, this maintains a queue of changes. A client connects and gets the full
@@ -226,7 +229,8 @@ public class BoardChangeRegistry {
             Set<IssueChange> updatedIssues = new HashSet<>();
             Set<IssueChange> deletedIssues = new HashSet<>();
             Map<String, Assignee> newAssignees = new HashMap<>();
-            sortIssues(newIssues, updatedIssues, deletedIssues, newAssignees);
+            Map<String, Component> newComponents = new HashMap<>();
+            sortIssues(newIssues, updatedIssues, deletedIssues, newAssignees, newComponents);
 
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
@@ -235,6 +239,7 @@ public class BoardChangeRegistry {
             }
 
             serializeAssignees(changes, newAssignees);
+            serializeComponents(changes, newComponents);
             serializeStateChanges(changes, processStateChanges());
             serializeBlacklist(changes);
             return output;
@@ -265,6 +270,15 @@ public class BoardChangeRegistry {
             }
         }
 
+        private void serializeComponents(ModelNode parent, Map<String, Component> newComponents) {
+            if (newComponents.size() > 0) {
+                ModelNode components = parent.get(COMPONENTS);
+                for (Component component : newComponents.values()) {
+                    component.serialize(components);
+                }
+            }
+        }
+
         private void serializeStateChanges(ModelNode parent, Map<String, Map<String, StateChange>> stateChangesByProject) {
             if (stateChangesByProject.size() > 0) {
                 for (Map.Entry<String, Map<String, StateChange>> projectEntry : stateChangesByProject.entrySet()) {
@@ -283,21 +297,29 @@ public class BoardChangeRegistry {
             }
         }
 
-        private void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues, Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees) {
+        private void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues,
+                                Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees,
+                                Map<String, Component> newComponents) {
             for (IssueChange change : issueChanges.values()) {
                 Assignee newAssignee = null;
+                Map<String, Component> newComponentsForIssue = null;
                 if (change.type == CREATE) {
                     newIssues.add(change);
                     newAssignee = change.newAssignee;
+                    newComponentsForIssue = change.newComponents;
                 } else if (change.type == UPDATE) {
                     updatedIssues.add(change);
                     newAssignee = change.newAssignee;
+                    newComponentsForIssue = change.newComponents;
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
                 }
 
                 if (newAssignee != null) {
                     newAssignees.put(newAssignee.getKey(), newAssignee);
+                }
+                if (newComponentsForIssue != null) {
+                    newComponents.putAll(newComponentsForIssue);
                 }
             }
         }
@@ -322,9 +344,12 @@ public class BoardChangeRegistry {
         private String summary;
         private String assignee;
         private boolean unassigned;
+        private Set<String> components;
+        private boolean clearedComponents;
         private String state;
 
         private Assignee newAssignee;
+        private Map<String, Component> newComponents;
 
         //We are interested in the latest state for the issue if it was moved or re-ranked
         //This information will then be used by the board change collector to figure out which states
@@ -356,7 +381,7 @@ public class BoardChangeRegistry {
             switch (type) {
                 case CREATE:
                 case UPDATE:
-                    mergeFields(event, boardChange.getNewAssignee());
+                    mergeFields(event, boardChange.getNewAssignee(), boardChange.getNewComponents());
                     if (boardChange.getChangedState() != null && boardChange.getChangedStateIssues() != null) {
                         stateChange = new StateChange(boardChange.getChangedState(), boardChange.getChangedStateIssues());
                     }
@@ -372,7 +397,7 @@ public class BoardChangeRegistry {
 
         }
 
-        void mergeFields(JirbanIssueEvent event, Assignee evtNewAssignee) {
+        void mergeFields(JirbanIssueEvent event, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
             final JirbanIssueEvent.Detail detail = event.getDetails();
             if (detail.getIssueType() != null) {
                 issueType = detail.getIssueType();
@@ -396,6 +421,34 @@ public class BoardChangeRegistry {
                     }
                     if (evtNewAssignee != null) {
                         newAssignee = evtNewAssignee;
+                    }
+                }
+            }
+            if (detail.getComponents() != null) {
+                if (detail.getComponents() == JirbanIssueEvent.NO_COMPONENT) {
+                    components = null;
+                    clearedComponents = true;
+                    newComponents = null;
+                } else {
+                    components = new HashSet<>(detail.getComponents().size());
+                    detail.getComponents().forEach(comp -> components.add(comp.getName()));
+                    clearedComponents = false;
+                    if (evtNewComponents != null) {
+                        newComponents = newComponents == null ? new HashMap<>() : newComponents;
+                        for (Component newComponent : evtNewComponents) {
+                            newComponents.put(newComponent.getName(), newComponent);
+                        }
+                    }
+                    if (newComponents != null) {
+                        Set<String> removes = new HashSet<>();
+                        for (Component newComponent : newComponents.values()) {
+                            if (!components.contains(newComponent.getName())) {
+                                removes.add(newComponent.getName());
+                            }
+                        }
+                        for (String remove : removes) {
+                            newComponents.remove(remove);
+                        }
                     }
                 }
             }
@@ -439,6 +492,9 @@ public class BoardChangeRegistry {
                     if (assignee != null) {
                         output.get(ASSIGNEE).set(assignee);
                     }
+                    if (components != null) {
+                        components.forEach(component -> output.get(COMPONENTS).add(component));
+                    }
                     output.get(STATE).set(state);
                     break;
                 case UPDATE:
@@ -455,11 +511,17 @@ public class BoardChangeRegistry {
                     if (assignee != null) {
                         output.get(ASSIGNEE).set(assignee);
                     }
+                    if (components != null) {
+                        components.forEach(component -> output.get(COMPONENTS).add(component));
+                    }
                     if (state != null) {
                         output.get(STATE).set(state);
                     }
                     if (unassigned) {
                         output.get(UNASSIGNED).set(true);
+                    }
+                    if (clearedComponents) {
+                        output.get(CLEAR_COMPONENTS).set(true);
                     }
                     break;
                 case DELETE:

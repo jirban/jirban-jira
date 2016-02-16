@@ -2,6 +2,7 @@ export class TestBoardData {
 
     public view:number = 0;
     public assignees:any = TestBoardData.STANDARD_ASSIGNEES;
+    public components:any = TestBoardData.STANDARD_COMPONENTS;
     public priorities:any = TestBoardData.STANDARD_PRIORITIES;
     public issueTypes:any = TestBoardData.STANDARD_ISSUE_TYPES;
     public projects:any;
@@ -14,6 +15,7 @@ export class TestBoardData {
         //This parse/stringify stuff is to make sure that we use a clone of the objects
         //Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
         json["assignees"] = JSON.parse(JSON.stringify(this.assignees));
+        json["components"] = JSON.parse(JSON.stringify(this.components));
         json["priorities"] = JSON.parse(JSON.stringify(this.priorities));
         json["issue-types"] = JSON.parse(JSON.stringify(this.issueTypes));
         json["projects"] = JSON.parse(JSON.stringify(this.projects));
@@ -48,6 +50,8 @@ export class TestBoardData {
             avatar : "/avatars/kabir.png",
             name : "Kabir Khan"
         }];
+
+    public static STANDARD_COMPONENTS:any = ["First", "Second"];
 
     public static STANDARD_PRIORITIES:any = [
         {
@@ -181,7 +185,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-2" : {
             key : "TDP-2",
@@ -189,7 +194,8 @@ export class TestBoardData {
             summary : "Two",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TDP-3" : {
             key : "TDP-3",
@@ -211,7 +217,8 @@ export class TestBoardData {
             summary : "Five",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-6" : {
             key : "TDP-6",
@@ -219,7 +226,8 @@ export class TestBoardData {
             summary : "Six",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TDP-7" : {
             key : "TDP-7",
@@ -234,7 +242,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TBG-2" : {
             key : "TBG-2",
@@ -242,7 +251,8 @@ export class TestBoardData {
             summary : "Two",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TBG-3" : {
             key : "TBG-3",
@@ -308,7 +318,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-2" : {
             key : "TDP-2",
@@ -316,7 +327,8 @@ export class TestBoardData {
             summary : "Two",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TDP-3" : {
             key : "TDP-3",
@@ -338,7 +350,8 @@ export class TestBoardData {
             summary : "Five",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-6" : {
             key : "TDP-6",
@@ -346,7 +359,8 @@ export class TestBoardData {
             summary : "Six",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TDP-7" : {
             key : "TDP-7",
@@ -421,7 +435,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-2" : {
             key : "TDP-2",
@@ -429,7 +444,8 @@ export class TestBoardData {
             summary : "Two",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TDP-3" : {
             key : "TDP-3",
@@ -451,7 +467,8 @@ export class TestBoardData {
             summary : "Five",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-6" : {
             key : "TDP-6",
@@ -459,7 +476,8 @@ export class TestBoardData {
             summary : "Six",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TDP-7" : {
             key : "TDP-7",
@@ -474,7 +492,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TBG-2" : {
             key : "TBG-2",
@@ -482,7 +501,8 @@ export class TestBoardData {
             summary : "Two",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TBG-3" : {
             key : "TBG-3",
@@ -551,7 +571,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         },
         "TDP-2" : {
             key : "TDP-2",
@@ -559,7 +580,8 @@ export class TestBoardData {
             summary : "Two",
             priority : 1,
             type : 1,
-            assignee : 1
+            assignee : 1,
+            components: [1]
         },
         "TBG-1" : {
             key : "TBG-1",
@@ -567,7 +589,8 @@ export class TestBoardData {
             summary : "One",
             priority : 0,
             type : 0,
-            assignee : 0
+            assignee : 0,
+            components: [0]
         }
     };
 }

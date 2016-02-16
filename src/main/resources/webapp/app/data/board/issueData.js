@@ -8,7 +8,7 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
             }],
         execute: function() {
             IssueData = (function () {
-                function IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked) {
+                function IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority, type, statusIndex, linked) {
                     this._filtered = false;
                     this._boardData = boardData;
                     this._key = key;
@@ -16,6 +16,7 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                     this._statusIndex = statusIndex;
                     this._summary = summary;
                     this._assignee = assignee;
+                    this._components = components;
                     this._priority = priority;
                     this._type = type;
                     this._colour = colour;
@@ -29,6 +30,14 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                     var assignee = boardData.assignees.forIndex(input.assignee);
                     var priority = boardData.priorities.forIndex(input.priority);
                     var type = boardData.issueTypes.forIndex(input.type);
+                    var components;
+                    if (input.components) {
+                        components = [];
+                        for (var _i = 0, _a = input.components; _i < _a.length; _i++) {
+                            var componentIndex = _a[_i];
+                            components.push(boardData.components.forIndex(componentIndex));
+                        }
+                    }
                     var colour;
                     var project = boardData.boardProjects.forKey(projectCode);
                     if (project) {
@@ -42,7 +51,7 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                             linked.push(IssueData.createFullRefresh(boardData, linkedIssues[i]));
                         }
                     }
-                    return new IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked);
+                    return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority, type, statusIndex, linked);
                 };
                 IssueData.createFromChangeSet = function (boardData, add) {
                     var projectCode = IssueData.productCodeFromKey(add.key);
@@ -56,8 +65,16 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                         colour = project.colour;
                         statusIndex = project.getOwnStateIndex(add.state);
                     }
+                    var components;
+                    if (add.components) {
+                        components = [];
+                        for (var _i = 0, _a = add.components; _i < _a.length; _i++) {
+                            var component = _a[_i];
+                            components.push(boardData.components.forKey(component));
+                        }
+                    }
                     var linked; //This does not get set from the events
-                    return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, priority, type, statusIndex, linked);
+                    return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked);
                 };
                 IssueData.productCodeFromKey = function (key) {
                     var index = key.lastIndexOf("-");
@@ -95,6 +112,13 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                 Object.defineProperty(IssueData.prototype, "assignee", {
                     get: function () {
                         return this._assignee;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
+                Object.defineProperty(IssueData.prototype, "components", {
+                    get: function () {
+                        return this._components;
                     },
                     enumerable: true,
                     configurable: true
@@ -269,8 +293,21 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                         var project = this.boardProject;
                         this._statusIndex = project.getOwnStateIndex(update.state);
                     }
-                    if (update.assignee) {
+                    if (update.unassigned) {
+                        this._assignee = null;
+                    }
+                    else if (update.assignee) {
                         this._assignee = this.boardData.assignees.forKey(update.assignee);
+                    }
+                    if (update.clearedComponents) {
+                        this._components = null;
+                    }
+                    else if (update.components) {
+                        this._components = [];
+                        for (var _i = 0, _a = update.components; _i < _a.length; _i++) {
+                            var component = _a[_i];
+                            this._components.push(this.boardData.components.forKey(component));
+                        }
                     }
                 };
                 return IssueData;

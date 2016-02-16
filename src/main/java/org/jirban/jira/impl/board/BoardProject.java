@@ -24,10 +24,12 @@ package org.jirban.jira.impl.board;
 import static org.jirban.jira.impl.Constants.ISSUES;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.config.BoardProjectConfig;
@@ -35,6 +37,7 @@ import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
@@ -70,6 +73,10 @@ class BoardProject {
 
     int getAssigneeIndex(Assignee assignee) {
         return board.getAssigneeIndex(assignee);
+    }
+
+    int getComponentIndex(Component component) {
+        return board.getComponentIndex(component);
     }
 
     void serialize(ModelNode parent) {
@@ -177,6 +184,9 @@ class BoardProject {
             return board.getLinkedProjectContext(linkedProjectCode);
         }
 
+        public Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
+            return board.getComponents(componentObjects);
+        }
     }
 
     /**
@@ -250,16 +260,16 @@ class BoardProject {
         }
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
-                          Assignee assignee, String state) {
-            newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee);
+                          Assignee assignee, Set<Component> issueComponents, String state) {
+            newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee, issueComponents);
             updatedState = newIssue != null;
             return newIssue;
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
-                                 Assignee issueAssignee, boolean rankOrStateChanged, String state) {
+                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged, String state) {
             this.existing = existing;
-            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, state);
+            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, issueComponents, state);
             if (newIssue == null && rankOrStateChanged) {
                 newIssue = existing;
             }

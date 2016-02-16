@@ -21,6 +21,8 @@
  */
 package ut.org.jirban.jira;
 
+import java.util.Collection;
+
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
@@ -32,6 +34,7 @@ import org.junit.Rule;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
 import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
@@ -41,6 +44,7 @@ import com.atlassian.jira.user.util.UserManager;
 import ut.org.jirban.jira.mock.CrowdUserBridge;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
+import ut.org.jirban.jira.mock.MockProjectComponent;
 import ut.org.jirban.jira.mock.SearchServiceBuilder;
 import ut.org.jirban.jira.mock.UserManagerBuilder;
 
@@ -84,31 +88,38 @@ public class AbstractBoardTest {
     }
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
-                                                                 IssueType issueType, Priority priority, String summary, String username, String state) {
-        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, state);
+                                                                 IssueType issueType, Priority priority, String summary,
+                                                                 String username, String[] components, String state) {
+        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, components, state);
     }
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
-                                                                 String issueType, String priority, String summary, String username, String state) {
+                                                                 String issueType, String priority, String summary,
+                                                                 String username, String[] components, String state) {
         CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
         User user = userBridge.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, state);
+                summary, user, MockProjectComponent.createProjectComponents(components), state);
 
-        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, state);
+        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, components, state);
         return create;
     }
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
-                                                                 Priority priority, String summary, String username, boolean unassigned, String state, boolean rank) {
+                                                                 Priority priority, String summary, String username,
+                                                                 boolean unassigned, String[] components,
+                                                                 boolean clearComponents, String state, boolean rank) {
         String issueTypeName = issueType == null ? null : issueType.name;
         String priorityName = priority == null ? null : priority.name;
-        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned, state, rank);
+        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
+                components, clearComponents, state, rank);
     }
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
-                                                                 String priorityName, String summary, String username, boolean unassigned, String state, boolean rank) {
+                                                                 String priorityName, String summary, String username,
+                                                                 boolean unassigned, String[] components,
+                                                                 boolean clearComponents, String state, boolean rank) {
         Assert.assertFalse(username != null && unassigned);
 
         User user;
@@ -119,10 +130,11 @@ public class AbstractBoardTest {
             user = userBridge.getUserByKey(username);
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
+        Collection<ProjectComponent> projectComponents = clearComponents ? JirbanIssueEvent.NO_COMPONENT : MockProjectComponent.createProjectComponents(components);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
-                priorityName, summary, user, state, state != null || rank);
+                priorityName, summary, user, projectComponents, state, state != null || rank);
 
-        issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, state);
+        issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
         return update;
     }
     protected enum IssueType {
@@ -137,8 +149,6 @@ public class AbstractBoardTest {
             this.index = index;
             this.name = super.name().toLowerCase();
         }
-
-
     }
 
     protected enum Priority {

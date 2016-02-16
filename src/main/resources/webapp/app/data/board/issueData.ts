@@ -5,6 +5,7 @@ import {IssueType} from "./issueType";
 import {isNumber} from "angular2/src/facade/lang";
 import {BoardProject, Project} from "./project";
 import {IssueChange} from "./change";
+import {Component} from "./component";
 
 
 export class IssueData {
@@ -14,6 +15,7 @@ export class IssueData {
     private _colour:string;
     private _summary:string;
     private _assignee:Assignee;
+    private _components:Component[];
     private _priority:Priority;
     private _type:IssueType;
     //The index within the issue's project's own states
@@ -22,7 +24,7 @@ export class IssueData {
     private _filtered:boolean = false;
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
-                assignee:Assignee, priority:Priority, type:IssueType, statusIndex:number,
+                assignee:Assignee,  components:Component[], priority:Priority, type:IssueType, statusIndex:number,
                 linked:IssueData[]) {
         this._boardData = boardData;
         this._key = key;
@@ -30,6 +32,7 @@ export class IssueData {
         this._statusIndex = statusIndex;
         this._summary = summary;
         this._assignee = assignee;
+        this._components = components;
         this._priority = priority;
         this._type = type;
         this._colour = colour;
@@ -45,6 +48,14 @@ export class IssueData {
         let priority:Priority = boardData.priorities.forIndex(input.priority);
         let type:IssueType = boardData.issueTypes.forIndex(input.type);
 
+        let components:Component[];
+        if (input.components) {
+            components = [];
+            for (let componentIndex of input.components) {
+                components.push(boardData.components.forIndex(componentIndex));
+            }
+        }
+
         let colour:string;
         let project:BoardProject = boardData.boardProjects.forKey(projectCode);
         if (project) {
@@ -59,7 +70,7 @@ export class IssueData {
                 linked.push(IssueData.createFullRefresh(boardData, linkedIssues[i]));
             }
         }
-        return new IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked);
+        return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority, type, statusIndex, linked);
     }
 
     static createFromChangeSet(boardData:BoardData, add:IssueChange) {
@@ -74,9 +85,17 @@ export class IssueData {
             colour = project.colour;
             statusIndex = project.getOwnStateIndex(add.state);
         }
+
+        let components:Component[];
+        if (add.components) {
+            components = [];
+            for (let component of add.components) {
+                components.push(boardData.components.forKey(component));
+            }
+        }
+
         let linked:IssueData[];//This does not get set from the events
-        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, priority, type,
-            statusIndex, linked);
+        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked);
 
     }
 
@@ -105,6 +124,10 @@ export class IssueData {
 
     get assignee():Assignee {
         return this._assignee;
+    }
+
+    get components():Component[] {
+        return this._components;
     }
 
     get priority():Priority {
@@ -232,8 +255,18 @@ export class IssueData {
             let project:BoardProject = this.boardProject;
             this._statusIndex = project.getOwnStateIndex(update.state);
         }
-        if (update.assignee) {
+        if (update.unassigned) {
+            this._assignee = null;
+        } else if (update.assignee) {
             this._assignee = this.boardData.assignees.forKey(update.assignee);
+        }
+        if (update.clearedComponents) {
+            this._components = null;
+        } else if (update.components) {
+            this._components = [];
+            for (let component of update.components) {
+                this._components.push(this.boardData.components.forKey(component));
+            }
         }
     }
 }
