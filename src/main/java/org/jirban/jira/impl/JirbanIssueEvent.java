@@ -98,6 +98,17 @@ public class JirbanIssueEvent {
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
+    public boolean isRecalculateState() {
+        if (type == Type.DELETE) {
+            return false;
+        } else if (type == Type.CREATE) {
+            return true;
+        } else if (type == Type.UPDATE) {
+            return detail.isRankOrStateChanged();
+        }
+        return false;
+    }
+
     public static class Detail {
         private final String issueType;
         private final String priority;

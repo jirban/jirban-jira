@@ -39,28 +39,39 @@ import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.index.IndexException;
-import com.atlassian.jira.issue.index.IssueIndexManager;
-import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.issue.search.SearchResults;
-import com.atlassian.jira.jql.builder.JqlQueryBuilder;
+import com.atlassian.jira.issue.index.ReindexIssuesCompletedEvent;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
-import com.atlassian.jira.user.ApplicationUsers;
-import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
  * The listener listening to issue events, and delegating relevant ones to the issue table.
+ * When creating/updating an issue a series of events occur in the same thread as part of handling the request. The two
+ * important ones for our purposes are:
+ * <ol>
+ *     <li>The {@code IssueEvent} - Here we grab the changes to occur in {@link #onIssueEvent(IssueEvent)} and
+ *     construct the needed {@code JirbanIssueEvent} instances.</li>
+ *     <li>The {@code ReindexIssuesCompletedEvent} - This is similar to an after commit, where Jira has completed
+ *     updating the state of the issues.</li>
+ * </ol>
+ *
+ * The {@code JirbanIssueEvent} instances created in the first step are used to update our board caches when receiving
+ * the second event. Note that this split is *ONLY NECESSARY* when an action is performed which updates the status
+ * of an issue, since when rebuilding the board we need to query the issues by status, and the status updates are only
+ * available after the second step. All other changed data (e.g. assignee, issue type, summary, priority etc.) is
+ * available in the first step. So for a create, or an update involving a state change or a rank change we delay updating
+ * the board caches until we received the {@code ReindexIssuesCompletedEvent}. For everything else, we update the board
+ * caches when we receive the first {@code IssueEvent}.
+ *
  *
  * @author Kabir Khan
  */
 @Named("jirbanIssueEventListener")
-public class JirbanIssueEventListener  implements InitializingBean, DisposableBean {
+public class JirbanIssueEventListener implements InitializingBean, DisposableBean {
     private static final Logger log = LoggerFactory.getLogger(JirbanIssueEventListener.class);
 
     private static final String CHANGE_LOG_FIELD = "field";
@@ -82,14 +93,10 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
     @ComponentImport
     private final ProjectManager projectManager;
 
-    @ComponentImport
-    private final SearchService searchService;
-
-
-    @ComponentImport
-    private final IssueIndexManager issueIndexManager;
-
     private final BoardManager boardManager;
+
+    private volatile JirbanIssueEvent currentEvt;
+
 
     /**
      * Constructor.
@@ -98,13 +105,10 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
      * @param boardManager injected {@code BoardManager} implementation.
      */
     @Autowired
-    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager,
-                                    IssueIndexManager issueIndexManager, SearchService searchService, BoardManager boardManager) {
+    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager, BoardManager boardManager) {
         this.eventPublisher = eventPublisher;
         this.projectManager = projectManager;
-        this.issueIndexManager = issueIndexManager;
         this.boardManager = boardManager;
-        this.searchService = searchService;
     }
 
     /**
@@ -129,7 +133,22 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
 
     /**
      * Receives any {@code IssueEvent}s sent by JIRA.
-     * @param issueEvent the IssueEvent passed to us
+     * @param event the event passed to us
+     */
+    @EventListener
+    public void onEvent(ReindexIssuesCompletedEvent event) throws IndexException {
+        if (currentEvt != null) {
+            try {
+                boardManager.handleEvent(currentEvt);
+            } finally {
+                currentEvt = null;
+            }
+        }
+    }
+
+    /**
+     * Receives any {@code IssueEvent}s sent by JIRA
+     * @param issueEvent the event passed to us
      */
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) throws IndexException {
@@ -188,7 +207,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), issue.getStatusObject().getName());
-        passEventToBoardManager(issueEvent, event);
+        passEventToBoardManagerOrDelay(event);
 
         //TODO there could be linked issues
     }
@@ -200,7 +219,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         }
 
         final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(issue.getKey(), issue.getProjectObject().getKey());
-        passEventToBoardManager(issueEvent, event);
+        passEventToBoardManagerOrDelay(event);
     }
 
     private void onWorklogEvent(IssueEvent issueEvent) throws IndexException {
@@ -242,7 +261,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
                 issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
                 summary, assignee, state, rankOrStateChanged);
-        passEventToBoardManager(issueEvent, event);
+        passEventToBoardManagerOrDelay(event);
     }
 
     private void onMoveEvent(IssueEvent issueEvent) throws IndexException {
@@ -270,7 +289,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
 
         if (isAffectedProject(oldProjectCode)) {
             final JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent(oldIssueKey, oldProjectCode);
-            passEventToBoardManager(issueEvent, event);
+            passEventToBoardManagerOrDelay(event);
         }
 
         //2) Then we can do a create on the project with the issue in the event
@@ -286,7 +305,7 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
                 issue.getAssignee(), newState);
-        passEventToBoardManager(issueEvent, event);
+        passEventToBoardManagerOrDelay(event);
 
     }
 
@@ -306,45 +325,18 @@ public class JirbanIssueEventListener  implements InitializingBean, DisposableBe
         return changeItems;
     }
 
-    private void passEventToBoardManager(IssueEvent original, JirbanIssueEvent event) throws IndexException {
-        if (event.getDetails().isRankOrStateChanged()) {
-//            ImportUtils.
-//            issueIndexManager.reIndex(original.getIssue());
+    private void passEventToBoardManagerOrDelay(JirbanIssueEvent event) throws IndexException {
+        if (event.isRecalculateState()) {
+            //Delay the processing of the event as outlined in the class javadoc
+            currentEvt = event;
+        } else {
+            //We can handle the event right away
+            boardManager.handleEvent(event);
         }
-        testSearching(original);
-        boardManager.handleEvent(event);
     }
 
     private boolean isAffectedProject(String projectCode) {
         return boardManager.hasBoardsForProjectCode(projectCode);
     }
 
-    private void testSearching(IssueEvent issueEvent) {
-        Issue issue = issueEvent.getIssue();
-
-        System.out.println("------> " + issue.getKey() + " " + issue.getStatusObject().getName() + " " + issue.getPriorityObject().getName());
-
-        doSearch(issue);
-        try {
-            issueIndexManager.reIndex(issue);
-        } catch (IndexException e) {
-            e.printStackTrace();
-        }
-        doSearch(issue);
-    }
-
-    private void doSearch(Issue issue) {
-        JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
-        queryBuilder.where().issue(issue.getKey());
-        try {
-
-            SearchResults results = searchService.search(ApplicationUsers.byKey("admin").getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
-            List<Issue> list = results.getIssues();
-            for (Issue li : list) {
-                System.out.println("------> " + li.getKey() + " " + li.getStatusObject().getName() + " " + li.getPriorityObject().getName());
-            }
-        } catch (SearchException e) {
-            e.printStackTrace();
-        }
-    }
 }
