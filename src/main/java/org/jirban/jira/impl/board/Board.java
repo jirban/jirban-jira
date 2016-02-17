@@ -498,8 +498,11 @@ public class Board {
                 }
                 //Propagate the new state somehow
                 if (evtDetail.isRankOrStateChanged()) {
-                    final String state = boardCopy.getIssue(event.getIssueKey()).getState();
-                    changeBuilder.addStateRecalculation(state, projectCopy.getIssuesForOwnState(state));
+                    Issue issue = boardCopy.getIssue(event.getIssueKey());
+                    if (issue != null) {
+                        final String state = issue.getState();
+                        changeBuilder.addStateRecalculation(state, projectCopy.getIssuesForOwnState(state));
+                    }
                 }
                 changeBuilder.buildAndRegister();
 

@@ -522,6 +522,11 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
     }
 
+    @Test
+    public void testChangeIssueState() throws SearchException {
+
+    }
+
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);
 
@@ -535,8 +540,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         Assert.assertFalse(changesNode.hasDefined(CHANGES, BLACKLIST));
     }
-
-
 
     private void checkDeletes(int fromView, int expectedView, String...expectedKeys) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView);

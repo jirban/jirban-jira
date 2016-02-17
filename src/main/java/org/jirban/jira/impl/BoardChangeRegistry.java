@@ -22,6 +22,7 @@
 package org.jirban.jira.impl;
 
 import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.ISSUES;
@@ -155,6 +156,7 @@ public class BoardChangeRegistry {
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
         private final BlacklistChange blacklistChange = new BlacklistChange();
+        private final Set<String> issuesWithStateChanges = new HashSet<>();
 
         public ChangeSetCollector(int endView) {
             this.view = endView;
@@ -174,6 +176,11 @@ public class BoardChangeRegistry {
                         issueChanges.remove(issueChange.issueKey);
                     }
                 }
+                if (issueChange.stateChange != null) {
+                    issuesWithStateChanges.add(issueKey);
+                } else {
+                    issuesWithStateChanges.remove(issueKey);
+                }
             } else {
                 blacklistChange.populate(boardChange);
             }
@@ -181,6 +188,28 @@ public class BoardChangeRegistry {
             if (boardChange.getView() > view) {
                 view = boardChange.getView();
             }
+        }
+
+        private Map<String, Map<String, StateChange>> processStateChanges() {
+            Map<String, Map<String, StateChange>> stateChangesByProject = new HashMap<>();
+            Map<String, Map<String, Integer>> stateChangeViewsByProject = new HashMap<>();
+
+            for (String issueKey : issuesWithStateChanges) {
+                IssueChange change = issueChanges.get(issueKey);
+                if (change != null) {
+                    StateChange stateChange = change.stateChange;
+
+                    Map<String, StateChange> stateChangesByState = stateChangesByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
+                    Map<String, Integer> viewsByState = stateChangeViewsByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
+
+                    Integer maxView = viewsByState.get(stateChange.state);
+                    if (maxView == null || maxView < change.view) {
+                        viewsByState.put(stateChange.state, change.view);
+                        stateChangesByState.put(stateChange.state, stateChange);
+                    }
+                }
+            }
+            return stateChangesByProject;
         }
 
         ModelNode serialize() {
@@ -201,7 +230,7 @@ public class BoardChangeRegistry {
             }
 
             serializeAssignees(changes, newAssignees);
-
+            serializeStateChanges(changes, processStateChanges());
             serializeBlacklist(changes);
             return output;
         }
@@ -224,9 +253,27 @@ public class BoardChangeRegistry {
 
         private void serializeAssignees(ModelNode parent, Map<String, Assignee> newAssignees) {
             if (newAssignees.size() > 0) {
-                ModelNode assignees = parent.get("assignees");
+                ModelNode assignees = parent.get(ASSIGNEES);
                 for (Assignee assignee : newAssignees.values()) {
                     assignee.serialize(assignees);
+                }
+            }
+        }
+
+        private void serializeStateChanges(ModelNode parent, Map<String, Map<String, StateChange>> stateChangesByProject) {
+            if (stateChangesByProject.size() > 0) {
+                for (Map.Entry<String, Map<String, StateChange>> projectEntry : stateChangesByProject.entrySet()) {
+                    final String projectCode = projectEntry.getKey();
+                    final Map<String, StateChange> changesForProject = projectEntry.getValue();
+
+                    for (StateChange change : changesForProject.values()) {
+                        if (change.issues.size() > 0) {
+                            final ModelNode stateChanges = parent.get(Constants.STATES, projectCode, change.state);
+                            for (String issueKey : change.issues) {
+                                stateChanges.add(issueKey);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -260,6 +307,7 @@ public class BoardChangeRegistry {
 
     //Will all be called in one thread by ChangeSetCollector, so
     private static class IssueChange {
+        private final String projectCode;
         private final String issueKey;
         private int view;
         private Type type;
@@ -273,13 +321,20 @@ public class BoardChangeRegistry {
 
         private Assignee newAssignee;
 
-        public IssueChange(String issueKey) {
+        //We are interested in the latest state for the issue if it was moved or re-ranked
+        //This information will then be used by the board change collector to figure out which states
+        //should be shipped to the client. If several issues are moved to the same state, the one with the highest
+        //view should be sent to the client.
+        private StateChange stateChange;
+
+        public IssueChange(String projectCode, String issueKey) {
+            this.projectCode = projectCode;
             this.issueKey = issueKey;
         }
 
         static IssueChange create(BoardChange boardChange) {
             JirbanIssueEvent event = boardChange.getEvent();
-            IssueChange change = new IssueChange(event.getIssueKey());
+            IssueChange change = new IssueChange(event.getProjectCode(), event.getIssueKey());
             change.merge(boardChange);
 
             return change;
@@ -297,12 +352,18 @@ public class BoardChangeRegistry {
                 case CREATE:
                 case UPDATE:
                     mergeFields(event, boardChange.getNewAssignee());
+                    if (boardChange.getChangedState() != null && boardChange.getChangedStateIssues() != null) {
+                        stateChange = new StateChange(boardChange.getChangedState(), boardChange.getChangedStateIssues());
+                    }
                     break;
                 case DELETE:
                     //No need to do anything, we will not serialize this issue's details
+                    //Clear the state change details
+                    stateChange = null;
                     break;
                 default:
             }
+
 
         }
 
@@ -336,6 +397,7 @@ public class BoardChangeRegistry {
             if (detail.getState() != null) {
                 state = detail.getState();
             }
+
         }
 
         void mergeType(JirbanIssueEvent event) {
@@ -470,6 +532,16 @@ public class BoardChangeRegistry {
             }
 
             return modelNode;
+        }
+    }
+
+    private static class StateChange {
+        final String state;
+        final List<String> issues;
+
+        public StateChange(String state, List<String> issues) {
+            this.state = state;
+            this.issues = issues;
         }
     }
 

@@ -112,6 +112,14 @@ public class BoardChange {
         return addedBlacklistIssue != null || deletedBlacklistIssue != null;
     }
 
+    String getChangedState() {
+        return changedState;
+    }
+
+    List<String> getChangedStateIssues() {
+        return changedStateIssues;
+    }
+
     public static class Builder {
         private final BoardChangeRegistry registry;
         private final int view;
