@@ -132,7 +132,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     }
 
     /**
-     * Receives any {@code IssueEvent}s sent by JIRA.
+     * Receives any {@code ReindexIssuesCompletedEvent}s sent by JIRA.
      * @param event the event passed to us
      */
     @EventListener
@@ -156,19 +156,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         // if it's an event we're interested in, log it
         System.out.println("-----> Event " + issueEvent);
 
-        //TODO For linked projects we only care about the issues actually linked to!
-
         //TODO There are no events for when updating linked issues, so we need to poll somewhere
-
-        /*
-            TODO The following things will need recalculation of the target state of the issue:
-             -ISSUE_CREATED_ID
-             -ISSUE_MOVED_ID
-             -ISSUE_REOPENED_ID/ISSUE_GENERICEVENT_ID/ISSUE_RESOLVED_ID, if any of the following fields changed
-                * status changed
-                * Rank changed
-
-         */
+        // (or it might be good enough to invalidate the board every 5 mins or so to get the linked issues recalculated)
 
         //CREATED, DELETED and MOVED do not have a worklog
         if (eventTypeId == EventType.ISSUE_CREATED_ID) {

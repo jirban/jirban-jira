@@ -284,8 +284,6 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {},
                 {"TBG-2", "TBG-4"},
                 {}});
-
-        //TODO Check the diffs we will send to clients
     }
 
     @Test
@@ -780,7 +778,8 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {}, {"TDP-2"}, {}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{
                 {}, {}, {"TBG-2"}, {}});
-        checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3");    }
+        checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3");
+    }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);

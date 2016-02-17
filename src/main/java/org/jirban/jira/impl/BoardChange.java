@@ -21,25 +21,45 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.List;
+
 import org.jirban.jira.impl.board.Assignee;
 
 /**
+ * Contains the details of a change to the board, which the clients will apply when polling for changes since their
+ * current view id
+ *
  * @author Kabir Khan
  */
 public class BoardChange {
+    //The time of the change
     private final long time = System.currentTimeMillis();
+
+    //The view id following the change
     private final int view;
+
+    //The event, containing the issue id etc.
     private final JirbanIssueEvent event;
+
+    //The new assignee, if the change brings in an assignee not currently on the board
     private final Assignee newAssignee;
+
+    //If the blacklist was modified. We are mainly interested in if a new unmapped state/priority/type pops up, and
+    //its associated issue. Also, if an issue is deleted, it should be removed from the blacklist.
     private final String addedBlacklistState;
     private final String addedBlacklistPriority;
     private final String addedBlacklistIssueType;
     private final String addedBlacklistIssue;
     private final String deletedBlacklistIssue;
 
+    //If the state was changed
+    private final String changedState;
+    private final List<String> changedStateIssues;
+
+
     private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
-                        String addedBlacklistIssue, String deletedBlacklistIssue) {
+                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState, List<String> changedStateIssues) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
@@ -48,6 +68,8 @@ public class BoardChange {
         this.addedBlacklistIssueType = addedBlacklistIssueType;
         this.addedBlacklistIssue = addedBlacklistIssue;
         this.deletedBlacklistIssue = deletedBlacklistIssue;
+        this.changedState = changedState;
+        this.changedStateIssues = changedStateIssues;
     }
 
     long getTime() {
@@ -94,12 +116,20 @@ public class BoardChange {
         private final BoardChangeRegistry registry;
         private final int view;
         private final JirbanIssueEvent event;
+
+        //The new assignee if one was brought in
         private Assignee newAssignee;
+
+        //If the blacklist was changed
         private String addedBlacklistState;
         private String addedBlacklistPriority;
         private String addedBlacklistIssueType;
         private String addedBlacklistIssue;
         private String deletedBlacklistIssue;
+
+        //If the state was recalculated
+        private String changedState;
+        private List<String> changedStateIssues;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -126,9 +156,14 @@ public class BoardChange {
         }
 
         public void buildAndRegister() {
-            BoardChange change = new BoardChange(view, event, newAssignee, addedBlacklistState, addedBlacklistPriority, addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue);
+            BoardChange change = new BoardChange(view, event, newAssignee, addedBlacklistState, addedBlacklistPriority,
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, changedStateIssues);
             registry.registerChange(change);
         }
 
+        public void addStateRecalculation(String state, List<String> changedStateIssues) {
+            changedState = state;
+            this.changedStateIssues = changedStateIssues;
+        }
     }
 }

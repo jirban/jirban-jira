@@ -471,7 +471,7 @@ public class Board {
 
             if (newIssue != null || blacklist.isUpdated() || evtDetail.isRankOrStateChanged()) {
                 //The project's issue tables will be updated if needed
-                BoardProject projectCopy = projectUpdater.update();
+                final BoardProject projectCopy = projectUpdater.build();
                 final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
                 projectsCopy.put(event.getProjectCode(), projectCopy);
 
@@ -479,7 +479,7 @@ public class Board {
                 //Include the assignee if it was new
                 //Include the project state table if recalculated
 
-                Board boardCopy = new Board(board, board.boardConfig,
+                final Board boardCopy = new Board(board, board.boardConfig,
                         assigneesCopy == null ? board.assignees : assigneesCopy,
                         assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
                         allIssuesCopy,
@@ -496,7 +496,11 @@ public class Board {
                     changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
                             blacklist.getAddedPriority(), blacklist.getAddedIssue());
                 }
-                //TODO propagate the new state somehow
+                //Propagate the new state somehow
+                if (evtDetail.isRankOrStateChanged()) {
+                    final String state = boardCopy.getIssue(event.getIssueKey()).getState();
+                    changeBuilder.addStateRecalculation(state, projectCopy.getIssuesForOwnState(state));
+                }
                 changeBuilder.buildAndRegister();
 
                 return boardCopy;

@@ -84,6 +84,11 @@ class BoardProject {
         }
     }
 
+    List<String> getIssuesForOwnState(String ownState) {
+        int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(ownState);
+        return issueKeysByState.get(stateIndex);
+    }
+
     boolean isOwner() {
         return board.getConfig().getOwnerProjectCode().equals(projectConfig.getCode());
     }
@@ -100,7 +105,7 @@ class BoardProject {
     public BoardProject copyAndDeleteIssue(Issue deleteIssue) throws SearchException {
         Updater updater = new Updater(null, null, this, null);
         updater.deleteIssue(deleteIssue);
-        return updater.update();
+        return updater.build();
     }
 
     public Updater updater(SearchService searchService, Board.Updater boardUpdater,
@@ -267,7 +272,7 @@ class BoardProject {
 
         }
 
-        BoardProject update() throws SearchException {
+        BoardProject build() throws SearchException {
 
             final int deleteIndex = getStateIndexToDeleteFrom();
             final List<String> deletedStateIssues = deleteIndex >= 0 ?
