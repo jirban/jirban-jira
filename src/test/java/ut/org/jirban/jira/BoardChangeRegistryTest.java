@@ -79,6 +79,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(0);
         checkNoIssueChanges(0, 0);
         checkNoBlacklistChanges(0, 0);
+        checkNoStateChanges(0, 0);
+
     }
 
     @Test
@@ -107,6 +109,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(0, 1);
         checkDeletes(0, 1, "TDP-3");
         checkNoBlacklistChanges(0, 1);
+        checkNoStateChanges(0, 1);
 
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete);
@@ -117,6 +120,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(0, 2, "TDP-3", "TDP-7");
         checkDeletes(1, 2, "TDP-7");
         checkNoBlacklistChanges(0, 2);
+        checkNoStateChanges(0, 2);
+
 
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete);
@@ -129,7 +134,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(2, 3, "TBG-1");
         checkNoIssueChanges(3, 3);
         checkNoBlacklistChanges(0, 3);
-
+        checkNoStateChanges(0, 3);
     }
 
     @Test
@@ -143,6 +148,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(0, 1);
         checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"));
         checkNoBlacklistChanges(0, 1);
+        checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
 
         //Now add an issue which brings in new assignees
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X");
@@ -154,11 +160,16 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(0, 2,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
+        checkStateChanges(0, 2, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"),
+                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
+
         checkAssignees(1, 2, "jason");
         checkDeletes(1, 2);
         checkAdds(1, 2,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"));
         checkNoBlacklistChanges(0, 2);
+        checkStateChanges(1, 2, new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
+
 
         //Add another one not bringing in new assignees
         create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D");
@@ -171,17 +182,24 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
+                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
+
         checkAssignees(1, 3, "jason");
         checkDeletes(1, 3);
         checkUpdates(1, 3);
         checkAdds(1, 3,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkStateChanges(1, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
+                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkAssignees(2, 3);
         checkDeletes(2, 3);
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
+                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkNoBlacklistChanges(0, 3);
     }
 
@@ -192,6 +210,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         boardManager.handleEvent(update);
         checkViewId(0);
         checkNoIssueChanges(0, 0);
+        checkNoStateChanges(0, 0);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false);
         boardManager.handleEvent(update);
@@ -201,6 +220,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, "Seven-1", null, null));
         checkNoBlacklistChanges(0, 1);
+        checkNoStateChanges(0, 1);
+
 
         update = createUpdateEventAndAddToRegistry("TDP-7", IssueType.BUG, null, null, null, false, null, false);
         boardManager.handleEvent(update);
@@ -212,6 +233,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(1, 2);
         checkUpdates(1, 2, new IssueData("TDP-7", IssueType.BUG, null, null, null, null));
         checkNoBlacklistChanges(0, 2);
+        checkNoStateChanges(0, 2);
+
 
         update = createUpdateEventAndAddToRegistry("TDP-7", null, Priority.HIGHEST, null, null, false, null, false);
         boardManager.handleEvent(update);
@@ -226,8 +249,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkDeletes(2, 3);
         checkUpdates(2, 3, new IssueData("TDP-7", null, Priority.HIGHEST, null, null, null));
         checkNoBlacklistChanges(0, 3);
+        checkNoStateChanges(0, 3);
 
-        //TODO States
     }
 
 
@@ -240,6 +263,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, null, "kabir", null));
         checkNoBlacklistChanges(0, 1);
+        checkNoStateChanges(0, 1);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, true, null, false);
         boardManager.handleEvent(update);
@@ -249,6 +273,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(1, 2);
         checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, true, null));
         checkNoBlacklistChanges(0, 2);
+        checkNoStateChanges(0, 2);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "jason", false, null, false);
         boardManager.handleEvent(update);
@@ -260,7 +285,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(2, 3, "jason");
         checkUpdates(2, 3, new IssueData("TDP-7", null, null, null, "jason", false, null));
         checkNoBlacklistChanges(0, 3);
-
+        checkNoStateChanges(0, 3);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "brian", false, null, false);
         boardManager.handleEvent(update);
@@ -274,6 +299,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(3, 4);
         checkUpdates(3, 4, new IssueData("TDP-7", null, null, null, "brian", false, null));
         checkNoBlacklistChanges(0, 4);
+        checkNoStateChanges(0, 4);
+
     }
 
 
@@ -284,6 +311,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, "Seven-1", null, null));
         checkNoBlacklistChanges(0, 1);
+        checkNoStateChanges(0, 1);
 
         update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, null, null, "kabir", false, null, false);
         boardManager.handleEvent(update);
@@ -292,8 +320,9 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-7", null, null, "Seven-1", null, null),
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkNoBlacklistChanges(0, 2);
+        checkNoStateChanges(0, 2);
 
-        //Create, update and delete one to make sure that does not affect the others
+        //Create, update and delete TDP-8 to make sure that does not affect the others
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D");
         boardManager.handleEvent(create);
         checkViewId(3);
@@ -302,14 +331,21 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkAdds(0, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
+
         checkUpdates(1, 3,
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkAdds(1, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkStateChanges(1, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
+
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, "TDP-D"));
+        checkStateChanges(2, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
         checkNoBlacklistChanges(0, 3);
+
+
 
         //This should appear as an add for change sets including its previous create, and an update for change
         //sets not including the create
@@ -322,24 +358,26 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkAdds(0, 4,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", "TDP-C"));
+        checkStateChanges(0, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         checkAssignees(1, 4, "jason");
         checkUpdates(1, 4,
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkAdds(1, 4,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", "TDP-C"));
+        checkStateChanges(1, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         checkAssignees(2, 4, "jason");
         checkUpdates(2, 4);
         checkAdds(2, 4,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", "TDP-C"));
+        checkStateChanges(2, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         checkAssignees(3, 4, "jason");
         checkUpdates(3, 4,
                 new IssueData("TDP-8", null, null, null, "jason", "TDP-C"));
         checkAdds(3, 4);
-        checkNoBlacklistChanges(0, 4);
-
+        checkStateChanges(3, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         //This will not appear in change sets including the create, it becomes a noop
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
@@ -350,25 +388,30 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-7", null, null, "Seven-1", null, null),
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkAdds(0, 5);
+        checkNoStateChanges(0, 5);
+
 
         checkAssignees(1, 5);
         checkUpdates(1, 5,
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null));
         checkAdds(1, 5);
+        checkNoStateChanges(1, 5);
 
         checkAssignees(2, 5);
         checkUpdates(2, 5);
         checkAdds(2, 5);
+        checkNoStateChanges(2, 5);
 
         checkAssignees(3, 5);
         checkUpdates(3, 5);
         checkAdds(3, 5);
+        checkNoStateChanges(3, 5);
 
         checkAssignees(4, 5);
         checkUpdates(4, 5);
         checkAdds(4, 5);
-        checkNoBlacklistChanges(0, 5);
-
+        checkNoBlacklistChanges(4, 5);
+        checkNoStateChanges(4, 5);
     }
 
     @Test
@@ -378,6 +421,8 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-8"}, null);
+        checkNoStateChanges(0, 1);
+
 
         event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false);
         boardManager.handleEvent(event);
@@ -392,8 +437,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-8"});
+        checkNoStateChanges(0, 2);
         checkNoIssueChanges(1, 2);
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
+        checkNoStateChanges(1, 2);
     }
 
     @Test
@@ -403,6 +450,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-7"}, null);
+        checkNoStateChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false);
         boardManager.handleEvent(event);
@@ -417,8 +465,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-7"});
+        checkNoStateChanges(0, 2);
         checkNoIssueChanges(1, 2);
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
+        checkNoStateChanges(1, 2);
     }
 
 
@@ -429,6 +479,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-8"}, null);
+        checkNoStateChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false);
         boardManager.handleEvent(event);
@@ -443,8 +494,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-8"});
+        checkNoStateChanges(0, 2);
         checkNoIssueChanges(1, 2);
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
+        checkNoStateChanges(1, 2);
     }
 
     @Test
@@ -454,6 +507,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-7"}, null);
+        checkNoStateChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false);
         boardManager.handleEvent(event);
@@ -468,8 +522,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-7"});
+        checkNoStateChanges(0, 2);
         checkNoIssueChanges(1, 2);
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
+        checkNoStateChanges(1, 2);
     }
 
     @Test
@@ -479,6 +535,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-8"}, null);
+        checkNoStateChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-8", null, (Priority)null, "Eight-1", null, false, null, false);
         boardManager.handleEvent(event);
@@ -493,8 +550,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-8"});
+        checkNoStateChanges(0, 2);
         checkNoIssueChanges(1, 2);
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
+        checkNoStateChanges(1, 2);
     }
 
     @Test
@@ -504,6 +563,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-7"}, null);
+        checkNoStateChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-7", null, (Priority)null, "Eight-1", null, false, null, false);
         boardManager.handleEvent(event);
@@ -518,13 +578,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-7"});
+        checkNoStateChanges(0, 2);
         checkNoIssueChanges(1, 2);
         checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
-    }
-
-    @Test
-    public void testChangeIssueState() throws SearchException {
-
+        checkNoStateChanges(1, 2);
     }
 
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
@@ -539,6 +596,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         Assert.assertFalse(changesNode.hasDefined(CHANGES, BLACKLIST));
+    }
+
+    private void checkNoStateChanges(int fromView, int expectedView) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView);
+
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+        Assert.assertFalse(changesNode.hasDefined(CHANGES, STATES));
     }
 
     private void checkDeletes(int fromView, int expectedView, String...expectedKeys) throws SearchException {
@@ -663,6 +727,38 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
+    private void checkStateChanges(int fromView, int expectedView, StateChangeData... expectedChanges) throws SearchException {
+        Map<String, Map<String, List<String>>> expected = new HashMap<>();
+        for (StateChangeData change : expectedChanges) {
+            Map<String, List<String>> expectedForProject = expected.computeIfAbsent(change.projectCode, p -> new HashMap<>());
+            expectedForProject.put(change.state, Arrays.asList(change.issues));
+        }
+
+        ModelNode changesNode = getChangesJson(fromView);
+        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+        ModelNode statesNode = changesNode.get(CHANGES, STATES);
+        Assert.assertEquals(expected.size(), statesNode.keys().size());
+
+        for (Map.Entry<String, Map<String, List<String>>> projectEntry : expected.entrySet()) {
+            ModelNode projectChangeNode = statesNode.get(projectEntry.getKey());
+            Assert.assertTrue(projectChangeNode.isDefined());
+
+            Map<String, List<String>> projectChanges = projectEntry.getValue();
+            Assert.assertEquals(projectChanges.size(), projectChangeNode.keys().size());
+
+            for (Map.Entry<String, List<String>> stateEntry : projectChanges.entrySet()) {
+                List<ModelNode> issuesList = projectChangeNode.get(stateEntry.getKey()).asList();
+                List<String> expectedIssues = stateEntry.getValue();
+                Assert.assertEquals(expectedIssues.size(), issuesList.size());
+
+                for (int i = 0 ; i < issuesList.size() ; i++) {
+                    Assert.assertEquals(expectedIssues.get(i), issuesList.get(i).asString());
+                }
+            }
+        }
+    }
+
+
     String nullOrString(ModelNode node) {
         if (node.isDefined()) {
             return node.asString();
@@ -704,6 +800,18 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             this.assignee = assignee;
             this.unassigned = unassigned;
             this.state = state;
+        }
+    }
+
+    private static class StateChangeData {
+        private final String projectCode;
+        private final String state;
+        private final String[] issues;
+
+        public StateChangeData(String projectCode, String state, String...issues) {
+            this.projectCode = projectCode;
+            this.state = state;
+            this.issues = issues;
         }
     }
 }

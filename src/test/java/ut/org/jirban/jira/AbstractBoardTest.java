@@ -120,7 +120,7 @@ public class AbstractBoardTest {
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
-                priorityName, summary, user, state, rank);
+                priorityName, summary, user, state, state != null || rank);
 
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, state);
         return update;
