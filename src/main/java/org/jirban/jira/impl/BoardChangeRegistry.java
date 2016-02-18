@@ -55,6 +55,11 @@ import org.jirban.jira.impl.JirbanIssueEvent.Type;
 import org.jirban.jira.impl.board.Assignee;
 
 /**
+ * Since Jira 6.4.x does not support web sockets, this maintains a queue of changes. A client connects and gets the full
+ * board which has a current {@code view} sequence number. The client then polls every so often, and passes in its known
+ * {@code view} sequence number. This class then returns the json of the delta between the client's sequence number and
+ * the current {@code view} sequence number.
+ *
  * @author Kabir Khan
  */
 public class BoardChangeRegistry {

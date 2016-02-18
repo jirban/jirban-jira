@@ -92,7 +92,7 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                 IssueTable.prototype.getIssue = function (issueKey) {
                     return this._allIssues.forKey(issueKey);
                 };
-                IssueTable.prototype.processTableChanges = function (changeSet) {
+                IssueTable.prototype.processTableChanges = function (boardData, changeSet) {
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
                     //Delete from the "all issues table"
                     var deletedIssues = this._allIssues.deleteKeys(changeSet.deletedIssueKeys);
@@ -129,6 +129,8 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                     if (changeSet.issueAdds) {
                         for (var _d = 0, _e = changeSet.issueAdds; _d < _e.length; _d++) {
                             var add = _e[_d];
+                            var issue = issueData_1.IssueData.createFromChangeSet(boardData, add);
+                            this._allIssues.add(issue.key, issue);
                         }
                     }
                     //Now update the changed states
@@ -147,36 +149,6 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                     this.createTable();
                     this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
                 };
-                //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
-                //    let issue:IssueData = this._allIssues.forKey(issueKey);
-                //    if (!issue) {
-                //        return;
-                //    }
-                //
-                //    let project:BoardProject = this._boardData.boardProjects.forKey(issue.projectCode);
-                //    let affectedStateIndices:number[] =
-                //        project.moveIssueAndGetAffectedStateIndices(this._projects, issue, toState, beforeIssueKey);
-                //
-                //    if (!this._swimlane) {
-                //        for (let stateIndex of affectedStateIndices) {
-                //            let counter:StateIssueCounter = new StateIssueCounter();
-                //            let stateColumn:IssueData[] = this.createIssueTableStateColumn(stateIndex, counter);
-                //            this._issueTable[stateIndex] = stateColumn;
-                //            this._totalIssuesByState[stateIndex] = counter.count;
-                //        }
-                //    } else {
-                //        let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
-                //        for (let stateIndex of affectedStateIndices) {
-                //            //Reset the state column of the swimlane table
-                //            for (let data of this._swimlaneTable) {
-                //                data.resetState(stateIndex);
-                //            }
-                //            let counter:StateIssueCounter = new StateIssueCounter();
-                //            this.createSwimlaneTableStateColumn(indexer, this._swimlaneTable, stateIndex, counter);
-                //            this._totalIssuesByState[stateIndex] = counter.count;
-                //        }
-                //    }
-                //}
                 IssueTable.prototype.internalFullRefresh = function (input, initial) {
                     var _this = this;
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(initial);

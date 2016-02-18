@@ -106,13 +106,7 @@ export class BoardData {
                 this.blacklist.addChangeSet(changeSet);
             }
 
-
-            //let deleteKeys:string[] = changeSet.deletedIssueKeys;
-            //this._issueTable.deleteIssues(deleteKeys);
-            //if (changeSet.issueUpdates) {
-            //    this._issueTable.applyUpdates(changeSet.issueUpdates);
-            //}
-            this._issueTable.processTableChanges(changeSet);
+            this._issueTable.processTableChanges(this, changeSet);
 
 
             //Finally bump the view

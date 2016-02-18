@@ -62,6 +62,24 @@ export class IssueData {
         return new IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked);
     }
 
+    static createFromChangeSet(boardData:BoardData, add:IssueChange) {
+        let projectCode:string = IssueData.productCodeFromKey(add.key);
+        let assignee:Assignee = boardData.assignees.forKey(add.assignee);
+        let priority:Priority = boardData.priorities.forKey(add.priority);
+        let type:IssueType = boardData.issueTypes.forKey(add.type);
+        let colour:string;
+        let statusIndex:number;
+        let project:BoardProject = boardData.boardProjects.forKey(projectCode);
+        if (project) {
+            colour = project.colour;
+            statusIndex = project.getOwnStateIndex(add.state);
+        }
+        let linked:IssueData[];//This does not get set from the events
+        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, priority, type,
+            statusIndex, linked);
+    }
+
+
     private static productCodeFromKey(key:string) : string {
         let index:number = key.lastIndexOf("-");
         return key.substring(0, index);

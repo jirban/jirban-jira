@@ -52,6 +52,9 @@ import org.junit.Test;
 import com.atlassian.jira.issue.search.SearchException;
 
 /**
+ * Tests the layout of the board on the server, and how it is serialized to the client on first load/full refresh.
+ * {@link BoardChangeRegistryTest} tests the output of what happens when changes are made to the board issues.
+ *
  * @author Kabir Khan
  */
 public class BoardManagerTest extends AbstractBoardTest {

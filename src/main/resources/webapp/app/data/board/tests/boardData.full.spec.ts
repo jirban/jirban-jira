@@ -7,6 +7,11 @@ import {IssueType} from "./../issueType";
 import {IssueTable} from "./../issueTable";
 import {IssueData} from "./../issueData";
 
+/**
+ * This tests application of the expected json onto the BoardData component on the client which is so central to the display of the board.
+ * The inputs into this test are of the same formats that we are checking for the server side in
+ * BoardManagerTest and BoardChangeRegistryTest.
+ */
 describe('BoardData tests', ()=> {
 //Tests for the BoardData component which is so central to the display of the board
     describe('Load', () => {
@@ -729,19 +734,19 @@ describe('BoardData tests', ()=> {
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
         });
 
-        it ("Main project", () => {
+        it ("Main project to populated state - no new assignee", () => {
             checkAssignees(boardData, "brian", "kabir");
             let changes:any = {
                 changes: {
                     view: 1,
                     issues: {
-                        "create" : [{
+                        "new" : [{
                             key: "TDP-3",
-                            state : 1,
+                            state : "TDP-B",
                             summary : "Three",
-                            priority : 1,
-                            type : 1,
-                            assignee : 1
+                            priority : "high",
+                            type : "bug",
+                            assignee : "kabir"
 
                         }]
                     },
@@ -766,8 +771,129 @@ describe('BoardData tests', ()=> {
             expect(createdIssue.key).toBe("TDP-3");
             checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", "Three");
         });
+
+        it ("Main project to unpopulated state  - new assignee", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "new" : [{
+                            key: "TDP-3",
+                            state : "TDP-C",
+                            summary : "Three",
+                            priority : "high",
+                            type : "bug",
+                            assignee : "jason"
+
+                        }]
+                    },
+                    states: {
+                        TDP : {
+                            "TDP-C" : ["TDP-3"]
+                        }
+                    },
+                    assignees : [{
+                        key : "jason",
+                        email : "jason@example.com",
+                        avatar : "/avatars/jason.png",
+                        name : "Jason Greene"
+                    }]
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            checkAssignees(boardData, "brian", "kabir", "jason");
+
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], []];
+            checkBoardLayout(boardData, layout);
+            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-3");
+            expect(createdIssue.key).toBe("TDP-3");
+            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "jason", "Three");
+        });
+
+        it ("Other project populated state", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "new" : [{
+                            key: "TBG-2",
+                            state : "TBG-X",
+                            summary : "Two",
+                            priority : "high",
+                            type : "bug",
+                            assignee : "kabir"
+
+                        }]
+                    },
+                    states: {
+                        TBG : {
+                            "TBG-X" : ["TBG-2", "TBG-1"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-2");
+            expect(createdIssue.key).toBe("TBG-2");
+            checkBoardIssue(createdIssue, "TBG-2", "bug", "high", "kabir", "Two");
+        });
+
+        it ("Other project unpopulated state", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "new" : [{
+                            key: "TBG-2",
+                            state : "TBG-Y",
+                            summary : "Two",
+                            priority : "highest",
+                            type : "feature",
+                            assignee : "brian"
+
+                        }]
+                    },
+                    states: {
+                        TBG : {
+                            "TBG-Y" : ["TBG-2"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TBG-2"], []];
+            checkBoardLayout(boardData, layout);
+            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-2");
+            expect(createdIssue.key).toBe("TBG-2");
+            checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", "Two");
+        });
     });
 
+    //TODO a test involving several updates, deletes and state changes
 
     function checkEntries(value:string[], ...expected:string[]) {
         expect(value.length).toBe(expected.length);
@@ -975,4 +1101,5 @@ describe('BoardData tests', ()=> {
         expect(issue.typeName).toBe(issueType.name);
         expect(issue.typeUrl).toBe(issueType.icon);
     }
+
 });

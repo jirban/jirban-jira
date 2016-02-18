@@ -82,7 +82,7 @@ export class IssueTable {
         return this._allIssues.forKey(issueKey);
     }
 
-    processTableChanges(changeSet:ChangeSet) {
+    processTableChanges(boardData:BoardData, changeSet:ChangeSet) {
         let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
 
         //Delete from the "all issues table"
@@ -122,8 +122,8 @@ export class IssueTable {
         //Add all the created issues
         if (changeSet.issueAdds) {
             for (let add of changeSet.issueAdds) {
-                //TODO (need to refactor issuedata constructor)
-                //Add it to the all issues table
+                let issue:IssueData = IssueData.createFromChangeSet(boardData, add);
+                this._allIssues.add(issue.key, issue);
             }
         }
 
@@ -148,37 +148,6 @@ export class IssueTable {
         this.createTable();
         this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
     }
-
-    //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
-    //    let issue:IssueData = this._allIssues.forKey(issueKey);
-    //    if (!issue) {
-    //        return;
-    //    }
-    //
-    //    let project:BoardProject = this._boardData.boardProjects.forKey(issue.projectCode);
-    //    let affectedStateIndices:number[] =
-    //        project.moveIssueAndGetAffectedStateIndices(this._projects, issue, toState, beforeIssueKey);
-    //
-    //    if (!this._swimlane) {
-    //        for (let stateIndex of affectedStateIndices) {
-    //            let counter:StateIssueCounter = new StateIssueCounter();
-    //            let stateColumn:IssueData[] = this.createIssueTableStateColumn(stateIndex, counter);
-    //            this._issueTable[stateIndex] = stateColumn;
-    //            this._totalIssuesByState[stateIndex] = counter.count;
-    //        }
-    //    } else {
-    //        let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
-    //        for (let stateIndex of affectedStateIndices) {
-    //            //Reset the state column of the swimlane table
-    //            for (let data of this._swimlaneTable) {
-    //                data.resetState(stateIndex);
-    //            }
-    //            let counter:StateIssueCounter = new StateIssueCounter();
-    //            this.createSwimlaneTableStateColumn(indexer, this._swimlaneTable, stateIndex, counter);
-    //            this._totalIssuesByState[stateIndex] = counter.count;
-    //        }
-    //    }
-    //}
 
     private internalFullRefresh(input:any, initial:boolean) {
         let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(initial);

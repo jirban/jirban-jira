@@ -44,6 +44,21 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
                     }
                     return new IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked);
                 };
+                IssueData.createFromChangeSet = function (boardData, add) {
+                    var projectCode = IssueData.productCodeFromKey(add.key);
+                    var assignee = boardData.assignees.forKey(add.assignee);
+                    var priority = boardData.priorities.forKey(add.priority);
+                    var type = boardData.issueTypes.forKey(add.type);
+                    var colour;
+                    var statusIndex;
+                    var project = boardData.boardProjects.forKey(projectCode);
+                    if (project) {
+                        colour = project.colour;
+                        statusIndex = project.getOwnStateIndex(add.state);
+                    }
+                    var linked; //This does not get set from the events
+                    return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, priority, type, statusIndex, linked);
+                };
                 IssueData.productCodeFromKey = function (key) {
                     var index = key.lastIndexOf("-");
                     return key.substring(0, index);
