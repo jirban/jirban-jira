@@ -110,12 +110,6 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                     configurable: true
                 });
                 Object.defineProperty(ChangeSet.prototype, "addedAssignees", {
-                    //get issueChanges() : boolean {
-                    //    if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
-                    //        return true;
-                    //    }
-                    //    return false;
-                    //}
                     get: function () {
                         return this._addedAssignees;
                     },
@@ -125,6 +119,13 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                 ChangeSet.prototype.addToBlacklist = function (blacklist) {
                     blacklist.addChanges(this._blacklistChange);
                 };
+                Object.defineProperty(ChangeSet.prototype, "stateChanges", {
+                    get: function () {
+                        return this._stateChanges;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 return ChangeSet;
             })();
             exports_1("ChangeSet", ChangeSet);

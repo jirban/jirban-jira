@@ -103,19 +103,16 @@ export class ChangeSet {
         return false;
     }
 
-    //get issueChanges() : boolean {
-    //    if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
-    //        return true;
-    //    }
-    //    return false;
-    //}
-
     get addedAssignees() : Assignee[] {
         return this._addedAssignees;
     }
 
     addToBlacklist(blacklist:BlacklistData) {
         blacklist.addChanges(this._blacklistChange);
+    }
+
+    get stateChanges():Indexed<Indexed<string[]>> {
+        return this._stateChanges;
     }
 }
 

@@ -85,57 +85,68 @@ export class IssueTable {
     processTableChanges(changeSet:ChangeSet) {
         let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
 
+        //Delete from the "all issues table"
         let deletedIssues:IssueData[] = this._allIssues.deleteKeys(changeSet.deletedIssueKeys);
-        this._projects.deleteIssues(deletedIssues);
 
         if (changeSet.issueUpdates) {
             for (let update of changeSet.issueUpdates) {
                 let issue = this._allIssues.forKey(update.key);
                 if (!issue) {
                     console.log("Could not find issue to update " + update.key);
-                    return;
+                    continue;
+                }
+                if (update.state) {
+                    //The issue has moved its state, so we need to delete it from the old state column
+                    deletedIssues.push(issue);
+                }
+            }
+        }
+
+        //Delete all the deleted issues from the project issue tables
+        //This also includes all the issues that have been moved
+        this._projects.deleteIssues(deletedIssues);
+
+
+        //Now do the actual application of the updates
+        if (changeSet.issueUpdates) {
+            for (let update of changeSet.issueUpdates) {
+                let issue = this._allIssues.forKey(update.key);
+                if (!issue) {
+                    console.log("Could not find issue to update " + update.key);
+                    continue;
                 }
                 issue.applyUpdate(update);
+            }
+        }
+        //Add all the created issues
+        if (changeSet.issueAdds) {
+            for (let add of changeSet.issueAdds) {
+                //TODO (need to refactor issuedata constructor)
+                //Add it to the all issues table
+            }
+        }
+
+        //Now update the changed states
+        if (changeSet.stateChanges) {
+            let ownerProject:BoardProject = this._projects.ownerProject;
+            for (let projectCode in changeSet.stateChanges.indices) {
+
+                let projectStates:Indexed<string[]> = changeSet.stateChanges.forKey(projectCode);
+                let project:BoardProject = this._projects.boardProjects.forKey(projectCode);
+
+                for (let stateName in projectStates.indices) {
+
+                    let boardState:string = project.mapStateStringToBoard(stateName);
+                    let boardIndex:number = ownerProject.getOwnStateIndex(boardState);
+
+                    project.updateStateIssues(boardIndex, projectStates.forKey(stateName));
+                }
             }
         }
 
         this.createTable();
         this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
-
     }
-
-    //deleteIssues(issueKeys:string[]) {
-    //    //TODO don't duplicate this across all the update functions
-    //    let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
-    //
-    //    let deletedIssues:IssueData[] = this._allIssues.deleteKeys(issueKeys);
-    //    this._projects.deleteIssues(deletedIssues);
-    //
-    //
-    //    //TODO don't duplicate this across all the update functions
-    //    this.createTable();
-    //    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
-    //
-    //}
-    //
-    //applyUpdates(issueUpdates:IssueChange[]) {
-    //    //TODO don't duplicate this across all the update functions
-    //    let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
-    //
-    //    for (let update of issueUpdates) {
-    //        let issue = this._allIssues.forKey(update.key);
-    //        if (!issue) {
-    //            console.log("Could not find issue to update " + update.key);
-    //            return;
-    //        }
-    //        issue.applyUpdate(update);
-    //    }
-    //
-    //    //TODO don't duplicate this across all the update functions
-    //    this.createTable();
-    //    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
-    //
-    //}
 
     //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
     //    let issue:IssueData = this._allIssues.forKey(issueKey);

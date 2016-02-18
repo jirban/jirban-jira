@@ -28,6 +28,10 @@ export class Projects {
         return this._owner;
     }
 
+    get ownerProject():BoardProject {
+        return this._boardProjects.forKey(this._owner);
+    }
+
     get boardStates():Indexed<string> {
         return this._boardProjects.forKey(this.owner).states;
     }
@@ -114,7 +118,7 @@ export abstract class BoardProject extends Project {
     //The table of issue keys uses the board states. This means that for non-owner projects there may be some empty
     //columns where the states are not mapped. It is simpler this way :)
     private _issueKeys:string[][];
-    private _projects:Projects;
+    protected _projects:Projects;
 
     constructor(code:string, colour:string, states:Indexed<string>, issueKeys:string[][]) {
         super(code, states);
@@ -165,61 +169,21 @@ export abstract class BoardProject extends Project {
             }
         }
     }
-    //moveIssueAndGetAffectedStateIndices(projects:Projects, issue:IssueData, toState:string, beforeIssueKey:string) : number[] {
-    //
-    //    console.log("---> Move Issue to " + toState + ": "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
-    //
-    //    let fromIndex = this.getMoveFromBoardStateIndex(projects, issue);
-    //    let toIndex = projects.boardStates.indices[toState];
-    //
-    //    console.log("---> fromIndex " + fromIndex + " ; toIndex "  + toIndex);
-    //
-    //    //Remove the issue from the from states
-    //    let fromIssues:string[] = this._issueKeys[fromIndex];
-    //    console.log("From issues " + fromIssues);
-    //    console.log("From issues length " + fromIssues.length);
-    //    for (let i:number = 0 ; i < fromIssues.length ; i++) {
-    //        if (fromIssues[i] == issue.key) {
-    //            console.log("Deleted");
-    //            fromIssues.splice(i, 1);
-    //            break;
-    //        }
-    //    }
-    //    //Add the issue to the to states
-    //    let toIssues:string[] = this._issueKeys[toIndex];
-    //    if (!beforeIssueKey || toIssues.length == 0) {
-    //        toIssues.push(issue.key);
-    //        console.log("Added");
-    //    } else {
-    //        for (let i:number = 0 ; i < toIssues.length ; i++) {
-    //            if (toIssues[i] == beforeIssueKey) {
-    //                toIssues.splice(i, 0, issue.key);
-    //                console.log("Inserted");
-    //                break;
-    //            }
-    //        }
-    //    }
-    //    //Return the affected state indices
-    //    let affectedStateIndices:number[] = [fromIndex];
-    //    if (toIndex != fromIndex) {
-    //        //Update the issue _own_ state
-    //        issue.statusIndex = this.mapBoardStateIndexToOwnIndex(projects, toIndex);
-    //        console.log("---> Moved Issue "  + issue.key + " " + issue.ownStatus + "(" +issue.statusIndex + ") - " + issue.boardStatus);
-    //
-    //        affectedStateIndices.push(toIndex);
-    //    }
-    //    return affectedStateIndices;
-    //}
 
     abstract isValidState(state:string) : boolean;
 
-    abstract mapStateStringToBoard(state:string) : string;
+    abstract mapStateStringToBoard(ownState:string) : string;
 
+    abstract getOwnerProject():BoardProject;
 
-    //abstract getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number;
+    mapStateStringToBoardIndex(ownState:string):number {
+        let boardState:string = this.mapStateStringToBoard(ownState);
+        return this.getOwnerProject().getOwnStateIndex(boardState);
+    }
 
-    //abstract mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number;
-
+    updateStateIssues(stateIndex:number, issueKeys:string[]) {
+        this._issueKeys[stateIndex] = issueKeys;
+    }
 
 }
 
@@ -238,17 +202,14 @@ class OwnerProject extends BoardProject {
     }
 
 
-    mapStateStringToBoard(state:string):string {
-        return state;
+    mapStateStringToBoard(ownState:string):string {
+        return ownState;
     }
 
-    //getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number {
-    //    return issue.statusIndex;
-    //}
-    //
-    //mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number {
-    //    return boardStateIndex;
-    //}
+
+    getOwnerProject():BoardProject {
+        return this;
+    }
 }
 
 /**
@@ -270,22 +231,14 @@ class OtherMainProject extends BoardProject {
     }
 
 
-    mapStateStringToBoard(state:string):string {
-        return this._projectStatesToBoardState[state];
+    mapStateStringToBoard(ownState:string):string {
+        return this._projectStatesToBoardState[ownState];
     }
 
-    //getMoveFromBoardStateIndex(projects:Projects, issue:IssueData):number {
-    //    //Convert the issue's own state into a board state
-    //    let boardStatus:string = issue.boardStatus;
-    //    let index = projects.boardStates.indices[boardStatus];
-    //    return index;
-    //}
-    //
-    //mapBoardStateIndexToOwnIndex(projects:Projects, boardStateIndex:number):number {
-    //    let boardState:string = projects.boardStates.forIndex(boardStateIndex);
-    //    let myState = this._boardStatesToProjectState[boardState];
-    //    return this._states.indices[myState];
-    //}
+
+    getOwnerProject():BoardProject {
+        return this._projects.ownerProject;
+    }
 }
 
 

@@ -94,54 +94,59 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                 };
                 IssueTable.prototype.processTableChanges = function (changeSet) {
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
+                    //Delete from the "all issues table"
                     var deletedIssues = this._allIssues.deleteKeys(changeSet.deletedIssueKeys);
-                    this._projects.deleteIssues(deletedIssues);
                     if (changeSet.issueUpdates) {
                         for (var _i = 0, _a = changeSet.issueUpdates; _i < _a.length; _i++) {
                             var update = _a[_i];
                             var issue = this._allIssues.forKey(update.key);
                             if (!issue) {
                                 console.log("Could not find issue to update " + update.key);
-                                return;
+                                continue;
+                            }
+                            if (update.state) {
+                                //The issue has moved its state, so we need to delete it from the old state column
+                                deletedIssues.push(issue);
+                            }
+                        }
+                    }
+                    //Delete all the deleted issues from the project issue tables
+                    //This also includes all the issues that have been moved
+                    this._projects.deleteIssues(deletedIssues);
+                    //Now do the actual application of the updates
+                    if (changeSet.issueUpdates) {
+                        for (var _b = 0, _c = changeSet.issueUpdates; _b < _c.length; _b++) {
+                            var update = _c[_b];
+                            var issue = this._allIssues.forKey(update.key);
+                            if (!issue) {
+                                console.log("Could not find issue to update " + update.key);
+                                continue;
                             }
                             issue.applyUpdate(update);
+                        }
+                    }
+                    //Add all the created issues
+                    if (changeSet.issueAdds) {
+                        for (var _d = 0, _e = changeSet.issueAdds; _d < _e.length; _d++) {
+                            var add = _e[_d];
+                        }
+                    }
+                    //Now update the changed states
+                    if (changeSet.stateChanges) {
+                        var ownerProject = this._projects.ownerProject;
+                        for (var projectCode in changeSet.stateChanges.indices) {
+                            var projectStates = changeSet.stateChanges.forKey(projectCode);
+                            var project = this._projects.boardProjects.forKey(projectCode);
+                            for (var stateName in projectStates.indices) {
+                                var boardState = project.mapStateStringToBoard(stateName);
+                                var boardIndex = ownerProject.getOwnStateIndex(boardState);
+                                project.updateStateIssues(boardIndex, projectStates.forKey(stateName));
+                            }
                         }
                     }
                     this.createTable();
                     this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
                 };
-                //deleteIssues(issueKeys:string[]) {
-                //    //TODO don't duplicate this across all the update functions
-                //    let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
-                //
-                //    let deletedIssues:IssueData[] = this._allIssues.deleteKeys(issueKeys);
-                //    this._projects.deleteIssues(deletedIssues);
-                //
-                //
-                //    //TODO don't duplicate this across all the update functions
-                //    this.createTable();
-                //    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
-                //
-                //}
-                //
-                //applyUpdates(issueUpdates:IssueChange[]) {
-                //    //TODO don't duplicate this across all the update functions
-                //    let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
-                //
-                //    for (let update of issueUpdates) {
-                //        let issue = this._allIssues.forKey(update.key);
-                //        if (!issue) {
-                //            console.log("Could not find issue to update " + update.key);
-                //            return;
-                //        }
-                //        issue.applyUpdate(update);
-                //    }
-                //
-                //    //TODO don't duplicate this across all the update functions
-                //    this.createTable();
-                //    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
-                //
-                //}
                 //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
                 //    let issue:IssueData = this._allIssues.forKey(issueKey);
                 //    if (!issue) {

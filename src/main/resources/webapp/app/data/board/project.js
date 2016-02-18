@@ -37,6 +37,13 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                     enumerable: true,
                     configurable: true
                 });
+                Object.defineProperty(Projects.prototype, "ownerProject", {
+                    get: function () {
+                        return this._boardProjects.forKey(this._owner);
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 Object.defineProperty(Projects.prototype, "boardStates", {
                     get: function () {
                         return this._boardProjects.forKey(this.owner).states;
@@ -194,6 +201,13 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                         }
                     }
                 };
+                BoardProject.prototype.mapStateStringToBoardIndex = function (ownState) {
+                    var boardState = this.mapStateStringToBoard(ownState);
+                    return this.getOwnerProject().getOwnStateIndex(boardState);
+                };
+                BoardProject.prototype.updateStateIssues = function (stateIndex, issueKeys) {
+                    this._issueKeys[stateIndex] = issueKeys;
+                };
                 return BoardProject;
             })(Project);
             exports_1("BoardProject", BoardProject);
@@ -209,8 +223,11 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                 OwnerProject.prototype.isValidState = function (state) {
                     return !!this._states.forKey(state);
                 };
-                OwnerProject.prototype.mapStateStringToBoard = function (state) {
-                    return state;
+                OwnerProject.prototype.mapStateStringToBoard = function (ownState) {
+                    return ownState;
+                };
+                OwnerProject.prototype.getOwnerProject = function () {
+                    return this;
                 };
                 return OwnerProject;
             })(BoardProject);
@@ -230,8 +247,11 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                 OtherMainProject.prototype.isValidState = function (state) {
                     return !!this._boardStatesToProjectState[state];
                 };
-                OtherMainProject.prototype.mapStateStringToBoard = function (state) {
-                    return this._projectStatesToBoardState[state];
+                OtherMainProject.prototype.mapStateStringToBoard = function (ownState) {
+                    return this._projectStatesToBoardState[ownState];
+                };
+                OtherMainProject.prototype.getOwnerProject = function () {
+                    return this._projects.ownerProject;
                 };
                 return OtherMainProject;
             })(BoardProject);
