@@ -92,31 +92,56 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                 IssueTable.prototype.getIssue = function (issueKey) {
                     return this._allIssues.forKey(issueKey);
                 };
-                IssueTable.prototype.deleteIssues = function (issueKeys) {
-                    //TODO don't duplicate this across all the update functions
+                IssueTable.prototype.processTableChanges = function (changeSet) {
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
-                    var deletedIssues = this._allIssues.deleteKeys(issueKeys);
+                    var deletedIssues = this._allIssues.deleteKeys(changeSet.deletedIssueKeys);
                     this._projects.deleteIssues(deletedIssues);
-                    //TODO don't duplicate this across all the update functions
-                    this.createTable();
-                    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
-                };
-                IssueTable.prototype.applyUpdates = function (issueUpdates) {
-                    //TODO don't duplicate this across all the update functions
-                    var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(false);
-                    for (var _i = 0; _i < issueUpdates.length; _i++) {
-                        var update = issueUpdates[_i];
-                        var issue = this._allIssues.forKey(update.key);
-                        if (!issue) {
-                            console.log("Could not find issue to update " + update.key);
-                            return;
+                    if (changeSet.issueUpdates) {
+                        for (var _i = 0, _a = changeSet.issueUpdates; _i < _a.length; _i++) {
+                            var update = _a[_i];
+                            var issue = this._allIssues.forKey(update.key);
+                            if (!issue) {
+                                console.log("Could not find issue to update " + update.key);
+                                return;
+                            }
+                            issue.applyUpdate(update);
                         }
-                        issue.applyUpdate(update);
                     }
-                    //TODO don't duplicate this across all the update functions
                     this.createTable();
                     this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
                 };
+                //deleteIssues(issueKeys:string[]) {
+                //    //TODO don't duplicate this across all the update functions
+                //    let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
+                //
+                //    let deletedIssues:IssueData[] = this._allIssues.deleteKeys(issueKeys);
+                //    this._projects.deleteIssues(deletedIssues);
+                //
+                //
+                //    //TODO don't duplicate this across all the update functions
+                //    this.createTable();
+                //    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+                //
+                //}
+                //
+                //applyUpdates(issueUpdates:IssueChange[]) {
+                //    //TODO don't duplicate this across all the update functions
+                //    let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
+                //
+                //    for (let update of issueUpdates) {
+                //        let issue = this._allIssues.forKey(update.key);
+                //        if (!issue) {
+                //            console.log("Could not find issue to update " + update.key);
+                //            return;
+                //        }
+                //        issue.applyUpdate(update);
+                //    }
+                //
+                //    //TODO don't duplicate this across all the update functions
+                //    this.createTable();
+                //    this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+                //
+                //}
                 //moveIssue(issueKey:string, toState:string, beforeIssueKey:string) {
                 //    let issue:IssueData = this._allIssues.forKey(issueKey);
                 //    if (!issue) {

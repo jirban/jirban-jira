@@ -80,9 +80,6 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                     configurable: true
                 });
                 Object.defineProperty(ChangeSet.prototype, "deletedIssueKeys", {
-                    //get issueDeletes():string[] {
-                    //    return this._issueDeletes;
-                    //}
                     /**
                      * Gets the issues which should be totally removed from the board
                      */
@@ -112,17 +109,13 @@ System.register(["./assignee", "../../common/indexed", "./blacklist"], function(
                     enumerable: true,
                     configurable: true
                 });
-                Object.defineProperty(ChangeSet.prototype, "issueChanges", {
-                    get: function () {
-                        if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
-                            return true;
-                        }
-                        return false;
-                    },
-                    enumerable: true,
-                    configurable: true
-                });
                 Object.defineProperty(ChangeSet.prototype, "addedAssignees", {
+                    //get issueChanges() : boolean {
+                    //    if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
+                    //        return true;
+                    //    }
+                    //    return false;
+                    //}
                     get: function () {
                         return this._addedAssignees;
                     },

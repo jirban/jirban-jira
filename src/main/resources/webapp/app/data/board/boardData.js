@@ -91,11 +91,12 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                             }
                             this.blacklist.addChangeSet(changeSet);
                         }
-                        var deleteKeys = changeSet.deletedIssueKeys;
-                        this._issueTable.deleteIssues(deleteKeys);
-                        if (changeSet.issueUpdates) {
-                            this._issueTable.applyUpdates(changeSet.issueUpdates);
-                        }
+                        //let deleteKeys:string[] = changeSet.deletedIssueKeys;
+                        //this._issueTable.deleteIssues(deleteKeys);
+                        //if (changeSet.issueUpdates) {
+                        //    this._issueTable.applyUpdates(changeSet.issueUpdates);
+                        //}
+                        this._issueTable.processTableChanges(changeSet);
                         //Finally bump the view
                         this._view = changeSet.view;
                     }

@@ -79,10 +79,6 @@ export class ChangeSet {
         return this._issueUpdates;
     }
 
-    //get issueDeletes():string[] {
-    //    return this._issueDeletes;
-    //}
-
     /**
      * Gets the issues which should be totally removed from the board
      */
@@ -107,12 +103,12 @@ export class ChangeSet {
         return false;
     }
 
-    get issueChanges() : boolean {
-        if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
-            return true;
-        }
-        return false;
-    }
+    //get issueChanges() : boolean {
+    //    if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
+    //        return true;
+    //    }
+    //    return false;
+    //}
 
     get addedAssignees() : Assignee[] {
         return this._addedAssignees;
