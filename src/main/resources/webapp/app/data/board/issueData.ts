@@ -21,29 +21,50 @@ export class IssueData {
     private _linked:IssueData[];
     private _filtered:boolean = false;
 
-    constructor(boardData:BoardData, input:any) {
+    constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
+                assignee:Assignee, priority:Priority, type:IssueType, statusIndex:number,
+                linked:IssueData[]) {
         this._boardData = boardData;
-        this._key = input.key;
-        let index:number = this._key.lastIndexOf("-");
-        this._projectCode = this._key.substring(0, index);
-        this._statusIndex = input.state;
-        this._summary = input.summary;
-        this._assignee = boardData.assignees.forIndex(input.assignee);
-        this._priority = boardData.priorities.forIndex(input.priority);
-        this._type = boardData.issueTypes.forIndex(input.type);
+        this._key = key;
+        this._projectCode = projectCode;
+        this._statusIndex = statusIndex;
+        this._summary = summary;
+        this._assignee = assignee;
+        this._priority = priority;
+        this._type = type;
+        this._colour = colour;
+        this._linked = linked;
+    }
 
-        let project:BoardProject = boardData.boardProjects.forKey(this._projectCode);
+    static createFullRefresh(boardData:BoardData, input:any) : IssueData {
+        let key:string = input.key;
+        let projectCode:string = IssueData.productCodeFromKey(key);
+        let statusIndex:number = input.state;
+        let summary:string = input.summary;
+        let assignee:Assignee = boardData.assignees.forIndex(input.assignee);
+        let priority:Priority = boardData.priorities.forIndex(input.priority);
+        let type:IssueType = boardData.issueTypes.forIndex(input.type);
+
+        let colour:string;
+        let project:BoardProject = boardData.boardProjects.forKey(projectCode);
         if (project) {
-            this._colour = project.colour;
+            colour = project.colour;
         }
 
+        let linked:IssueData[];
         let linkedIssues = input["linked-issues"];
         if (!!linkedIssues && linkedIssues.length > 0) {
-            this._linked = [];
+            linked = [];
             for (let i:number = 0; i < linkedIssues.length; i++) {
-                this._linked.push(new IssueData(boardData, linkedIssues[i]));
+                linked.push(IssueData.createFullRefresh(boardData, linkedIssues[i]));
             }
         }
+        return new IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked);
+    }
+
+    private static productCodeFromKey(key:string) : string {
+        let index:number = key.lastIndexOf("-");
+        return key.substring(0, index);
     }
 
     //Plain getters

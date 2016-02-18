@@ -107,6 +107,7 @@ export class IssueTable {
         this._projects.deleteIssues(deletedIssues);
 
 
+
         //Now do the actual application of the updates
         if (changeSet.issueUpdates) {
             for (let update of changeSet.issueUpdates) {
@@ -186,7 +187,7 @@ export class IssueTable {
         this._allIssues.indexMap(
             input.issues,
             (key, data) => {
-                return new IssueData(this._boardData, data);
+                return IssueData.createFullRefresh(this._boardData, data);
             });
         this.createTable();
 

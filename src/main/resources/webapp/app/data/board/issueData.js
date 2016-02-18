@@ -8,29 +8,46 @@ System.register(["angular2/src/facade/lang"], function(exports_1) {
             }],
         execute: function() {
             IssueData = (function () {
-                function IssueData(boardData, input) {
+                function IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked) {
                     this._filtered = false;
                     this._boardData = boardData;
-                    this._key = input.key;
-                    var index = this._key.lastIndexOf("-");
-                    this._projectCode = this._key.substring(0, index);
-                    this._statusIndex = input.state;
-                    this._summary = input.summary;
-                    this._assignee = boardData.assignees.forIndex(input.assignee);
-                    this._priority = boardData.priorities.forIndex(input.priority);
-                    this._type = boardData.issueTypes.forIndex(input.type);
-                    var project = boardData.boardProjects.forKey(this._projectCode);
+                    this._key = key;
+                    this._projectCode = projectCode;
+                    this._statusIndex = statusIndex;
+                    this._summary = summary;
+                    this._assignee = assignee;
+                    this._priority = priority;
+                    this._type = type;
+                    this._colour = colour;
+                    this._linked = linked;
+                }
+                IssueData.createFullRefresh = function (boardData, input) {
+                    var key = input.key;
+                    var projectCode = IssueData.productCodeFromKey(key);
+                    var statusIndex = input.state;
+                    var summary = input.summary;
+                    var assignee = boardData.assignees.forIndex(input.assignee);
+                    var priority = boardData.priorities.forIndex(input.priority);
+                    var type = boardData.issueTypes.forIndex(input.type);
+                    var colour;
+                    var project = boardData.boardProjects.forKey(projectCode);
                     if (project) {
-                        this._colour = project.colour;
+                        colour = project.colour;
                     }
+                    var linked;
                     var linkedIssues = input["linked-issues"];
                     if (!!linkedIssues && linkedIssues.length > 0) {
-                        this._linked = [];
+                        linked = [];
                         for (var i = 0; i < linkedIssues.length; i++) {
-                            this._linked.push(new IssueData(boardData, linkedIssues[i]));
+                            linked.push(IssueData.createFullRefresh(boardData, linkedIssues[i]));
                         }
                     }
-                }
+                    return new IssueData(boardData, key, projectCode, colour, summary, assignee, priority, type, statusIndex, linked);
+                };
+                IssueData.productCodeFromKey = function (key) {
+                    var index = key.lastIndexOf("-");
+                    return key.substring(0, index);
+                };
                 Object.defineProperty(IssueData.prototype, "key", {
                     //Plain getters
                     get: function () {

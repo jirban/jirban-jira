@@ -182,7 +182,7 @@ System.register(["./issueData", './swimlaneIndexer', "../../common/indexed"], fu
                     var storedSwimlaneVisibilities = this.storeSwimlaneVisibilities(initial);
                     this._allIssues = new indexed_1.Indexed();
                     this._allIssues.indexMap(input.issues, function (key, data) {
-                        return new issueData_1.IssueData(_this._boardData, data);
+                        return issueData_1.IssueData.createFullRefresh(_this._boardData, data);
                     });
                     this.createTable();
                     this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
