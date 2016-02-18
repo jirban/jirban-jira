@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/router', '../../services/issuesService', '../../services/authenticationHelper', '../../data/board/boardData', './issue/issue', './swimlaneEntry/swimlaneEntry', "./panelMenu/panelMenu", "./issueContextMenu/issueContextMenu"], function(exports_1) {
+System.register(['angular2/core', 'angular2/router', '../../services/issuesService', '../../data/board/boardData', './issue/issue', './swimlaneEntry/swimlaneEntry', "./panelMenu/panelMenu", "./issueContextMenu/issueContextMenu"], function(exports_1) {
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,7 +8,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, router_1, issuesService_1, authenticationHelper_1, boardData_1, issue_1, swimlaneEntry_1, panelMenu_1, issueContextMenu_1;
+    var core_1, router_1, issuesService_1, boardData_1, issue_1, swimlaneEntry_1, panelMenu_1, issueContextMenu_1;
     var BoardComponent;
     return {
         setters:[
@@ -20,9 +20,6 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
             },
             function (issuesService_1_1) {
                 issuesService_1 = issuesService_1_1;
-            },
-            function (authenticationHelper_1_1) {
-                authenticationHelper_1 = authenticationHelper_1_1;
             },
             function (boardData_1_1) {
                 boardData_1 = boardData_1_1;
@@ -58,9 +55,6 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
                         //TODO logout locally if 401, and redirect to login
                         //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
                         //rather than about the auth problems
-                        //To be safe, go back to the login page
-                        authenticationHelper_1.clearToken();
-                        _this.router.navigateByUrl('/login');
                     }, function () { return console.log('Board: data loaded'); });
                     this.setWindowSize();
                 }

@@ -3,7 +3,6 @@ import {Headers, Http, Response} from 'angular2/http';
 import {Router} from 'angular2/router';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
-import {getToken, hasToken} from '../services/authenticationHelper';
 import {RestUrlUtil} from "../common/RestUrlUtil";
 
 
@@ -13,18 +12,9 @@ export class BoardsService {
     }
 
     loadBoardsList(summaryOnly:boolean) : Observable<any> {
-        if (!hasToken()) {
-            this._router.navigateByUrl("/login");
-        }
-        let token = getToken();
-        let headers = new Headers();
-        headers.append("Authorization", token);
-
         let path:string = RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
         let ret:Observable<any> =
-            this._http.get(path, {
-                headers : headers
-            }).
+            this._http.get(path).
             map((res: Response) => res.json());
         return ret;
     }

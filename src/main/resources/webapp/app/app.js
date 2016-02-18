@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/router', './components/about/about', './components/board/board', './components/boards/boards', './components/login/login', './services/loggedInRouterOutlet', './services/authenticationHelper', "./components/config/config"], function(exports_1) {
+System.register(['angular2/core', 'angular2/router', './components/about/about', './components/board/board', './components/boards/boards', "./components/config/config"], function(exports_1) {
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,7 +8,7 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, router_1, about_1, board_1, boards_1, login_1, loggedInRouterOutlet_1, authenticationHelper_1, config_1;
+    var core_1, router_1, about_1, board_1, boards_1, config_1;
     var App;
     return {
         setters:[
@@ -27,15 +27,6 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
             function (boards_1_1) {
                 boards_1 = boards_1_1;
             },
-            function (login_1_1) {
-                login_1 = login_1_1;
-            },
-            function (loggedInRouterOutlet_1_1) {
-                loggedInRouterOutlet_1 = loggedInRouterOutlet_1_1;
-            },
-            function (authenticationHelper_1_1) {
-                authenticationHelper_1 = authenticationHelper_1_1;
-            },
             function (config_1_1) {
                 config_1 = config_1_1;
             }],
@@ -45,9 +36,6 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
                     this.router = router;
                     this.location = location;
                 }
-                App.prototype.isLoggedIn = function () {
-                    return authenticationHelper_1.hasToken();
-                };
                 App = __decorate([
                     core_1.Component({
                         selector: 'my-app'
@@ -60,7 +48,7 @@ System.register(['angular2/core', 'angular2/router', './components/about/about',
                     ]),
                     core_1.View({
                         template: "\n\n<div class=\"toolbar\">\n    <div class=\"toolbar-left\">\n        <span><a [routerLink]=\"['/About']\" class=\"toolbar-link\"><b>JirBan</b></a></span>\n        <span> <a [routerLink]=\"['/Boards']\" class=\"toolbar-link\">Boards</a></span>\n        <!-- TODO Only display this if it is an admin -->\n        <span> <a [routerLink]=\"['/Config']\" class=\"toolbar-link\">Config</a></span>\n    </div>\n</div>\n\n<router-outlet></router-outlet>\n    ",
-                        directives: [router_1.ROUTER_DIRECTIVES, loggedInRouterOutlet_1.LoggedInRouterOutlet, about_1.AboutComponent, board_1.BoardComponent, login_1.LoginComponent]
+                        directives: [router_1.ROUTER_DIRECTIVES, about_1.AboutComponent, board_1.BoardComponent]
                     }), 
                     __metadata('design:paramtypes', [router_1.Router, router_1.Location])
                 ], App);

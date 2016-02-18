@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/operator/map', '../services/authenticationHelper', "../common/RestUrlUtil"], function(exports_1) {
+System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/operator/map', "../common/RestUrlUtil"], function(exports_1) {
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,7 +8,7 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, http_1, router_1, authenticationHelper_1, RestUrlUtil_1;
+    var core_1, http_1, router_1, RestUrlUtil_1;
     var BoardsService;
     return {
         setters:[
@@ -22,9 +22,6 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                 router_1 = router_1_1;
             },
             function (_1) {},
-            function (authenticationHelper_1_1) {
-                authenticationHelper_1 = authenticationHelper_1_1;
-            },
             function (RestUrlUtil_1_1) {
                 RestUrlUtil_1 = RestUrlUtil_1_1;
             }],
@@ -35,16 +32,8 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                     this._router = _router;
                 }
                 BoardsService.prototype.loadBoardsList = function (summaryOnly) {
-                    if (!authenticationHelper_1.hasToken()) {
-                        this._router.navigateByUrl("/login");
-                    }
-                    var token = authenticationHelper_1.getToken();
-                    var headers = new http_1.Headers();
-                    headers.append("Authorization", token);
                     var path = RestUrlUtil_1.RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
-                    var ret = this._http.get(path, {
-                        headers: headers
-                    }).
+                    var ret = this._http.get(path).
                         map(function (res) { return res.json(); });
                     return ret;
                 };

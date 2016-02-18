@@ -1,4 +1,4 @@
-System.register(['angular2/core', 'angular2/router', '../../services/boardsService', '../../services/authenticationHelper', "angular2/common", "../../common/indexed"], function(exports_1) {
+System.register(['angular2/core', 'angular2/router', '../../services/boardsService', "angular2/common", "../../common/indexed"], function(exports_1) {
     var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
         var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
         if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
@@ -8,7 +8,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
     var __metadata = (this && this.__metadata) || function (k, v) {
         if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
     };
-    var core_1, router_1, boardsService_1, authenticationHelper_1, common_1, common_2, indexed_1;
+    var core_1, router_1, boardsService_1, common_1, common_2, indexed_1;
     var ConfigComponent;
     return {
         setters:[
@@ -20,9 +20,6 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
             },
             function (boardsService_1_1) {
                 boardsService_1 = boardsService_1_1;
-            },
-            function (authenticationHelper_1_1) {
-                authenticationHelper_1 = authenticationHelper_1_1;
             },
             function (common_1_1) {
                 common_1 = common_1_1;
@@ -54,9 +51,6 @@ System.register(['angular2/core', 'angular2/router', '../../services/boardsServi
                         //TODO logout locally if 401, and redirect to login
                         //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
                         //rather than about the auth problems
-                        //To be safe, go back to the error page
-                        authenticationHelper_1.clearToken();
-                        _this._router.navigateByUrl('/login');
                     }, function () { return console.log('Board: done'); });
                     this.updateNewForm();
                 };

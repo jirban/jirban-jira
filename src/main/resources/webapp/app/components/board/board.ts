@@ -1,7 +1,6 @@
 import {Component, View} from 'angular2/core';
 import {Router, RouteParams} from 'angular2/router';
 import {IssuesService} from '../../services/issuesService';
-import {clearToken,setToken} from '../../services/authenticationHelper';
 import {BoardData} from '../../data/board/boardData';
 import {IssueData} from '../../data/board/issueData';
 import {IssueComponent} from './issue/issue';
@@ -46,9 +45,6 @@ export class BoardComponent implements OnDestroy {
                 //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
                 //rather than about the auth problems
 
-                //To be safe, go back to the login page
-                clearToken();
-                this.router.navigateByUrl('/login');
             },
             () => console.log('Board: data loaded')
         );

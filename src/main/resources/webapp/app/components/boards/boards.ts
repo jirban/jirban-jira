@@ -2,7 +2,6 @@ import {Component, View} from 'angular2/core';
 import {ROUTER_DIRECTIVES, ROUTER_PROVIDERS, Router, RouterLink} from 'angular2/router';
 import {BoardsService} from '../../services/boardsService';
 import {BoardComponent} from '../board/board';
-import {clearToken,setToken} from '../../services/authenticationHelper';
 import {Observable} from "rxjs/Observable";
 
 @Component({
@@ -28,10 +27,6 @@ export class BoardsComponent {
                 //TODO logout locally if 401, and redirect to login
                 //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
                 //rather than about the auth problems
-
-                //To be safe, go back to the error page
-                clearToken();
-                this.router.navigateByUrl('/login');
             },
             () => console.log('Board: done')
         );

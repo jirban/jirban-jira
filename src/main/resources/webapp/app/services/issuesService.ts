@@ -4,7 +4,6 @@ import {Headers, Http, Response} from 'angular2/http';
 import {Router} from 'angular2/router';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
-import {getToken, hasToken} from '../services/authenticationHelper';
 import {BoardData} from "../data/board/boardData";
 import {RestUrlUtil} from "../common/RestUrlUtil";
 
@@ -16,20 +15,12 @@ export class IssuesService {
     //private ws : WebSocket;
 
     constructor(http:Http, router:Router) {
-        if (!hasToken()) {
-            router.navigateByUrl('/login');
-        }
         this.http = http;
     }
 
     getIssuesData(board:number) : Observable<Response> {
-        let token = getToken();
-        let headers = new Headers();
-        headers.append("Authorization", token);
         let path:string = RestUrlUtil.caclulateRestUrl('rest/issues/' + board);
-        return this.http.get(path, {
-            headers: headers
-        }).map(res => (<Response>res).json());
+        return this.http.get(path).map(res => (<Response>res).json());
     }
 
 
@@ -56,9 +47,6 @@ export class IssuesService {
     //}
 
     moveIssue(boardName:string, issueKey:string, toState:string, insertBeforeIssueKey:string, insertAfterIssueKey:string) : Observable<void> {
-        let token = getToken();
-        let headers = new Headers();
-        headers.append("Authorization", token);
         let payload:any = {
             boardName: boardName,
             issueKey: issueKey,
@@ -69,10 +57,8 @@ export class IssuesService {
 
         console.log("IssuesService - Initiating move " + new Date());
         return this.http.post(
-            'rest/move-issue', JSON.stringify(payload), {
-                headers: headers
-            })
-            .map(res => (<Response>res).json())
+            'rest/move-issue', JSON.stringify(payload))
+            .map(res => (<Response>res).json());
     }
 
     private getWebSocketUrl(board:string) : string {

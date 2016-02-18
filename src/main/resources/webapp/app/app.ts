@@ -5,10 +5,6 @@ import {APP_BASE_HREF, ROUTER_DIRECTIVES, ROUTER_PROVIDERS, HashLocationStrategy
 import {AboutComponent} from './components/about/about';
 import {BoardComponent} from './components/board/board';
 import {BoardsComponent} from './components/boards/boards';
-import {LoginComponent} from './components/login/login';
-import {LogoutComponent} from './components/logout/logout';
-import {LoggedInRouterOutlet} from './services/loggedInRouterOutlet';
-import {hasToken} from './services/authenticationHelper';
 import {ConfigComponent} from "./components/config/config";
 
 @Component({
@@ -19,9 +15,6 @@ import {ConfigComponent} from "./components/config/config";
     new Route({path: '/board', component: BoardComponent, name: 'Board'}),
     new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
     new Route({path: '/config', component: ConfigComponent, name: 'Config'})
-    /*,
-    new Route({path: '/login', component: LoginComponent, name: 'Login'}),
-    new Route({path: '/logout', component: LogoutComponent, name: 'Logout'})*/
 ])
 @View({
     template: `
@@ -37,7 +30,7 @@ import {ConfigComponent} from "./components/config/config";
 
 <router-outlet></router-outlet>
     `,
-    directives: [ROUTER_DIRECTIVES, LoggedInRouterOutlet, AboutComponent, BoardComponent, LoginComponent]
+    directives: [ROUTER_DIRECTIVES, AboutComponent, BoardComponent]
 })
 export class App {
     router:Router;
@@ -46,9 +39,5 @@ export class App {
     constructor(router:Router, location:Location) {
         this.router = router;
         this.location = location;
-    }
-
-    private isLoggedIn() {
-        return hasToken();
     }
 }
