@@ -7,7 +7,7 @@ import {SwimlaneIndexer, SwimlaneIndexerFactory} from './swimlaneIndexer';
 import {Indexed} from "../../common/indexed";
 import {BoardProject} from "./project";
 import {stat} from "fs";
-import {IssueUpdate} from "./change";
+import {IssueChange} from "./change";
 
 export class IssueTable {
     private _allIssues:Indexed<IssueData>;
@@ -94,7 +94,7 @@ export class IssueTable {
 
     }
 
-    applyUpdates(issueUpdates:IssueUpdate[]) {
+    applyUpdates(issueUpdates:IssueChange[]) {
         //TODO don't duplicate this across all the update functions
         let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
 

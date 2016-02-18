@@ -30,18 +30,7 @@ System.register([], function(exports_1) {
                     return bd;
                 };
                 BlacklistData.prototype.addChangeSet = function (changeSet) {
-                    if (changeSet.blacklistStates) {
-                        this._states = this._states.concat(changeSet.blacklistStates.slice());
-                    }
-                    if (changeSet.blacklistPriorities) {
-                        this._priorities = this._priorities.concat(changeSet.blacklistPriorities.slice());
-                    }
-                    if (changeSet.blacklistTypes) {
-                        this._issueTypes = this._issueTypes.concat(changeSet.blacklistTypes.slice());
-                    }
-                    if (changeSet.blacklistIssues) {
-                        this._issues = this._issues.concat(changeSet.blacklistIssues.slice());
-                    }
+                    changeSet.addToBlacklist(this);
                 };
                 Object.defineProperty(BlacklistData.prototype, "states", {
                     get: function () {
@@ -71,6 +60,20 @@ System.register([], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
+                BlacklistData.prototype.addChanges = function (change) {
+                    if (change.issueTypes.length > 0) {
+                        this._issueTypes = this._issueTypes.concat(change.issueTypes.slice());
+                    }
+                    if (change.priorities) {
+                        this._priorities = this._priorities.concat(change.priorities.slice());
+                    }
+                    if (change.states) {
+                        this._states = this._states.concat(change.states.slice());
+                    }
+                    if (change.issues) {
+                        this._issues = this._issues.concat(change.issues.slice());
+                    }
+                };
                 return BlacklistData;
             })();
             exports_1("BlacklistData", BlacklistData);

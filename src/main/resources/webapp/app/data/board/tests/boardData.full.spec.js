@@ -189,7 +189,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkIssueDatas(boardData, layout);
                     });
                 });
-                describe('Exisiting Blacklist', function () {
+                describe('Existing Blacklist', function () {
                     var boardData;
                     beforeEach(function () {
                         boardData = new boardData_1.BoardData();
@@ -345,7 +345,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkBoardLayout(boardData, layout);
                         checkIssueDatas(boardData, layout);
                     });
-                    it('Delete issue and remove from backlog', function () {
+                    it('Delete issue and remove from blacklist', function () {
                         var changes = {
                             changes: {
                                 view: 1,
@@ -506,6 +506,45 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", "One");
                     });
                 });
+                describe("Create issue", function () {
+                    var boardData;
+                    beforeEach(function () {
+                        boardData = new boardData_1.BoardData();
+                        boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+                    });
+                    it("Main project", function () {
+                        checkAssignees(boardData, "brian", "kabir");
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "create": [{
+                                            key: "TDP-3",
+                                            state: 1,
+                                            summary: "Three",
+                                            priority: 1,
+                                            type: 1,
+                                            assignee: 1
+                                        }]
+                                },
+                                states: {
+                                    TDP: {
+                                        "TDP-2": ["TDP-2", "TDP-3"]
+                                    }
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        checkAssignees(boardData, "brian", "kabir");
+                        var layout = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        var createdIssue = checkIssueDatas(boardData, layout, "TDP-3");
+                        expect(createdIssue.key).toBe("TDP-3");
+                        checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", "Three");
+                    });
+                });
                 function checkEntries(value) {
                     var expected = [];
                     for (var _i = 1; _i < arguments.length; _i++) {
@@ -517,6 +556,16 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         expect(value).toContain(ex);
                     }
                 }
+                /**
+                 * This verifies the issues against the original setup for the board which uses 'calculable' settings.
+                 * When the board has changed, we can pass in an issue to skip. It will be returned, and manual
+                 * verification can happen.
+                 *
+                 * @param boardData the current board data
+                 * @param layout the board layout
+                 * @param skipKey the issue key to skip
+                 * @returns {IssueData} the issue that was skipped
+                 */
                 function checkIssueDatas(boardData, layout, skipKey) {
                     //If 'skipKey' is set, we return the matching issue for manual checks
                     var skippedIssue;

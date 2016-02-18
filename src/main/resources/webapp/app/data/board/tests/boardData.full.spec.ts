@@ -245,7 +245,7 @@ describe('BoardData tests', ()=> {
         });
     });
 
-    describe('Exisiting Blacklist', () => {
+    describe('Existing Blacklist', () => {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
@@ -431,7 +431,7 @@ describe('BoardData tests', ()=> {
             checkIssueDatas(boardData, layout);
         });
 
-        it('Delete issue and remove from backlog', () => {
+        it('Delete issue and remove from blacklist', () => {
             let changes:any = {
                 changes: {
                     view: 1,
@@ -621,6 +621,53 @@ describe('BoardData tests', ()=> {
 
     });
 
+    describe("Create issue", () => {
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        });
+
+        it ("Main project", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "create" : [{
+                            key: "TDP-3",
+                            state : 1,
+                            summary : "Three",
+                            priority : 1,
+                            type : 1,
+                            assignee : 1
+
+                        }]
+                    },
+                    states: {
+                        TDP : {
+                            "TDP-2" : ["TDP-2", "TDP-3"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-3");
+            expect(createdIssue.key).toBe("TDP-3");
+            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", "Three");
+        });
+    });
+
 
     function checkEntries(value:string[], ...expected:string[]) {
         expect(value.length).toBe(expected.length);
@@ -629,6 +676,16 @@ describe('BoardData tests', ()=> {
         }
     }
 
+    /**
+     * This verifies the issues against the original setup for the board which uses 'calculable' settings.
+     * When the board has changed, we can pass in an issue to skip. It will be returned, and manual
+     * verification can happen.
+     *
+     * @param boardData the current board data
+     * @param layout the board layout
+     * @param skipKey the issue key to skip
+     * @returns {IssueData} the issue that was skipped
+     */
     function checkIssueDatas(boardData:BoardData, layout:string[][], skipKey?:string) : IssueData {
         //If 'skipKey' is set, we return the matching issue for manual checks
         let skippedIssue:IssueData;

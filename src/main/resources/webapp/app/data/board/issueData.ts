@@ -5,7 +5,6 @@ import {IssueType} from "./issueType";
 import {isNumber} from "angular2/src/facade/lang";
 import {BoardProject, Project} from "./project";
 import {IssueChange} from "./change";
-import {IssueUpdate} from "./change";
 
 
 export class IssueData {
@@ -179,7 +178,7 @@ export class IssueData {
     }
 
     //Update functions
-    applyUpdate(update:IssueUpdate) {
+    applyUpdate(update:IssueChange) {
         if (update.type) {
             this._type = this._boardData.issueTypes.forKey(update.type);
         }

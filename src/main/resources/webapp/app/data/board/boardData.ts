@@ -16,7 +16,6 @@ import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
-import {IssueDelete} from "./change";
 
 
 export class BoardData {
@@ -99,34 +98,16 @@ export class BoardData {
                 }
             }
 
-            let deleteKeys:string[] = [];
 
             if (changeSet.blacklistChanges) {
                 if (!this.blacklist) {
                     this.blacklist = new BlacklistData();
                 }
                 this.blacklist.addChangeSet(changeSet);
-
-                if (changeSet.blacklistIssues || changeSet.blacklistClearedIssues) {
-                    if (changeSet.blacklistIssues) {
-                        deleteKeys = deleteKeys.concat(changeSet.blacklistIssues);
-                    }
-                    if (changeSet.blacklistClearedIssues) {
-                        deleteKeys = deleteKeys.concat(changeSet.blacklistClearedIssues);
-                    }
-                }
             }
 
-            if (changeSet.issueChanges) {
-                if (changeSet.issueDeletes) {
-                    let deletes:IssueDelete[] = changeSet.issueDeletes;
-                    for (let issueDelete of deletes) {
-                        deleteKeys.push(issueDelete.key);
-                    }
-                }
+            let deleteKeys:string[] = changeSet.deletedIssueKeys;
 
-                //TODO if an update is changing state, need to remove it from the old state here
-            }
 
 
             this._issueTable.deleteIssues(deleteKeys);

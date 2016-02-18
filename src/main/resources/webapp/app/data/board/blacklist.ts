@@ -28,18 +28,7 @@ export class BlacklistData {
     }
 
     addChangeSet(changeSet:ChangeSet) {
-        if (changeSet.blacklistStates) {
-            this._states = this._states.concat(changeSet.blacklistStates.slice());
-        }
-        if (changeSet.blacklistPriorities) {
-            this._priorities = this._priorities.concat(changeSet.blacklistPriorities.slice());
-        }
-        if (changeSet.blacklistTypes) {
-            this._issueTypes = this._issueTypes.concat(changeSet.blacklistTypes.slice());
-        }
-        if (changeSet.blacklistIssues) {
-            this._issues = this._issues.concat(changeSet.blacklistIssues.slice());
-        }
+        changeSet.addToBlacklist(this);
     }
 
     get states():string[] {
@@ -56,5 +45,20 @@ export class BlacklistData {
 
     get issues():string[] {
         return this._issues;
+    }
+
+    addChanges(change:BlacklistData):void {
+        if (change.issueTypes.length > 0) {
+            this._issueTypes = this._issueTypes.concat(change.issueTypes.slice());
+        }
+        if (change.priorities) {
+            this._priorities = this._priorities.concat(change.priorities.slice());
+        }
+        if (change.states) {
+            this._states = this._states.concat(change.states.slice());
+        }
+        if (change.issues) {
+            this._issues = this._issues.concat(change.issues.slice());
+        }
     }
 }

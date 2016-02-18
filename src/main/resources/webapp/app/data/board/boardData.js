@@ -85,30 +85,13 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                                 this._assignees.add(assignee.key, assignee);
                             }
                         }
-                        var deleteKeys = [];
                         if (changeSet.blacklistChanges) {
                             if (!this.blacklist) {
                                 this.blacklist = new blacklist_1.BlacklistData();
                             }
                             this.blacklist.addChangeSet(changeSet);
-                            if (changeSet.blacklistIssues || changeSet.blacklistClearedIssues) {
-                                if (changeSet.blacklistIssues) {
-                                    deleteKeys = deleteKeys.concat(changeSet.blacklistIssues);
-                                }
-                                if (changeSet.blacklistClearedIssues) {
-                                    deleteKeys = deleteKeys.concat(changeSet.blacklistClearedIssues);
-                                }
-                            }
                         }
-                        if (changeSet.issueChanges) {
-                            if (changeSet.issueDeletes) {
-                                var deletes = changeSet.issueDeletes;
-                                for (var _b = 0; _b < deletes.length; _b++) {
-                                    var issueDelete = deletes[_b];
-                                    deleteKeys.push(issueDelete.key);
-                                }
-                            }
-                        }
+                        var deleteKeys = changeSet.deletedIssueKeys;
                         this._issueTable.deleteIssues(deleteKeys);
                         if (changeSet.issueUpdates) {
                             this._issueTable.applyUpdates(changeSet.issueUpdates);

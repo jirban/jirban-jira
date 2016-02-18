@@ -1,20 +1,21 @@
 import {Assignee} from "./assignee";
 import {AssigneeDeserializer} from "./assignee";
 import {Indexed} from "../../common/indexed";
+import {BlacklistData} from "./blacklist";
 export class ChangeSet {
     private _view:number;
 
-    private _issueAdds:IssueAdd[];
-    private _issueUpdates:IssueUpdate[];
-    private _issueDeletes:IssueDelete[];
+    private _issueAdds:IssueChange[];
+    private _issueUpdates:IssueChange[];
+    private _issueDeletes:string[];
 
     private _addedAssignees:Assignee[];
 
-    private _blacklistStates:string[];
-    private _blacklistTypes:string[];
-    private _blacklistPriorities:string[];
-    private _blacklistIssues:string[];
+    private _blacklistChange:BlacklistData;
     private _blacklistClearedIssues:string[];
+
+    private _stateChanges:Indexed<Indexed<string[]>>;
+
 
     constructor(input:any) {
         let changes:any = input.changes;
@@ -26,22 +27,19 @@ export class ChangeSet {
             let updatedIssues:any[] = issues.update;
             let deletedIssues:any[] = issues.delete;
             if (newIssues) {
-                this._issueAdds = new Array<IssueAdd>(newIssues.length);
+                this._issueAdds = new Array<IssueChange>(newIssues.length);
                 for (let i:number = 0 ; i < newIssues.length ; i++) {
-                    this._issueAdds[i] = IssueAdd.deserialize(newIssues[i]);
+                    this._issueAdds[i] = IssueChange.deserializeAdd(newIssues[i]);
                 }
             }
             if (updatedIssues) {
-                this._issueUpdates = new Array<IssueUpdate>(updatedIssues.length);
+                this._issueUpdates = new Array<IssueChange>(updatedIssues.length);
                 for (let i:number = 0 ; i < updatedIssues.length ; i++) {
-                    this._issueUpdates[i] = IssueUpdate.deserialize(updatedIssues[i]);
+                    this._issueUpdates[i] = IssueChange.deserializeUpdate(updatedIssues[i]);
                 }
             }
             if (deletedIssues) {
-                this._issueDeletes = new Array<IssueDelete>(deletedIssues.length);
-                for (let i:number = 0 ; i < deletedIssues.length ; i++) {
-                    this._issueDeletes[i] = new IssueDelete(deletedIssues[i]);
-                }
+                this._issueDeletes = deletedIssues;
             }
         }
 
@@ -51,22 +49,21 @@ export class ChangeSet {
 
         let blacklist:any = changes.blacklist;
         if (blacklist) {
-            if (blacklist.states) {
-                this._blacklistStates = blacklist.states;
-            }
-            if (blacklist["issue-types"]) {
-                this._blacklistTypes = blacklist["issue-types"];
-            }
-            if (blacklist.priorities) {
-                this._blacklistPriorities = blacklist.priorities;
-            }
-            if (blacklist.issues) {
-                this._blacklistIssues = blacklist.issues;
-            }
+            this._blacklistChange = BlacklistData.fromInput(blacklist);
             if (blacklist["removed-issues"]) {
                 this._blacklistClearedIssues = blacklist["removed-issues"];
             }
         }
+
+        let stateChanges:any = changes.states;
+        this._stateChanges = new Indexed<Indexed<string[]>>();
+        this._stateChanges.indexMap(stateChanges, (projectCode:string, projectEntry:any) => {
+           let projStates:Indexed<string[]> = new Indexed<string[]>();
+            projStates.indexMap(projectEntry, (stateName:string, stateEntry:any) => {
+                return stateEntry;
+            });
+            return projStates;
+        });
     }
 
 
@@ -74,48 +71,44 @@ export class ChangeSet {
         return this._view;
     }
 
-    get issueAdds():IssueAdd[] {
+    get issueAdds():IssueChange[] {
         return this._issueAdds;
     }
 
-    get issueUpdates():IssueUpdate[] {
+    get issueUpdates():IssueChange[] {
         return this._issueUpdates;
     }
 
-    get issueDeletes():IssueDelete[] {
-        return this._issueDeletes;
-    }
+    //get issueDeletes():string[] {
+    //    return this._issueDeletes;
+    //}
 
-    get blacklistStates():string[] {
-        return this._blacklistStates;
-    }
-
-    get blacklistTypes():string[] {
-        return this._blacklistTypes;
-    }
-
-    get blacklistPriorities():string[] {
-        return this._blacklistPriorities;
-    }
-
-    get blacklistIssues():string[] {
-        return this._blacklistIssues;
-    }
-
-    get blacklistClearedIssues():string[] {
-        return this._blacklistClearedIssues;
+    /**
+     * Gets the issues which should be totally removed from the board
+     */
+    get deletedIssueKeys():string[] {
+        let deleteKeys:string[] = [];
+        if (this._blacklistChange && this._blacklistChange) {
+            deleteKeys = deleteKeys.concat(this._blacklistChange.issues);
+        }
+        if (this._blacklistClearedIssues) {
+            deleteKeys = deleteKeys.concat(this._blacklistClearedIssues);
+        }
+        if (this._issueDeletes) {
+            deleteKeys = deleteKeys.concat(this._issueDeletes);
+        }
+        return deleteKeys;
     }
 
     get blacklistChanges() : boolean {
-        if (this._blacklistClearedIssues || this._blacklistIssues || this._blacklistPriorities ||
-                this._blacklistStates || this._blacklistTypes ) {
+        if (this._blacklistClearedIssues || this._blacklistChange ) {
             return true;
         }
         return false;
     }
 
     get issueChanges() : boolean {
-        if (this.issueAdds || this.issueUpdates || this.issueDeletes) {
+        if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
             return true;
         }
         return false;
@@ -124,21 +117,14 @@ export class ChangeSet {
     get addedAssignees() : Assignee[] {
         return this._addedAssignees;
     }
+
+    addToBlacklist(blacklist:BlacklistData) {
+        blacklist.addChanges(this._blacklistChange);
+    }
 }
 
-export abstract class IssueChange {
+export class IssueChange {
     private _key:string;
-
-    constructor(key:string) {
-        this._key = key;
-    }
-
-    get key():string {
-        return this._key;
-    }
-}
-
-export abstract class IssueDetailChange extends IssueChange {
     private _type:string;
     private _priority:string;
     private _summary:string;
@@ -146,12 +132,16 @@ export abstract class IssueDetailChange extends IssueChange {
     private _assignee:string;
 
     constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
-        super(key);
+        this._key = key;
         this._type = type;
         this._priority = priority;
         this._summary = summary;
         this._state = state;
         this._assignee = assignee;
+    }
+
+    get key():string {
+        return this._key;
     }
 
     get type():string {
@@ -173,32 +163,17 @@ export abstract class IssueDetailChange extends IssueChange {
     get assignee():string {
         return this._assignee;
     }
-}
 
-export class IssueAdd extends IssueDetailChange {
-    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
-        super(key, type, priority, summary, state, assignee);
-    }
-
-    static deserialize(input:any) : IssueAdd {
+    static deserializeAdd(input:any) : IssueChange {
         //TODO state!!!
-        return new IssueAdd(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
-    }
-}
-
-export class IssueUpdate extends IssueDetailChange {
-    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string) {
-        super(key, type, priority, summary, state, assignee);
+        return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
     }
 
-    static deserialize(input:any) : IssueAdd {
-        //TODO state!!!
-        return new IssueUpdate(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
+    static deserializeUpdate(input:any) : IssueChange {
+        return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
     }
-}
 
-export class IssueDelete extends IssueChange {
-    constructor(key:string) {
-        super(key);
+    static createDelete(input:any) : IssueChange {
+        return null;
     }
 }

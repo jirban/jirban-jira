@@ -1,15 +1,16 @@
-System.register(["./assignee"], function(exports_1) {
-    var __extends = (this && this.__extends) || function (d, b) {
-        for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-        function __() { this.constructor = d; }
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-    };
-    var assignee_1;
-    var ChangeSet, IssueChange, IssueDetailChange, IssueAdd, IssueUpdate, IssueDelete;
+System.register(["./assignee", "../../common/indexed", "./blacklist"], function(exports_1) {
+    var assignee_1, indexed_1, blacklist_1;
+    var ChangeSet, IssueChange;
     return {
         setters:[
             function (assignee_1_1) {
                 assignee_1 = assignee_1_1;
+            },
+            function (indexed_1_1) {
+                indexed_1 = indexed_1_1;
+            },
+            function (blacklist_1_1) {
+                blacklist_1 = blacklist_1_1;
             }],
         execute: function() {
             ChangeSet = (function () {
@@ -24,20 +25,17 @@ System.register(["./assignee"], function(exports_1) {
                         if (newIssues) {
                             this._issueAdds = new Array(newIssues.length);
                             for (var i = 0; i < newIssues.length; i++) {
-                                this._issueAdds[i] = IssueAdd.deserialize(newIssues[i]);
+                                this._issueAdds[i] = IssueChange.deserializeAdd(newIssues[i]);
                             }
                         }
                         if (updatedIssues) {
                             this._issueUpdates = new Array(updatedIssues.length);
                             for (var i = 0; i < updatedIssues.length; i++) {
-                                this._issueUpdates[i] = IssueUpdate.deserialize(updatedIssues[i]);
+                                this._issueUpdates[i] = IssueChange.deserializeUpdate(updatedIssues[i]);
                             }
                         }
                         if (deletedIssues) {
-                            this._issueDeletes = new Array(deletedIssues.length);
-                            for (var i = 0; i < deletedIssues.length; i++) {
-                                this._issueDeletes[i] = new IssueDelete(deletedIssues[i]);
-                            }
+                            this._issueDeletes = deletedIssues;
                         }
                     }
                     if (changes.assignees) {
@@ -45,22 +43,20 @@ System.register(["./assignee"], function(exports_1) {
                     }
                     var blacklist = changes.blacklist;
                     if (blacklist) {
-                        if (blacklist.states) {
-                            this._blacklistStates = blacklist.states;
-                        }
-                        if (blacklist["issue-types"]) {
-                            this._blacklistTypes = blacklist["issue-types"];
-                        }
-                        if (blacklist.priorities) {
-                            this._blacklistPriorities = blacklist.priorities;
-                        }
-                        if (blacklist.issues) {
-                            this._blacklistIssues = blacklist.issues;
-                        }
+                        this._blacklistChange = blacklist_1.BlacklistData.fromInput(blacklist);
                         if (blacklist["removed-issues"]) {
                             this._blacklistClearedIssues = blacklist["removed-issues"];
                         }
                     }
+                    var stateChanges = changes.states;
+                    this._stateChanges = new indexed_1.Indexed();
+                    this._stateChanges.indexMap(stateChanges, function (projectCode, projectEntry) {
+                        var projStates = new indexed_1.Indexed();
+                        projStates.indexMap(projectEntry, function (stateName, stateEntry) {
+                            return stateEntry;
+                        });
+                        return projStates;
+                    });
                 }
                 Object.defineProperty(ChangeSet.prototype, "view", {
                     get: function () {
@@ -83,52 +79,32 @@ System.register(["./assignee"], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
-                Object.defineProperty(ChangeSet.prototype, "issueDeletes", {
+                Object.defineProperty(ChangeSet.prototype, "deletedIssueKeys", {
+                    //get issueDeletes():string[] {
+                    //    return this._issueDeletes;
+                    //}
+                    /**
+                     * Gets the issues which should be totally removed from the board
+                     */
                     get: function () {
-                        return this._issueDeletes;
-                    },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(ChangeSet.prototype, "blacklistStates", {
-                    get: function () {
-                        return this._blacklistStates;
-                    },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(ChangeSet.prototype, "blacklistTypes", {
-                    get: function () {
-                        return this._blacklistTypes;
-                    },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(ChangeSet.prototype, "blacklistPriorities", {
-                    get: function () {
-                        return this._blacklistPriorities;
-                    },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(ChangeSet.prototype, "blacklistIssues", {
-                    get: function () {
-                        return this._blacklistIssues;
-                    },
-                    enumerable: true,
-                    configurable: true
-                });
-                Object.defineProperty(ChangeSet.prototype, "blacklistClearedIssues", {
-                    get: function () {
-                        return this._blacklistClearedIssues;
+                        var deleteKeys = [];
+                        if (this._blacklistChange && this._blacklistChange) {
+                            deleteKeys = deleteKeys.concat(this._blacklistChange.issues);
+                        }
+                        if (this._blacklistClearedIssues) {
+                            deleteKeys = deleteKeys.concat(this._blacklistClearedIssues);
+                        }
+                        if (this._issueDeletes) {
+                            deleteKeys = deleteKeys.concat(this._issueDeletes);
+                        }
+                        return deleteKeys;
                     },
                     enumerable: true,
                     configurable: true
                 });
                 Object.defineProperty(ChangeSet.prototype, "blacklistChanges", {
                     get: function () {
-                        if (this._blacklistClearedIssues || this._blacklistIssues || this._blacklistPriorities ||
-                            this._blacklistStates || this._blacklistTypes) {
+                        if (this._blacklistClearedIssues || this._blacklistChange) {
                             return true;
                         }
                         return false;
@@ -138,7 +114,7 @@ System.register(["./assignee"], function(exports_1) {
                 });
                 Object.defineProperty(ChangeSet.prototype, "issueChanges", {
                     get: function () {
-                        if (this.issueAdds || this.issueUpdates || this.issueDeletes) {
+                        if (this._issueAdds || this._issueUpdates || this._issueDeletes) {
                             return true;
                         }
                         return false;
@@ -153,12 +129,20 @@ System.register(["./assignee"], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
+                ChangeSet.prototype.addToBlacklist = function (blacklist) {
+                    blacklist.addChanges(this._blacklistChange);
+                };
                 return ChangeSet;
             })();
             exports_1("ChangeSet", ChangeSet);
             IssueChange = (function () {
-                function IssueChange(key) {
+                function IssueChange(key, type, priority, summary, state, assignee) {
                     this._key = key;
+                    this._type = type;
+                    this._priority = priority;
+                    this._summary = summary;
+                    this._state = state;
+                    this._assignee = assignee;
                 }
                 Object.defineProperty(IssueChange.prototype, "key", {
                     get: function () {
@@ -167,89 +151,54 @@ System.register(["./assignee"], function(exports_1) {
                     enumerable: true,
                     configurable: true
                 });
-                return IssueChange;
-            })();
-            exports_1("IssueChange", IssueChange);
-            IssueDetailChange = (function (_super) {
-                __extends(IssueDetailChange, _super);
-                function IssueDetailChange(key, type, priority, summary, state, assignee) {
-                    _super.call(this, key);
-                    this._type = type;
-                    this._priority = priority;
-                    this._summary = summary;
-                    this._state = state;
-                    this._assignee = assignee;
-                }
-                Object.defineProperty(IssueDetailChange.prototype, "type", {
+                Object.defineProperty(IssueChange.prototype, "type", {
                     get: function () {
                         return this._type;
                     },
                     enumerable: true,
                     configurable: true
                 });
-                Object.defineProperty(IssueDetailChange.prototype, "priority", {
+                Object.defineProperty(IssueChange.prototype, "priority", {
                     get: function () {
                         return this._priority;
                     },
                     enumerable: true,
                     configurable: true
                 });
-                Object.defineProperty(IssueDetailChange.prototype, "summary", {
+                Object.defineProperty(IssueChange.prototype, "summary", {
                     get: function () {
                         return this._summary;
                     },
                     enumerable: true,
                     configurable: true
                 });
-                Object.defineProperty(IssueDetailChange.prototype, "state", {
+                Object.defineProperty(IssueChange.prototype, "state", {
                     get: function () {
                         return this._state;
                     },
                     enumerable: true,
                     configurable: true
                 });
-                Object.defineProperty(IssueDetailChange.prototype, "assignee", {
+                Object.defineProperty(IssueChange.prototype, "assignee", {
                     get: function () {
                         return this._assignee;
                     },
                     enumerable: true,
                     configurable: true
                 });
-                return IssueDetailChange;
-            })(IssueChange);
-            exports_1("IssueDetailChange", IssueDetailChange);
-            IssueAdd = (function (_super) {
-                __extends(IssueAdd, _super);
-                function IssueAdd(key, type, priority, summary, state, assignee) {
-                    _super.call(this, key, type, priority, summary, state, assignee);
-                }
-                IssueAdd.deserialize = function (input) {
+                IssueChange.deserializeAdd = function (input) {
                     //TODO state!!!
-                    return new IssueAdd(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
+                    return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
                 };
-                return IssueAdd;
-            })(IssueDetailChange);
-            exports_1("IssueAdd", IssueAdd);
-            IssueUpdate = (function (_super) {
-                __extends(IssueUpdate, _super);
-                function IssueUpdate(key, type, priority, summary, state, assignee) {
-                    _super.call(this, key, type, priority, summary, state, assignee);
-                }
-                IssueUpdate.deserialize = function (input) {
-                    //TODO state!!!
-                    return new IssueUpdate(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
+                IssueChange.deserializeUpdate = function (input) {
+                    return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee);
                 };
-                return IssueUpdate;
-            })(IssueDetailChange);
-            exports_1("IssueUpdate", IssueUpdate);
-            IssueDelete = (function (_super) {
-                __extends(IssueDelete, _super);
-                function IssueDelete(key) {
-                    _super.call(this, key);
-                }
-                return IssueDelete;
-            })(IssueChange);
-            exports_1("IssueDelete", IssueDelete);
+                IssueChange.createDelete = function (input) {
+                    return null;
+                };
+                return IssueChange;
+            })();
+            exports_1("IssueChange", IssueChange);
         }
     }
 });
