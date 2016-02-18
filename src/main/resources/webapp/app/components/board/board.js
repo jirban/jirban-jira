@@ -50,6 +50,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
                     }
                     issuesService.getIssuesData(this.boardId).subscribe(function (data) {
                         _this.setIssueData(data);
+                        _this.pollIssues();
                     }, function (err) {
                         console.log(err);
                         //TODO logout locally if 401, and redirect to login
@@ -64,18 +65,25 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
                 };
                 BoardComponent.prototype.setIssueData = function (issueData) {
                     this.boardData.deserialize(this.boardId, issueData);
-                    //this.issuesService.registerWebSocket(this.boardName, (data : any) => {
-                    //    let command:string = data.command;
-                    //    if (command === "full-refresh") {
-                    //        let payload:any = data["payload"];
-                    //        this.boardData.messageFullRefresh(payload);
-                    //        console.log("Got new data!")
-                    //    } else if (command === "issue-move") {
-                    //        let payload:any = data["payload"];
-                    //        this.boardData.messageIssueMove(payload);
-                    //        console.log("Got new data!")
-                    //    }
-                    //});
+                };
+                BoardComponent.prototype.pollIssues = function (timeout) {
+                    var _this = this;
+                    var to = timeout ? timeout : 5000;
+                    setTimeout(function () { _this.doPoll(); }, to);
+                };
+                BoardComponent.prototype.doPoll = function () {
+                    var _this = this;
+                    console.log("Poll");
+                    this.issuesService.pollBoard(this.boardId, this.boardData.view).subscribe(function (data) {
+                        console.log("----> Received changes: " + data);
+                        _this.boardData.processChanges(data);
+                        _this.pollIssues();
+                    }, function (err) {
+                        console.log(err);
+                        //TODO logout locally if 401, and redirect to login
+                        //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
+                        //rather than about the auth problems
+                    }, function () { return console.log('Board: data loaded'); });
                 };
                 Object.defineProperty(BoardComponent.prototype, "visibleColumns", {
                     get: function () {

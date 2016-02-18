@@ -35,27 +35,10 @@ System.register(['angular2/core', 'angular2/http', 'angular2/router', 'rxjs/add/
                     var path = RestUrlUtil_1.RestUrlUtil.caclulateRestUrl('rest/issues/' + board);
                     return this.http.get(path).map(function (res) { return res.json(); });
                 };
-                //registerWebSocket(board:string,
-                //                  messageCallback : (data : any) => void) {
-                //    let wsUrl : string = this.getWebSocketUrl(board);
-                //    this.ws = new WebSocket(wsUrl);
-                //    this.ws.onmessage = (evt:MessageEvent) => {
-                //        console.log("got data " + evt.data);
-                //        messageCallback(JSON.parse(evt.data));
-                //    };
-                //    this.ws.onerror = (evt:Event) => {
-                //        console.log("Error: " + JSON.stringify(evt));
-                //    }
-                //    this.ws.onclose = (evt:Event) => {
-                //        console.log("Close ws " + JSON.stringify(evt));
-                //    }
-                //}
-                //
-                //closeWebSocket() {
-                //    if (this.ws) {
-                //        this.ws.close();
-                //    }
-                //}
+                IssuesService.prototype.pollBoard = function (board, view) {
+                    var path = RestUrlUtil_1.RestUrlUtil.caclulateRestUrl('rest/issues/' + board + "/updates/" + view);
+                    return this.http.get(path).map(function (res) { return res.json(); });
+                };
                 IssuesService.prototype.moveIssue = function (boardName, issueKey, toState, insertBeforeIssueKey, insertAfterIssueKey) {
                     var payload = {
                         boardName: boardName,

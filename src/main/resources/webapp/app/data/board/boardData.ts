@@ -66,51 +66,38 @@ export class BoardData {
     }
 
     /**
-     * Called when changed data is pushed from the server
-     * @param input the json containing the issue tables
-     */
-    messageFullRefresh(input:any) {
-        this.internalDeserialize(input);
-    }
-
-    ///**
-    // * Called when an issue is moved on the server's board
-    // * @param input the json containing the details of the issue move
-    // */
-    //messageIssueMove(input:any) {
-    //    console.log(input);
-    //    this._issueTable.moveIssue(input.issueKey, input.toState, input.beforeIssue);
-    //
-    //}
-
-    /**
      * Called when we receive a change set from the server
      *
      * @param input the json containing the details of the board change set
      */
     processChanges(input:any) {
-        let changeSet:ChangeSet = new ChangeSet(input);
-        if (changeSet.view != this.view) {
+        if (!input.changes) {
+            //This is a full refresh
+            this.internalDeserialize(input);
+        } else {
+            let changeSet:ChangeSet = new ChangeSet(input);
+            if (changeSet.view != this.view) {
 
-            if (changeSet.addedAssignees) {
-                for (let assignee of changeSet.addedAssignees) {
-                    this._assignees.add(assignee.key, assignee);
+                if (changeSet.addedAssignees) {
+                    for (let assignee of changeSet.addedAssignees) {
+                        this._assignees.add(assignee.key, assignee);
+                    }
                 }
-            }
 
 
-            if (changeSet.blacklistChanges) {
-                if (!this.blacklist) {
-                    this.blacklist = new BlacklistData();
+                if (changeSet.blacklistChanges) {
+                    if (!this.blacklist) {
+                        this.blacklist = new BlacklistData();
+                    }
+                    this.blacklist.addChangeSet(changeSet);
                 }
-                this.blacklist.addChangeSet(changeSet);
+
+                this._issueTable.processTableChanges(this, changeSet);
+
+
+                //Finally bump the view
+                this._view = changeSet.view;
             }
-
-            this._issueTable.processTableChanges(this, changeSet);
-
-
-            //Finally bump the view
-            this._view = changeSet.view;
         }
     }
 

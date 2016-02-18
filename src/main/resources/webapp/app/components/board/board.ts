@@ -38,6 +38,7 @@ export class BoardComponent implements OnDestroy {
         issuesService.getIssuesData(this.boardId).subscribe(
             data => {
                 this.setIssueData(data);
+                this.pollIssues();
             },
             err => {
                 console.log(err);
@@ -49,6 +50,7 @@ export class BoardComponent implements OnDestroy {
             () => console.log('Board: data loaded')
         );
         this.setWindowSize();
+
     }
 
     ngOnDestroy():any {
@@ -58,20 +60,32 @@ export class BoardComponent implements OnDestroy {
 
     private setIssueData(issueData:any) {
         this.boardData.deserialize(this.boardId, issueData);
-
-        //this.issuesService.registerWebSocket(this.boardName, (data : any) => {
-        //    let command:string = data.command;
-        //    if (command === "full-refresh") {
-        //        let payload:any = data["payload"];
-        //        this.boardData.messageFullRefresh(payload);
-        //        console.log("Got new data!")
-        //    } else if (command === "issue-move") {
-        //        let payload:any = data["payload"];
-        //        this.boardData.messageIssueMove(payload);
-        //        console.log("Got new data!")
-        //    }
-        //});
     }
+
+    private pollIssues(timeout?:number) {
+        let to:number = timeout ? timeout : 5000;
+        setTimeout(()=>{this.doPoll()}, to);
+    }
+
+    private doPoll() {
+        console.log("Poll");
+        this.issuesService.pollBoard(this.boardId, this.boardData.view).subscribe(
+            data => {
+                console.log("----> Received changes: " + data);
+                this.boardData.processChanges(data);
+                this.pollIssues();
+            },
+            err => {
+                console.log(err);
+                //TODO logout locally if 401, and redirect to login
+                //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
+                //rather than about the auth problems
+
+            },
+            () => console.log('Board: data loaded')
+        );
+    }
+
 
     private get visibleColumns() {
         return this.boardData.visibleColumns;

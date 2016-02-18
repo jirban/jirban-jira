@@ -23,28 +23,10 @@ export class IssuesService {
         return this.http.get(path).map(res => (<Response>res).json());
     }
 
-
-    //registerWebSocket(board:string,
-    //                  messageCallback : (data : any) => void) {
-    //    let wsUrl : string = this.getWebSocketUrl(board);
-    //    this.ws = new WebSocket(wsUrl);
-    //    this.ws.onmessage = (evt:MessageEvent) => {
-    //        console.log("got data " + evt.data);
-    //        messageCallback(JSON.parse(evt.data));
-    //    };
-    //    this.ws.onerror = (evt:Event) => {
-    //        console.log("Error: " + JSON.stringify(evt));
-    //    }
-    //    this.ws.onclose = (evt:Event) => {
-    //        console.log("Close ws " + JSON.stringify(evt));
-    //    }
-    //}
-    //
-    //closeWebSocket() {
-    //    if (this.ws) {
-    //        this.ws.close();
-    //    }
-    //}
+    pollBoard(board:number, view:number) : Observable<Response> {
+        let path = RestUrlUtil.caclulateRestUrl('rest/issues/' + board + "/updates/" + view);
+        return this.http.get(path).map(res => (<Response>res).json());
+    }
 
     moveIssue(boardName:string, issueKey:string, toState:string, insertBeforeIssueKey:string, insertAfterIssueKey:string) : Observable<void> {
         let payload:any = {

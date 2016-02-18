@@ -56,44 +56,34 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     return this;
                 };
                 /**
-                 * Called when changed data is pushed from the server
-                 * @param input the json containing the issue tables
-                 */
-                BoardData.prototype.messageFullRefresh = function (input) {
-                    this.internalDeserialize(input);
-                };
-                ///**
-                // * Called when an issue is moved on the server's board
-                // * @param input the json containing the details of the issue move
-                // */
-                //messageIssueMove(input:any) {
-                //    console.log(input);
-                //    this._issueTable.moveIssue(input.issueKey, input.toState, input.beforeIssue);
-                //
-                //}
-                /**
                  * Called when we receive a change set from the server
                  *
                  * @param input the json containing the details of the board change set
                  */
                 BoardData.prototype.processChanges = function (input) {
-                    var changeSet = new change_1.ChangeSet(input);
-                    if (changeSet.view != this.view) {
-                        if (changeSet.addedAssignees) {
-                            for (var _i = 0, _a = changeSet.addedAssignees; _i < _a.length; _i++) {
-                                var assignee = _a[_i];
-                                this._assignees.add(assignee.key, assignee);
+                    if (!input.changes) {
+                        //This is a full refresh
+                        this.internalDeserialize(input);
+                    }
+                    else {
+                        var changeSet = new change_1.ChangeSet(input);
+                        if (changeSet.view != this.view) {
+                            if (changeSet.addedAssignees) {
+                                for (var _i = 0, _a = changeSet.addedAssignees; _i < _a.length; _i++) {
+                                    var assignee = _a[_i];
+                                    this._assignees.add(assignee.key, assignee);
+                                }
                             }
-                        }
-                        if (changeSet.blacklistChanges) {
-                            if (!this.blacklist) {
-                                this.blacklist = new blacklist_1.BlacklistData();
+                            if (changeSet.blacklistChanges) {
+                                if (!this.blacklist) {
+                                    this.blacklist = new blacklist_1.BlacklistData();
+                                }
+                                this.blacklist.addChangeSet(changeSet);
                             }
-                            this.blacklist.addChangeSet(changeSet);
+                            this._issueTable.processTableChanges(this, changeSet);
+                            //Finally bump the view
+                            this._view = changeSet.view;
                         }
-                        this._issueTable.processTableChanges(this, changeSet);
-                        //Finally bump the view
-                        this._view = changeSet.view;
                     }
                 };
                 /**
