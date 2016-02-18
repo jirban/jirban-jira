@@ -133,30 +133,6 @@ public class Board {
         return outputNode;
     }
 
-//    public boolean isDataSame(Board that) {
-//        //I don't want to do a standard equals() since I am not comparing all the data
-//        if (that == null) return false;
-//
-//        if (assignees.size() != that.assignees.size()) {
-//            return false;
-//        }
-//        for (Map.Entry<String, Assignee> entry : assignees.entrySet()) {
-//            if (!entry.getValue().isDataSame(that.assignees.get(entry.getKey()))) {
-//                return false;
-//            }
-//        }
-//
-//        if (projects.size() != that.projects.size()) {
-//            return false;
-//        }
-//        for (Map.Entry<String, BoardProject> entry : projects.entrySet()) {
-//            if (!entry.getValue().isDataSame(that.projects.get(entry.getKey()))) {
-//                return false;
-//            }
-//        }
-//        return true;
-//    }
-
     public Issue getIssue(String key) {
         return allIssues.get(key);
     }
