@@ -621,6 +621,106 @@ describe('BoardData tests', ()=> {
 
     });
 
+    describe('Update issues - state change', () => {
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+        });
+
+        it ('Update main project to populated state', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TDP-1",
+                            type: "bug",
+                            state: "TDP-B"
+                        }]
+                    },
+                    states: {
+                        TDP : {
+                            "TDP-B" : ["TDP-1", "TDP-2"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [[], ["TDP-1", "TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssue.key).toBe("TDP-1");
+            checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+        });
+
+        it ('Update main project to unpopulated state', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TDP-1",
+                            type: "bug",
+                            state: "TDP-C"
+                        }]
+                    },
+                    states: {
+                        TDP : {
+                            "TDP-C" : ["TDP-1"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-1"], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssue.key).toBe("TDP-1");
+            checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+        });
+
+        it ('Update other project', () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [{
+                            key: "TBG-1",
+                            type: "bug",
+                            state: "TBG-Y"
+                        }]
+                    },
+                    states: {
+                        TBG : {
+                            "TBG-Y" : ["TBG-1"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toBe(jasmine.anything);
+
+            let layout:any = [["TDP-1"], ["TDP-2"], ["TBG-1"], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssue.key).toBe("TBG-1");
+            checkBoardIssue(updatedIssue, "TBG-1", "bug", "highest", "brian", "One");
+        });
+    });
+
+
     describe("Create issue", () => {
         let boardData:BoardData;
         beforeEach(() => {
@@ -647,7 +747,7 @@ describe('BoardData tests', ()=> {
                     },
                     states: {
                         TDP : {
-                            "TDP-2" : ["TDP-2", "TDP-3"]
+                            "TDP-B" : ["TDP-2", "TDP-3"]
                         }
                     }
                 }

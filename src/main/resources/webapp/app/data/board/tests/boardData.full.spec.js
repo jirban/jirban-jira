@@ -506,6 +506,94 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                         checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", "One");
                     });
                 });
+                describe('Update issues - state change', function () {
+                    var boardData;
+                    beforeEach(function () {
+                        boardData = new boardData_1.BoardData();
+                        boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.PRE_CHANGE_BOARD_PROJECTS, testData_1.TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+                    });
+                    it('Update main project to populated state', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "update": [{
+                                            key: "TDP-1",
+                                            type: "bug",
+                                            state: "TDP-B"
+                                        }]
+                                },
+                                states: {
+                                    TDP: {
+                                        "TDP-B": ["TDP-1", "TDP-2"]
+                                    }
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        var layout = [[], ["TDP-1", "TDP-2", "TBG-1"], [], []];
+                        checkBoardLayout(boardData, layout);
+                        var updatedIssue = checkIssueDatas(boardData, layout, "TDP-1");
+                        expect(updatedIssue.key).toBe("TDP-1");
+                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+                    });
+                    it('Update main project to unpopulated state', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "update": [{
+                                            key: "TDP-1",
+                                            type: "bug",
+                                            state: "TDP-C"
+                                        }]
+                                },
+                                states: {
+                                    TDP: {
+                                        "TDP-C": ["TDP-1"]
+                                    }
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        var layout = [[], ["TDP-2", "TBG-1"], ["TDP-1"], []];
+                        checkBoardLayout(boardData, layout);
+                        var updatedIssue = checkIssueDatas(boardData, layout, "TDP-1");
+                        expect(updatedIssue.key).toBe("TDP-1");
+                        checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", "One");
+                    });
+                    it('Update other project', function () {
+                        var changes = {
+                            changes: {
+                                view: 1,
+                                issues: {
+                                    "update": [{
+                                            key: "TBG-1",
+                                            type: "bug",
+                                            state: "TBG-Y"
+                                        }]
+                                },
+                                states: {
+                                    TBG: {
+                                        "TBG-Y": ["TBG-1"]
+                                    }
+                                }
+                            }
+                        };
+                        boardData.processChanges(changes);
+                        expect(boardData.view).toBe(1);
+                        expect(boardData.blacklist).not.toBe(jasmine.anything);
+                        var layout = [["TDP-1"], ["TDP-2"], ["TBG-1"], []];
+                        checkBoardLayout(boardData, layout);
+                        var updatedIssue = checkIssueDatas(boardData, layout, "TBG-1");
+                        expect(updatedIssue.key).toBe("TBG-1");
+                        checkBoardIssue(updatedIssue, "TBG-1", "bug", "highest", "brian", "One");
+                    });
+                });
                 describe("Create issue", function () {
                     var boardData;
                     beforeEach(function () {
@@ -529,7 +617,7 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
                                 },
                                 states: {
                                     TDP: {
-                                        "TDP-2": ["TDP-2", "TDP-3"]
+                                        "TDP-B": ["TDP-2", "TDP-3"]
                                     }
                                 }
                             }
