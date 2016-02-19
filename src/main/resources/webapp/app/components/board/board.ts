@@ -71,7 +71,7 @@ export class BoardComponent implements OnDestroy {
         console.log("Poll");
         this.issuesService.pollBoard(this.boardId, this.boardData.view).subscribe(
             data => {
-                console.log("----> Received changes: " + data);
+                console.log("----> Received changes: " + JSON.stringify(data));
                 this.boardData.processChanges(data);
                 this.pollIssues();
             },
