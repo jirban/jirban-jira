@@ -96,6 +96,12 @@ System.register([], function(exports_1) {
                         this.indices[key] = index;
                     }
                 };
+                Indexed.prototype.reorder = function (values, keyValue) {
+                    for (var i = 0; i < values.length; i++) {
+                        this._array[i] = values[i];
+                        this._indices[keyValue(values[i])] = i;
+                    }
+                };
                 Object.defineProperty(Indexed.prototype, "array", {
                     get: function () {
                         return this._array;

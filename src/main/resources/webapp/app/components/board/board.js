@@ -75,7 +75,7 @@ System.register(['angular2/core', 'angular2/router', '../../services/issuesServi
                     var _this = this;
                     console.log("Poll");
                     this.issuesService.pollBoard(this.boardId, this.boardData.view).subscribe(function (data) {
-                        console.log("----> Received changes: " + data);
+                        console.log("----> Received changes: " + JSON.stringify(data));
                         _this.boardData.processChanges(data);
                         _this.pollIssues();
                     }, function (err) {

@@ -138,21 +138,33 @@ System.register(['angular2/core', 'angular2/common', '../../../data/board/boardD
                 Object.defineProperty(ControlPanelComponent.prototype, "assigneeFilterForm", {
                     get: function () {
                         var _this = this;
-                        if (this._assigneeFilterForm) {
-                            return this._assigneeFilterForm;
+                        if (!this._assigneeFilterForm) {
+                            console.log("----> assignee form");
+                            var form = this.formBuilder.group({});
+                            //The unassigned assignee and the ones configured in the project
+                            form.addControl(assignee_1.NO_ASSIGNEE, new common_1.Control(false));
+                            for (var _i = 0, _a = this.assignees; _i < _a.length; _i++) {
+                                var assignee = _a[_i];
+                                form.addControl(assignee.key, new common_1.Control(false));
+                            }
+                            form.valueChanges
+                                .subscribe(function (value) {
+                                _this.updateAssigneeFilter(value);
+                            });
+                            this._assigneeFilterForm = form;
                         }
-                        var form = this.formBuilder.group({});
-                        //The unassigned assignee and the ones configured in the project
-                        form.addControl(assignee_1.NO_ASSIGNEE, new common_1.Control(false));
-                        for (var _i = 0, _a = this.assignees; _i < _a.length; _i++) {
-                            var assignee = _a[_i];
-                            form.addControl(assignee.key, new common_1.Control(false));
+                        else if (this.boardData.getAndClearHasNewAssignees()) {
+                            //TODO look into an Observable instead
+                            console.log("----> checking assignee form");
+                            var form = this._assigneeFilterForm;
+                            for (var _b = 0, _c = this.assignees; _b < _c.length; _b++) {
+                                var assignee = _c[_b];
+                                var control = form.controls[assignee.key];
+                                if (!control) {
+                                    form.addControl(assignee.key, new common_1.Control(false));
+                                }
+                            }
                         }
-                        form.valueChanges
-                            .subscribe(function (value) {
-                            _this.updateAssigneeFilter(value);
-                        });
-                        this._assigneeFilterForm = form;
                         return this._assigneeFilterForm;
                     },
                     enumerable: true,

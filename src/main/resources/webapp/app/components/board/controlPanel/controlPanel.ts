@@ -11,6 +11,7 @@ import {Priority} from "../../../data/board/priority";
 import {NO_ASSIGNEE} from '../../../data/board/assignee';
 
 import {IMap} from '../../../common/map';
+import {AbstractControl} from "angular2/common";
 
 @Component({
     selector: 'control-panel',
@@ -131,23 +132,35 @@ export class ControlPanelComponent {
     }
 
     private get assigneeFilterForm() : ControlGroup {
-        if (this._assigneeFilterForm) {
-            return this._assigneeFilterForm;
-        }
-        let form : ControlGroup =
-            this.formBuilder.group({});
+        if (!this._assigneeFilterForm) {
+            console.log("----> assignee form");
 
-        //The unassigned assignee and the ones configured in the project
-        form.addControl(NO_ASSIGNEE, new Control(false));
-        for (let assignee of this.assignees) {
-            form.addControl(assignee.key, new Control(false));
-        }
-        form.valueChanges
-            .subscribe((value) => {
-                this.updateAssigneeFilter(value);
-            });
+            let form:ControlGroup =
+                this.formBuilder.group({});
 
-        this._assigneeFilterForm = form;
+            //The unassigned assignee and the ones configured in the project
+            form.addControl(NO_ASSIGNEE, new Control(false));
+            for (let assignee of this.assignees) {
+                form.addControl(assignee.key, new Control(false));
+            }
+            form.valueChanges
+                .subscribe((value) => {
+                    this.updateAssigneeFilter(value);
+                });
+
+            this._assigneeFilterForm = form;
+        } else if (this.boardData.getAndClearHasNewAssignees()) {
+            //TODO look into an Observable instead
+            console.log("----> checking assignee form");
+
+            let form:ControlGroup = this._assigneeFilterForm;
+            for (let assignee of this.assignees) {
+                let control:AbstractControl = form.controls[assignee.key];
+                if (!control) {
+                    form.addControl(assignee.key, new Control(false));
+                }
+            }
+        }
         return this._assigneeFilterForm;
     }
 

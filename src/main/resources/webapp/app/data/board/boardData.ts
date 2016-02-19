@@ -47,6 +47,9 @@ export class BoardData {
 
     private hideables:Hideable[] = [];
 
+    /** Flag to only recalculate the assignees in the control panel when they have been changed */
+    private _hasNewAssignees:boolean = false;
+
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -79,9 +82,14 @@ export class BoardData {
             if (changeSet.view != this.view) {
 
                 if (changeSet.addedAssignees) {
+                    //Make sure that the added assignees are in the correct order for the control panel list
                     for (let assignee of changeSet.addedAssignees) {
                         this._assignees.add(assignee.key, assignee);
                     }
+                    let assignees:Assignee[] = this.assignees.array;
+                    assignees.sort((a1:Assignee, a2:Assignee) => {return a1.name.localeCompare(a2.name)});
+                    this._assignees.reorder(assignees, (assignee:Assignee) => assignee.key);
+                    this._hasNewAssignees = true;
                 }
 
 
@@ -99,6 +107,15 @@ export class BoardData {
                 this._view = changeSet.view;
             }
         }
+    }
+
+    getAndClearHasNewAssignees() : boolean {
+        //TODO look into an Observable instead
+        let ret:boolean = this._hasNewAssignees;
+        if (ret) {
+            this._hasNewAssignees = false;
+        }
+        return ret;
     }
 
     /**

@@ -39,6 +39,8 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     this._issueDisplayDetails = new boardFilters_1.IssueDisplayDetails();
                     this._boardFilters = new boardFilters_1.BoardFilters();
                     this.hideables = [];
+                    /** Flag to only recalculate the assignees in the control panel when they have been changed */
+                    this._hasNewAssignees = false;
                 }
                 /**
                  * Called on loading the board the first time
@@ -69,10 +71,15 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                         var changeSet = new change_1.ChangeSet(input);
                         if (changeSet.view != this.view) {
                             if (changeSet.addedAssignees) {
+                                //Make sure that the added assignees are in the correct order for the control panel list
                                 for (var _i = 0, _a = changeSet.addedAssignees; _i < _a.length; _i++) {
                                     var assignee = _a[_i];
                                     this._assignees.add(assignee.key, assignee);
                                 }
+                                var assignees = this.assignees.array;
+                                assignees.sort(function (a1, a2) { return a1.name.localeCompare(a2.name); });
+                                this._assignees.reorder(assignees, function (assignee) { return assignee.key; });
+                                this._hasNewAssignees = true;
                             }
                             if (changeSet.blacklistChanges) {
                                 if (!this.blacklist) {
@@ -85,6 +92,14 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                             this._view = changeSet.view;
                         }
                     }
+                };
+                BoardData.prototype.getAndClearHasNewAssignees = function () {
+                    //TODO look into an Observable instead
+                    var ret = this._hasNewAssignees;
+                    if (ret) {
+                        this._hasNewAssignees = false;
+                    }
+                    return ret;
                 };
                 /**
                  * Called when changes are made to the issue detail to display in the control panel

@@ -77,6 +77,7 @@ export class IssueData {
         let linked:IssueData[];//This does not get set from the events
         return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, priority, type,
             statusIndex, linked);
+
     }
 
 
