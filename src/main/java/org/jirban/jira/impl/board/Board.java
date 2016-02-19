@@ -30,6 +30,7 @@ import static org.jirban.jira.impl.Constants.VIEW;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -67,7 +68,8 @@ public class Board {
 
     private final BoardConfig boardConfig;
 
-    private final Map<String, Assignee> assignees;
+    //Map of assignees sorted by their display name
+    private final Map<String, Assignee> sortedAssignees;
     private final Map<String, Integer> assigneeIndices;
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
@@ -75,15 +77,21 @@ public class Board {
     private final Blacklist blacklist;
 
     private Board(Board old, BoardConfig boardConfig,
-                    Map<String, Assignee> assignees,
-                    Map<String, Integer> assigneeIndices,
+                    Map<String, Assignee> sortedAssignees,
                     Map<String, Issue> allIssues,
                     Map<String, BoardProject> projects,
                     Blacklist blacklist) {
         this.currentView = old == null ? 0 : old.currentView + 1;
         this.boardConfig = boardConfig;
-        this.assignees = assignees;
-        this.assigneeIndices = assigneeIndices;
+
+        this.sortedAssignees = sortedAssignees;
+        Map<String, Integer> assigneeIndices = new HashMap<>();
+        int i = 0;
+        for (String key : sortedAssignees.keySet()) {
+            assigneeIndices.put(key, i++);
+        }
+        this.assigneeIndices = Collections.unmodifiableMap(assigneeIndices);
+
         this.allIssues = allIssues;
         this.projects = projects;
         this.blacklist = blacklist;
@@ -107,10 +115,8 @@ public class Board {
         outputNode.get(VIEW).set(currentView);
         ModelNode assigneesNode = outputNode.get(ASSIGNEES);
         assigneesNode.setEmptyList();
-        List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
-        Collections.sort(assigneeNames, (a1, a2) -> a1.getDisplayName().compareTo(a2.getDisplayName()));
-        for (Assignee assignee : assigneeNames) {
-            assignees.get(assignee.getKey()).serialize(assigneesNode);
+        for (Assignee assignee : sortedAssignees.values()) {
+            assignee.serialize(assigneesNode);
         }
 
         boardConfig.serializeModelNodeForBoard(outputNode);
@@ -230,12 +236,14 @@ public class Board {
         abstract Blacklist.Accessor getBlacklist();
     }
 
-    private static Map<String, Integer> getAssigneeIndices(Map<String, Assignee> assignees) {
-        Map<String, Integer> assigneeIndices = new HashMap<>();
-        for (String assigneeKey : assignees.keySet()) {
-            assigneeIndices.put(assigneeKey, assigneeIndices.size());
+    private static Map<String, Assignee> sortAssignees(Map<String, Assignee> assignees) {
+        List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
+        Collections.sort(assigneeNames, Comparator.comparing(Assignee::getKey, String.CASE_INSENSITIVE_ORDER));
+        LinkedHashMap<String, Assignee> result = new LinkedHashMap<>();
+        for (Assignee assignee : assigneeNames) {
+            result.put(assignee.getKey(), assignee);
         }
-        return assigneeIndices;
+        return result;
     }
 
     /**
@@ -245,7 +253,7 @@ public class Board {
         private final SearchService searchService;
         private final AvatarService avatarService;
 
-        private final Map<String, Assignee> assignees = new TreeMap<>();
+        private final Map<String, Assignee> assignees = new HashMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
         private final Map<String, BoardProject.Builder> projects = new HashMap<>();
         private final Blacklist.Builder blacklist = new Blacklist.Builder();
@@ -309,7 +317,7 @@ public class Board {
                 }
             });
 
-            Board board = new Board(null, boardConfig, Collections.unmodifiableMap(assignees), Collections.unmodifiableMap(getAssigneeIndices(assignees)),
+            Board board = new Board(null, boardConfig, Collections.unmodifiableMap(sortAssignees(assignees)),
                     Collections.unmodifiableMap(allIssues), Collections.unmodifiableMap(projects),
                     blacklist.build());
             for (BoardProject project : projects.values()) {
@@ -390,7 +398,7 @@ public class Board {
             }
 
             Board boardCopy = new Board(board, board.boardConfig,
-                    board.assignees, board.assigneeIndices,
+                    board.sortedAssignees,
                     Collections.unmodifiableMap(allIssuesCopy),
                     projectsCopy,
                     blacklist.build());
@@ -456,8 +464,7 @@ public class Board {
                 //Include the project state table if recalculated
 
                 final Board boardCopy = new Board(board, board.boardConfig,
-                        assigneesCopy == null ? board.assignees : assigneesCopy,
-                        assigneesCopy == null ? board.assigneeIndices : Collections.unmodifiableMap(getAssigneeIndices(assigneesCopy)),
+                        assigneesCopy == null ? board.sortedAssignees : Collections.unmodifiableMap(sortAssignees(assigneesCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
                         blacklist.build());
@@ -513,9 +520,9 @@ public class Board {
             final User eventAssignee = evtDetail.getAssignee();
             final Map<String, Assignee> assigneesCopy;
             Assignee newAssignee = null;
-            if (eventAssignee != null && eventAssignee != JirbanIssueEvent.UNASSIGNED && !board.assignees.containsKey(eventAssignee.getName())) {
+            if (eventAssignee != null && eventAssignee != JirbanIssueEvent.UNASSIGNED && !board.sortedAssignees.containsKey(eventAssignee.getName())) {
                 newAssignee = Board.createAssignee(avatarService, boardOwner, evtDetail.getAssignee());
-                this.assigneesCopy = copyAndPut(board.assignees, eventAssignee.getName(), newAssignee, TreeMap::new);
+                this.assigneesCopy = copyAndPut(board.sortedAssignees, eventAssignee.getName(), newAssignee, TreeMap::new);
             }
             return newAssignee;
         }
@@ -528,7 +535,7 @@ public class Board {
             } else if (evtDetail.getAssignee() == JirbanIssueEvent.UNASSIGNED) {
                 return Assignee.UNASSIGNED;
             } else {
-                return board.assignees.get(evtDetail.getAssignee().getName());
+                return board.sortedAssignees.get(evtDetail.getAssignee().getName());
             }
         }
 
