@@ -229,6 +229,9 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                 OwnerProject.prototype.getOwnerProject = function () {
                     return this;
                 };
+                OwnerProject.prototype.mapBoardStateToOwnState = function (boardState) {
+                    return boardState;
+                };
                 return OwnerProject;
             })(BoardProject);
             /**
@@ -252,6 +255,9 @@ System.register(['../../common/indexed', "./swimlaneIndexer"], function(exports_
                 };
                 OtherMainProject.prototype.getOwnerProject = function () {
                     return this._projects.ownerProject;
+                };
+                OtherMainProject.prototype.mapBoardStateToOwnState = function (boardState) {
+                    return this._boardStatesToProjectState[boardState];
                 };
                 return OtherMainProject;
             })(BoardProject);

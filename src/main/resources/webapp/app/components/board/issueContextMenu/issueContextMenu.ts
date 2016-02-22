@@ -106,22 +106,24 @@ export class IssueContextMenuComponent {
 
         //Tell the server to move the issue. The actual move will come in via the board's web socket since the actions
         //are queued on the server and once done the changes are broadcast to everyone connected.
-        this.issuesService.moveIssue(this.boardData.boardName, this.issue.key, this.toState, beforeKey, afterKey)
-            .subscribe(
-                data => {
-                    console.log("Executed move!");
-                }
-                ,
-                err => {
-                    console.error(err);
-                },
-                () => {
-                    console.log('request completed')
-                    this.clearMoveMenu();
-                }
-            );
-
-        console.log("insertBeforeIssueKey " + this.insertBeforeIssueKey);
+        //this.boardData.initiateMoveIssue(this.issuesService, this.issue, this.toState, beforeKey, afterKey);
+        //this.issuesService.moveIssue(this.boardData.boardName, this.issue.key, this.toState, beforeKey, afterKey)
+        //    .subscribe(
+        //        data => {
+        //            console.log("Executed move!");
+        //        }
+        //        ,
+        //        err => {
+        //            console.error(err);
+        //        },
+        //        () => {
+        //            console.log('request completed')
+        //            this.clearMoveMenu();
+        //        }
+        //    );
+        //
+        //console.log("insertBeforeIssueKey " + this.insertBeforeIssueKey);
+        this.issuesService.moveIssue(this.boardData, this.issue, this.toState, beforeKey, afterKey);
     }
 
     private onResize(event : any) {

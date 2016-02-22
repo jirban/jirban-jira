@@ -16,6 +16,7 @@ import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
+import {IssuesService} from "../../services/issuesService";
 
 
 export class BoardData {
@@ -24,6 +25,7 @@ export class BoardData {
     private _swimlane:string;
     private _issueTable:IssueTable;
     private _visibleColumns:boolean[] = [];
+    private _rankCustomFieldId:number;
 
     public jiraUrl:string;
 
@@ -129,7 +131,10 @@ export class BoardData {
 
     private internalDeserialize(input:any, first:boolean = false) {
         this._view = input.view;
-        this.jiraUrl = RestUrlUtil.calculateJiraUrl();
+        if (first) {
+            this.jiraUrl = RestUrlUtil.calculateJiraUrl();
+            this._rankCustomFieldId = input["rank-custom-field-id"];
+        }
 
         this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
@@ -280,6 +285,10 @@ export class BoardData {
     getValidMoveBeforeIssues(issueKey:string, toState:string) {
         let moveIssue:IssueData = this._issueTable.getIssue(issueKey);
         return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
+    }
+
+    get rankCustomFieldId():number {
+        return this._rankCustomFieldId;
     }
 }
 

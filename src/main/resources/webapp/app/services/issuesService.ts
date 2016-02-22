@@ -6,6 +6,8 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/operator/map';
 import {BoardData} from "../data/board/boardData";
 import {RestUrlUtil} from "../common/RestUrlUtil";
+import {IssueData} from "../data/board/issueData";
+import {BoardProject} from "../data/board/project";
 
 @Injectable()
 export class IssuesService {
@@ -28,33 +30,141 @@ export class IssuesService {
         return this.http.get(path).map(res => (<Response>res).json());
     }
 
-    moveIssue(boardName:string, issueKey:string, toState:string, insertBeforeIssueKey:string, insertAfterIssueKey:string) : Observable<void> {
-        let payload:any = {
-            boardName: boardName,
-            issueKey: issueKey,
-            toState: toState,
-            afterIssue: insertAfterIssueKey,
-            beforeIssue: insertBeforeIssueKey
-        }
+    //moveIssue(board:number, issueKey:string, toState:string, insertBeforeIssueKey:string, insertAfterIssueKey:string) : Observable<void> {
+    //    let payload:any = {
+    //        board: board,
+    //        issueKey: issueKey,
+    //        toState: toState,
+    //        afterIssue: insertAfterIssueKey,
+    //        beforeIssue: insertBeforeIssueKey
+    //    }
+    //
+    //    console.log("IssuesService - Initiating move " + new Date());
+    //    return this.http.post(
+    //        'rest/move-issue', JSON.stringify(payload))
+    //        .map(res => (<Response>res).json());
+    //}
 
-        console.log("IssuesService - Initiating move " + new Date());
-        return this.http.post(
-            'rest/move-issue', JSON.stringify(payload))
-            .map(res => (<Response>res).json());
+    moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string) {
+        let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, issue, toBoardState, beforeKey, afterKey);
+        mi.execute();
+    }
+}
+
+class MoveIssueAction {
+    private _toOwnState:string;
+
+    private _changeState;
+    private _changeRank;
+    constructor(private _http:Http, private _boardData:BoardData, private _issue:IssueData,
+                     private _toBoardState, private _beforeKey:string, private _afterKey:string) {
+        let project:BoardProject = _boardData.boardProjects.forKey(_issue.projectCode);
+        this._toOwnState = project.mapBoardStateToOwnState(_toBoardState);
+        this._changeState = this._toOwnState != this._issue.ownStatus;
+        this._changeRank = this._beforeKey || this._afterKey;
     }
 
-    private getWebSocketUrl(board:string) : string {
-        let location : Location = window.location;
-        let wsUrl = location.protocol === "https:" ? "wss://" : "ws://";
-        wsUrl += location.hostname;
-        if (location.port) {
-            wsUrl += ":" + location.port;
+    execute() {
+        if (this._changeState) {
+            this.getTransitionsAndPerform();
+        } else if (this._changeRank) {
+            this.performRerank();
         }
-        wsUrl += location.pathname;
-        wsUrl += "websocket/issuerefresh/";
-        wsUrl += board;
-        console.log("--> web socket url " + wsUrl);
-        return wsUrl;
+    }
+
+    getTransitionsAndPerform() {
+        let path = this._boardData.jiraUrl + '/rest/api/2/issue/' + this._issue.key + '/transitions';
+        console.log("URL " + path);
+
+        let headers:Headers = new Headers();
+        headers.append("Accept", "application/json");
+
+        this._http.get(path, {headers : headers})
+            .map(res => (<Response>res).json())
+            .subscribe(
+                data => this.performStateTransition(data),
+                error => this.error(error)
+            );
+    }
+
+    performStateTransition(transitionsValue:any) {
+        let transitionId:number = -1;
+        let transitions:any = transitionsValue.transitions;
+        for (let transition of transitions) {
+            if (transition.name === this._toOwnState) {
+                transitionId = transition.id;
+                break;
+            }
+        }
+
+        if (transitionId == -1) {
+            let state:string = this._toBoardState;
+            if (this._toOwnState != this._toBoardState) {
+                state = state + "(" + this._toOwnState + ")";
+            }
+            this.error({msg: "Could not find a valid transition to " + state});
+        } else {
+            let path = this._boardData.jiraUrl + '/rest/api/2/issue/' + this._issue.key + '/transitions';
+            //path = path + "?issueIdOrKey=" + this._issue.key;
+            let payload:any = {transition: {id: transitionId}};
+
+            let headers:Headers = new Headers();
+            headers.append("Content-Type", "application/json");
+            headers.append("Accept", "application/json");
+
+            console.log("post to URL " + path);
+
+            this._http.post(path, JSON.stringify(payload), {headers : headers})
+                .map(res => (<Response>res).json())
+                .subscribe(
+                    data => {
+                        if (this._changeRank) {
+                            this.performRerank();
+                        } else {
+                            this.done();
+                        }
+                    },
+                    error => this.error(error)
+                );
+        }
+    }
+
+    performRerank() {
+        let path:string = this._boardData.jiraUrl + '/rest/greenhopper/1.0/rank';
+        let payload:any =  {
+            customFieldId: this._boardData.rankCustomFieldId,
+            issueKeys: [this._issue.key],
+        };
+        if (this._beforeKey) {
+            payload.rankBeforeKey = this._beforeKey;
+        }
+        if (this._afterKey) {
+            payload.rankAfterKey = this._afterKey;
+        }
+
+        let headers:Headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Accept", "application/json");
+
+        this._http.post(path, JSON.stringify(payload), {headers : headers})
+            .map(res => (<Response>res).json())
+            .subscribe(
+                data => {
+                    this.done();
+                },
+                error => this.error(error)
+            );
+    }
+
+    done() {
+    }
+
+    error(error:any) {
+        //TOOD
+        console.log(error);
     }
 
 }
+
+
+

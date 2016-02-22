@@ -87,7 +87,6 @@ System.register(['angular2/core', '../../../data/board/boardData', '../../../ser
                     this.toState = toState;
                 };
                 IssueContextMenuComponent.prototype.onSelectMoveIssue = function (event, beforeIssueKey) {
-                    var _this = this;
                     console.log("onSelectMoveIssue - " + beforeIssueKey);
                     event.preventDefault();
                     this.insertBeforeIssueKey = beforeIssueKey;
@@ -105,16 +104,24 @@ System.register(['angular2/core', '../../../data/board/boardData', '../../../ser
                     console.log("onSelectMoveIssue key - afterKey " + afterKey);
                     //Tell the server to move the issue. The actual move will come in via the board's web socket since the actions
                     //are queued on the server and once done the changes are broadcast to everyone connected.
-                    this.issuesService.moveIssue(this.boardData.boardName, this.issue.key, this.toState, beforeKey, afterKey)
-                        .subscribe(function (data) {
-                        console.log("Executed move!");
-                    }, function (err) {
-                        console.error(err);
-                    }, function () {
-                        console.log('request completed');
-                        _this.clearMoveMenu();
-                    });
-                    console.log("insertBeforeIssueKey " + this.insertBeforeIssueKey);
+                    //this.boardData.initiateMoveIssue(this.issuesService, this.issue, this.toState, beforeKey, afterKey);
+                    //this.issuesService.moveIssue(this.boardData.boardName, this.issue.key, this.toState, beforeKey, afterKey)
+                    //    .subscribe(
+                    //        data => {
+                    //            console.log("Executed move!");
+                    //        }
+                    //        ,
+                    //        err => {
+                    //            console.error(err);
+                    //        },
+                    //        () => {
+                    //            console.log('request completed')
+                    //            this.clearMoveMenu();
+                    //        }
+                    //    );
+                    //
+                    //console.log("insertBeforeIssueKey " + this.insertBeforeIssueKey);
+                    this.issuesService.moveIssue(this.boardData, this.issue, this.toState, beforeKey, afterKey);
                 };
                 IssueContextMenuComponent.prototype.onResize = function (event) {
                     this.setWindowSize();

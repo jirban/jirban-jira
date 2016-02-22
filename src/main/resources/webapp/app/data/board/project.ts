@@ -173,7 +173,7 @@ export abstract class BoardProject extends Project {
     abstract isValidState(state:string) : boolean;
 
     abstract mapStateStringToBoard(ownState:string) : string;
-
+    abstract mapBoardStateToOwnState(boardState:string) : string;
     abstract getOwnerProject():BoardProject;
 
     mapStateStringToBoardIndex(ownState:string):number {
@@ -210,6 +210,11 @@ class OwnerProject extends BoardProject {
     getOwnerProject():BoardProject {
         return this;
     }
+
+
+    mapBoardStateToOwnState(boardState:string):string {
+        return boardState;
+    }
 }
 
 /**
@@ -238,6 +243,11 @@ class OtherMainProject extends BoardProject {
 
     getOwnerProject():BoardProject {
         return this._projects.ownerProject;
+    }
+
+
+    mapBoardStateToOwnState(boardState:string):string {
+        return this._boardStatesToProjectState[boardState];
     }
 }
 

@@ -111,7 +111,10 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                 BoardData.prototype.internalDeserialize = function (input, first) {
                     if (first === void 0) { first = false; }
                     this._view = input.view;
-                    this.jiraUrl = RestUrlUtil_1.RestUrlUtil.calculateJiraUrl();
+                    if (first) {
+                        this.jiraUrl = RestUrlUtil_1.RestUrlUtil.calculateJiraUrl();
+                        this._rankCustomFieldId = input["rank-custom-field-id"];
+                    }
                     this.blacklist = input.blacklist ? blacklist_1.BlacklistData.fromInput(input.blacklist) : null;
                     this._projects = new project_1.ProjectDeserializer().deserialize(input);
                     this._assignees = new assignee_1.AssigneeDeserializer().deserialize(input);
@@ -293,6 +296,13 @@ System.register(['./assignee', './priority', './issueType', './boardFilters', ".
                     var moveIssue = this._issueTable.getIssue(issueKey);
                     return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
                 };
+                Object.defineProperty(BoardData.prototype, "rankCustomFieldId", {
+                    get: function () {
+                        return this._rankCustomFieldId;
+                    },
+                    enumerable: true,
+                    configurable: true
+                });
                 return BoardData;
             })();
             exports_1("BoardData", BoardData);

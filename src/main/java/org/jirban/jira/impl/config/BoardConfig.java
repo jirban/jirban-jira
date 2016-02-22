@@ -42,6 +42,7 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanValidationException;
+import org.jirban.jira.impl.Constants;
 
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
@@ -213,6 +214,7 @@ public class BoardConfig {
     }
 
     public void serializeModelNodeForBoard(ModelNode boardNode) {
+        boardNode.get(Constants.RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
         ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {
             priority.serialize(prioritiesNode);

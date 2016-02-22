@@ -53,6 +53,9 @@ class Util {
 
     static void sendResponseJson(final HttpServletResponse response, final String json) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_TYPE.toString());
+        response.addHeader("Cache-Control", "no-cache");
+        response.addHeader("Cache-Control", "no-store");
+        response.addHeader("Cache-Control", "no-transform");
         response.getWriter().write(json);
     }
 

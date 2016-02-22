@@ -5,7 +5,7 @@ System.register([], function(exports_1) {
         execute: function() {
             /**
              * Util to calculate the rest urls, depending on if we are running in dev mode (i.e. not deployed as a servlet),
-             * or deployed within Jira
+             * or deployed within Jira. These will be relative to the
              */
             RestUrlUtil = (function () {
                 function RestUrlUtil() {
@@ -36,7 +36,7 @@ System.register([], function(exports_1) {
                         return location.href.substr(0, index);
                     }
                     else if (RestUrlUtil.isLocalDebug(location)) {
-                        //Return the locally running Jira instance
+                        //Return the locally running Jira instance since this is still where the icons etc are loaded from
                         return "http://localhost:2990/jira";
                     }
                     console.error("Could not determine jir url " + location.href);
