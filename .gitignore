@@ -3,3 +3,4 @@ jirban-jira.iml
 .idea
 target
 node_modules
+src/main/resources/webapp/app/**/*.js
