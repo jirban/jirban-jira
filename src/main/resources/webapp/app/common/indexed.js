@@ -18,6 +18,9 @@ System.register([], function(exports_1) {
                  * @param keyValue function to get the key to index by
                  */
                 Indexed.prototype.indexArray = function (input, factory, keyValue) {
+                    if (!input) {
+                        return;
+                    }
                     var i = 0;
                     for (var _i = 0; _i < input.length; _i++) {
                         var entry = input[_i];
@@ -34,6 +37,9 @@ System.register([], function(exports_1) {
                  * @param keyValue function to get the key to index by
                  */
                 Indexed.prototype.indexMap = function (input, factory) {
+                    if (!input) {
+                        return;
+                    }
                     var i = 0;
                     for (var key in input) {
                         var value = factory(key, input[key]);

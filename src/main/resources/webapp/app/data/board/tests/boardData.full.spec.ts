@@ -17,6 +17,18 @@ describe('BoardData tests', ()=> {
 //Tests for the BoardData component which is so central to the display of the board
     describe('Load', () => {
 
+        it ('Empty board', () => {
+            let data:any = TestBoardData.create(TestBoardData.OWNER_ONLY_BOARD_PROJECTS, []);
+
+            //Delete from the standard config to simulate a project with absolutely no issues
+            delete data.components;
+            delete data.assignees;
+            data.projects.main.TDP.issues=[[], [], [], []];
+
+            let boardData:BoardData = new BoardData();
+            boardData.deserialize(1, data);
+        });
+
         it('Full board; No blacklist', () => {
             let boardData:BoardData = new BoardData();
             boardData.deserialize(1,

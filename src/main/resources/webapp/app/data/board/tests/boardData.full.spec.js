@@ -17,6 +17,15 @@ System.register(["./../boardData", "./testData"], function(exports_1) {
             describe('BoardData tests', function () {
                 //Tests for the BoardData component which is so central to the display of the board
                 describe('Load', function () {
+                    it('Empty board', function () {
+                        var data = testData_1.TestBoardData.create(testData_1.TestBoardData.OWNER_ONLY_BOARD_PROJECTS, []);
+                        //Delete from the standard config to simulate a project with absolutely no issues
+                        delete data.components;
+                        delete data.assignees;
+                        data.projects.main.TDP.issues = [[], [], [], []];
+                        var boardData = new boardData_1.BoardData();
+                        boardData.deserialize(1, data);
+                    });
                     it('Full board; No blacklist', function () {
                         var boardData = new boardData_1.BoardData();
                         boardData.deserialize(1, testData_1.TestBoardData.create(testData_1.TestBoardData.FULL_BOARD_PROJECTS, testData_1.TestBoardData.FULL_BOARD_ISSUES));

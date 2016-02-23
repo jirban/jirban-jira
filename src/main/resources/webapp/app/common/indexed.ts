@@ -15,6 +15,9 @@ export class Indexed<T> {
      * @param keyValue function to get the key to index by
      */
     indexArray(input:any, factory:(entry:any)=>T, keyValue:(t:T)=>string) {
+        if (!input) {
+            return;
+        }
         let i = 0;
         for (let entry of input) {
             let value:T = factory(entry);
@@ -31,6 +34,9 @@ export class Indexed<T> {
      * @param keyValue function to get the key to index by
      */
     indexMap(input:any, factory:(key:string, entry:any)=>T) {
+        if (!input) {
+            return;
+        }
         let i = 0;
         for (let key in input) {
             let value:T = factory(key, input[key]);
