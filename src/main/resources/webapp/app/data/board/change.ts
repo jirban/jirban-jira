@@ -2,7 +2,7 @@ import {Assignee} from "./assignee";
 import {AssigneeDeserializer} from "./assignee";
 import {Indexed} from "../../common/indexed";
 import {BlacklistData} from "./blacklist";
-import {Component, ComponentDeserializer} from "./component";
+import {JiraComponent, ComponentDeserializer} from "./component";
 export class ChangeSet {
     private _view:number;
 
@@ -11,7 +11,7 @@ export class ChangeSet {
     private _issueDeletes:string[];
 
     private _addedAssignees:Assignee[];
-    private _addedComponents:Component[];
+    private _addedComponents:JiraComponent[];
 
     private _blacklistChange:BlacklistData;
     private _blacklistClearedIssues:string[];
@@ -112,7 +112,7 @@ export class ChangeSet {
         return this._addedAssignees;
     }
 
-    get addedComponents():Component[] {
+    get addedComponents():JiraComponent[] {
         return this._addedComponents;
     }
 

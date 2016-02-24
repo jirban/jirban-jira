@@ -17,7 +17,7 @@ import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {IssuesService} from "../../services/issuesService";
-import {Component, ComponentDeserializer} from "./component";
+import {JiraComponent, ComponentDeserializer} from "./component";
 
 
 export class BoardData {
@@ -39,7 +39,7 @@ export class BoardData {
     /** All the assignees */
     private _assignees:Indexed<Assignee>;
     /** All the components */
-    private _components:Indexed<Component>;
+    private _components:Indexed<JiraComponent>;
     /** All the priorities */
     private _priorities:Indexed<Priority>;
     /** All the issue types */
@@ -104,9 +104,9 @@ export class BoardData {
                     for (let component of changeSet.addedComponents) {
                         this._components.add(component.name, component);
                     }
-                    let components:Component[] = this._components.array;
-                    components.sort((c1:Component, c2:Component) => {return c1.name.localeCompare(c2.name)});
-                    this._components.reorder(components, (component:Component) => component.name);
+                    let components:JiraComponent[] = this._components.array;
+                    components.sort((c1:JiraComponent, c2:JiraComponent) => {return c1.name.localeCompare(c2.name)});
+                    this._components.reorder(components, (component:JiraComponent) => component.name);
                     this._hasNewComponents = true;
                 }
 
@@ -209,7 +209,7 @@ export class BoardData {
         return this._assignees;
     }
 
-    get components():Indexed<Component> {
+    get components():Indexed<JiraComponent> {
         return this._components;
     }
 

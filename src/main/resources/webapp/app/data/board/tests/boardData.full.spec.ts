@@ -6,7 +6,7 @@ import {Indexed} from "../../../common/indexed";
 import {IssueType} from "./../issueType";
 import {IssueTable} from "./../issueTable";
 import {IssueData} from "./../issueData";
-import {Component} from "../component";
+import {JiraComponent} from "../component";
 
 /**
  * This tests application of the expected json onto the BoardData component on the client which is so central to the display of the board.
@@ -1171,7 +1171,7 @@ describe('BoardData tests', ()=> {
         expect(assignee.name.toLowerCase()).toContain(key.toLowerCase());
     }
 
-    function checkBoardComponents(components:Component[], keys:string[]) {
+    function checkBoardComponents(components:JiraComponent[], keys:string[]) {
         expect(components.length).toEqual(keys.length);
         for (let i:number = 0 ; i < keys.length ; i++) {
             expect(keys).toContain(components[i].name);
@@ -1195,7 +1195,6 @@ describe('BoardData tests', ()=> {
             expect(boardData.linkedProjects[linkedProject]).toEqual(jasmine.anything());
         }
     }
-
 
     function checkBoardPriority(priority:Priority, name:string) {
         expect(priority.name).toEqual(name);

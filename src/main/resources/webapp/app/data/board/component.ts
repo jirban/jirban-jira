@@ -1,6 +1,8 @@
 import {Indexed} from "../../common/indexed";
 
-export class Component {
+export const NO_COMPONENT:string = "$no$component";
+
+export class JiraComponent {
     private _name:string;
 
     constructor(name:string) {
@@ -14,12 +16,12 @@ export class Component {
 
 export class ComponentDeserializer {
 
-    deserialize(input:any) : Indexed<Component> {
-        let components:Indexed<Component> = new Indexed<Component>();
+    deserialize(input:any) : Indexed<JiraComponent> {
+        let components:Indexed<JiraComponent> = new Indexed<JiraComponent>();
         components.indexArray(
             input.components,
             (entry)=> {
-                return new Component(entry);
+                return new JiraComponent(entry);
             },
             (component) => {
                 return component.name;

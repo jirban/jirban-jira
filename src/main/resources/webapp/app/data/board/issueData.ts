@@ -5,7 +5,7 @@ import {IssueType} from "./issueType";
 import {isNumber} from "angular2/src/facade/lang";
 import {BoardProject, Project} from "./project";
 import {IssueChange} from "./change";
-import {Component} from "./component";
+import {JiraComponent} from "./component";
 
 
 export class IssueData {
@@ -15,7 +15,7 @@ export class IssueData {
     private _colour:string;
     private _summary:string;
     private _assignee:Assignee;
-    private _components:Component[];
+    private _components:JiraComponent[];
     private _priority:Priority;
     private _type:IssueType;
     //The index within the issue's project's own states
@@ -24,7 +24,7 @@ export class IssueData {
     private _filtered:boolean = false;
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
-                assignee:Assignee,  components:Component[], priority:Priority, type:IssueType, statusIndex:number,
+                assignee:Assignee,  components:JiraComponent[], priority:Priority, type:IssueType, statusIndex:number,
                 linked:IssueData[]) {
         this._boardData = boardData;
         this._key = key;
@@ -48,7 +48,7 @@ export class IssueData {
         let priority:Priority = boardData.priorities.forIndex(input.priority);
         let type:IssueType = boardData.issueTypes.forIndex(input.type);
 
-        let components:Component[];
+        let components:JiraComponent[];
         if (input.components) {
             components = [];
             for (let componentIndex of input.components) {
@@ -86,7 +86,7 @@ export class IssueData {
             statusIndex = project.getOwnStateIndex(add.state);
         }
 
-        let components:Component[];
+        let components:JiraComponent[];
         if (add.components) {
             components = [];
             for (let component of add.components) {
@@ -126,7 +126,7 @@ export class IssueData {
         return this._assignee;
     }
 
-    get components():Component[] {
+    get components():JiraComponent[] {
         return this._components;
     }
 

@@ -2,13 +2,12 @@ import {Component, EventEmitter, View,} from 'angular2/core';
 import {Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Router, RouteParams} from 'angular2/router';
 
-import {Assignee} from "../../../data/board/assignee";
+import {NO_ASSIGNEE, Assignee} from "../../../data/board/assignee";
 import {BoardData} from '../../../data/board/boardData';
 import {IssueDisplayDetails} from '../../../data/board/boardFilters';
 import {IssueData} from '../../../data/board/issueData';
 import {IssueType} from '../../../data/board/issueType';
 import {Priority} from "../../../data/board/priority";
-import {NO_ASSIGNEE} from '../../../data/board/assignee';
 
 import {IMap} from '../../../common/map';
 import {AbstractControl} from "angular2/common";
