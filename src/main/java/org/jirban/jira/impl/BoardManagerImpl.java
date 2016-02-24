@@ -24,6 +24,10 @@ package org.jirban.jira.impl;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -33,6 +37,8 @@ import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.board.Board;
 import org.jirban.jira.impl.config.BoardConfig;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
@@ -49,7 +55,9 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
  * @author Kabir Khan
  */
 @Named("jirbanBoardManager")
-public class BoardManagerImpl implements BoardManager {
+public class BoardManagerImpl implements BoardManager, InitializingBean, DisposableBean {
+
+    private static final int REFRESH_TIMEOUT_SECONDS = 5 * 60;
 
     //Guarded by this
     private Map<Integer, Board> boards = new HashMap<>();
@@ -69,6 +77,9 @@ public class BoardManagerImpl implements BoardManager {
 
     private final BoardConfigurationManager boardConfigurationManager;
 
+    private final ExecutorService boardRefreshExecutor = Executors.newSingleThreadExecutor();
+
+    private final Queue<RefreshEntry> boardRefreshQueue = new LinkedBlockingQueue<>();
 
     @Inject
     public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
@@ -102,6 +113,7 @@ public class BoardManagerImpl implements BoardManager {
                     board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
                     boards.put(id, board);
                     boardChangeRegistries.put(id, new BoardChangeRegistry(board.getCurrentView()));
+                    boardRefreshQueue.add(new RefreshEntry(id, REFRESH_TIMEOUT_SECONDS));
                 }
             }
         }
@@ -187,5 +199,73 @@ public class BoardManagerImpl implements BoardManager {
         }
 
         return changes.toJSONString(true);
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        boardRefreshExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        Thread.sleep(10000);
+
+                        //Throw out all the 'expired' boards so that they are refreshed again
+                        synchronized (BoardManagerImpl.this) {
+                            RefreshEntry entry = boardRefreshQueue.peek();
+                            while (entry != null && System.currentTimeMillis() > entry.endTime) {
+                                //Remove the entry we peeked at
+                                entry = boardRefreshQueue.poll();
+
+                                //Remove the board, an attempt to read it will result in a new instance being fully loaded
+                                //and created
+                                boardChangeRegistries.remove(entry.boardId);
+                                boards.remove(entry.boardId);
+
+                                //Add a new entry for the new refresh timeout
+                                boardRefreshQueue.add(entry.createNew());
+
+                                entry = boardRefreshQueue.peek();
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        boardRefreshExecutor.shutdown();
+    }
+
+    private static class RefreshEntry {
+        private final int boardId;
+        private final long endTime;
+
+        public RefreshEntry(int boardId, int timeoutSeconds) {
+            this.boardId = boardId;
+            this.endTime = System.currentTimeMillis() + timeoutSeconds *1000;
+        }
+
+        RefreshEntry createNew() {
+            return new RefreshEntry(boardId, REFRESH_TIMEOUT_SECONDS);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            RefreshEntry that = (RefreshEntry) o;
+            return boardId == that.boardId;
+        }
+
+        @Override
+        public int hashCode() {
+            return boardId;
+        }
     }
 }

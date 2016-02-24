@@ -120,7 +120,6 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     public void afterPropertiesSet() throws Exception {
         // register ourselves with the EventPublisher
-        System.out.println("-----> Registering listener");
         eventPublisher.register(this);
     }
 
@@ -130,7 +129,6 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     public void destroy() throws Exception {
         // unregister ourselves with the EventPublisher
-        System.out.println("-----> Unregistering listener");
         eventPublisher.unregister(this);
     }
 
@@ -157,10 +155,9 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     public void onIssueEvent(IssueEvent issueEvent) throws IndexException {
         long eventTypeId = issueEvent.getEventTypeId();
         // if it's an event we're interested in, log it
-        System.out.println("-----> Event " + issueEvent);
 
-        //TODO There are no events for when updating linked issues, so we need to poll somewhere
-        // (or it might be good enough to invalidate the board every 5 mins or so to get the linked issues recalculated)
+        //There are no events for when updating linked issues. Instead we invalidate the boards every five minutes in
+        //BoardManagerImpl which forces a full refresh of the board which will bring in linked issues
 
         //CREATED, DELETED and MOVED do not have a worklog
         if (eventTypeId == EventType.ISSUE_CREATED_ID) {
