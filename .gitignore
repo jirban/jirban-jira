@@ -4,3 +4,4 @@ jirban-jira.iml
 target
 node_modules
 src/main/resources/webapp/app/**/*.js
+src/main/resources/webapp/app/**/*.js.map
