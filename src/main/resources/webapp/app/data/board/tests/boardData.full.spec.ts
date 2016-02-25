@@ -1,3 +1,4 @@
+/// <reference path="../../../../node_modules/angular2/ts/typings/jasmine/jasmine.d.ts" />
 import {BoardData} from "./../boardData";
 import {TestBoardData} from "./testData";
 import {Assignee} from "./../assignee";
