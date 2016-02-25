@@ -6,7 +6,6 @@ import {BoardFilters} from "./boardFilters";
 import {SwimlaneIndexer, SwimlaneIndexerFactory} from './swimlaneIndexer';
 import {Indexed} from "../../common/indexed";
 import {BoardProject} from "./project";
-import {stat} from "fs";
 import {IssueChange} from "./change";
 import {ChangeSet} from "./change";
 
