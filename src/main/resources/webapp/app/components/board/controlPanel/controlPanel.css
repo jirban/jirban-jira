@@ -54,3 +54,6 @@ a.close {
 .setting-content-small {
     color: #222222;
 }
+.clickable {
+    cursor: pointer;
+}

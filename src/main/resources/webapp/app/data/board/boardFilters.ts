@@ -3,16 +3,22 @@ import {Priority} from "./priority";
 import {IssueData} from "./issueData"
 import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
+import {JiraComponent} from "./component";
+import {NO_COMPONENT} from "./component";
+import {IMap} from "../../common/map";
+import ownKeys = Reflect.ownKeys;
 
 export class BoardFilters {
     private _projectFilter:any;
     private _priorityFilter:any;
     private _issueTypeFilter:any;
     private _assigneeFilter:any;
+    private _componentFilter:any;
     private projects:boolean = false;
     private assignees:boolean = false;
     private priorities:boolean = false;
     private issueTypes:boolean = false;
+    private components:boolean = false;
 
     setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
@@ -70,6 +76,26 @@ export class BoardFilters {
         }
     }
 
+    setComponentFilter(filter:any, components:Indexed<JiraComponent>) {
+        //Trim to only contain the visible ones in _componentFilter
+        this._componentFilter = {};
+        this.components = false;
+        if (filter[NO_COMPONENT]) {
+            this.components = true;
+            this._componentFilter[NO_COMPONENT] = true;
+        }
+
+        if (components) {
+            for (let component of components.array) {
+                if (filter[component.name]) {
+                    this.components = true;
+                    this._componentFilter[component.name] = true;
+                }
+            }
+        }
+
+    }
+
     filterIssue(issue:IssueData):boolean {
         if (this.filterProject(issue.projectCode)) {
             return true;
@@ -83,6 +109,9 @@ export class BoardFilters {
         if (this.filterIssueType(issue.type.name)) {
             return true;
         }
+        if (this.filterComponentAllComponents(issue.components)) {
+            return true;
+        }
         return false;
     }
 
@@ -93,25 +122,60 @@ export class BoardFilters {
         return false;
     }
 
-    filterAssignee(assigneeKey:string) {
+    filterAssignee(assigneeKey:string):boolean {
         if (this.assignees) {
             return !this._assigneeFilter[assigneeKey ? assigneeKey : NO_ASSIGNEE]
         }
         return false;
     }
 
-    filterPriority(priorityName:string) {
+    filterPriority(priorityName:string):boolean {
         if (this.priorities) {
             return !this._priorityFilter[priorityName];
         }
         return false;
     }
 
-    filterIssueType(issueTypeName:string) {
+    filterIssueType(issueTypeName:string):boolean {
         if (this.issueTypes) {
             return !this._issueTypeFilter[issueTypeName];
         }
         return false;
+    }
+
+    private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
+        if (this.components) {
+            if (!issueComponents) {
+                return !this._componentFilter[NO_COMPONENT];
+            } else {
+                let tmp:any = ownKeys(this._componentFilter);
+                if (ownKeys(this._componentFilter).length == 1 && this._componentFilter[NO_COMPONENT]) {
+                    //All we want to match is no components, and we have some components so return that we
+                    //should be filtered out
+                    return true;
+                }
+                for (let component in this._componentFilter) {
+                    if (component === NO_COMPONENT) {
+                        //We have components and we are looking for some components, for this case ignore the
+                        //no components filter
+                        continue;
+                    }
+                    if (!issueComponents.forKey(component)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+        return false;
+    }
+
+    filterComponent(componentName:string):boolean {
+        if (this.components) {
+            return !this._componentFilter[componentName ? componentName : NO_COMPONENT]
+        }
+        return false;
+
     }
 }
 

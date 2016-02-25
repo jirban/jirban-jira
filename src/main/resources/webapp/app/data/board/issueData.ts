@@ -6,6 +6,7 @@ import {isNumber} from "angular2/src/facade/lang";
 import {BoardProject, Project} from "./project";
 import {IssueChange} from "./change";
 import {JiraComponent} from "./component";
+import {Indexed} from "../../common/indexed";
 
 
 export class IssueData {
@@ -15,7 +16,7 @@ export class IssueData {
     private _colour:string;
     private _summary:string;
     private _assignee:Assignee;
-    private _components:JiraComponent[];
+    private _components:Indexed<JiraComponent>;
     private _priority:Priority;
     private _type:IssueType;
     //The index within the issue's project's own states
@@ -24,7 +25,7 @@ export class IssueData {
     private _filtered:boolean = false;
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
-                assignee:Assignee,  components:JiraComponent[], priority:Priority, type:IssueType, statusIndex:number,
+                assignee:Assignee,  components:Indexed<JiraComponent>, priority:Priority, type:IssueType, statusIndex:number,
                 linked:IssueData[]) {
         this._boardData = boardData;
         this._key = key;
@@ -48,11 +49,12 @@ export class IssueData {
         let priority:Priority = boardData.priorities.forIndex(input.priority);
         let type:IssueType = boardData.issueTypes.forIndex(input.type);
 
-        let components:JiraComponent[];
+        let components:Indexed<JiraComponent>;
         if (input.components) {
-            components = [];
+            components = new Indexed<JiraComponent>()
             for (let componentIndex of input.components) {
-                components.push(boardData.components.forIndex(componentIndex));
+                let component:JiraComponent =boardData.components.forIndex(componentIndex);
+                components.add(component.name, component);
             }
         }
 
@@ -86,11 +88,12 @@ export class IssueData {
             statusIndex = project.getOwnStateIndex(add.state);
         }
 
-        let components:JiraComponent[];
+        let components:Indexed<JiraComponent>;
         if (add.components) {
-            components = [];
-            for (let component of add.components) {
-                components.push(boardData.components.forKey(component));
+            components = new Indexed<JiraComponent>();
+            for (let name of add.components) {
+                let component:JiraComponent = boardData.components.forKey(name);
+                components.add(component.name, component);
             }
         }
 
@@ -126,7 +129,7 @@ export class IssueData {
         return this._assignee;
     }
 
-    get components():JiraComponent[] {
+    get components():Indexed<JiraComponent> {
         return this._components;
     }
 
@@ -263,9 +266,10 @@ export class IssueData {
         if (update.clearedComponents) {
             this._components = null;
         } else if (update.components) {
-            this._components = [];
-            for (let component of update.components) {
-                this._components.push(this.boardData.components.forKey(component));
+            this._components = new Indexed<JiraComponent>();
+            for (let name of update.components) {
+                let component:JiraComponent = this.boardData.components.forKey(name);
+                this._components.add(component.name, component);
             }
         }
     }

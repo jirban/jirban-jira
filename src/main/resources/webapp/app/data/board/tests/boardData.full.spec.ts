@@ -1060,7 +1060,8 @@ describe('BoardData tests', ()=> {
         }
 
         if (components) {
-            checkBoardComponents(issue.components, components);
+            expect(issue.components).toEqual(jasmine.anything());
+            checkBoardComponents(issue.components.array, components);
         } else {
             expect(issue.components).not.toEqual(jasmine.anything());
         }

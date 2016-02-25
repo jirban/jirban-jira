@@ -15,6 +15,7 @@
       "name" : "Kabir Khan"
     }
   ],
+  "components": ["One", "Two", "Three"],
   "priorities" : [
     {
       "name" : "Blocker",
@@ -244,6 +245,61 @@
     ]}}
   },
   "issues" : {
+    "EAPDS-1" : {
+      "key" : "EAPDS-1",
+      "state" : 6,
+      "summary" : "First things first",
+      "priority" : 1,
+      "type" : 1,
+      "components": [0, 1],
+      "linked-issues" : [
+        {
+          "key" : "EAPUS-2",
+          "state" : 1,
+          "summary" : "Upstream needs doing before we can do the downstream stuff",
+          "priority" : 1,
+          "type" : 0
+        },
+        {
+          "key" : "EAPUS-1",
+          "state" : 0,
+          "summary" : "The other thing we need to do first",
+          "priority" : 1,
+          "type" : 0
+        }
+      ]
+    },
+    "EAPDS-2" : {
+      "key" : "EAPDS-2",
+      "state" : 6,
+      "summary" : "Issue with a pretty long description and a lot of details which will need to be truncated",
+      "priority" : 1,
+      "type" : 1,
+      "components": [0],
+      "linked-issues" : [{
+        "key" : "EAPUS-3",
+        "state" : 0,
+        "summary" : "Shorten what we output to the console and reiterate",
+        "priority" : 1,
+        "type" : 0
+      }]
+    },
+    "EAPDS-3" : {
+      "key" : "EAPDS-3",
+      "state" : 0,
+      "summary" : "Dependency injection is broken in jsf",
+      "priority" : 0,
+      "type" : 2,
+      "components": [2]
+    },
+    "EAPDS-4" : {
+      "key" : "EAPDS-4",
+      "state" : 0,
+      "summary" : "New welcome page",
+      "priority" : 1,
+      "type" : 2,
+      "components": [1]
+    },
     "EAPDS-26" : {
       "key" : "EAPDS-26",
       "state" : 0,
@@ -403,29 +459,6 @@
       "priority" : 1,
       "type" : 0
     },
-    "EAPDS-1" : {
-      "key" : "EAPDS-1",
-      "state" : 6,
-      "summary" : "First things first",
-      "priority" : 1,
-      "type" : 1,
-      "linked-issues" : [
-        {
-          "key" : "EAPUS-2",
-          "state" : 1,
-          "summary" : "Upstream needs doing before we can do the downstream stuff",
-          "priority" : 1,
-          "type" : 0
-        },
-        {
-          "key" : "EAPUS-1",
-          "state" : 0,
-          "summary" : "The other thing we need to do first",
-          "priority" : 1,
-          "type" : 0
-        }
-      ]
-    },
     "EAPDS-32" : {
       "key" : "EAPDS-32",
       "state" : 2,
@@ -447,20 +480,6 @@
         "type" : 2
       }]
     },
-    "EAPDS-2" : {
-      "key" : "EAPDS-2",
-      "state" : 6,
-      "summary" : "Issue with a pretty long description and a lot of details which will need to be truncated",
-      "priority" : 1,
-      "type" : 1,
-      "linked-issues" : [{
-        "key" : "EAPUS-3",
-        "state" : 0,
-        "summary" : "Shorten what we output to the console and reiterate",
-        "priority" : 1,
-        "type" : 0
-      }]
-    },
     "EAPBGS-37" : {
       "key" : "EAPBGS-37",
       "state" : 4,
@@ -475,13 +494,6 @@
         "type" : 2
       }]
     },
-    "EAPDS-3" : {
-      "key" : "EAPDS-3",
-      "state" : 0,
-      "summary" : "Dependency injection is broken in jsf",
-      "priority" : 0,
-      "type" : 2
-    },
     "EAPDS-30" : {
       "key" : "EAPDS-30",
       "state" : 1,
@@ -493,13 +505,6 @@
       "key" : "EAPBGS-36",
       "state" : 1,
       "summary" : "Remove deprecated methods for ordered-child-resources",
-      "priority" : 1,
-      "type" : 2
-    },
-    "EAPDS-4" : {
-      "key" : "EAPDS-4",
-      "state" : 0,
-      "summary" : "New welcome page",
       "priority" : 1,
       "type" : 2
     },

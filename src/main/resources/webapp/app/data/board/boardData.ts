@@ -282,7 +282,16 @@ export class BoardData {
         this._boardFilters.setAssigneeFilter(filter, this._assignees);
         this._issueTable.filters = this._boardFilters;
     }
-    
+
+    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any) {
+        this._boardFilters.setProjectFilter(projectFilter, this._projects.boardProjectCodes);
+        this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
+        this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
+        this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
+        this._boardFilters.setComponentFilter(componentFilter, this._components);
+        this._issueTable.filters = this._boardFilters;
+    }
+
     hideHideables() {
         for (let hideable of this.hideables) {
             hideable.hide();

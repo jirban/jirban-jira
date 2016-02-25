@@ -45,7 +45,10 @@ export class SwimlaneIndexerFactory {
             return new IssueTypeSwimlaneIndexer(filters, boardData, initTable);
         } else if (swimlane === "assignee") {
             return new AssigneeSwimlaneIndexer(filters, boardData, initTable);
+        } else if (swimlane === "component") {
+            return new ComponentSwimlaneIndexer(filters, boardData, initTable);
         }
+
         return null;
     }
 }
@@ -136,10 +139,6 @@ class IssueTypeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    get swimlaneTable():SwimlaneData[] {
-        return this._swimlaneTable;
-    }
-
     swimlaneIndex(issue:IssueData):number {
         return this._boardData.issueTypes.indices[issue.typeName];
     }
@@ -170,10 +169,6 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    get swimlaneTable():SwimlaneData[] {
-        return this._swimlaneTable;
-    }
-
     swimlaneIndex(issue:IssueData):number {
         if (!issue.assignee) {
             return this._swimlaneNames.length - 1;
@@ -187,6 +182,54 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
             assigneeKey = this._boardData.assignees.forIndex(swimlaneData.index).key;
         }
         return this._filters.filterAssignee(assigneeKey);
+    }
+
+    matchIssues(targetIssue:IssueData, issue:IssueData):boolean {
+        if (!targetIssue.assignee  && !issue.assignee) {
+            return true;
+        } else if (targetIssue.assignee && issue.assignee) {
+            return targetIssue.assignee.key === issue.assignee.key;
+        }
+        return false;
+    }
+}
+
+
+class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
+    private _swimlaneNames:string[] = [];
+
+    constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
+        super(filters, boardData);
+        if (initTable) {
+            let i:number = 0;
+            for (let component of this._boardData.components.array) {
+                this._swimlaneNames.push(component.name);
+            }
+            //Add an additional entry for the no component case
+            this._swimlaneNames.push("None");
+
+            this._swimlaneTable = createTable(boardData, this._swimlaneNames);
+        }
+    }
+
+    get swimlaneTable():SwimlaneData[] {
+        return this._swimlaneTable;
+    }
+
+    swimlaneIndex(issue:IssueData):number {
+        if (!issue.components) {
+            return this._swimlaneNames.length - 1;
+        }
+        //TODO currently it only can belong to one swimlane, although an issue might have more than one component - choose the first
+        return this._boardData.components.indices[issue.components.array[0].name];
+    }
+
+    filter(swimlaneData:SwimlaneData):boolean {
+        let componentName:string = null;
+        if (swimlaneData.index < this._swimlaneNames.length - 1) {
+            componentName = this._boardData.components.forIndex(swimlaneData.index).name;
+        }
+        return this._filters.filterComponent(componentName);
     }
 
     matchIssues(targetIssue:IssueData, issue:IssueData):boolean {
