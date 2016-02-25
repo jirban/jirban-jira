@@ -48,7 +48,6 @@ public class AuthFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)throws IOException,ServletException{
         final HttpServletRequest req = (HttpServletRequest)request;
         final ApplicationUser user = getUserByKey(req);
-        System.out.println("-----> Auth Filter " + user);
 
         //continue the request
         if (user != null) {

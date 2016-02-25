@@ -112,7 +112,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
                     board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
                     boards.put(id, board);
-                    boardChangeRegistries.put(id, new BoardChangeRegistry(board.getCurrentView()));
+                    boardChangeRegistries.put(id, new BoardChangeRegistry(board));
                     boardRefreshQueue.add(new RefreshEntry(id, REFRESH_TIMEOUT_SECONDS));
                 }
             }
@@ -168,6 +168,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     return;
                 }
                 synchronized (this) {
+                    changeRegistry.setBoard(newBoard);
                     boards.put(boardId, newBoard);
                 }
             } catch (Exception e) {

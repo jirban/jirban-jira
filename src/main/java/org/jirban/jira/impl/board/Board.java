@@ -562,7 +562,7 @@ public class Board {
                     Issue issue = boardCopy.getIssue(event.getIssueKey());
                     if (issue != null) {
                         final String state = issue.getState();
-                        changeBuilder.addStateRecalculation(state, projectCopy.getIssuesForOwnState(state));
+                        changeBuilder.addStateRecalculation(state);
                     }
                 }
                 changeBuilder.buildAndRegister();

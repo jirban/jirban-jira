@@ -59,12 +59,11 @@ public class BoardChange {
 
     //If the state was changed
     private final String changedState;
-    private final List<String> changedStateIssues;
 
 
     private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
-                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState, List<String> changedStateIssues) {
+                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
@@ -75,7 +74,6 @@ public class BoardChange {
         this.addedBlacklistIssue = addedBlacklistIssue;
         this.deletedBlacklistIssue = deletedBlacklistIssue;
         this.changedState = changedState;
-        this.changedStateIssues = changedStateIssues;
     }
 
     long getTime() {
@@ -126,10 +124,6 @@ public class BoardChange {
         return changedState;
     }
 
-    List<String> getChangedStateIssues() {
-        return changedStateIssues;
-    }
-
 
     public static class Builder {
         private final BoardChangeRegistry registry;
@@ -151,7 +145,6 @@ public class BoardChange {
 
         //If the state was recalculated
         private String changedState;
-        private List<String> changedStateIssues;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -177,9 +170,8 @@ public class BoardChange {
             return this;
         }
 
-        public Builder addStateRecalculation(String state, List<String> changedStateIssues) {
+        public Builder addStateRecalculation(String state) {
             changedState = state;
-            this.changedStateIssues = changedStateIssues;
             return this;
         }
 
@@ -190,7 +182,7 @@ public class BoardChange {
 
         public void buildAndRegister() {
             BoardChange change = new BoardChange(view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, changedStateIssues);
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState);
             registry.registerChange(change);
         }
     }

@@ -51,7 +51,7 @@ import com.atlassian.query.order.SortOrder;
  *
  * @author Kabir Khan
  */
-class BoardProject {
+public class BoardProject {
 
     private volatile Board board;
     private final BoardProjectConfig projectConfig;
@@ -91,7 +91,7 @@ class BoardProject {
         }
     }
 
-    List<String> getIssuesForOwnState(String ownState) {
+    public List<String> getIssuesForOwnState(String ownState) {
         int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(ownState);
         return issueKeysByState.get(stateIndex);
     }

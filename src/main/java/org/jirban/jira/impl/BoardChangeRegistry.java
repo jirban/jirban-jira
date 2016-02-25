@@ -55,7 +55,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent.Type;
 import org.jirban.jira.impl.board.Assignee;
+import org.jirban.jira.impl.board.Board;
+import org.jirban.jira.impl.board.BoardProject;
 import org.jirban.jira.impl.board.Component;
+
+import com.atlassian.jira.project.Project;
 
 /**
  * Since Jira 6.4.x does not support web sockets, this maintains a queue of changes. A client connects and gets the full
@@ -73,6 +77,8 @@ public class BoardChangeRegistry {
     //Delete items older than one minute
     private static final int CLEANUP_AGE_SECONDS = 60000;
 
+    private volatile Board board;
+
     //The time for the next cleanup
     private volatile long nextCleanup;
 
@@ -81,8 +87,9 @@ public class BoardChangeRegistry {
     private volatile int startView;
     private volatile int endView;
 
-    BoardChangeRegistry(int startView) {
-        this.startView = startView;
+    BoardChangeRegistry(Board board) {
+        this.board = board;
+        this.startView = board.getCurrentView();
         this.endView = startView;
         incrementNextCleanup();
     }
@@ -91,6 +98,7 @@ public class BoardChangeRegistry {
         return new BoardChange.Builder(this, view, event);
     }
 
+    //This gets called by the board change builder
     void registerChange(BoardChange boardChange) {
         //Do the cleanup here if needed, but....
         getChangesListCleaningUpIfNeeded();
@@ -100,6 +108,12 @@ public class BoardChangeRegistry {
             endView = boardChange.getView();
         }
     }
+
+    //This gets called by the board manager after the board has been built
+    void setBoard(Board board) {
+        this.board = board;
+    }
+
 
     ModelNode getChangesSince(int sinceView) throws FullRefreshNeededException {
         //Get a snapshot of the changes
@@ -112,16 +126,20 @@ public class BoardChangeRegistry {
             throw new FullRefreshNeededException();
         }
 
+        final Board board = this.board;
         final List<BoardChange> changes = getChangesListCleaningUpIfNeeded();
-        final ChangeSetCollector collector = new ChangeSetCollector(endView);
+        final ChangeSetCollector collector = new ChangeSetCollector(board.getCurrentView());
         for (BoardChange change : changes) {
             if (change.getView() <= sinceView) {
                 continue;
             }
             collector.addChange(change);
+            if (change.getView() > board.getCurrentView()) {
+                break;
+            }
         }
 
-        return collector.serialize();
+        return collector.serialize(board);
     }
 
     private List<BoardChange> getChangesListCleaningUpIfNeeded() {
@@ -184,7 +202,7 @@ public class BoardChangeRegistry {
                         issueChanges.remove(issueChange.issueKey);
                     }
                 }
-                if (issueChange.stateChange != null) {
+                if (issueChange.changedState != null) {
                     issuesWithStateChanges.add(issueKey);
                 } else {
                     issuesWithStateChanges.remove(issueKey);
@@ -198,29 +216,31 @@ public class BoardChangeRegistry {
             }
         }
 
-        private Map<String, Map<String, StateChange>> processStateChanges() {
-            Map<String, Map<String, StateChange>> stateChangesByProject = new HashMap<>();
+        private Map<String, Set<String>> processStateChanges() {
+            //Several issues might undergo the same state changes, and be moved out,
+            //make sure the last one wins
+            Map<String, Set<String>> stateChangesByProject = new HashMap<>();
             Map<String, Map<String, Integer>> stateChangeViewsByProject = new HashMap<>();
 
             for (String issueKey : issuesWithStateChanges) {
                 IssueChange change = issueChanges.get(issueKey);
                 if (change != null) {
-                    StateChange stateChange = change.stateChange;
+                    String changedState = change.changedState;
 
-                    Map<String, StateChange> stateChangesByState = stateChangesByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
+                    Set<String> stateChangesByState = stateChangesByProject.computeIfAbsent(change.projectCode, pc -> new HashSet<>());
                     Map<String, Integer> viewsByState = stateChangeViewsByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
 
-                    Integer maxView = viewsByState.get(stateChange.state);
+                    Integer maxView = viewsByState.get(changedState);
                     if (maxView == null || maxView < change.view) {
-                        viewsByState.put(stateChange.state, change.view);
-                        stateChangesByState.put(stateChange.state, stateChange);
+                        viewsByState.put(changedState, change.view);
+                        stateChangesByState.add(changedState);
                     }
                 }
             }
             return stateChangesByProject;
         }
 
-        ModelNode serialize() {
+        ModelNode serialize(Board board) {
             ModelNode output = new ModelNode();
             ModelNode changes = output.get(CHANGES);
             changes.get(VIEW).set(view);
@@ -240,7 +260,7 @@ public class BoardChangeRegistry {
 
             serializeAssignees(changes, newAssignees);
             serializeComponents(changes, newComponents);
-            serializeStateChanges(changes, processStateChanges());
+            serializeStateChanges(board, changes, processStateChanges());
             serializeBlacklist(changes);
             return output;
         }
@@ -279,18 +299,17 @@ public class BoardChangeRegistry {
             }
         }
 
-        private void serializeStateChanges(ModelNode parent, Map<String, Map<String, StateChange>> stateChangesByProject) {
+        private void serializeStateChanges(Board board, ModelNode parent, Map<String, Set<String>> stateChangesByProject) {
             if (stateChangesByProject.size() > 0) {
-                for (Map.Entry<String, Map<String, StateChange>> projectEntry : stateChangesByProject.entrySet()) {
+                for (Map.Entry<String, Set<String>> projectEntry : stateChangesByProject.entrySet()) {
                     final String projectCode = projectEntry.getKey();
-                    final Map<String, StateChange> changesForProject = projectEntry.getValue();
+                    final Set<String> changesForProject = projectEntry.getValue();
 
-                    for (StateChange change : changesForProject.values()) {
-                        if (change.issues.size() > 0) {
-                            final ModelNode stateChanges = parent.get(Constants.STATES, projectCode, change.state);
-                            for (String issueKey : change.issues) {
-                                stateChanges.add(issueKey);
-                            }
+                    BoardProject project = board.getBoardProject(projectCode);
+                    for (String state : changesForProject) {
+                        final ModelNode stateChangesNode = parent.get(Constants.STATES, projectCode, state);
+                        for (String issueKey : project.getIssuesForOwnState(state)) {
+                            stateChangesNode.add(issueKey);
                         }
                     }
                 }
@@ -355,7 +374,7 @@ public class BoardChangeRegistry {
         //This information will then be used by the board change collector to figure out which states
         //should be shipped to the client. If several issues are moved to the same state, the one with the highest
         //view should be sent to the client.
-        private StateChange stateChange;
+        private String changedState;
 
         public IssueChange(String projectCode, String issueKey) {
             this.projectCode = projectCode;
@@ -382,14 +401,14 @@ public class BoardChangeRegistry {
                 case CREATE:
                 case UPDATE:
                     mergeFields(event, boardChange.getNewAssignee(), boardChange.getNewComponents());
-                    if (boardChange.getChangedState() != null && boardChange.getChangedStateIssues() != null) {
-                        stateChange = new StateChange(boardChange.getChangedState(), boardChange.getChangedStateIssues());
+                    if (boardChange.getChangedState() != null) {
+                        changedState = boardChange.getChangedState();
                     }
                     break;
                 case DELETE:
                     //No need to do anything, we will not serialize this issue's details
                     //Clear the state change details
-                    stateChange = null;
+                    changedState = null;
                     break;
                 default:
             }

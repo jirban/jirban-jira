@@ -44,7 +44,7 @@ public class RestServlet extends HttpServlet{
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
-        System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
+        //System.out.println("Rest servlet GET " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("GET", pathInfo);
             if (pathAndId.isPath(VERSION)) {
@@ -53,7 +53,7 @@ public class RestServlet extends HttpServlet{
                 versionNode.get(VERSION).set(API_VERSION);
             }if (pathAndId.isPath(BOARDS)) {
                 pathAndId.validateId(false);
-                System.out.println("Getting boards");
+                //System.out.println("Getting boards");
                 boolean full = req.getParameter("full") != null;
                 final String json;
                 if (full) {
@@ -102,7 +102,7 @@ public class RestServlet extends HttpServlet{
     protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
-        System.out.println("Rest servlet DELETE " + pathInfo + "(" + user + ")");
+        //System.out.println("Rest servlet DELETE " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("DELETE", pathInfo);
             if (pathAndId.isPath(BOARDS)) {
@@ -125,7 +125,7 @@ public class RestServlet extends HttpServlet{
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
-        System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
+        //System.out.println("Rest servlet POST " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("POST", pathInfo);
             if (pathAndId.isPath(BOARDS)) {
@@ -149,7 +149,7 @@ public class RestServlet extends HttpServlet{
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         ApplicationUser user = Util.getRemoteUser(req);
         String pathInfo = req.getPathInfo();
-        System.out.println("Rest servlet PUT " + pathInfo + "(" + user + ")");
+        //System.out.println("Rest servlet PUT " + pathInfo + "(" + user + ")");
         try {
             PathAndId pathAndId = PathAndId.parse("PUT", pathInfo);
             if (pathAndId.isPath(BOARDS)) {

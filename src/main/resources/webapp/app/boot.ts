@@ -13,6 +13,6 @@ bootstrap(App, [
     HTTP_PROVIDERS,
     ROUTER_PROVIDERS,
     provide(LocationStrategy, {useClass: HashLocationStrategy}),
-    provide(APP_BASE_HREF, {useValue: '/app/'})
+    provide(APP_BASE_HREF, {useValue: '../../app/'})
 ])
     .catch(err => console.error(err));

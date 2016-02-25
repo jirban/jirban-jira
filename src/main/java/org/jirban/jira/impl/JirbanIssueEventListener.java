@@ -138,6 +138,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     @EventListener
     public void onEvent(ReindexIssuesCompletedEvent event) throws IndexException {
+        System.out.println("----> Reindex " + Thread.currentThread().getName());
         if (currentEvt != null) {
             try {
                 boardManager.handleEvent(currentEvt);
@@ -153,6 +154,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) throws IndexException {
+        System.out.println("----> Issue Event " + Thread.currentThread().getName());
+
         long eventTypeId = issueEvent.getEventTypeId();
         // if it's an event we're interested in, log it
 
@@ -185,6 +188,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             //affected in the worklog
             onWorklogEvent(issueEvent);
         }
+        System.out.println("----> Issue Event END ");
     }
 
     private void onCreateEvent(IssueEvent issueEvent) throws IndexException {
