@@ -6,6 +6,7 @@ import {AboutComponent} from './components/about/about';
 import {BoardComponent} from './components/board/board';
 import {BoardsComponent} from './components/boards/boards';
 import {ConfigComponent} from "./components/config/config";
+import {version} from "angular2/src/upgrade/angular_js";
 
 @Component({
     selector: 'my-app'
@@ -39,5 +40,7 @@ export class App {
     constructor(router:Router, location:Location) {
         this.router = router;
         this.location = location;
+
+        //console.log("VERSION " + JSON.stringify(version));
     }
 }
