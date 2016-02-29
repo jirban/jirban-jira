@@ -15,7 +15,7 @@
     border: 0px;
 }
 .board tbody {
-    overflow-x: scroll;
+    overflow-x: hidden;
     display: block;
     /**height   : ?? - calculated in board.ts */
 }
