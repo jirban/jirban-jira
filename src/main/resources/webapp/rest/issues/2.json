@@ -1,0 +1,163 @@
+{
+  "view" : 0,
+  "rank-custom-field-id" : 12311940,
+  "assignees" : [
+    {
+      "key" : "emuckenhuber",
+      "email" : "emanuel.muckenhuber@gmail.com",
+      "avatar" : "https://static.jboss.org/developer/gravatar/ddb8426eafc8e3628d263af28aa13086?d=mm&s=32",
+      "name" : "Emanuel Muckenhuber"
+    },
+    {
+      "key" : "kabirkhan",
+      "email" : "kabir.khan@jboss.com",
+      "avatar" : "https://static.jboss.org/developer/gravatar/00aa85cb5ea8fd5882bab9765f40655e?d=mm&s=32",
+      "name" : "Kabir Khan"
+    }
+  ],
+  "components": ["One", "Two", "Three"],
+  "priorities" : [
+    {
+      "name" : "Blocker",
+      "icon" : "/images/icons/priorities/blocker.png"
+    },
+    {
+      "name" : "Major",
+      "icon" : "/images/icons/priorities/major.png"
+    },
+    {
+      "name" : "Minor",
+      "icon" : "/images/icons/priorities/minor.png"
+    },
+    {
+      "name" : "Optional",
+      "icon" : "/images/icons/priorities/minor.png"
+    },
+    {
+      "name" : "Trivial",
+      "icon" : "/images/icons/priorities/trivial.png"
+    }
+  ],
+  "issue-types" : [
+    {
+      "name" : "Task",
+      "icon" : "/images/icons/issuetypes/task.png"
+    },
+    {
+      "name" : "Story",
+      "icon" : "/images/icons/issuetypes/story.png"
+    },
+    {
+      "name" : "Bug",
+      "icon" : "/images/icons/issuetypes/bug.png"
+    },
+    {
+      "name" : "Epic",
+      "icon" : "/images/icons/issuetypes/epic.png"
+    }
+  ],
+  "projects" : {
+    "owner" : "EAPDS",
+    "main" : {
+      "EAPDS" : {
+        "colour" : "#4667CA",
+        "states" : [
+          "One",
+          "Two",
+          "Three",
+          "Four"
+        ],
+        "issues" : [
+          [
+            "EAPDS-1",
+            "EAPDS-2",
+            "EAPDS-3",
+            "EAPDS-4"
+          ],
+          [
+            "EAPDS-5",
+            "EAPDS-6",
+            "EAPDS-7"
+          ],
+          [
+            "EAPDS-8"
+          ],
+          [
+            "EAPDS-9"
+          ]
+        ]
+      }
+    },
+    "linked" : {"EAPUS" : {"states" : [
+      "Backlog",
+      "Selected for Development",
+      "In Progress",
+      "Done"
+    ]}}
+  },
+  "issues" : {
+    "EAPDS-1": {
+      "key": "EAPDS-1",
+      "state": 0,
+      "summary": "First things first",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-2": {
+      "key": "EAPDS-2",
+      "state": 0,
+      "summary": "Two",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-3": {
+      "key": "EAPDS-3",
+      "state": 0,
+      "summary": "Three",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-4": {
+      "key": "EAPDS-4",
+      "state": 0,
+      "summary": "Four",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-5": {
+      "key": "EAPDS-5",
+      "state": 1,
+      "summary": "Five",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-6": {
+      "key": "EAPDS-6",
+      "state": 1,
+      "summary": "Six",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-7": {
+      "key": "EAPDS-7",
+      "state": 1,
+      "summary": "Seven",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-8": {
+      "key": "EAPDS-8",
+      "state": 2,
+      "summary": "Eight",
+      "priority": 1,
+      "type": 1
+    },
+    "EAPDS-9": {
+      "key": "EAPDS-9",
+      "state": 3,
+      "summary": "Nine",
+      "priority": 1,
+      "type": 1
+    }
+  }
+}
