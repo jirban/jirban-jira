@@ -30,21 +30,6 @@ export class IssuesService {
         return this.http.get(path).map(res => (<Response>res).json());
     }
 
-    //moveIssue(board:number, issueKey:string, toState:string, insertBeforeIssueKey:string, insertAfterIssueKey:string) : Observable<void> {
-    //    let payload:any = {
-    //        board: board,
-    //        issueKey: issueKey,
-    //        toState: toState,
-    //        afterIssue: insertAfterIssueKey,
-    //        beforeIssue: insertBeforeIssueKey
-    //    }
-    //
-    //    console.log("IssuesService - Initiating move " + new Date());
-    //    return this.http.post(
-    //        'rest/move-issue', JSON.stringify(payload))
-    //        .map(res => (<Response>res).json());
-    //}
-
     moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string) {
         let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, issue, toBoardState, beforeKey, afterKey);
         mi.execute();

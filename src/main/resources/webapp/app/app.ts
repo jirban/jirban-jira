@@ -37,10 +37,20 @@ export class App {
     router:Router;
     location:Location;
 
+
     constructor(router:Router, location:Location) {
         this.router = router;
         this.location = location;
 
-        //console.log("VERSION " + JSON.stringify(version));
+        router.subscribe((route:string) => {
+            //Hack to hide the body scroll bars on the board page.
+            //This is only really necessary on FireFox on linux, where the board's table
+            //seems have extra width added to allow for the scrollbars on the board's divs
+            let showBodyScrollbars:boolean = true;
+            if (route.startsWith("board?board")) {
+                showBodyScrollbars = false;
+            }
+            document.getElementsByTagName("body")[0].className = showBodyScrollbars ? "" : "no-scrollbars";
+        });
     }
 }

@@ -4,6 +4,10 @@ body {
     font-family: 'Open Sans', Verdana, Arial, sans-serif;
 }
 
+/** See comment in app.ts's constructor */
+.no-scrollbars {
+    overflow: hidden;
+}
 
 /* Global link settings */
 a:link {
