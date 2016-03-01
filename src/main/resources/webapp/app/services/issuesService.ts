@@ -12,21 +12,26 @@ import {ProgressErrorService} from "./progressErrorService";
 
 @Injectable()
 export class IssuesService {
-    private router : Router;
+    private bigTimeout:number = 30000;
+    static smallTimeout:number = 15000;
     private http : Http;
 
-    constructor(http:Http, router:Router) {
+    constructor(http:Http) {
         this.http = http;
     }
 
     getIssuesData(board:number) : Observable<Response> {
         let path:string = RestUrlUtil.caclulateRestUrl('rest/issues/' + board);
-        return this.http.get(path).map(res => (<Response>res).json());
+        return this.http.get(path)
+            .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .map(res => (<Response>res).json());
     }
 
     pollBoard(board:number, view:number) : Observable<Response> {
         let path = RestUrlUtil.caclulateRestUrl('rest/issues/' + board + "/updates/" + view);
-        return this.http.get(path).map(res => (<Response>res).json());
+        return this.http.get(path)
+            .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .map(res => (<Response>res).json());
     }
 
     moveIssue(boardData:BoardData, progressError:ProgressErrorService, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string) {
@@ -66,6 +71,7 @@ class MoveIssueAction {
         headers.append("Accept", "application/json");
 
         this._http.get(path, {headers : headers})
+            .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json())
             .subscribe(
                 data => this.performStateTransition(data),
@@ -101,6 +107,7 @@ class MoveIssueAction {
             console.log("post to URL " + path);
 
             this._http.post(path, JSON.stringify(payload), {headers : headers})
+                .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for POST " + path)
                 .map(res => (<Response>res).json())
                 .subscribe(
                     data => {
@@ -133,6 +140,7 @@ class MoveIssueAction {
         headers.append("Accept", "application/json");
 
         this._http.post(path, JSON.stringify(payload), {headers : headers})
+            .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for POST " + path)
             .map(res => (<Response>res).json())
             .subscribe(
                 data => {

@@ -44,6 +44,13 @@ export class ProgressErrorService {
         this._error = err;
     }
 
+    setErrorString(error:string) {
+        console.log("Setting error: " + error);
+        this._progress = false;
+        this._error = error;
+    }
+
+
     getError():string {
         return this._error;
     }

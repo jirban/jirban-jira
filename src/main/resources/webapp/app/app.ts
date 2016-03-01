@@ -8,9 +8,14 @@ import {BoardsComponent} from './components/boards/boards';
 import {ConfigComponent} from "./components/config/config";
 import {version} from "angular2/src/upgrade/angular_js";
 import {ProgressErrorService} from "./services/progressErrorService";
+import {VersionCheckService} from "./services/versionCheckService";
+
+/** The current API version. It should match what is set in RestServlet.API_VERSION */
+const VERSION:number = 1;
 
 @Component({
-    selector: 'my-app'
+    selector: 'my-app',
+    providers: [VersionCheckService]
 })
 @RouteConfig([
     new Route({path: '/', component: AboutComponent, name: 'About'}),
@@ -50,7 +55,7 @@ export class App {
     _router:Router;
     _progressError:ProgressErrorService;
 
-    constructor(router:Router, progressError:ProgressErrorService) {
+    constructor(router:Router, progressError:ProgressErrorService, versionCheckService:VersionCheckService) {
         this._router = router;
         this._progressError = progressError;
 
@@ -64,6 +69,20 @@ export class App {
             }
             document.getElementsByTagName("body")[0].className = showBodyScrollbars ? "" : "no-scrollbars";
         });
+
+        this._progressError.startProgress(true);
+        versionCheckService.getVersion()
+            .subscribe(
+                data => {
+                    let version:number = data.version;
+                    if (version != VERSION) {
+                        this._progressError.setErrorString("You appear to be using an outdated/cached version of the client. " +
+                            "Please empty your browser caches and reload this page.")
+                    }
+                },
+                error => {this._progressError.setError(error)},
+                () => {this._progressError.finishProgress()}
+            )
     }
 
     get hideProgress():boolean {
@@ -79,3 +98,4 @@ export class App {
         this._progressError.clearError();
     }
 }
+

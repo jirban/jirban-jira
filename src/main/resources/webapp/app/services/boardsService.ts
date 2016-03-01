@@ -21,7 +21,7 @@ export class BoardsService {
         let path:string = RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
         let ret:Observable<any> =
             this._http.get(path)
-                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .timeout(this.timeout, "The server did not respond in a timely manner for GET " + path)
                 .map((res: Response) => res.json());
 
         return ret;
@@ -35,7 +35,7 @@ export class BoardsService {
             this._http.post(path, json, {
                 headers : headers
             })
-                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .timeout(this.timeout, "The server did not respond in a timely manner for POST " + path)
                 .map((res: Response) => res.json());
         return ret;
     }
@@ -48,7 +48,7 @@ export class BoardsService {
             this._http.put(path, json, {
                 headers : headers
             })
-                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .timeout(this.timeout, "The server did not respond in a timely manner for PUT " + path)
                 .map((res: Response) => res.json());
         return ret;
     }
@@ -61,7 +61,7 @@ export class BoardsService {
             this._http.delete(path, {
                 headers : headers
             })
-                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .timeout(this.timeout, "The server did not respond in a timely manner for DELETE " + path)
                 .map((res: Response) => res.json());
         return ret;
     }

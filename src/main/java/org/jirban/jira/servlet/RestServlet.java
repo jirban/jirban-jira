@@ -29,7 +29,8 @@ public class RestServlet extends HttpServlet{
     private static final Logger log = LoggerFactory.getLogger(RestServlet.class);
 
     /**
-     * If we change anything in the payloads etc. we should bump this so that the client can take action
+     * If we change anything in the payloads etc. we should bump this so that the client can take action.
+     * The corresponding location on the client is in app.ts
      */
     private static final int API_VERSION = 1;
 
@@ -51,7 +52,9 @@ public class RestServlet extends HttpServlet{
                 pathAndId.validateId(false);
                 ModelNode versionNode = new ModelNode();
                 versionNode.get(VERSION).set(API_VERSION);
-            }if (pathAndId.isPath(BOARDS)) {
+                Util.sendResponseJson(resp, versionNode.toJSONString(true));
+                return;
+            } else if (pathAndId.isPath(BOARDS)) {
                 pathAndId.validateId(false);
                 //System.out.println("Getting boards");
                 boolean full = req.getParameter("full") != null;
