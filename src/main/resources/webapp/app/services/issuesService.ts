@@ -108,7 +108,7 @@ class MoveIssueAction {
 
             this._http.post(path, JSON.stringify(payload), {headers : headers})
                 .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for POST " + path)
-                .map(res => (<Response>res).json())
+                //.map(res => (<Response>res).json())
                 .subscribe(
                     data => {
                         if (this._changeRank) {
@@ -139,7 +139,8 @@ class MoveIssueAction {
         headers.append("Content-Type", "application/json");
         headers.append("Accept", "application/json");
 
-        this._http.post(path, JSON.stringify(payload), {headers : headers})
+        console.log("PUT " + JSON.stringify(payload) + " to " + path);
+        this._http.put(path, JSON.stringify(payload), {headers : headers})
             .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for POST " + path)
             .map(res => (<Response>res).json())
             .subscribe(
