@@ -8,6 +8,8 @@ import {SwimlaneEntryComponent} from './swimlaneEntry/swimlaneEntry';
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {OnDestroy} from "angular2/core";
+import {ProgressErrorService} from "../../services/progressErrorService";
+
 
 @Component({
     selector: 'board',
@@ -21,33 +23,35 @@ import {OnDestroy} from "angular2/core";
 export class BoardComponent implements OnDestroy {
     boardId:number;
 
-    private owner:string;
-
     private boardHeight; //board + headers
     private boardBodyHeight; //board + headers
     private width;
 
     private issueContextMenuData:IssueContextMenuData;
 
-    constructor(private issuesService:IssuesService, private router:Router, private routeParams:RouteParams, private boardData:BoardData) {
+    private _pollFailureCount:number = 0;
+
+    private _currentTimeout;
+    private _destroyed:boolean = false;
+
+    constructor(private _issuesService:IssuesService, private _boardData:BoardData, private _progressError:ProgressErrorService, routeParams:RouteParams) {
         let boardId:string = routeParams.get('board');
         if (boardId) {
             this.boardId = Number(boardId);
         }
 
-        issuesService.getIssuesData(this.boardId).subscribe(
+        this._progressError.startProgress(true);
+        _issuesService.getIssuesData(this.boardId).subscribe(
             data => {
                 this.setIssueData(data);
-                this.pollIssues();
             },
             err => {
-                console.log(err);
-                //TODO logout locally if 401, and redirect to login
-                //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
-                //rather than about the auth problems
-
+                this._progressError.setError(err);
             },
-            () => console.log('Board: data loaded')
+            () => {
+                this.pollIssues();
+                this._progressError.finishProgress();
+            }
         );
         this.setWindowSize();
 
@@ -55,45 +59,66 @@ export class BoardComponent implements OnDestroy {
 
     ngOnDestroy():any {
         //this.issuesService.closeWebSocket();
+        let timeout:number = this._currentTimeout;
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        this._destroyed = true;
         return null;
     }
 
     private setIssueData(issueData:any) {
-        this.boardData.deserialize(this.boardId, issueData);
+        this._boardData.deserialize(this.boardId, issueData);
     }
 
     private pollIssues(timeout?:number) {
         let to:number = timeout ? timeout : 5000;
-        setTimeout(()=>{this.doPoll()}, to);
+        this._currentTimeout = setTimeout(()=>{this.doPoll()}, to);
     }
 
     private doPoll() {
-        console.log("Poll");
-        this.issuesService.pollBoard(this.boardId, this.boardData.view).subscribe(
-            data => {
-                console.log("----> Received changes: " + JSON.stringify(data));
-                this.boardData.processChanges(data);
-                this.pollIssues();
-            },
-            err => {
-                console.log(err);
-                //TODO logout locally if 401, and redirect to login
-                //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
-                //rather than about the auth problems
+        if (this._destroyed) {
+            return;
+        }
+        if (this._progressError.progress) {
+            //Another request is already in progress (probably a move)
+            //Just do another poll and return so we don't clash the error codes etc.
+            this.pollIssues();
+            return;
+        }
 
-            },
-            () => console.log('Board: data loaded')
-        );
+        //Don't use the progress monitor for this background task.
+        //Simply set the error in it if one happened
+        this._issuesService.pollBoard(this.boardId, this._boardData.view)
+            .subscribe(
+                data => {
+                    console.log("----> Received changes: " + JSON.stringify(data));
+                    this.boardData.processChanges(data);
+                    this.pollIssues();
+                },
+                err => {
+                    this._pollFailureCount++;
+                    console.log(err);
+                    if (this._pollFailureCount < 3) {
+                        this.pollIssues();
+                    } else {
+                        this._progressError.setError("Connection to the board lost.");
+                    }
+                },
+                () => {
+                    this._pollFailureCount = 0;
+                }
+            );
     }
 
 
     private get visibleColumns() {
-        return this.boardData.visibleColumns;
+        return this._boardData.visibleColumns;
     }
 
 
     private toggleColumn(stateIndex:number) {
-        this.boardData.toggleColumnVisibility(stateIndex);
+        this._boardData.toggleColumnVisibility(stateIndex);
     }
 
     private toCharArray(state:string):string[] {
@@ -108,7 +133,7 @@ export class BoardComponent implements OnDestroy {
     }
 
     private get boardStates():string[] {
-        return this.boardData.boardStates;
+        return this._boardData.boardStates;
     }
 
     private onResize(event : any) {
@@ -128,11 +153,15 @@ export class BoardComponent implements OnDestroy {
     }
 
     private hideMenus() {
-        this.boardData.hideHideables();
+        this._boardData.hideHideables();
         this.issueContextMenuData = null;
     }
 
     onCloseIssueContextMenu(event:any) {
         this.issueContextMenuData = null;
+    }
+
+    get boardData():BoardData {
+        return this._boardData;
     }
 }

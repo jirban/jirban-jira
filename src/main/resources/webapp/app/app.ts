@@ -7,6 +7,7 @@ import {BoardComponent} from './components/board/board';
 import {BoardsComponent} from './components/boards/boards';
 import {ConfigComponent} from "./components/config/config";
 import {version} from "angular2/src/upgrade/angular_js";
+import {ProgressErrorService} from "./services/progressErrorService";
 
 @Component({
     selector: 'my-app'
@@ -27,20 +28,31 @@ import {version} from "angular2/src/upgrade/angular_js";
         <!-- TODO Only display this if it is an admin -->
         <span> <a [routerLink]="['/Config']" class="toolbar-link">Config</a></span>
     </div>
+
+</div>
+<router-outlet></router-outlet>
+
+<div class="wait-screen" [hidden]="hideProgress"> </div>
+<div id="error-panel" [hidden]="!error" (click)="onClickErrorClose($event)">
+    <div class="header">
+            <div class="header-text">Board Settings</div>
+            <div class="header-close-button">
+                <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
+            </div>
+    </div>
+    {{error}}
 </div>
 
-<router-outlet></router-outlet>
     `,
     directives: [ROUTER_DIRECTIVES, AboutComponent, BoardComponent]
 })
 export class App {
-    router:Router;
-    location:Location;
+    _router:Router;
+    _progressError:ProgressErrorService;
 
-
-    constructor(router:Router, location:Location) {
-        this.router = router;
-        this.location = location;
+    constructor(router:Router, progressError:ProgressErrorService) {
+        this._router = router;
+        this._progressError = progressError;
 
         router.subscribe((route:string) => {
             //Hack to hide the body scroll bars on the board page.
@@ -52,5 +64,18 @@ export class App {
             }
             document.getElementsByTagName("body")[0].className = showBodyScrollbars ? "" : "no-scrollbars";
         });
+    }
+
+    get hideProgress():boolean {
+        return !this._progressError.displayProgressIcon();
+    }
+
+    get error():string {
+        return this._progressError.getError();
+    }
+
+    onClickErrorClose(event:MouseEvent):void {
+        event.preventDefault();
+        this._progressError.clearError();
     }
 }

@@ -7,12 +7,14 @@ import {APP_BASE_HREF, ROUTER_PROVIDERS, HashLocationStrategy, Location, Locatio
 
 import {enableProdMode} from 'angular2/core';
 import {App} from './app';
+import {ProgressErrorService} from "./services/progressErrorService";
 
 
 enableProdMode();
 bootstrap(App, [
     HTTP_PROVIDERS,
     ROUTER_PROVIDERS,
+    ProgressErrorService,
     provide(LocationStrategy, {useClass: HashLocationStrategy}),
     provide(APP_BASE_HREF, {useValue: '../../app/'})
 ])

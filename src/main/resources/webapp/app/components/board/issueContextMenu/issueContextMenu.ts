@@ -3,6 +3,7 @@ import {BoardData} from '../../../data/board/boardData';
 import {IssueData} from '../../../data/board/issueData';
 import {IssuesService} from '../../../services/issuesService';
 import {IssueComponent} from '../issue/issue';
+import {ProgressErrorService} from "../../../services/progressErrorService";
 
 @Component({
     inputs: ['data'],
@@ -30,7 +31,7 @@ export class IssueContextMenuComponent {
 
     private closeContextMenu:EventEmitter<any> = new EventEmitter();
 
-    constructor(private boardData:BoardData, private issuesService:IssuesService) {
+    constructor(private _boardData:BoardData, private _issuesService:IssuesService, private _progressError:ProgressErrorService) {
         this.setWindowSize();
     }
 
@@ -45,9 +46,9 @@ export class IssueContextMenuComponent {
         this._data = data;
         this.issue = null;
         if (data) {
-            this.issue = this.boardData.getIssue(data.issueKey);
+            this.issue = this._boardData.getIssue(data.issueKey);
             this.toState = this.issue.boardStatus;
-            this.issuesForState = this.boardData.getValidMoveBeforeIssues(this.issue.key, this.toState);
+            this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, this.toState);
         }
 
 
@@ -66,11 +67,11 @@ export class IssueContextMenuComponent {
     }
 
     private get moveStates() : string[] {
-        return this.boardData.boardStates;
+        return this._boardData.boardStates;
     }
 
     private isValidState(state:string) : boolean {
-        return this.boardData.isValidStateForProject(this.issue.projectCode, state);
+        return this._boardData.isValidStateForProject(this.issue.projectCode, state);
     }
 
     private onShowMovePanel(event:MouseEvent) {
@@ -81,7 +82,7 @@ export class IssueContextMenuComponent {
 
     private onSelectMoveState(event:MouseEvent, toState:string) {
         event.preventDefault();
-        this.issuesForState = this.boardData.getValidMoveBeforeIssues(this.issue.key, toState);
+        this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, toState);
         this.toState = toState;
     }
 
@@ -105,7 +106,7 @@ export class IssueContextMenuComponent {
         console.log("onSelectMoveIssue key - afterKey " + afterKey);
 
         //Tell the server to move the issue. The actual move will come in via the board's polling mechanism.
-        this.issuesService.moveIssue(this.boardData, this.issue, this.toState, beforeKey, afterKey);
+        this._issuesService.moveIssue(this._boardData, this._progressError, this.issue, this.toState, beforeKey, afterKey);
     }
 
     private onResize(event : any) {
@@ -137,6 +138,10 @@ export class IssueContextMenuComponent {
     private onClickClose(event:MouseEvent) {
         this.closeContextMenu.emit({});
         event.preventDefault();
+    }
+
+    get boardData():BoardData {
+        return this._boardData;
     }
 }
 

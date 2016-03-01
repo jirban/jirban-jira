@@ -8,13 +8,12 @@ import {BoardData} from "../data/board/boardData";
 import {RestUrlUtil} from "../common/RestUrlUtil";
 import {IssueData} from "../data/board/issueData";
 import {BoardProject} from "../data/board/project";
+import {ProgressErrorService} from "./progressErrorService";
 
 @Injectable()
 export class IssuesService {
     private router : Router;
     private http : Http;
-
-    //private ws : WebSocket;
 
     constructor(http:Http, router:Router) {
         this.http = http;
@@ -30,8 +29,8 @@ export class IssuesService {
         return this.http.get(path).map(res => (<Response>res).json());
     }
 
-    moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string) {
-        let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, issue, toBoardState, beforeKey, afterKey);
+    moveIssue(boardData:BoardData, progressError:ProgressErrorService, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string) {
+        let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, progressError, issue, toBoardState, beforeKey, afterKey);
         mi.execute();
     }
 }
@@ -41,7 +40,7 @@ class MoveIssueAction {
 
     private _changeState;
     private _changeRank;
-    constructor(private _http:Http, private _boardData:BoardData, private _issue:IssueData,
+    constructor(private _http:Http, private _boardData:BoardData, private _progressError:ProgressErrorService, private _issue:IssueData,
                      private _toBoardState, private _beforeKey:string, private _afterKey:string) {
         let project:BoardProject = _boardData.boardProjects.forKey(_issue.projectCode);
         this._toOwnState = project.mapBoardStateToOwnState(_toBoardState);
@@ -51,8 +50,10 @@ class MoveIssueAction {
 
     execute() {
         if (this._changeState) {
+            this._progressError.startProgress(true);
             this.getTransitionsAndPerform();
         } else if (this._changeRank) {
+            this._progressError.startProgress(true);
             this.performRerank();
         }
     }
@@ -68,7 +69,7 @@ class MoveIssueAction {
             .map(res => (<Response>res).json())
             .subscribe(
                 data => this.performStateTransition(data),
-                error => this.error(error)
+                error => this.setError(error)
             );
     }
 
@@ -87,7 +88,7 @@ class MoveIssueAction {
             if (this._toOwnState != this._toBoardState) {
                 state = state + "(" + this._toOwnState + ")";
             }
-            this.error({msg: "Could not find a valid transition to " + state});
+            this.setError({msg: "Could not find a valid transition to " + state});
         } else {
             let path = this._boardData.jiraUrl + '/rest/api/2/issue/' + this._issue.key + '/transitions';
             //path = path + "?issueIdOrKey=" + this._issue.key;
@@ -109,7 +110,7 @@ class MoveIssueAction {
                             this.done();
                         }
                     },
-                    error => this.error(error)
+                    error => this.setError(error)
                 );
         }
     }
@@ -137,16 +138,16 @@ class MoveIssueAction {
                 data => {
                     this.done();
                 },
-                error => this.error(error)
+                error => this.setError(error)
             );
     }
 
     done() {
+        this._progressError.finishProgress();
     }
 
-    error(error:any) {
-        //TOOD
-        console.log(error);
+    private setError(error:any) {
+        this._progressError.setError(error);
     }
 
 }

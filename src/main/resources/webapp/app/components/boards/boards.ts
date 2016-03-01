@@ -3,6 +3,7 @@ import {ROUTER_DIRECTIVES, ROUTER_PROVIDERS, Router, RouterLink} from 'angular2/
 import {BoardsService} from '../../services/boardsService';
 import {BoardComponent} from '../board/board';
 import {Observable} from "rxjs/Observable";
+import {ProgressErrorService} from "../../services/progressErrorService";
 
 @Component({
     selector: 'boards',
@@ -14,23 +15,20 @@ import {Observable} from "rxjs/Observable";
     directives: [ROUTER_DIRECTIVES]
 })
 export class BoardsComponent {
-    private boards:any[]
+    private boards:any[];
 
-    constructor(public boardsService:BoardsService, public router:Router) {
-        boardsService.loadBoardsList(true).subscribe(
+    constructor(private _boardsService:BoardsService, progressError:ProgressErrorService) {
+        progressError.startProgress(true);
+        _boardsService.loadBoardsList(true).subscribe(
             data => {
                 console.log('Boards: Got data' + JSON.stringify(data));
                 this.boards = data;
             },
             err => {
-                console.log(err);
-                //TODO logout locally if 401, and redirect to login
-                //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
-                //rather than about the auth problems
+                progressError.setError(err);
             },
-            () => console.log('Board: done')
-        );
+            () => {
+                progressError.finishProgress();
+            });
     }
-
-
 }

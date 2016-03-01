@@ -6,6 +6,7 @@ import {ControlGroup, FormBuilder} from "angular2/common";
 import {Validators} from "angular2/common";
 import {Control} from "angular2/common";
 import {Indexed} from "../../common/indexed";
+import {ProgressErrorService} from "../../services/progressErrorService";
 
 @Component({
     selector: 'boards',
@@ -28,23 +29,23 @@ export class ConfigComponent {
     private jsonErrorEdit:string = null;
     private jsonErrorCreate:string = null;
 
-    constructor(private _boardsService:BoardsService, private _router:Router, private _formBuilder:FormBuilder) {
+    constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
         this.loadBoards();
     }
 
     private loadBoards() {
+        this._progressError.startProgress(true);
         this._boardsService.loadBoardsList(false).subscribe(
             data => {
                 console.log('Boards: Got data' + JSON.stringify(data));
                 this._boards = this.indexBoard(data);
             },
             err => {
-                console.log(err);
-                //TODO logout locally if 401, and redirect to login
-                //err seems to contain a complaint about the json marshalling of the empty body having gone wrong,
-                //rather than about the auth problems
+                this._progressError.setError(err);
             },
-            () => console.log('Board: done')
+            () => {
+                this._progressError.finishProgress();
+            }
         );
 
         this.updateNewForm();
@@ -122,6 +123,7 @@ export class ConfigComponent {
     }
 
     deleteBoard() {
+        this._progressError.startProgress(true);
         this._boardsService.deleteBoard(this.selected)
             .subscribe(
                 data => {
@@ -131,10 +133,11 @@ export class ConfigComponent {
                     this.deleting = false;
                 },
                 err => {
-                    console.log(err);
-                    //TODO error reporting
+                    this._progressError.setError(err);
                 },
-                () => {}
+                () => {
+                    this._progressError.finishProgress();
+                }
             );
     }
 
@@ -144,6 +147,7 @@ export class ConfigComponent {
             this.jsonErrorEdit = "The contents must be valid json";
             return;
         }
+        this._progressError.startProgress(true);
         this._boardsService.saveBoard(this.selected, value)
             .subscribe(
                 data => {
@@ -152,10 +156,11 @@ export class ConfigComponent {
                     this.edit = false;
                 },
                 err => {
-                    console.log(err);
-                    //TODO error reporting
+                    this._progressError.setError(err);
                 },
-                () => {}
+                () => {
+                    this._progressError.finishProgress();
+                }
             );
     }
 
@@ -165,6 +170,7 @@ export class ConfigComponent {
             this.jsonErrorCreate = "The contents must be valid json";
             return;
         }
+        this._progressError.startProgress(true);
         this._boardsService.createBoard(this.newForm.value.newJson)
             .subscribe(
                 data => {
@@ -173,10 +179,11 @@ export class ConfigComponent {
                     this.updateNewForm();
                 },
                 err => {
-                    console.log(err);
-                    //TODO error reporting
+                    this._progressError.setError(err);
                 },
-                () => {}
+                () => {
+                    this._progressError.finishProgress();
+                }
             );
     }
 

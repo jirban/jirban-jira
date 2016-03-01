@@ -2,20 +2,28 @@ import {Injectable} from 'angular2/core';
 import {Headers, Http, Response} from 'angular2/http';
 import {Router} from 'angular2/router';
 import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/operator/map';
 import {RestUrlUtil} from "../common/RestUrlUtil";
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/timeout';
+import {timeout} from "rxjs/operator/timeout";
+import {ProgressErrorService} from "./progressErrorService";
 
 
 @Injectable()
 export class BoardsService {
-    constructor(private _http:Http, private _router:Router) {
+
+    private timeout:number = 20000;
+
+    constructor(private _http:Http) {
     }
 
     loadBoardsList(summaryOnly:boolean) : Observable<any> {
         let path:string = RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
         let ret:Observable<any> =
-            this._http.get(path).
-            map((res: Response) => res.json());
+            this._http.get(path)
+                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .map((res: Response) => res.json());
+
         return ret;
     }
 
@@ -26,8 +34,9 @@ export class BoardsService {
         let ret:Observable<any> =
             this._http.post(path, json, {
                 headers : headers
-            }).
-            map((res: Response) => res.json());
+            })
+                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .map((res: Response) => res.json());
         return ret;
     }
 
@@ -38,8 +47,9 @@ export class BoardsService {
         let ret:Observable<any> =
             this._http.put(path, json, {
                 headers : headers
-            }).
-            map((res: Response) => res.json());
+            })
+                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .map((res: Response) => res.json());
         return ret;
     }
 
@@ -50,8 +60,9 @@ export class BoardsService {
         let ret:Observable<any> =
             this._http.delete(path, {
                 headers : headers
-            }).
-            map((res: Response) => res.json());
+            })
+                .timeout(this.timeout, "The server did not respond in a timely manner")
+                .map((res: Response) => res.json());
         return ret;
     }
 }
