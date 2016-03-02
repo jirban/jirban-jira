@@ -60,14 +60,18 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
  *     <li>The {@code ReindexIssuesCompletedEvent} - This is similar to an after commit, where Jira has completed
  *     updating the state of the issues.</li>
  * </ol>
- *
+ * <p/>
  * The {@code JirbanIssueEvent} instances created in the first step are used to update our board caches when receiving
- * the second event. Note that this split is *ONLY NECESSARY* when an action is performed which updates the status
+ * the second event. Note that this split is *ONLY NECESSARY* when an action is performed which updates the status/rank
  * of an issue, since when rebuilding the board we need to query the issues by status, and the status updates are only
  * available after the second step. All other changed data (e.g. assignee, issue type, summary, priority etc.) is
  * available in the first step. So for a create, or an update involving a state change or a rank change we delay updating
  * the board caches until we received the {@code ReindexIssuesCompletedEvent}. For everything else, we update the board
  * caches when we receive the first {@code IssueEvent}.
+ * <p/>
+ * However, if an issue is only re-ranked via JirBan and Jira Agile's board, the events are in the opposite order. First
+ * we have the {@code ReindexIssuesCompletedEvent} and then the {@code IssueEvent}. So in this case we do not wait to update
+ * the issue.
  *
  *
  * @author Kabir Khan
@@ -320,7 +324,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     }
 
     private void passEventToBoardManagerOrDelay(JirbanIssueEvent event) throws IndexException {
-        if (event.isRecalculateState()) {
+        if (event.isRecalculateState() && !event.isRerankOnly()) {
             //Delay the processing of the event as outlined in the class javadoc
             currentEvt = event;
         } else {

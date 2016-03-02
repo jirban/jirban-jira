@@ -114,6 +114,17 @@ public class JirbanIssueEvent {
         return false;
     }
 
+    public boolean isRerankOnly() {
+        if (type == Type.UPDATE) {
+            if (detail.isRankOrStateChanged()) {
+                return detail.getComponents() == null && detail.getIssueType() == null && detail.getAssignee() == null &&
+                        detail.getPriority() == null && detail.getState() == null && detail.getSummary() == null;
+
+            }
+        }
+        return false;
+    }
+
     public static class Detail {
         private final String issueType;
         private final String priority;
