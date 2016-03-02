@@ -168,7 +168,7 @@ export class BoardProject extends Project {
             let issueKeysForState:string[] = this._issueKeys[issueTableIndex];
             for (let i:number = 0 ; i < issueKeysForState.length ; ) {
                 if (deletedIssues[issueKeysForState[i]]) {
-                    issueKeysForState.splice(0, 1);
+                    issueKeysForState.splice(i, 1);
                 } else {
                     i++;
                 }
