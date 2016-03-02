@@ -1,6 +1,27 @@
 {
   "view" : 0,
   "rank-custom-field-id" : 12311940,
+  "states" : [
+    "Backlog Pool",
+    "Backlog P2",
+    "Backlog P1",
+    "Analysis Doing",
+    "Analysis PM Input",
+    "Analysis Rejected",
+    "Dev TODO",
+    "QA Rejected",
+    "Waiting For Upstream",
+    "Dev Backport TODO",
+    "Backport",
+    "Backport Review",
+    "Dev Parked",
+    "Prod",
+    "Docs",
+    "Awaiting Release",
+    "QA TODO",
+    "QA",
+    "Done"
+  ],
   "assignees" : [
     {
       "key" : "emuckenhuber",
@@ -61,27 +82,27 @@
     "main" : {
       "EAPDS" : {
         "colour" : "#4667CA",
-        "states" : [
-          "Backlog Pool",
-          "Backlog P2",
-          "Backlog P1",
-          "Analysis Doing",
-          "Analysis PM Input",
-          "Analysis Rejected",
-          "Dev TODO",
-          "QA Rejected",
-          "Waiting For Upstream",
-          "Dev Backport TODO",
-          "Backport",
-          "Backport Review",
-          "Dev Parked",
-          "Prod",
-          "Docs",
-          "Awaiting Release",
-          "QA TODO",
-          "QA",
-          "Done"
-        ],
+        "state-links" : {
+          "Backlog Pool" : "Backlog Pool",
+          "Backlog P2" : "Backlog P2",
+          "Backlog P1" : "Backlog P1",
+          "Analysis Doing" : "Analysis Doing",
+          "Analysis PM Input" : "Analysis PM Input",
+          "Analysis Rejected" : "Analysis Rejected",
+          "Dev TODO" : "Dev TODO",
+          "QA Rejected" : "QA Rejected",
+          "Waiting For Upstream" : "Waiting For Upstream",
+          "Dev Backport TODO" : "Dev Backport TODO",
+          "Backport" : "Backport",
+          "Backport Review" : "Backport Review",
+          "Dev Parked" : "Dev Parked",
+          "Prod" : "Prod",
+          "Docs" : "Docs",
+          "Awaiting Release" : "Awaiting Release",
+          "QA TODO" : "QA TODO",
+          "QA" : "QA",
+          "Done" : "Done"
+        },
         "issues" : [
           [
             "EAPDS-21",
@@ -130,21 +151,6 @@
       },
       "EAPBGS" : {
         "colour" : "#CA6746",
-        "states" : [
-          "Backlog",
-          "Analysis Doing",
-          "Analysis Rejected",
-          "QA Rejected",
-          "Waiting For Upstream",
-          "Dev Backport TODO",
-          "Backport",
-          "Backport Review",
-          "Prod",
-          "Awaiting Release",
-          "QA TODO",
-          "QA",
-          "Done"
-        ],
         "state-links" : {
           "Backlog Pool" : null,
           "Backlog P2" : null,

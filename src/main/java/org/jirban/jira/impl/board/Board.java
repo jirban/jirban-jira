@@ -213,10 +213,6 @@ public class Board {
             this.boardOwner = boardOwner;
         }
 
-        Set<String> getOwnerStateNames() {
-            return boardConfig.getOwnerStateNames();
-        }
-
         Integer getIssueTypeIndexRecordingMissing(String issueKey, String issueTypeName) {
             final Integer issueTypeIndex = boardConfig.getIssueTypeIndex(issueTypeName);
             if (issueTypeIndex == null) {
@@ -235,11 +231,6 @@ public class Board {
 
         void addMissingState(String issueKey, String stateName) {
             getBlacklist().addMissingState(issueKey, stateName);
-        }
-
-
-        BoardProjectConfig getOwningProject() {
-            return boardConfig.getOwningProject();
         }
 
         IssueLinkManager getIssueLinkManager() {
@@ -261,6 +252,10 @@ public class Board {
         abstract Blacklist.Accessor getBlacklist();
 
         abstract Set<Component> getComponents(Collection<ProjectComponent> componentObjects);
+
+        public List<String> getStateNames() {
+            return boardConfig.getStateNames();
+        }
     }
 
     private static Map<String, Assignee> sortAssignees(Map<String, Assignee> assignees) {
@@ -373,11 +368,11 @@ public class Board {
             Map<String, BoardProject> projects = new LinkedHashMap<>();
 
             BoardProject.Builder ownerProject = this.projects.remove(boardConfig.getOwnerProjectCode());
-            projects.put(boardConfig.getOwnerProjectCode(), ownerProject.build(true));
+            projects.put(boardConfig.getOwnerProjectCode(), ownerProject.build());
 
             this.projects.forEach((name, projectBuilder) -> {
                 if (boardConfig.getBoardProject(name) != null) {
-                    projects.put(name, projectBuilder.build(false));
+                    projects.put(name, projectBuilder.build());
                 }
             });
 

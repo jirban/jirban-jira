@@ -1094,16 +1094,16 @@ describe('BoardData tests', ()=> {
                 if (issue.projectCode === "TDP") {
                     expect(issue.statusIndex).toBe(i);
                     if (i == 0) {
-                        expect(issue.boardStatus).toBe("TDP-A");
+                        expect(issue.boardStatus).toBe("S-1");
                         expect(issue.ownStatus).toBe("TDP-A");
                     } else if (i == 1) {
-                        expect(issue.boardStatus).toBe("TDP-B");
+                        expect(issue.boardStatus).toBe("S-2");
                         expect(issue.ownStatus).toBe("TDP-B");
                     } else if (i == 2) {
-                        expect(issue.boardStatus).toBe("TDP-C");
+                        expect(issue.boardStatus).toBe("S-3");
                         expect(issue.ownStatus).toBe("TDP-C");
                     } else if (i == 3) {
-                        expect(issue.boardStatus).toBe("TDP-D");
+                        expect(issue.boardStatus).toBe("S-4");
                         expect(issue.ownStatus).toBe("TDP-D");
                     } else {
                         fail("Bad TDP state index " + i);
@@ -1111,10 +1111,10 @@ describe('BoardData tests', ()=> {
                 } else if (issue.projectCode === "TBG") {
                     expect(issue.statusIndex).toBe(i - 1);
                     if (i == 1) {
-                        expect(issue.boardStatus).toBe("TDP-B");
+                        expect(issue.boardStatus).toBe("S-2");
                         expect(issue.ownStatus).toBe("TBG-X");
                     } else if (i == 2) {
-                        expect(issue.boardStatus).toBe("TDP-C");
+                        expect(issue.boardStatus).toBe("S-3");
                         expect(issue.ownStatus).toBe("TBG-Y");
                     } else {
                         fail("Bad TBG state index " + i);

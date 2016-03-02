@@ -1,6 +1,12 @@
 {
   "view" : 0,
   "rank-custom-field-id" : 12311940,
+  "states" : [
+    "One",
+    "Two",
+    "Three",
+    "Four"
+  ],
   "assignees" : [
     {
       "key" : "emuckenhuber",
@@ -61,12 +67,12 @@
     "main" : {
       "EAPDS" : {
         "colour" : "#4667CA",
-        "states" : [
-          "One",
-          "Two",
-          "Three",
-          "Four"
-        ],
+        "state-links" : {
+          "One" : "One",
+          "Two" : "Two",
+          "Three" : "Three",
+          "Four" : "Four"
+        },
         "issues" : [
           [
             "EAPDS-1",

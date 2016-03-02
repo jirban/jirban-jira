@@ -30,6 +30,8 @@ export class BoardData {
 
     public jiraUrl:string;
 
+    private _boardStates:Indexed<string>;
+
     private _projects:Projects;
 
     public blacklist:BlacklistData;
@@ -163,7 +165,10 @@ export class BoardData {
 
         this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
-        this._projects = new ProjectDeserializer().deserialize(input);
+        this._boardStates = new Indexed<string>();
+        this._boardStates.indexArray(input.states, (entry)=>entry, (entry)=>entry);
+
+        this._projects = new ProjectDeserializer(this._boardStates).deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);
         this._components = new ComponentDeserializer().deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
@@ -174,8 +179,9 @@ export class BoardData {
         } else {
             this._issueTable.fullRefresh(this._projects, input);
         }
-        //this.updateIssueTables();
     }
+
+
 
     toggleColumnVisibility(stateIndex:number) {
         this._visibleColumns[stateIndex] = !this._visibleColumns[stateIndex];
@@ -222,7 +228,11 @@ export class BoardData {
     }
 
     get boardStates() : string[] {
-        return this._projects.boardStates.array;
+        return this._boardStates.array;
+    }
+
+    get indexedBoardStates():Indexed<string> {
+        return this._boardStates;
     }
 
     get owner() : string {

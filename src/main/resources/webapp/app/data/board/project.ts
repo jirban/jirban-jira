@@ -10,15 +10,18 @@ import {SwimlaneMatcher, SwimlaneIndexerFactory} from "./swimlaneIndexer";
  * Registry of project related data got from the server
  */
 export class Projects {
+
     private _owner:string;
+    private _boardStates:Indexed<string>;
     private _boardProjects:Indexed<BoardProject> = new Indexed<BoardProject>();
     private _linkedProjects:IMap<LinkedProject> = {};
     private _boardProjectCodes:string[] = [];
 
-    constructor(owner:string, boardProjects:Indexed<BoardProject>, linkedProjects:IMap<LinkedProject>) {
+    constructor(owner:string, boardStates:Indexed<string>, boardProjects:Indexed<BoardProject>, linkedProjects:IMap<LinkedProject>) {
         this._owner = owner;
         this._boardProjects = boardProjects;
         this._linkedProjects = linkedProjects;
+        this._boardStates = boardStates;
         for (let key in boardProjects.indices) {
             this._boardProjectCodes.push(key);
         }
@@ -28,12 +31,12 @@ export class Projects {
         return this._owner;
     }
 
+    //get boardStates():Indexed<string> {
+    //    return this._boardStates;
+    //}
+
     get ownerProject():BoardProject {
         return this._boardProjects.forKey(this._owner);
-    }
-
-    get boardStates():Indexed<string> {
-        return this._boardProjects.forKey(this.owner).states;
     }
 
     get linkedProjects():IMap<LinkedProject> {
@@ -50,7 +53,7 @@ export class Projects {
 
     getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toState:string) : IssueData[] {
         let project:BoardProject = this._boardProjects.forKey(moveIssue.projectCode);
-        let toStateIndex:number = this.boardStates.indices[toState];
+        let toStateIndex:number = this._boardStates.indices[toState];
         return project.getValidMoveBeforeIssues(issueTable, swimlane, moveIssue, toStateIndex);
     }
 
@@ -113,17 +116,24 @@ export abstract class Project {
 /**
  * These are the projects whose issues will appear as cards on the board.
  */
-export abstract class BoardProject extends Project {
+export class BoardProject extends Project {
+    private _boardStates:Indexed<string>;
     private _colour:string;
     //The table of issue keys uses the board states. This means that for non-owner projects there may be some empty
     //columns where the states are not mapped. It is simpler this way :)
     private _issueKeys:string[][];
-    protected _projects:Projects;
 
-    constructor(code:string, colour:string, states:Indexed<string>, issueKeys:string[][]) {
+    _boardStatesToProjectState:IMap<string> = {};
+    _projectStatesToBoardState:IMap<string> = {};
+
+    constructor(boardStates:Indexed<string>, code:string, colour:string, states:Indexed<string>, issueKeys:string[][],
+                boardStatesToProjectState:IMap<string>, projectStatesToBoardState:IMap<string>) {
         super(code, states);
+        this._boardStates = boardStates;
         this._colour = colour;
         this._issueKeys = issueKeys;
+        this._boardStatesToProjectState = boardStatesToProjectState;
+        this._projectStatesToBoardState = projectStatesToBoardState;
     }
 
     get colour():string {
@@ -132,10 +142,6 @@ export abstract class BoardProject extends Project {
 
     get issueKeys():string[][] {
         return this._issueKeys;
-    }
-
-    set projects(projects:Projects) {
-        this._projects = projects;
     }
 
     getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toStateIndex:number) : IssueData[] {
@@ -157,7 +163,7 @@ export abstract class BoardProject extends Project {
 
     deleteIssues(deletedIssuesByBoardState:IMap<IMap<IssueData>>) {
         for (let boardState in deletedIssuesByBoardState) {
-            let issueTableIndex:number = this._projects.getBoardStateIndex(boardState);
+            let issueTableIndex:number = this._boardStates.indices[boardState];
             let deletedIssues:IMap<IssueData> = deletedIssuesByBoardState[boardState];
             let issueKeysForState:string[] = this._issueKeys[issueTableIndex];
             for (let i:number = 0 ; i < issueKeysForState.length ; ) {
@@ -170,67 +176,6 @@ export abstract class BoardProject extends Project {
         }
     }
 
-    abstract isValidState(state:string) : boolean;
-
-    abstract mapStateStringToBoard(ownState:string) : string;
-    abstract mapBoardStateToOwnState(boardState:string) : string;
-    abstract getOwnerProject():BoardProject;
-
-    mapStateStringToBoardIndex(ownState:string):number {
-        let boardState:string = this.mapStateStringToBoard(ownState);
-        return this.getOwnerProject().getOwnStateIndex(boardState);
-    }
-
-    updateStateIssues(stateIndex:number, issueKeys:string[]) {
-        this._issueKeys[stateIndex] = issueKeys;
-    }
-
-}
-
-/**
- * This is the 'owner' project.
- * Its states will map directly onto the board states.
- */
-class OwnerProject extends BoardProject {
-
-    constructor(code:string, colour:string, states:Indexed<string>, issueKeys:string[][]) {
-        super(code, colour, states, issueKeys);
-    }
-
-    isValidState(state:string) : boolean {
-        return !!this._states.forKey(state);
-    }
-
-
-    mapStateStringToBoard(ownState:string):string {
-        return ownState;
-    }
-
-
-    getOwnerProject():BoardProject {
-        return this;
-    }
-
-
-    mapBoardStateToOwnState(boardState:string):string {
-        return boardState;
-    }
-}
-
-/**
- * This is for other projects whose issues appear as cards on the board.
- * Its states will need mapping onto the board states.
- */
-class OtherMainProject extends BoardProject {
-    _boardStatesToProjectState:IMap<string> = {};
-    _projectStatesToBoardState:IMap<string> = {};
-    constructor(code:string, colour:string, states:Indexed<string>, issueKeys:string[][],
-                boardStatesToProjectState:IMap<string>, projectStatesToBoardState:IMap<string>) {
-        super(code, colour, states, issueKeys);
-        this._boardStatesToProjectState = boardStatesToProjectState;
-        this._projectStatesToBoardState = projectStatesToBoardState;
-    }
-
     isValidState(state:string):boolean {
         return !!this._boardStatesToProjectState[state];
     }
@@ -241,14 +186,19 @@ class OtherMainProject extends BoardProject {
     }
 
 
-    getOwnerProject():BoardProject {
-        return this._projects.ownerProject;
-    }
-
-
     mapBoardStateToOwnState(boardState:string):string {
         return this._boardStatesToProjectState[boardState];
     }
+
+    mapStateStringToBoardIndex(ownState:string):number {
+        let boardState:string = this.mapStateStringToBoard(ownState);
+        return this._boardStates.indices[boardState];
+    }
+
+    updateStateIssues(stateIndex:number, issueKeys:string[]) {
+        this._issueKeys[stateIndex] = issueKeys;
+    }
+
 }
 
 
@@ -263,17 +213,19 @@ export class LinkedProject extends Project {
 }
 
 export class ProjectDeserializer {
+
+    constructor(private _boardStates:Indexed<string>) {
+
+    }
+
     deserialize(input:any) : Projects {
         let projectsInput = input.projects;
 
         let owner:string = projectsInput.owner;
         let mainProjectsInput:any = projectsInput.main;
-        let boardProjects:Indexed<BoardProject> = this.deserializeBoardProjects(owner, mainProjectsInput);
+        let boardProjects:Indexed<BoardProject> = this.deserializeBoardProjects(mainProjectsInput);
         let linkedProjects:IMap<LinkedProject> = this.deserializeLinkedProjects(projectsInput);
-        let projects:Projects = new Projects(owner, boardProjects, linkedProjects);
-        for (let project of boardProjects.array) {
-            project.projects = projects;
-        }
+        let projects:Projects = new Projects(owner, this._boardStates, boardProjects, linkedProjects);
         return projects;
     }
 
@@ -288,30 +240,33 @@ export class ProjectDeserializer {
         return linkedProjects;
     }
 
-    private deserializeBoardProjects(owner:string, mainProjectsInput:any) : Indexed<BoardProject> {
+    private deserializeBoardProjects(mainProjectsInput:any) : Indexed<BoardProject> {
         let boardProjects:Indexed<BoardProject> = new Indexed<BoardProject>();
         boardProjects.indexMap(
             mainProjectsInput,
             (key, projectInput) => {
                 let colour:string = projectInput.colour;
-                let states:Indexed<string> = this.deserializeStateArray(projectInput.states);
                 let issues:string[][] = projectInput.issues;
 
-                if (key === owner) {
-                    return new OwnerProject(key, colour, states, issues);
-                } else {
-                    let boardStatesToProjectState:IMap<string> = {};
-                    let projectStatesToBoardState:IMap<string> = {};
-                    let stateLinksInput = projectInput["state-links"];
-                    for (let boardState in stateLinksInput) {
-                        let projectState = stateLinksInput[boardState];
-                        if (projectState) {
-                            boardStatesToProjectState[boardState] = projectState;
-                            projectStatesToBoardState[projectState] = boardState;
-                        }
+                let boardStatesToProjectState:IMap<string> = {};
+                let projectStatesToBoardState:IMap<string> = {};
+                let stateLinksInput = projectInput["state-links"];
+                for (let boardState in stateLinksInput) {
+                    let projectState = stateLinksInput[boardState];
+                    if (projectState) {
+                        boardStatesToProjectState[boardState] = projectState;
+                        projectStatesToBoardState[projectState] = boardState;
                     }
-                    return new OtherMainProject(key, colour, states, issues, boardStatesToProjectState, projectStatesToBoardState);
                 }
+
+                let states:Indexed<string> = new Indexed<string>();
+                for (let boardState of this._boardStates.array) {
+                    let ownState = boardStatesToProjectState[boardState];
+                    if (ownState) {
+                        states.add(ownState, ownState);
+                    }
+                }
+                return new BoardProject(this._boardStates, key, colour, states, issues, boardStatesToProjectState, projectStatesToBoardState);
             }
         );
         return boardProjects;

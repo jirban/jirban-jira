@@ -30,12 +30,15 @@ import static org.jirban.jira.impl.Constants.OWNING_PROJECT;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PROJECTS;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
+import static org.jirban.jira.impl.Constants.STATE;
+import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,6 +67,7 @@ public class BoardConfig {
     private final String owningUserKey;
     private final String ownerProjectCode;
     private final int rankCustomFieldId;
+    private final BoardStates boardStates;
     private final Map<String, BoardProjectConfig> boardProjects;
     private final Map<String, LinkedProjectConfig> linkedProjects;
     private final Map<String, NameAndUrl> priorities;
@@ -73,6 +77,7 @@ public class BoardConfig {
 
     private BoardConfig(int id, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
+                        BoardStates boardStates,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
 
@@ -81,6 +86,7 @@ public class BoardConfig {
         this.owningUserKey = owningUserKey;
         this.ownerProjectCode = ownerProjectCode;
         this.rankCustomFieldId = rankCustomFieldId;
+        this.boardStates = boardStates;
         this.boardProjects = boardProjects;
         this.linkedProjects = linkedProjects;
         this.priorities = priorities;
@@ -103,23 +109,24 @@ public class BoardConfig {
 
     private static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
                                     int id, String owningUserKey, ModelNode boardNode) {
-        String projectGroupName = getRequiredChild(boardNode, "Group", null, NAME).asString();
-        String owningProjectName = getRequiredChild(boardNode, "Group", projectGroupName, OWNING_PROJECT).asString();
-        int rankCustomFieldId = getRequiredChild(boardNode, "Group", projectGroupName, RANK_CUSTOM_FIELD_ID).asInt();
+        String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
+        String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
+        int rankCustomFieldId = getRequiredChild(boardNode, "Group", boardName, RANK_CUSTOM_FIELD_ID).asInt();
 
-        ModelNode projects = getRequiredChild(boardNode, "Group", projectGroupName, PROJECTS);
+        final BoardStates boardStates = BoardStates.loadBoardStates(boardNode.get(STATES));
+
+        ModelNode projects = getRequiredChild(boardNode, "Group", boardName, PROJECTS);
         ModelNode mainProject = projects.remove(owningProjectName);
         if (mainProject == null || !mainProject.isDefined()) {
-            throw new IllegalStateException("Project group '" + projectGroupName + "' specifies '" + owningProjectName + "' as its main project but it does not exist");
+            throw new IllegalStateException("Project group '" + boardName + "' specifies '" + owningProjectName + "' as its main project but it does not exist");
         }
         Map<String, BoardProjectConfig> mainProjects = new LinkedHashMap<>();
-        OwnerBoardProjectConfig mainProjectConfig = OwnerBoardProjectConfig.load(owningProjectName, mainProject);
+        BoardProjectConfig mainProjectConfig = BoardProjectConfig.load(boardStates, owningProjectName, mainProject);
         mainProjects.put(owningProjectName, mainProjectConfig);
 
         for (String projectName : projects.keys()) {
             ModelNode project = projects.get(projectName);
-            //TODO add these other top level projects, mapping their states to the main project states
-            mainProjects.put(projectName, NonOwnerBoardProjectConfig.load(projectName, project));
+            mainProjects.put(projectName, BoardProjectConfig.load(boardStates, projectName, project));
         }
 
         ModelNode linked = boardNode.get(LINKED_PROJECTS);
@@ -131,15 +138,13 @@ public class BoardConfig {
             }
         }
 
-        BoardConfig boardConfig = new BoardConfig(id, projectGroupName, owningUserKey, owningProjectName,
+        BoardConfig boardConfig = new BoardConfig(id, boardName, owningUserKey, owningProjectName,
                 rankCustomFieldId,
+                boardStates,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
                 Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get(PRIORITIES).asList())),
                 Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get(ISSUE_TYPES).asList())));
-        for (BoardProjectConfig cfg : mainProjects.values()) {
-            cfg.setBoardConfig(boardConfig);
-        }
         return boardConfig;
     }
 
@@ -197,24 +202,24 @@ public class BoardConfig {
         return boardProjects.values();
     }
 
-    public BoardProjectConfig getOwnerProject() {
-        return boardProjects.get(ownerProjectCode);
-    }
-
     public BoardProjectConfig getBoardProject(String projectCode) {
         return boardProjects.get(projectCode);
-    }
-
-    public LinkedProjectConfig getLinkedProject(String projectCode) {
-        return linkedProjects.get(projectCode);
     }
 
     public LinkedProjectConfig getLinkedProjectConfig(String linkedProjectCode) {
         return linkedProjects.get(linkedProjectCode);
     }
 
+    /**
+     * Used to serialize the board for the view board view
+     *
+     * @param boardNode The node to serialize the board to
+     */
     public void serializeModelNodeForBoard(ModelNode boardNode) {
         boardNode.get(Constants.RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
+
+        boardNode.get(STATES).set(boardStates.toModelNode());
+
         ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {
             priority.serialize(prioritiesNode);
@@ -239,11 +244,16 @@ public class BoardConfig {
         }
     }
 
+    /**
+     * Used to serialize the board for the view/edit board config view
+     */
     private ModelNode serializeModelNodeForConfig() {
         ModelNode boardNode = new ModelNode();
         boardNode.get(NAME).set(name);
         boardNode.get(OWNING_PROJECT).set(ownerProjectCode);
         boardNode.get(RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
+
+        boardNode.get(STATES).set(boardStates.toModelNode());
 
         ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {
@@ -268,16 +278,8 @@ public class BoardConfig {
         return boardNode;
     }
 
-    public Set<String> getOwnerStateNames() {
-        return boardProjects.get(ownerProjectCode).getStateNames();
-    }
-
     public String getOwnerProjectCode() {
         return ownerProjectCode;
-    }
-
-    public BoardProjectConfig getOwningProject() {
-        return boardProjects.get(ownerProjectCode);
     }
 
     public Integer getIssueTypeIndex(String name) {
@@ -296,4 +298,7 @@ public class BoardConfig {
         return rankCustomFieldId;
     }
 
+    public List<String> getStateNames() {
+        return boardStates.getStateNames();
+    }
 }

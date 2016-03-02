@@ -150,20 +150,20 @@ public class BoardProject {
             if (index == null) {
                 board.addMissingState(issueKey, stateName);
             } else {
-                if (!projectConfig.isOwner()) {
-                    Integer ownerStateIndex = null;
-                    String ownerState = projectConfig.mapOwnStateOntoBoardState(stateName);
-                    if (ownerState != null) {
-                        ownerStateIndex = board.getOwningProject().getStateIndex(ownerState);
-                    }
-                    if (ownerStateIndex == null) {
-                        //This was not mapped to a valid owner state so report the problem
-                        board.addMissingState(issueKey, ownerState != null ? ownerState : stateName);
-                        return null;
-                    }
-                    //Do not return the owner state index here although all was fine. The calculation of the columns
-                    //depends on everything using their own state index.
-                }
+//                if (!projectConfig.isOwner()) {
+//                    Integer ownerStateIndex = null;
+//                    String ownerState = projectConfig.mapOwnStateOntoBoardState(stateName);
+//                    if (ownerState != null) {
+//                        ownerStateIndex = board.getOwningProject().getStateIndex(ownerState);
+//                    }
+//                    if (ownerStateIndex == null) {
+//                        //This was not mapped to a valid owner state so report the problem
+//                        board.addMissingState(issueKey, ownerState != null ? ownerState : stateName);
+//                        return null;
+//                    }
+//                    //Do not return the owner state index here although all was fine. The calculation of the columns
+//                    //depends on everything using their own state index.
+//                }
             }
             return index;
         }
@@ -229,10 +229,10 @@ public class BoardProject {
             }
         }
 
-        BoardProject build(boolean owner) {
+        BoardProject build() {
             final List<List<String>> resultIssues = new ArrayList<>();
-            for (String state : board.getOwnerStateNames()) {
-                List<String> issues = issueKeysByState.get(owner ? state : projectConfig.mapBoardStateOntoOwnState(state));
+            for (String state : board.getStateNames()) {
+                List<String> issues = issueKeysByState.get(projectConfig.mapBoardStateOntoOwnState(state));
                 if (issues == null) {
                     issues = new ArrayList<>();
                 }

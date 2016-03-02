@@ -128,7 +128,7 @@ export class IssueTable {
 
         //Now update the changed states
         if (changeSet.stateChanges) {
-            let ownerProject:BoardProject = this._projects.ownerProject;
+            //let ownerProject:BoardProject = this._projects.ownerProject;
             for (let projectCode in changeSet.stateChanges.indices) {
 
                 let projectStates:Indexed<string[]> = changeSet.stateChanges.forKey(projectCode);
@@ -137,8 +137,7 @@ export class IssueTable {
                 for (let stateName in projectStates.indices) {
 
                     let boardState:string = project.mapStateStringToBoard(stateName);
-                    let boardIndex:number = ownerProject.getOwnStateIndex(boardState);
-
+                    let boardIndex:number = boardData.indexedBoardStates.indices[boardState];
                     project.updateStateIssues(boardIndex, projectStates.forKey(stateName));
                 }
             }

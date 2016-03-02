@@ -1,6 +1,7 @@
 export class TestBoardData {
 
     public view:number = 0;
+    public states:string[] = ["S-1", "S-2", "S-3", "S-4"];
     public assignees:any = TestBoardData.STANDARD_ASSIGNEES;
     public components:any = TestBoardData.STANDARD_COMPONENTS;
     public priorities:any = TestBoardData.STANDARD_PRIORITIES;
@@ -14,6 +15,7 @@ export class TestBoardData {
         json["view"] = this.view;
         //This parse/stringify stuff is to make sure that we use a clone of the objects
         //Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
+        json["states"] = JSON.parse(JSON.stringify(this.states));
         json["assignees"] = JSON.parse(JSON.stringify(this.assignees));
         json["components"] = JSON.parse(JSON.stringify(this.components));
         json["priorities"] = JSON.parse(JSON.stringify(this.priorities));
@@ -121,12 +123,12 @@ export class TestBoardData {
         owner : "TDP",
         main : {
             TDP : {
-                states : [
-                    "TDP-A",
-                    "TDP-B",
-                    "TDP-C",
-                    "TDP-D"
-                ],
+                "state-links" : {
+                    "S-1": "TDP-A",
+                    "S-2": "TDP-B",
+                    "S-3": "TDP-C",
+                    "S-4": "TDP-D"
+                },
                 colour : "#4667CA",
                 issues : [
                     [
@@ -151,10 +153,8 @@ export class TestBoardData {
                 ],
                 colour : "#CA6746",
                 "state-links" : {
-                    "TDP-A" : null,
-                    "TDP-B" : "TBG-X",
-                    "TDP-C" : "TBG-Y",
-                    "TDP-D" : null
+                    "S-2" : "TBG-X",
+                    "S-3" : "TBG-Y",
                 },
                 issues : [
                     [],
@@ -284,12 +284,12 @@ export class TestBoardData {
         owner : "TDP",
         main : {
             TDP : {
-                states : [
-                    "TDP-A",
-                    "TDP-B",
-                    "TDP-C",
-                    "TDP-D"
-                ],
+                "state-links" : {
+                    "S-1": "TDP-A",
+                    "S-2": "TDP-B",
+                    "S-3": "TDP-C",
+                    "S-4": "TDP-D"
+                },
                 colour : "#4667CA",
                 issues : [
                     [
@@ -385,12 +385,12 @@ export class TestBoardData {
         owner : "TDP",
         main : {
             TDP : {
-                states : [
-                    "TDP-A",
-                    "TDP-B",
-                    "TDP-C",
-                    "TDP-D"
-                ],
+                "state-links" : {
+                    "S-1": "TDP-A",
+                    "S-2": "TDP-B",
+                    "S-3": "TDP-C",
+                    "S-4": "TDP-D"
+                },
                 colour : "#4667CA",
                 issues : [
                     [],
@@ -406,10 +406,8 @@ export class TestBoardData {
                 ],
                 colour : "#CA6746",
                 "state-links" : {
-                    "TDP-A" : null,
-                    "TDP-B" : "TBG-X",
-                    "TDP-C" : "TBG-Y",
-                    "TDP-D" : null
+                    "S-2" : "TBG-X",
+                    "S-3" : "TBG-Y",
                 },
                 issues : [
                     [],
@@ -527,12 +525,12 @@ export class TestBoardData {
         owner : "TDP",
         main : {
             TDP : {
-                states : [
-                    "TDP-A",
-                    "TDP-B",
-                    "TDP-C",
-                    "TDP-D"
-                ],
+                "state-links" : {
+                    "S-1": "TDP-A",
+                    "S-2": "TDP-B",
+                    "S-3": "TDP-C",
+                    "S-4": "TDP-D"
+                },
                 colour : "#4667CA",
                 issues : [
                     ["TDP-1"],
@@ -542,16 +540,10 @@ export class TestBoardData {
                 ]
             },
             TBG : {
-                states : [
-                    "TBG-X",
-                    "TBG-Y"
-                ],
                 colour : "#CA6746",
                 "state-links" : {
-                    "TDP-A" : null,
-                    "TDP-B" : "TBG-X",
-                    "TDP-C" : "TBG-Y",
-                    "TDP-D" : null
+                    "S-2" : "TBG-X",
+                    "S-3" : "TBG-Y"
                 },
                 issues : [
                     [],

@@ -40,7 +40,7 @@ const VERSION:number = 1;
 <div class="wait-screen" [hidden]="hideProgress"> </div>
 <div id="error-panel" [hidden]="!error" (click)="onClickErrorClose($event)">
     <div class="header">
-            <div class="header-text">Board Settings</div>
+            <div class="header-text">Error</div>
             <div class="header-close-button">
                 <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
             </div>

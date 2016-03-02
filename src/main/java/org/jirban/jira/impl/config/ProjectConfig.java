@@ -21,12 +21,11 @@
  */
 package org.jirban.jira.impl.config;
 
-import static org.jirban.jira.impl.Constants.STATES;
-
 import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
 
 /**
  * Abstract base class for all kinds of project configurations.
@@ -58,19 +57,18 @@ public abstract class ProjectConfig {
         return states.get(stateName);
     }
 
-    public int getMaxStateIndex() {
-        return states.size() - 1;
-    }
-
-    private ModelNode getModelNodeWithStates(ModelNode parent) {
+    private ModelNode getModelNodeForCode(ModelNode parent) {
         ModelNode projectNode = parent.get(code);
-        ModelNode statesNode = projectNode.get(STATES);
-        this.states.keySet().forEach(statesNode::add);
         return projectNode;
     }
 
     ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
-        return getModelNodeWithStates(parent);
+        ModelNode projectNode = getModelNodeForCode(parent);
+        ModelNode states = projectNode.get(Constants.STATES).setEmptyList();
+        for (String state : this.states.keySet()) {
+            states.add(state);
+        }
+        return projectNode;
     }
 
 }

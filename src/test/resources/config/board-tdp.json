@@ -2,6 +2,9 @@
   "name": "Test Downstream Project",
   "owning-project": "TDP",
   "rank-custom-field-id": 10000,
+  "states": [
+    "S-A", "S-B", "S-C", "S-D"
+  ],
   "priorities": [
     "highest",
     "high",
@@ -17,19 +20,19 @@
     "TDP": {
       "query-filter": null,
       "colour": "#4667CA",
-      "states": [
-        "TDP-A",
-        "TDP-B",
-        "TDP-C",
-        "TDP-D"
-      ]
+      "state-links": {
+        "TDP-A" : "S-A",
+        "TDP-B" : "S-B",
+        "TDP-C" : "S-C",
+        "TDP-D" : "S-D"
+      }
     },
     "TBG": {
       "query-filter": null,
       "colour": "#CA6746",
       "state-links": {
-        "TBG-X": "TDP-B",
-        "TBG-Y": "TDP-C"
+        "TBG-X": "S-B",
+        "TBG-Y": "S-C"
       }
     }
   },

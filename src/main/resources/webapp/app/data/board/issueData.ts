@@ -179,8 +179,8 @@ export class IssueData {
 
     get ownStatus():string {
         //Used to report the status in mouse-over a card
-        //Note that the main projects which are not the 'owner', will report their own status rather than
-        // the mapped owner column they appear in
+        //Note that projects will report their own jira project status rather than
+        // the mapped board state in which they appear
         let project:Project = this._boardData.linkedProjects[this._projectCode];
         if (!project) {
             project = this._boardData.boardProjects.forKey(this._projectCode);

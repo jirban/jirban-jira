@@ -21,34 +21,71 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.COLOUR;
+import static org.jirban.jira.impl.Constants.STATE_LINKS;
+import static org.jirban.jira.impl.config.Util.getRequiredChild;
+
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.Property;
 import org.jirban.jira.impl.Constants;
 
 /** Abstract base class for project configurations of projects whose issues should appear as cards on the board.
  * @author Kabir Khan
  */
-public abstract class BoardProjectConfig extends ProjectConfig {
-    private volatile BoardConfig boardConfig;
+public class BoardProjectConfig extends ProjectConfig {
+    private final BoardStates boardStates;
     private final String queryFilter;
     private final String colour;
+    private final Map<String, String> ownToBoardStates;
+    /** Maps the owner states onto our states */
+    private final Map<String, String> boardToOwnStates;
 
-    protected BoardProjectConfig(final String code, final String queryFilter,
-                                 final String colour, final Map<String, Integer> states) {
+
+
+    private BoardProjectConfig(final BoardStates boardStates,
+                                final String code, final String queryFilter,
+                                final String colour, final Map<String, Integer> states,
+                                final Map<String, String> ownToBoardStates,
+                                final Map<String, String> boardToOwnStates) {
         super(code, states);
+        this.boardStates = boardStates;
         this.queryFilter = queryFilter;
         this.colour = colour;
+        this.boardToOwnStates = boardToOwnStates;
+        this.ownToBoardStates = ownToBoardStates;
     }
 
-    static Map<String, Integer> loadStringIntegerMap(final List<ModelNode> statesList) {
-        Map<String, Integer> statesMap = new LinkedHashMap<>();
-        for (int i = 0; i < statesList.size(); i++) {
-            statesMap.put(statesList.get(i).asString(), i);
+    static BoardProjectConfig load(final BoardStates boardStates, final String projectCode, ModelNode project) {
+        String colour = getRequiredChild(project, "Project", projectCode, COLOUR).asString();
+        ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, STATE_LINKS);
+
+        Map<String, String> ownToBoardStates = new HashMap<>();
+        Map<String, String> boardToOwnStates = new HashMap<>();
+        for (Property prop : statesLinks.asPropertyList()) {
+            final String ownState = prop.getName();
+            final String boardState = prop.getValue().asString();
+            ownToBoardStates.put(ownState, boardState);
+            boardToOwnStates.put(boardState, ownState);
         }
-        return statesMap;
+
+        int i = 0;
+        Map<String, Integer> states = new LinkedHashMap<>();
+        for (String boardState : boardStates.getStateNames()) {
+            final String ownState = boardToOwnStates.get(boardState);
+            if (ownState != null) {
+                states.put(ownState, i++);
+            }
+        }
+        return new BoardProjectConfig(boardStates, projectCode, loadQueryFilter(project), colour,
+                Collections.unmodifiableMap(states),
+                Collections.unmodifiableMap(ownToBoardStates),
+                Collections.unmodifiableMap(boardToOwnStates));
     }
 
     static String loadQueryFilter(ModelNode project) {
@@ -62,10 +99,6 @@ public abstract class BoardProjectConfig extends ProjectConfig {
         return filter;
     }
 
-    void setBoardConfig(BoardConfig boardConfig) {
-        this.boardConfig = boardConfig;
-    }
-
     public String getQueryFilter() {
         return queryFilter;
     }
@@ -74,28 +107,42 @@ public abstract class BoardProjectConfig extends ProjectConfig {
         return colour;
     }
 
-    @Override
-    ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
-        ModelNode projectNode = super.serializeModelNodeForBoard(boardConfig, parent);
-        projectNode.get(Constants.COLOUR).set(colour);
-        return projectNode;
-    }
 
     public Integer mapOwnStateOntoBoardStateIndex(String state) {
         String boardState = mapOwnStateOntoBoardState(state);
-        return boardConfig.getOwnerProject().getStateIndex(boardState);
+        return boardStates.getStateIndex(boardState);
 
     }
-    public abstract String mapBoardStateOntoOwnState(String boardState);
+    public String mapBoardStateOntoOwnState(String boardState) {
+        return boardToOwnStates.get(boardState);
+    }
 
-    public abstract String mapOwnStateOntoBoardState(String state);
+    public String mapOwnStateOntoBoardState(String state) {
+        return ownToBoardStates.get(state);
+    }
 
-    public abstract boolean isOwner();
+    @Override
+    ModelNode serializeModelNodeForBoard(BoardConfig boardConfig, ModelNode parent) {
+        ModelNode projectNode = super.serializeModelNodeForBoard(boardConfig, parent);
+        ModelNode stateLinksNode = projectNode.get(STATE_LINKS);
+        for (String state : boardStates.getStateNames()) {
+            String myState = mapBoardStateOntoOwnState(state);
+            stateLinksNode.get(state).set(myState == null ? new ModelNode() : new ModelNode(myState));
+        }
+        projectNode.get(Constants.COLOUR).set(colour);
+        return projectNode;
+    }
 
     ModelNode serializeModelNodeForConfig() {
         final ModelNode projectNode = new ModelNode();
         projectNode.get(Constants.QUERY_FILTER).set(queryFilter == null ? new ModelNode() : new ModelNode(queryFilter));
         projectNode.get(Constants.COLOUR).set(colour);
+        final ModelNode stateLinksNode = projectNode.get(STATE_LINKS);
+        stateLinksNode.setEmptyObject();
+        for (Map.Entry<String, String> entry : ownToBoardStates.entrySet()) {
+            stateLinksNode.get(entry.getKey()).set(entry.getValue());
+        }
         return projectNode;
     }
+
 }
