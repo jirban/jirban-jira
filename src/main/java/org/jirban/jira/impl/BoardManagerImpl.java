@@ -28,6 +28,7 @@ import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -240,7 +241,8 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Override
     public void destroy() throws Exception {
-        boardRefreshExecutor.shutdown();
+        boardRefreshExecutor.shutdownNow();
+        boardRefreshExecutor.awaitTermination(10, TimeUnit.SECONDS);
     }
 
     private static class RefreshEntry {
