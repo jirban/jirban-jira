@@ -9,6 +9,7 @@ import {RestUrlUtil} from "../common/RestUrlUtil";
 import {IssueData} from "../data/board/issueData";
 import {BoardProject} from "../data/board/project";
 import {ProgressErrorService} from "./progressErrorService";
+import {Observer} from "rxjs/Observer";
 
 @Injectable()
 export class IssuesService {
@@ -34,9 +35,9 @@ export class IssuesService {
             .map(res => (<Response>res).json());
     }
 
-    moveIssue(boardData:BoardData, progressError:ProgressErrorService, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string) {
-        let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, progressError, issue, toBoardState, beforeKey, afterKey);
-        mi.execute();
+    moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string):Observable<any>{
+        let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, issue, toBoardState, beforeKey, afterKey);
+        return mi.execute();
     }
 }
 
@@ -45,22 +46,39 @@ class MoveIssueAction {
 
     private _changeState;
     private _changeRank;
-    constructor(private _http:Http, private _boardData:BoardData, private _progressError:ProgressErrorService, private _issue:IssueData,
+
+    private _observable:Observable<any>;
+    private _observer:Observer<any>;
+
+    constructor(private _http:Http, private _boardData:BoardData, private _issue:IssueData,
                      private _toBoardState, private _beforeKey:string, private _afterKey:string) {
         let project:BoardProject = _boardData.boardProjects.forKey(_issue.projectCode);
         this._toOwnState = project.mapBoardStateToOwnState(_toBoardState);
         this._changeState = this._toOwnState != this._issue.ownStatus;
         this._changeRank = this._beforeKey || this._afterKey;
+
+        console.log("--- Creating observer");
+        this._observable = Observable.create((observer:Observer<any>) => {
+            this._observer = observer;
+            console.log("---- Created observer");
+        })
+
+        this._observable.subscribe(
+            data => {console.log("---- data")},
+            error => {console.log("---- error " + error)},
+            () => {console.log("---- done")}
+        );
     }
 
-    execute() {
+    execute():Observable<any> {
         if (this._changeState) {
-            this._progressError.startProgress(true);
             this.getTransitionsAndPerform();
         } else if (this._changeRank) {
-            this._progressError.startProgress(true);
             this.performRerank();
+        } else {
+            this.done();
         }
+        return this._observable;
     }
 
     getTransitionsAndPerform() {
@@ -152,11 +170,12 @@ class MoveIssueAction {
     }
 
     done() {
-        this._progressError.finishProgress();
+        this._observer.next({});
+        this._observer.complete();
     }
 
     private setError(error:any) {
-        this._progressError.setError(error);
+        this._observer.error(error);
     }
 
 }

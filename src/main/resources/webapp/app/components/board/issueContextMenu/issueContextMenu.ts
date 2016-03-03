@@ -106,7 +106,19 @@ export class IssueContextMenuComponent {
         console.log("onSelectMoveIssue key - afterKey " + afterKey);
 
         //Tell the server to move the issue. The actual move will come in via the board's polling mechanism.
-        this._issuesService.moveIssue(this._boardData, this._progressError, this.issue, this.toState, beforeKey, afterKey);
+        this._progressError.startProgress(true);
+        this._issuesService.moveIssue(this._boardData, this.issue, this.toState, beforeKey, afterKey)
+            .subscribe(
+                data => {},
+                error => {
+                    this._progressError.setError(error);
+                    this.clearMoveMenu();
+                },
+                () => {
+                    this._progressError.finishProgress();
+                    this.clearMoveMenu();
+                }
+            );
     }
 
     private onResize(event : any) {
