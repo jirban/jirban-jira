@@ -22,9 +22,11 @@
 package org.jirban.jira.impl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -223,9 +225,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                                 //and created
                                 boardChangeRegistries.remove(entry.boardId);
                                 boards.remove(entry.boardId);
-
-                                //Add a new entry for the new refresh timeout
-                                boardRefreshQueue.add(entry.createNew());
+                                //When an attempt is made to get the board again, a new entry will be added to the  queue
 
                                 entry = boardRefreshQueue.peek();
                             }
@@ -252,10 +252,6 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
         public RefreshEntry(int boardId, int timeoutSeconds) {
             this.boardId = boardId;
             this.endTime = System.currentTimeMillis() + timeoutSeconds *1000;
-        }
-
-        RefreshEntry createNew() {
-            return new RefreshEntry(boardId, REFRESH_TIMEOUT_SECONDS);
         }
 
         @Override
