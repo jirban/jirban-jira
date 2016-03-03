@@ -53,4 +53,11 @@
     <description>The module configuring the Active Objects service used by this plugin</description>
     <entity>org.jirban.jira.api.BoardCfg</entity>
   </ao>
+
+  <web-item name="config" key="jirban-config" section="greenhopper_menu/greenhopper_menu_dropdown" weight="1000">
+    <description key="jirban-config.description">The JirBan configuration</description>
+    <label key="jirban.label"></label>
+    <link linkId="jirban-config-link">/plugins/servlet/jirban</link>
+  </web-item>
+
 </atlassian-plugin>
