@@ -16,6 +16,7 @@
     <properties>
         <!-- versions -->
         <version.amps>6.2.1</version.amps>
+        <version.atlassions.greenhopper>6.7.12</version.atlassions.greenhopper>
         <version.atlassian.spring.scanner>1.2.6</version.atlassian.spring.scanner>
         <version.atlassian.templaterenderer>1.5.6</version.atlassian.templaterenderer>
         <version.atlassian.activeobjects>0.28.7</version.atlassian.activeobjects>
@@ -103,6 +104,13 @@
             <artifactId>jboss-dmr</artifactId>
             <version>${version.jboss-dmr}</version>
         </dependency>
+        <dependency>
+            <groupId>com.atlassian.jira.plugins</groupId>
+            <artifactId>jira-greenhopper-plugin</artifactId>
+            <version>${version.atlassions.greenhopper}</version>
+            <scope>provided</scope>
+        </dependency>
+
 
         <!-- Add dependency on jira-core if you want access to JIRA implementation classes as well as the sanctioned API. -->
         <!-- This is not normally recommended, but may be required eg when migrating a plugin originally developed against JIRA 4.x -->

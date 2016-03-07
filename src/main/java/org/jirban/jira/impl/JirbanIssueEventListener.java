@@ -23,7 +23,9 @@ package org.jirban.jira.impl;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Named;
 
@@ -40,6 +42,7 @@ import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
+import com.atlassian.greenhopper.service.lexorank.balance.LexoRankBalanceEvent;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
@@ -69,9 +72,10 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
  * the board caches until we received the {@code ReindexIssuesCompletedEvent}. For everything else, we update the board
  * caches when we receive the first {@code IssueEvent}.
  * <p/>
- * However, if an issue is only re-ranked via JirBan and Jira Agile's board, the events are in the opposite order. First
- * we have the {@code ReindexIssuesCompletedEvent} and then the {@code IssueEvent}. So in this case we do not wait to update
- * the issue.
+ * However, if an issue is only re-ranked via JirBan or Jira Agile's board, the {@code ReindexIssuesCompletedEvent} and
+ * the {@code IssueEvent} can come in any order. However a 'pure' re-rank is initiated by a {@code LexoRankBalanceEvent},
+ * so we use JirbanEventWrapper to track that we have all the needed information.
+ *
  *
  *
  * @author Kabir Khan
@@ -102,7 +106,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
     private final BoardManager boardManager;
 
-    private volatile JirbanIssueEvent currentEvt;
+    private final WrappedThreadLocal<JirbanEventWrapper> delayedEvents = new WrappedThreadLocal<>();
 
 
     /**
@@ -134,20 +138,46 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     public void destroy() throws Exception {
         // unregister ourselves with the EventPublisher
         eventPublisher.unregister(this);
+        delayedEvents.clearAll();
+    }
+
+//    @EventListener
+//    public void onAnyEvent(Object o) {
+//        System.out.println("----> " + o + " " + Thread.currentThread().getName());
+//    }
+
+    /**
+     * This is the event that initiates a re-rank.
+     * This will be followed by both an IssueEvent and a ReindexIssuesCompletedEvent, although the order of the two
+     * is not set in stone.
+     *
+     * @param event the rerank event
+     */
+    @EventListener
+    public void onRankEvent(LexoRankBalanceEvent event) {
+        System.out.println("--> Rank event " + event);
+        JirbanEventWrapper wrapper = new JirbanEventWrapper(true);
+        delayedEvents.set(wrapper);
+
     }
 
     /**
      * Receives any {@code ReindexIssuesCompletedEvent}s sent by JIRA.
+     *
      * @param event the event passed to us
      */
     @EventListener
     public void onEvent(ReindexIssuesCompletedEvent event) throws IndexException {
         System.out.println("----> Reindex " + Thread.currentThread().getName());
-        if (currentEvt != null) {
-            try {
-                boardManager.handleEvent(currentEvt);
-            } finally {
-                currentEvt = null;
+        JirbanEventWrapper delayedEvent = delayedEvents.get();
+        if (delayedEvent != null) {
+            delayedEvent.reindexed = true;
+            if (delayedEvent.isComplete()) {
+                try {
+                    boardManager.handleEvent(delayedEvent.issueEvent);
+                } finally {
+                    delayedEvents.remove();
+                }
             }
         }
     }
@@ -158,7 +188,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) throws IndexException {
-        System.out.println("----> Issue Event " + Thread.currentThread().getName());
+        System.out.println("----> On Issue Event " + issueEvent.getIssue().getKey() + " " + Thread.currentThread().getName() + " " + issueEvent);
 
         long eventTypeId = issueEvent.getEventTypeId();
         // if it's an event we're interested in, log it
@@ -170,13 +200,22 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         if (eventTypeId == EventType.ISSUE_CREATED_ID) {
             //Does not have a worklog
             onCreateEvent(issueEvent);
+
+            //Only relevant for updates (of state/rank)
+            delayedEvents.remove();
         } else if (eventTypeId == EventType.ISSUE_DELETED_ID) {
             //Does not have a worklog
             onDeleteEvent(issueEvent);
+
+            //Only relevant for updates (of state/rank)
+            delayedEvents.remove();
         } else if (eventTypeId == EventType.ISSUE_MOVED_ID) {
             //Has a worklog. We need to take into account the old values to delete the issue from the old project boards,
             //while we use the issue in the event to create the issue in the new project boards.
             onMoveEvent(issueEvent);
+
+            //Only relevant for updates (of state/rank)
+            delayedEvents.remove();
         } else if (eventTypeId == EventType.ISSUE_ASSIGNED_ID ||
                 eventTypeId == EventType.ISSUE_UPDATED_ID ||
                 eventTypeId == EventType.ISSUE_GENERICEVENT_ID ||
@@ -222,6 +261,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     private void onWorklogEvent(IssueEvent issueEvent) throws IndexException {
         final Issue issue = issueEvent.getIssue();
         if (!isAffectedProject(issue.getProjectObject().getKey())) {
+            delayedEvents.remove();
             return;
         }
 
@@ -324,9 +364,26 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     }
 
     private void passEventToBoardManagerOrDelay(JirbanIssueEvent event) throws IndexException {
-        if (event.isRecalculateState() && !event.isRerankOnly()) {
-            //Delay the processing of the event as outlined in the class javadoc
-            currentEvt = event;
+        if (event.isRecalculateState()) {
+            //Possible delay
+            JirbanEventWrapper wrapper = delayedEvents.get();
+            if (wrapper == null) {
+                //We are not a rerank, but a state move. Delay processing of the event until the ReindexIssuesCompletedEvent
+                //is received. For this use-case we always receive the IssueEvent before the ReindexIssuesCompletedEvent.
+                wrapper = new JirbanEventWrapper(false);
+                wrapper.issueEvent = event;
+                delayedEvents.set(wrapper);
+            } else {
+                //We already have an event wrapper. The only thing which would have put it here is if a ranking op was done
+                //so that the LexoRankBalanceEvent was triggered.
+                //The IssueEvent
+                wrapper.issueEvent = event;
+                if (wrapper.isComplete()) {
+                    //It is complete
+                    boardManager.handleEvent(event);
+                    delayedEvents.remove();
+                }
+            }
         } else {
             //We can handle the event right away
             boardManager.handleEvent(event);
@@ -337,4 +394,55 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         return boardManager.hasBoardsForProjectCode(projectCode);
     }
 
+    /**
+     * Alternative thread local implementation to avoid possible memory leaks on undeploy
+     *
+     * @param <T>
+     */
+    private static class WrappedThreadLocal<T> {
+        private final Map<Thread, T> delayedEvents = Collections.synchronizedMap(new IdentityHashMap<>());
+
+        void set(T value) {
+            System.out.println("Setting thread item " + Thread.currentThread());
+            delayedEvents.put(Thread.currentThread(), value);
+        }
+
+        T get() {
+            return delayedEvents.get(Thread.currentThread());
+        }
+
+        void remove() {
+            System.out.println("Removing thread item " + Thread.currentThread());
+            delayedEvents.remove(Thread.currentThread());
+        }
+
+        void clearAll() {
+            delayedEvents.clear();
+        }
+    }
+
+    /**
+     * Deal with Jira's strange event mechanism
+     *
+     *
+     */
+    private static class JirbanEventWrapper {
+        private final boolean rerankEvent;
+
+        private volatile JirbanIssueEvent issueEvent;
+
+        private volatile boolean reindexed;
+
+        JirbanEventWrapper(boolean rerankEvent) {
+            this.rerankEvent = rerankEvent;
+        }
+
+        public boolean isComplete() {
+            if (rerankEvent) {
+                return issueEvent != null && reindexed;
+            } else {
+                return issueEvent != null && reindexed;
+            }
+        }
+    }
 }
