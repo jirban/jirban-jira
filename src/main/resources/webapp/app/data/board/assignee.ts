@@ -42,13 +42,14 @@ export class Assignee {
         let arr:string[] = name.split(" ");
         if (arr.length == 1) {
             let ret:string = "";
-            for (let i:number = 0; i < 3 && i < name.length; i++) {
-                let char:string = ret[i];
+            for (let i:number = 0; i < 3 && i < arr[0].length; i++) {
+                let char:string = arr[0][i];
                 if (i == 0) {
                     char = char.toUpperCase();
                 } else {
                     char = char.toLowerCase();
                 }
+                ret = ret + char;
             }
             return ret;
         }

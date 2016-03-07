@@ -66,6 +66,7 @@ public class BoardConfig {
     private final String name;
     private final String owningUserKey;
     private final String ownerProjectCode;
+    /** The 'Rank' custom field as output by http://<jiraurl>/rest/api/2/field */
     private final int rankCustomFieldId;
     private final BoardStates boardStates;
     private final Map<String, BoardProjectConfig> boardProjects;
