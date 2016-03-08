@@ -13,17 +13,16 @@ export class TestBoardData {
     public build() : any {
         let json:any = {};
         json["view"] = this.view;
-        //This parse/stringify stuff is to make sure that we use a clone of the objects
-        //Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
-        json["states"] = JSON.parse(JSON.stringify(this.states));
-        json["assignees"] = JSON.parse(JSON.stringify(this.assignees));
-        json["components"] = JSON.parse(JSON.stringify(this.components));
-        json["priorities"] = JSON.parse(JSON.stringify(this.priorities));
-        json["issue-types"] = JSON.parse(JSON.stringify(this.issueTypes));
-        json["projects"] = JSON.parse(JSON.stringify(this.projects));
-        json["issues"] = JSON.parse(JSON.stringify(this.issues));
+        //We use a clone of the objects. Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
+        json["states"] = TestBoardData.clone(this.states);
+        json["assignees"] = TestBoardData.clone(this.assignees);
+        json["components"] = TestBoardData.clone(this.components);
+        json["priorities"] = TestBoardData.clone(this.priorities);
+        json["issue-types"] = TestBoardData.clone(this.issueTypes);
+        json["projects"] = TestBoardData.clone(this.projects);
+        json["issues"] = TestBoardData.clone(this.issues);
         if (this.blacklist) {
-            json["blacklist"] = JSON.parse(JSON.stringify(this.blacklist));
+            json["blacklist"] = TestBoardData.clone(this.blacklist);
         }
         //console.log(JSON.stringify(json, null, 2));
         return json;
@@ -37,6 +36,10 @@ export class TestBoardData {
             bd.blacklist = blacklist;
         }
         return bd.build();
+    }
+
+    static clone(input:any):any{
+        return JSON.parse(JSON.stringify(input));
     }
 
     public static STANDARD_ASSIGNEES:any = [

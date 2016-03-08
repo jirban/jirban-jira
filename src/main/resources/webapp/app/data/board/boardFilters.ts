@@ -6,7 +6,6 @@ import {IssueType} from "./issueType";
 import {JiraComponent} from "./component";
 import {NO_COMPONENT} from "./component";
 import {IMap} from "../../common/map";
-import ownKeys = Reflect.ownKeys;
 
 export class BoardFilters {
     private _projectFilter:any;
@@ -14,6 +13,7 @@ export class BoardFilters {
     private _issueTypeFilter:any;
     private _assigneeFilter:any;
     private _componentFilter:any;
+    private _componentFilterLength:number;
     private projects:boolean = false;
     private assignees:boolean = false;
     private priorities:boolean = false;
@@ -79,10 +79,12 @@ export class BoardFilters {
     setComponentFilter(filter:any, components:Indexed<JiraComponent>) {
         //Trim to only contain the visible ones in _componentFilter
         this._componentFilter = {};
+        this._componentFilterLength = 0;
         this.components = false;
         if (filter[NO_COMPONENT]) {
             this.components = true;
             this._componentFilter[NO_COMPONENT] = true;
+            this._componentFilterLength = 1;
         }
 
         if (components) {
@@ -90,6 +92,7 @@ export class BoardFilters {
                 if (filter[component.name]) {
                     this.components = true;
                     this._componentFilter[component.name] = true;
+                    this._componentFilterLength += 1;
                 }
             }
         }
@@ -148,8 +151,7 @@ export class BoardFilters {
             if (!issueComponents) {
                 return !this._componentFilter[NO_COMPONENT];
             } else {
-                let tmp:any = ownKeys(this._componentFilter);
-                if (ownKeys(this._componentFilter).length == 1 && this._componentFilter[NO_COMPONENT]) {
+                if (this._componentFilterLength == 1 && this._componentFilter[NO_COMPONENT]) {
                     //All we want to match is no components, and we have some components so return that we
                     //should be filtered out
                     return true;
@@ -160,11 +162,11 @@ export class BoardFilters {
                         //no components filter
                         continue;
                     }
-                    if (!issueComponents.forKey(component)) {
-                        return true;
+                    if (issueComponents.forKey(component)) {
+                        return false;
                     }
                 }
-                return false;
+                return true;
             }
         }
         return false;
