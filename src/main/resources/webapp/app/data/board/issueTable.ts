@@ -250,10 +250,12 @@ export class IssueTable {
 
             for (let index:number = 0; index < issueKeysForState.length; index++) {
                 let issue:IssueData = this._allIssues.forKey(issueKeysForState[index]);
-                let swimlaneIndex = indexer.swimlaneIndex(issue);
+                let swimlaneIndices:number[] = indexer.swimlaneIndex(issue);
                 issue.filtered = this._filters.filterIssue(issue);
-                let targetSwimlane:SwimlaneData = swimlaneTable[swimlaneIndex];
-                targetSwimlane.issueTable[stateIndex].push(issue);
+                for (let swimlaneIndex of swimlaneIndices) {
+                    let targetSwimlane:SwimlaneData = swimlaneTable[swimlaneIndex];
+                    targetSwimlane.issueTable[stateIndex].push(issue);
+                }
                 counter.increment();
             }
         }

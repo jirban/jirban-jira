@@ -7,7 +7,7 @@ import {Assignee} from "./assignee";
 
 export interface SwimlaneIndexer {
     swimlaneTable : SwimlaneData[];
-    swimlaneIndex(issue:IssueData):number;
+    swimlaneIndex(issue:IssueData):number[];
     filter(swimlaneData:SwimlaneData):boolean;
     matchIssues(targetIssue:IssueData, issue:IssueData):boolean;
 }
@@ -81,8 +81,8 @@ class ProjectSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    swimlaneIndex(issue:IssueData):number {
-        return this._indices[issue.projectCode];
+    swimlaneIndex(issue:IssueData):number[] {
+        return [this._indices[issue.projectCode]];
     }
 
     filter(swimlaneData:SwimlaneData):boolean {
@@ -110,8 +110,8 @@ class PrioritySwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    swimlaneIndex(issue:IssueData):number {
-        return this._boardData.priorities.indices[issue.priorityName];
+    swimlaneIndex(issue:IssueData):number[] {
+        return [this._boardData.priorities.indices[issue.priorityName]];
     }
 
     filter(swimlaneData:SwimlaneData):boolean {
@@ -139,8 +139,8 @@ class IssueTypeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    swimlaneIndex(issue:IssueData):number {
-        return this._boardData.issueTypes.indices[issue.typeName];
+    swimlaneIndex(issue:IssueData):number[] {
+        return [this._boardData.issueTypes.indices[issue.typeName]];
     }
 
     filter(swimlaneData:SwimlaneData):boolean {
@@ -169,11 +169,11 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
     }
 
-    swimlaneIndex(issue:IssueData):number {
+    swimlaneIndex(issue:IssueData):number[] {
         if (!issue.assignee) {
-            return this._swimlaneNames.length - 1;
+            return [this._swimlaneNames.length - 1];
         }
-        return this._boardData.assignees.indices[issue.assignee.key];
+        return [this._boardData.assignees.indices[issue.assignee.key]];
     }
 
     filter(swimlaneData:SwimlaneData):boolean {
@@ -216,12 +216,16 @@ class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         return this._swimlaneTable;
     }
 
-    swimlaneIndex(issue:IssueData):number {
+    swimlaneIndex(issue:IssueData):number[] {
         if (!issue.components) {
-            return this._swimlaneNames.length - 1;
+            return [this._swimlaneNames.length - 1];
         }
-        //TODO currently it only can belong to one swimlane, although an issue might have more than one component - choose the first
-        return this._boardData.components.indices[issue.components.array[0].name];
+
+        let lanes:number[] = new Array<number>(issue.components.array.length);
+        for (let i:number = 0 ; i < lanes.length ; i++) {
+            lanes[i] = this._boardData.components.indices[issue.components.array[i].name];
+        }
+        return lanes;
     }
 
     filter(swimlaneData:SwimlaneData):boolean {

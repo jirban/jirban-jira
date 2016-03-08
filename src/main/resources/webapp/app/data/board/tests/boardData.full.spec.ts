@@ -8,6 +8,7 @@ import {IssueType} from "./../issueType";
 import {IssueTable} from "./../issueTable";
 import {IssueData} from "./../issueData";
 import {JiraComponent} from "../component";
+import {SwimlaneData} from "../issueTable";
 
 /**
  * This tests application of the expected json onto the BoardData component on the client which is so central to the display of the board.
@@ -1124,7 +1125,7 @@ describe('BoardData tests', ()=> {
         });
 
         it ("Component (single per issue)", () => {
-            //Components are a bit different from all the filters, since an issue may have more than one component
+            //Components are a bit different from the other filters, since an issue may have more than one component
             boardData.updateFilters({}, {}, {}, {}, {"First":true});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
@@ -1163,7 +1164,7 @@ describe('BoardData tests', ()=> {
         });
 
         it ("Component (several per issue)", () => {
-            //Components are a bit different from all the filters, since an issue may have more than one component
+            //Components are a bit different from the other filters, since an issue may have more than one component
 
             //Add some components to some issues
             checkComponents(boardData, "First", "Second");
@@ -1182,6 +1183,7 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
             boardData.updateFilters({}, {}, {}, {}, {"First":true});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
@@ -1217,6 +1219,268 @@ describe('BoardData tests', ()=> {
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
         });
     });
+
+    describe("Swimlane test", () => {
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize(1,
+                TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
+        });
+
+        it ("Project", () => {
+            boardData.swimlane = "project";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "TDP",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TDP-2", "TDP-6"],
+                        ["TDP-3", "TDP-7"],
+                        ["TDP-4"]]
+                },
+                {
+                    "name": "TBG",
+                    table: [
+                        [],
+                        ["TBG-1", "TBG-3"],
+                        ["TBG-2", "TBG-4"],
+                        []]
+                });
+        });
+
+        it ("Priority", () => {
+            boardData.swimlane = "priority";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "highest",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        [],
+                        []]
+                },
+                {
+                    "name": "high",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                },
+                {
+                    "name": "low",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "lowest",
+                    table: [
+                        [],
+                        [],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
+
+        it ("Issue Type", () => {
+            boardData.swimlane = "issue-type";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "task",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        [],
+                        []]
+                },
+                {
+                    "name": "bug",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                },
+                {
+                    "name": "feature",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "issue",
+                    table: [
+                        [],
+                        [],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
+
+        it ("Assignee", () => {
+            boardData.swimlane = "assignee";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "Brian Stansberry",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        [],
+                        []]
+                },
+                {
+                    "name": "Kabir Khan",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7", "TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
+
+        it ("Component (single per issue)", () => {
+            //Components are a bit different from the other swimlane selectors, since an issue may have more than one component
+            boardData.swimlane = "component";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "First",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        [],
+                        []]
+                },
+                {
+                    "name": "Second",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7", "TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
+
+        it ("Component (several per issue)", () => {
+            //Components are a bit different from the other swimlane selectors, since an issue may have more than one component
+
+            //Add some components to some issues
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [
+                            {key: "TDP-3", components: ["First", "Second"]},
+                            {key: "TDP-7", components: ["First", "Second"]},
+                            {key: "TBG-3", components: ["First", "Second"]}]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+
+            boardData.swimlane = "component";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "First",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1", "TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "Second",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6", "TBG-3"],
+                        ["TDP-3", "TDP-7", "TBG-2"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        [],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
+    });
+
+    function checkBoardSwimlaneLayout(boardData:BoardData, ...layouts:any[]) {
+        let swimlanes:SwimlaneData[] = boardData.swimlaneTable;
+        expect(swimlanes).toEqual(jasmine.anything());
+        expect(swimlanes.length).toEqual(layouts.length);
+
+        for (let i:number = 0 ; i < swimlanes.length ; i++) {
+            let swimlane:SwimlaneData = swimlanes[i];
+            let layout:any = layouts[i];
+            expect(swimlane.name).toEqual(layout.name);
+            expect(swimlane.issueTable.length).toEqual(layout.table.length);
+
+            console.log(swimlane.name);
+            for (let j:number = 0 ; j < layout.table.length ; j++) {
+                let swimlaneIssues:IssueData[] = swimlane.issueTable[j];
+                let layoutKeys:string[] = layout.table[j];
+                expect(layoutKeys.length).toEqual(swimlaneIssues.length);
+
+                for (let k:number = 0 ; k < layoutKeys.length ; k++) {
+                    let issue:IssueData = swimlaneIssues[k];
+                    expect(issue.key).toEqual(layoutKeys[k]);
+                }
+            }
+        }
+    }
+
 
     function checkEntries(value:string[], ...expected:string[]) {
         expect(value.length).toBe(expected.length);
@@ -1294,6 +1558,7 @@ describe('BoardData tests', ()=> {
 
 
     function checkBoardLayout(boardData:BoardData, layout:string[][]) {
+        expect(boardData.swimlaneTable).not.toEqual(jasmine.anything());
         let issueTable:IssueData[][] = boardData.issueTable;
         expect(issueTable.length).toBe(layout.length);
         for (let i:number = 0; i < layout.length; i++) {
