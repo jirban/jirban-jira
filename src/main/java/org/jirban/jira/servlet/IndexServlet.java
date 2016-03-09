@@ -25,7 +25,6 @@ import com.atlassian.templaterenderer.TemplateRenderer;
  */
 @Named("jirbanIndexServlet")
 public class IndexServlet extends HttpServlet {
-    private static final Logger log = LoggerFactory.getLogger(IndexServlet.class);
 
     private static final String INDEX_BROWSER_TEMPLATE = "/webapp/index.vm";
 
@@ -42,8 +41,6 @@ public class IndexServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        System.out.println("Initialising the template");
-
         StringBuilder webappRoot = new StringBuilder(applicationProperties.getString(APKeys.JIRA_BASEURL));
         if (webappRoot.charAt(webappRoot.length() - 1) != '/') {
             webappRoot.append('/');

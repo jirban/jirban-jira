@@ -29,6 +29,7 @@ import java.util.Map;
 
 import javax.inject.Named;
 
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardManager;
 import org.ofbiz.core.entity.GenericEntityException;
 import org.ofbiz.core.entity.GenericValue;
@@ -141,11 +142,6 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         delayedEvents.clearAll();
     }
 
-//    @EventListener
-//    public void onAnyEvent(Object o) {
-//        System.out.println("----> " + o + " " + Thread.currentThread().getName());
-//    }
-
     /**
      * This is the event that initiates a re-rank.
      * This will be followed by both an IssueEvent and a ReindexIssuesCompletedEvent, although the order of the two
@@ -155,7 +151,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     @EventListener
     public void onRankEvent(LexoRankBalanceEvent event) {
-        System.out.println("--> Rank event " + event);
+        JirbanLogger.LOGGER.debug("LexoRankBalanceEvent on thread {}", Thread.currentThread().getName());
+
         JirbanEventWrapper wrapper = new JirbanEventWrapper(true);
         delayedEvents.set(wrapper);
 
@@ -168,7 +165,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     @EventListener
     public void onEvent(ReindexIssuesCompletedEvent event) throws IndexException {
-        System.out.println("----> Reindex " + Thread.currentThread().getName());
+        JirbanLogger.LOGGER.debug("ReindexIssuesCompletedEvent on thread {}", Thread.currentThread().getName());
+
         JirbanEventWrapper delayedEvent = delayedEvents.get();
         if (delayedEvent != null) {
             delayedEvent.reindexed = true;
@@ -188,7 +186,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      */
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) throws IndexException {
-        System.out.println("----> On Issue Event " + issueEvent.getIssue().getKey() + " " + Thread.currentThread().getName() + " " + issueEvent);
+        JirbanLogger.LOGGER.debug("IssueEvent {} on thread {}", issueEvent, Thread.currentThread().getName());
 
         long eventTypeId = issueEvent.getEventTypeId();
         // if it's an event we're interested in, log it
@@ -231,7 +229,6 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             //affected in the worklog
             onWorklogEvent(issueEvent);
         }
-        System.out.println("----> Issue Event END ");
     }
 
     private void onCreateEvent(IssueEvent issueEvent) throws IndexException {
@@ -403,7 +400,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         private final Map<Thread, T> delayedEvents = Collections.synchronizedMap(new IdentityHashMap<>());
 
         void set(T value) {
-            System.out.println("Setting thread item " + Thread.currentThread());
+            JirbanLogger.LOGGER.debug("Setting item on thread {}", Thread.currentThread().getName());
             delayedEvents.put(Thread.currentThread(), value);
         }
 
@@ -412,7 +409,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
 
         void remove() {
-            System.out.println("Removing thread item " + Thread.currentThread());
+            JirbanLogger.LOGGER.debug("Removing item on thread {}", Thread.currentThread().getName());
             delayedEvents.remove(Thread.currentThread());
         }
 

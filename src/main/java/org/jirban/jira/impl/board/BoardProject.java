@@ -352,9 +352,6 @@ public class BoardProject {
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
                 String issueKey = jiraIssue.getKey();
                 Issue issue = board.getIssue(issueKey);
-                if (issue == null) {
-                    System.out.println("Could not find issue " + issue);
-                }
                 issues.add(issue.getKey());
             }
             return Collections.unmodifiableList(issues);
