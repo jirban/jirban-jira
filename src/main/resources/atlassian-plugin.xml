@@ -28,12 +28,6 @@
     <url-pattern>/jirban</url-pattern>
   </servlet>
 
-  <!-- Handles the REST calls -->
-  <servlet name="Rest Servlet" i18n-name-key="rest-servlet.name" key="rest-servlet" class="org.jirban.jira.servlet.RestServlet">
-    <description key="rest-servlet.description">The Rest Servlet Plugin</description>
-    <url-pattern>/jirban/rest/*</url-pattern>
-  </servlet>
-
   <!-- Add a filter to load up the valid user -->
   <servlet-filter name="Auth Filter" i18n-name-key="auth-filter.name" key="auth-filter" class="org.jirban.jira.servlet.AuthFilter" location="before-dispatch" weight="100">
     <description key="auth-filter.description">The Auth Filter Plugin</description>
@@ -42,7 +36,7 @@
       https://developer.atlassian.com/jiradev/jira-platform/guides/other/tutorial-writing-jira-event-listeners-with-the-atlassian-event-library
      -->
     <url-pattern>/plugins/servlet/jirban</url-pattern>
-    <url-pattern>/plugins/servlet/jirban/*</url-pattern>
+    <url-pattern>/rest/jirban/*</url-pattern>
   </servlet-filter>
 
   <!-- Should be accessible under http://kabirmac.local:2990/jira/download/resources/org.jirban.jirban-jira/webapp/ -->
@@ -59,5 +53,10 @@
     <label key="jirban.label"></label>
     <link linkId="jirban-config-link">/plugins/servlet/jirban</link>
   </web-item>
+
+
+  <rest key="helloWorldRest" path="/jirban" version="1.0">
+    <description>Provides hello world services.</description>
+  </rest>
 
 </atlassian-plugin>

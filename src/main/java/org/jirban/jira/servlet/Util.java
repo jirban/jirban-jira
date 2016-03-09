@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanLogger;
 
 import com.atlassian.jira.user.ApplicationUser;
 
@@ -37,7 +38,6 @@ import com.atlassian.jira.user.ApplicationUser;
  */
 class Util {
     static final String CONTENT_APP_JSON = "application/json";
-    private static final String USER_REQUEST_KEY = "authenticated-user";
 
     private static volatile String BASE_URL;
 
@@ -46,40 +46,18 @@ class Util {
     }
 
     static void sendErrorJson(final HttpServletResponse response, final int error, final String message) throws IOException {
-        final String msg = message == null ? "{}" : message;
+
+        ModelNode msgNode = new ModelNode();
+        if (message == null) {
+            msgNode.get("message").set("");
+        } else {
+            msgNode.get("messsage").set(message);
+        }
+        final String msg = msgNode.toJSONString(true);
+        JirbanLogger.LOGGER.debug("Sending error Json. code={}; message={}", error, msg);
         response.setContentType(CONTENT_APP_JSON);
         response.sendError(error, msg);
-    }
-
-    static void sendResponseJson(final HttpServletResponse response, final String json) throws IOException {
-        response.setContentType(MediaType.APPLICATION_JSON_TYPE.toString());
-        response.addHeader("Cache-Control", "no-cache");
-        response.addHeader("Cache-Control", "no-store");
-        response.addHeader("Cache-Control", "no-transform");
-        response.getWriter().write(json);
-    }
-
-    static void setRemoteUser(final HttpServletRequest request, final ApplicationUser user) {
-        request.setAttribute(USER_REQUEST_KEY, user);
-    }
-
-    static ApplicationUser getRemoteUser(final HttpServletRequest request) {
-        return (ApplicationUser) request.getAttribute(USER_REQUEST_KEY);
-    }
-
-    static String getRequestBody(HttpServletRequest request) throws IOException {
-        StringBuffer sb = new StringBuffer();
-        BufferedReader reader = request.getReader();
-        String line = reader.readLine();
-        while (line != null) {
-            sb.append(line);
-            line = reader.readLine();
-        }
-        return sb.toString();
-    }
-
-    static ModelNode getRequestBodyNode(HttpServletRequest request) throws IOException {
-        return ModelNode.fromJSONStream(request.getInputStream());
+        response.flushBuffer();
     }
 
     static String getDeployedUrl(HttpServletRequest request) {

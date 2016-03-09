@@ -33,7 +33,9 @@ import com.atlassian.jira.user.ApplicationUser;
  */
 public interface BoardConfigurationManager {
     /**
-     * Gets all the boards.
+     * Gets all the boards. This does not do any attempt to validate the JSON, so that following a structure change
+     * for the config, we can still go in and edit everything. It filters boards which the user can not see from
+     * the view, but does not throw any permission exceptions.
      *
      * @param user      the logged in user
      * @param forConfig whether this is to edit/view the config (in which case we return everything),
@@ -45,22 +47,41 @@ public interface BoardConfigurationManager {
     /**
      * Saves a new board (if {@code id < 0}, or updates an exisiting one. Permissions are checked to see if the user
      * can update anything
-     *  @param user    the logged in user
+     * @param user    the logged in user
      * @param id      the id of the board
      * @param config  the configuration
+     * @throws org.jirban.jira.JirbanPermissionException if the user does not have the correct permissions
+     * @throws org.jirban.jira.JirbanValidationException if the input is bad
      */
     void saveBoard(ApplicationUser user, int id, ModelNode config);
 
+
+    /**
+     * Deletes a board. Permissions are checked to see if the user
+     * can delete it anything
+     * @param user    the logged in user
+     * @param id      the id of the board
+     * @throws org.jirban.jira.JirbanPermissionException if the user does not have the correct permissions
+     */
     void deleteBoard(ApplicationUser user, int id);
 
     /**
-     * Loads the board configuration
+     * Loads the board configuration. Permissions are checked to see if the user
+     * can update anything.
      * @param user the user
      * @param id the id of the configuration
      * @return the configuration
+     * @throws org.jirban.jira.JirbanPermissionException if the user does not have the correct permissions
+     * @throws org.jirban.jira.JirbanValidationException if the structure of the config is bad
      */
     BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, int id);
 
+    /**
+     * Gets all the boards set up for a given project
+     *
+     * @param projectCode the project code
+     * @return the board ids
+     */
     List<Integer> getBoardIdsForProjectCode(String projectCode);
 }
 

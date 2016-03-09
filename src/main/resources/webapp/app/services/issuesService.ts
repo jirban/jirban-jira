@@ -22,14 +22,14 @@ export class IssuesService {
     }
 
     getIssuesData(board:number) : Observable<Response> {
-        let path:string = RestUrlUtil.caclulateRestUrl('rest/issues/' + board);
+        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/issues/' + board);
         return this.http.get(path)
             .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());
     }
 
     pollBoard(board:number, view:number) : Observable<Response> {
-        let path = RestUrlUtil.caclulateRestUrl('rest/issues/' + board + "/updates/" + view);
+        let path = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/issues/' + board + "/updates/" + view);
         return this.http.get(path)
             .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());

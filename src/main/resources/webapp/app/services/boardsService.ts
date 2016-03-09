@@ -18,7 +18,7 @@ export class BoardsService {
     }
 
     loadBoardsList(summaryOnly:boolean) : Observable<any> {
-        let path:string = RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/boards' : 'rest/boards?full=1');
+        let path:string = RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/jirban/1.0/boards' : 'rest/jirban/1.0/boards?full=true');
         let ret:Observable<any> =
             this._http.get(path)
                 .timeout(this.timeout, "The server did not respond in a timely manner for GET " + path)
@@ -28,8 +28,9 @@ export class BoardsService {
     }
 
     createBoard(json:string) : Observable<any> {
-        let path:string = RestUrlUtil.caclulateRestUrl('rest/boards');
+        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/boards');
         let headers = new Headers();
+        headers.append("Content-Type", "application/json");
         console.log("Saving board " + path);
         let ret:Observable<any> =
             this._http.post(path, json, {
@@ -41,8 +42,9 @@ export class BoardsService {
     }
 
     saveBoard(id:number, json:string) : Observable<any> {
-        let path:string = RestUrlUtil.caclulateRestUrl('rest/boards/' + id);
+        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/boards/' + id);
         let headers = new Headers();
+        headers.append("Content-Type", "application/json");
         console.log("Saving board " + path);
         let ret:Observable<any> =
             this._http.put(path, json, {
@@ -54,8 +56,9 @@ export class BoardsService {
     }
 
     deleteBoard(id:number) : Observable<any> {
-        let path:string = RestUrlUtil.caclulateRestUrl('rest/boards/' + id);
+        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/boards/' + id);
         let headers = new Headers();
+        headers.append("Content-Type", "application/json");
         console.log("Deleting board " + path);
         let ret:Observable<any> =
             this._http.delete(path, {

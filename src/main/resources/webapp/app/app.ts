@@ -10,7 +10,7 @@ import {version} from "angular2/src/upgrade/angular_js";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {VersionCheckService} from "./services/versionCheckService";
 
-/** The current API version. It should match what is set in RestServlet.API_VERSION */
+/** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 1;
 
 @Component({
@@ -45,7 +45,7 @@ const VERSION:number = 1;
                 <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
             </div>
     </div>
-    {{error}}
+    <div>{{error}}</div>
 </div>
 
     `,

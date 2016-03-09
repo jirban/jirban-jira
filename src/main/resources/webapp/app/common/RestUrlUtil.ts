@@ -10,7 +10,7 @@ export class RestUrlUtil {
         let index:number = location.href.indexOf("/download/resources/");
         if (index > 0) {
             let url:string = location.href.substr(0, index);
-            url = url + "/plugins/servlet/jirban/" + path;
+            url = url + "/" + path;
             return url;
         } else if (RestUrlUtil.isLocalDebug(location)) {
             //For the local debugging of the UI, which does not seem to like loading json without a .json suffix
@@ -34,7 +34,7 @@ export class RestUrlUtil {
             //Return the locally running Jira instance since this is still where the icons etc are loaded from
             return "http://localhost:2990/jira";
         }
-        console.error("Could not determine jir url " + location.href);
+        console.error("Could not determine jira url " + location.href);
         return "";
     }
 

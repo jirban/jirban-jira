@@ -12,7 +12,7 @@ export class VersionCheckService {
     }
 
     getVersion() : Observable<any> {
-        let path:string = RestUrlUtil.caclulateRestUrl('rest/version');
+        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/version');
         let ret:Observable<any> =
             this._http.get(path)
                 .timeout(this.timeout, "The server did not respond in a timely manner for GET " + path)
