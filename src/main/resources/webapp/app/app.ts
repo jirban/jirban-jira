@@ -2,7 +2,6 @@
 import {Component, View, provide} from 'angular2/core'
 import {HTTP_PROVIDERS} from 'angular2/http';
 import {APP_BASE_HREF, ROUTER_DIRECTIVES, ROUTER_PROVIDERS, HashLocationStrategy, Location, LocationStrategy, Route, RouteConfig, Router, RouterLink, RouterOutlet} from 'angular2/router';
-import {AboutComponent} from './components/about/about';
 import {BoardComponent} from './components/board/board';
 import {BoardsComponent} from './components/boards/boards';
 import {ConfigComponent} from "./components/config/config";
@@ -18,7 +17,7 @@ const VERSION:number = 1;
     providers: [VersionCheckService]
 })
 @RouteConfig([
-    new Route({path: '/', component: AboutComponent, name: 'About'}),
+    new Route({path: '/', component: BoardsComponent, name: 'Boards'}),
     new Route({path: '/board', component: BoardComponent, name: 'Board'}),
     new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
     new Route({path: '/config', component: ConfigComponent, name: 'Config'})
@@ -28,7 +27,6 @@ const VERSION:number = 1;
 
 <div class="toolbar">
     <div class="toolbar-left">
-        <span><a [routerLink]="['/About']" class="toolbar-link"><b>JirBan</b></a></span>
         <span> <a [routerLink]="['/Boards']" class="toolbar-link">Boards</a></span>
         <!-- TODO Only display this if it is an admin -->
         <span> <a [routerLink]="['/Config']" class="toolbar-link">Config</a></span>
@@ -49,7 +47,7 @@ const VERSION:number = 1;
 </div>
 
     `,
-    directives: [ROUTER_DIRECTIVES, AboutComponent, BoardComponent]
+    directives: [ROUTER_DIRECTIVES, BoardComponent]
 })
 export class App {
     _router:Router;
