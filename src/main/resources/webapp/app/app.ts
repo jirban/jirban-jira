@@ -43,7 +43,7 @@ const VERSION:number = 1;
                 <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
             </div>
     </div>
-    <div>{{error}}</div>
+    <div class="message">{{error}}</div>
 </div>
 
     `,

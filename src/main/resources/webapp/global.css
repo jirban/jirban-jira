@@ -92,6 +92,9 @@ a.toolbar-link {
     float: right;
     font-weight: bold;
 }
+#error-panel .message {
+    padding: 3px;
+}
 a.close {
     color: #FFFFFF;
 }
