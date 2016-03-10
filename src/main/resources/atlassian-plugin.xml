@@ -52,6 +52,7 @@
     <description key="jirban-config.description">The JirBan configuration</description>
     <label key="jirban.label"></label>
     <link linkId="jirban-config-link">/plugins/servlet/jirban</link>
+    <condition class="org.jirban.jira.api.IsLoggedInCondition"/>
   </web-item>
 
 
