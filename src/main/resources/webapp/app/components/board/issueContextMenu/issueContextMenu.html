@@ -21,24 +21,33 @@
             <div class="column-header">Select state:</div>
             <div class="states">
                 <div *ngFor="#state of moveStates" [ngClass]="state === toState ? 'entry-selected' : 'entry'">
-                    <a href="state" (click)="onSelectMoveState($event, state)"
-                       *ngIf="isValidState(state)"
-                       [ngClass]="state === toState ? 'entry-selected' : 'entry'"><b>{{state}}</b></a>
-                    <span *ngIf="!isValidState(state)" title="This is not a valid state for {{issue.projectCode}}"><i>{{state}}</i></span>
+                    <div class="rank">
+                        <a href="rank" (click)="onSelectRankState($event, state)"
+                           *ngIf="isValidRankState(state)"
+                           title="Move to {{state}} and rank the issue">
+                            <img src="images/resize-height-2x.png" width="12px" height="12px" align="center"/></a>
+                        <span *ngIf="!isValidRankState(state)">&nbsp;</span>
+                    </div>
+                    <div *ngIf="isValidMoveState(state)" class="state-link">
+                        <a href="{{state}}" (click)="onSelectMoveState($event, state)"
+                           [ngClass]="state === toState ? 'entry-selected' : 'entry'"
+                           title="Move to {{state}}"><b>{{state}}</b></a>
+                    </div>
+                    <span *ngIf="!isValidMoveState(state)" title="This is not a valid state for {{issue.projectCode}}"><i>{{state}}</i></span>
                 </div>
             </div>
         </div>
-        <div class="column">
+        <div class="column" [hidden]="!issuesForState">
             <div class="column-header">Insert before:</div>
             <div class="issues">
                 <div *ngIf="toState"  class="entry" [ngClass]="'' === insertBeforeIssueKey ? 'entry-selected' : 'entry'">
-                    <a href="move" (click)="onSelectMoveIssue($event, '')"
+                    <a href="move" (click)="onSelectRankIssue($event, '')"
                        [ngClass]="'' === insertBeforeIssueKey ? 'entry-selected' : 'entry'"><b>- END -</b></a>
                 </div>
                 <div>&nbsp;</div>
                 <div *ngFor="#issue of issuesForState"
                      [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'">
-                    <a href="move" (click)="onSelectMoveIssue($event, issue.key)" title="{{issue.key}} - {{issue.summary}}"
+                    <a href="move" (click)="onSelectRankIssue($event, issue.key)" title="{{issue.key}} - {{issue.summary}}"
                        [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'"><b>{{issue.key}}</b> - {{issue.summary}}</a>
                 </div>
             </div>

@@ -70,7 +70,12 @@ export class IssueContextMenuComponent {
         return this._boardData.boardStates;
     }
 
-    private isValidState(state:string) : boolean {
+    private isValidMoveState(state:string) : boolean {
+        //We can do a plain move to all states apart from ourselves
+        return this._boardData.isValidStateForProject(this.issue.projectCode, state) && state != this.issue.boardStatus;
+    }
+
+    private isValidRankState(state:string) : boolean {
         return this._boardData.isValidStateForProject(this.issue.projectCode, state);
     }
 
@@ -81,12 +86,22 @@ export class IssueContextMenuComponent {
     }
 
     private onSelectMoveState(event:MouseEvent, toState:string) {
+        //The user has selected to move to a state accepting the default ranking
+        event.preventDefault();
+        this.issuesForState = null;
+        this.toState = toState;
+
+        this.moveIssue(false, null);
+    }
+
+    private onSelectRankState(event:MouseEvent, toState:string) {
+        //The user has selected the rank for state button, pull up the list of issues
         event.preventDefault();
         this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, toState);
         this.toState = toState;
     }
 
-    private onSelectMoveIssue(event:MouseEvent, beforeIssueKey:string) {
+    private onSelectRankIssue(event:MouseEvent, beforeIssueKey:string) {
         console.log("onSelectMoveIssue - " + beforeIssueKey)
         event.preventDefault();
         this.insertBeforeIssueKey = beforeIssueKey;
@@ -97,14 +112,20 @@ export class IssueContextMenuComponent {
             this.clearMoveMenu();
             return;
         }
+        this.moveIssue(true, beforeIssueKey);
+    }
 
-        let beforeKey:string = beforeIssueKey === "" ? null : beforeIssueKey;
+    private moveIssue(rank:boolean, beforeIssueKey:string) {
+        let beforeKey:string;;
         let afterKey:string;
-        if (!beforeKey && this.issuesForState.length > 0) {
-            afterKey = this.issuesForState[this.issuesForState.length - 1].key;
-        }
-        console.log("onSelectMoveIssue key - afterKey " + afterKey);
 
+        if (rank) {
+            beforeKey = beforeIssueKey === "" ? null : beforeIssueKey;
+            if (!beforeKey && this.issuesForState.length > 0) {
+                afterKey = this.issuesForState[this.issuesForState.length - 1].key;
+            }
+            console.log("onSelectMoveIssue key - afterKey " + afterKey);
+        }
         //Tell the server to move the issue. The actual move will come in via the board's polling mechanism.
         this._progressError.startProgress(true);
         this._issuesService.moveIssue(this._boardData, this.issue, this.toState, beforeKey, afterKey)

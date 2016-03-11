@@ -14,7 +14,6 @@ a.context {
     color: black;
 }
 
-
 #issue-move-panel {
     border: 1px solid #888888;
     position: absolute;
@@ -87,8 +86,12 @@ a.close {
     white-space: nowrap;
 }
 .entry {
+    white-space: nowrap;
+    overflow: hidden;
 }
 .entry-selected {
+    white-space: nowrap;
+    overflow: hidden;
     background-color: #444444;
 }
 a.entry {
@@ -96,4 +99,13 @@ a.entry {
 }
 a.entry-selected {
     color: #FFFFFF;
+}
+.rank {
+    display: inline-block;
+    min-width: 15px;
+    max-width: 15px;
+}
+.state-link {
+    display: inline-block;
+    text-align: left;
 }
