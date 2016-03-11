@@ -62,9 +62,9 @@ class MoveIssueAction {
         })
 
         this._observable.subscribe(
-            data => {console.log("---- data")},
-            error => {console.log("---- error " + error)},
-            () => {console.log("---- done")}
+            data => {},
+            error => {console.error(error)},
+            () => {}
         );
     }
 
