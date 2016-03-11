@@ -21,7 +21,8 @@ import {JiraComponent, ComponentDeserializer} from "./component";
 
 
 export class BoardData {
-    public boardName:string;
+    private _boardName:string;
+    private _id:number;
     private _view:number;
     private _swimlane:string;
     private _issueTable:IssueTable;
@@ -65,7 +66,8 @@ export class BoardData {
      * @param input the json containing the issue tables
      */
     deserialize(boardId:number, input:any):BoardData {
-        this.boardName = input.name;
+        this._boardName = input.name;
+        this._id = boardId;
         this.internalDeserialize(input, true);
 
         let arr:boolean[] = [];
@@ -191,6 +193,10 @@ export class BoardData {
         this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
     }
 
+    get id():number {
+        return this._id;
+    }
+
     get view():number {
         return this._view;
     }
@@ -257,6 +263,10 @@ export class BoardData {
 
     get issueDisplayDetails():IssueDisplayDetails {
         return this._issueDisplayDetails;
+    }
+
+    get boardName():string {
+        return this._boardName;
     }
 
     set swimlane(swimlane:string) {

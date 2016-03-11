@@ -28,15 +28,15 @@ export class IssuesService {
             .map(res => (<Response>res).json());
     }
 
-    pollBoard(board:number, view:number) : Observable<Response> {
-        let path = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/issues/' + board + "/updates/" + view);
+    pollBoard(boardData:BoardData) : Observable<Response> {
+        let path = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/issues/' + boardData.id + "/updates/" + boardData.view);
         return this.http.get(path)
             .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());
     }
 
     moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string):Observable<any>{
-        let mi:MoveIssueAction = new MoveIssueAction(this.http, boardData, issue, toBoardState, beforeKey, afterKey);
+        let mi:MoveIssueAction = new MoveIssueAction(this, this.http, boardData, issue, toBoardState, beforeKey, afterKey);
         return mi.execute();
     }
 }
@@ -50,17 +50,15 @@ class MoveIssueAction {
     private _observable:Observable<any>;
     private _observer:Observer<any>;
 
-    constructor(private _http:Http, private _boardData:BoardData, private _issue:IssueData,
+    constructor(private _issuesService:IssuesService, private _http:Http, private _boardData:BoardData, private _issue:IssueData,
                      private _toBoardState, private _beforeKey:string, private _afterKey:string) {
         let project:BoardProject = _boardData.boardProjects.forKey(_issue.projectCode);
         this._toOwnState = project.mapBoardStateToOwnState(_toBoardState);
         this._changeState = this._toOwnState != this._issue.ownStatus;
         this._changeRank = this._beforeKey || this._afterKey;
 
-        console.log("--- Creating observer");
         this._observable = Observable.create((observer:Observer<any>) => {
             this._observer = observer;
-            console.log("---- Created observer");
         })
 
         this._observable.subscribe(
@@ -132,7 +130,7 @@ class MoveIssueAction {
                         if (this._changeRank) {
                             this.performRerank();
                         } else {
-                            this.done();
+                            this.refreshBoard();
                         }
                     },
                     error => this.setError(error)
@@ -163,10 +161,20 @@ class MoveIssueAction {
             .map(res => (<Response>res).json())
             .subscribe(
                 data => {
-                    this.done();
+                    this.refreshBoard();
                 },
                 error => this.setError(error)
             );
+    }
+
+    refreshBoard() {
+        this._issuesService.pollBoard(this._boardData)
+            .subscribe(
+                data => {
+                    this._boardData.processChanges(data);
+                    this.done();
+                },
+                error => this.setError(error));
     }
 
     done() {

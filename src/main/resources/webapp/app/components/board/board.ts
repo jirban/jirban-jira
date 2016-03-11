@@ -89,7 +89,7 @@ export class BoardComponent implements OnDestroy {
 
         //Don't use the progress monitor for this background task.
         //Simply set the error in it if one happened
-        this._issuesService.pollBoard(this.boardId, this._boardData.view)
+        this._issuesService.pollBoard(this.boardData)
             .subscribe(
                 data => {
                     console.log("----> Received changes: " + JSON.stringify(data));
