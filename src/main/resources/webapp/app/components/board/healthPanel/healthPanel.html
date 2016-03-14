@@ -27,7 +27,7 @@
             <span>The following issue types from the Jira project are missing in the board's configuration, which affects
                 the Jira issues which can be shown.</span>
             <ul>
-                <li *ngFor="#entry of states">{{entry}}</li>
+                <li *ngFor="#entry of issueTypes">{{entry}}</li>
             </ul>
         </div>
         <div [hidden]="!priorities.length">
@@ -35,7 +35,7 @@
             <span>The following priorities from the Jira project are missing in the board's configuration, which affects
                 the Jira issues which can be shown.</span>
             <ul>
-                <li *ngFor="#entry of states">{{entry}}</li>
+                <li *ngFor="#entry of priorities">{{entry}}</li>
             </ul>
         </div>
     </div>
