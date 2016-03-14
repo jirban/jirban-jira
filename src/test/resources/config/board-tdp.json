@@ -3,7 +3,10 @@
   "owning-project": "TDP",
   "rank-custom-field-id": 10000,
   "states": [
-    "S-A", "S-B", "S-C", "S-D"
+    {"name": "S-A"},
+    {"name": "S-B"},
+    {"name": "S-C"},
+    {"name": "S-D"}
   ],
   "priorities": [
     "highest",

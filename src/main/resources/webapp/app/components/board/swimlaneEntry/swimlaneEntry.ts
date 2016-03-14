@@ -51,6 +51,6 @@ export class SwimlaneEntryComponent {
     }
 
     private get visibleColumns() : boolean[] {
-        return this.boardData.visibleColumns;
+        return this.boardData.headers.stateVisibilities;
     }
 }

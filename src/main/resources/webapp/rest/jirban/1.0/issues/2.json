@@ -2,11 +2,12 @@
   "view" : 0,
   "rank-custom-field-id" : 12311940,
   "states" : [
-    "One",
-    "Two",
-    "Three",
-    "Four"
+    {"name": "One", "header":0},
+    {"name": "Two", "header":0},
+    {"name": "Three", "header":1},
+    {"name": "Four", "header":1}
   ],
+  "headers" : ["First", "Second"],
   "assignees" : [
     {
       "key" : "emuckenhuber",

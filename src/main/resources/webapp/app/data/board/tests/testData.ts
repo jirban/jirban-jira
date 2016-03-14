@@ -1,7 +1,7 @@
 export class TestBoardData {
 
     public view:number = 0;
-    public states:string[] = ["S-1", "S-2", "S-3", "S-4"];
+    public states:any[] = [{name:"S-1"}, {name:"S-2"}, {name:"S-3"}, {name:"S-4"}];
     public assignees:any = TestBoardData.STANDARD_ASSIGNEES;
     public components:any = TestBoardData.STANDARD_COMPONENTS;
     public priorities:any = TestBoardData.STANDARD_PRIORITIES;

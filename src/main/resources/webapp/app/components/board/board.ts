@@ -9,6 +9,7 @@ import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {OnDestroy} from "angular2/core";
 import {ProgressErrorService} from "../../services/progressErrorService";
+import {BoardHeaderEntry, BoardHeaders} from "../../data/board/header";
 
 
 @Component({
@@ -69,6 +70,7 @@ export class BoardComponent implements OnDestroy {
 
     private setIssueData(issueData:any) {
         this._boardData.deserialize(this.boardId, issueData);
+        this.setWindowSize();
     }
 
     private pollIssues(timeout?:number) {
@@ -112,13 +114,8 @@ export class BoardComponent implements OnDestroy {
     }
 
 
-    private get visibleColumns() {
-        return this._boardData.visibleColumns;
-    }
-
-
-    private toggleColumn(stateIndex:number) {
-        this._boardData.toggleColumnVisibility(stateIndex);
+    private get visibleColumns():boolean[] {
+        return this._boardData.headers.stateVisibilities;
     }
 
     private toCharArray(state:string):string[] {
@@ -143,8 +140,14 @@ export class BoardComponent implements OnDestroy {
     private setWindowSize() {
         //Whole height - toolbars - borders
         this.boardHeight = window.innerHeight - 30 - 4;
+
         //board height - header - borders
-        this.boardBodyHeight = this.boardHeight - 30 - 3;
+        let boardHeaders = 30;
+        if (this._boardData.headers && this._boardData.headers.categorised) {
+            boardHeaders *= 2;
+        }
+        console.log("-----> " + boardHeaders);
+        this.boardBodyHeight = this.boardHeight - boardHeaders - 3;
         this.width = window.innerWidth - 2; //subtract width of border
     }
 
@@ -163,5 +166,36 @@ export class BoardComponent implements OnDestroy {
 
     get boardData():BoardData {
         return this._boardData;
+    }
+
+    /**
+     * If not categorised, only the top headers will exist.
+     * @returns {boolean}
+     */
+    get categorised():boolean {
+        return this._boardData.headers.categorised;
+    }
+
+    get topHeaders():BoardHeaderEntry[] {
+        return this._boardData.headers.topHeaders;
+    }
+
+    get bottomHeaders():BoardHeaderEntry[] {
+        return this._boardData.headers.bottomHeaders;
+    }
+
+    toggleHeaderVisibility(header:BoardHeaderEntry) {
+        this._boardData.headers.toggleHeaderVisibility(header);
+    }
+
+    getTopLevelHeaderClass(header:BoardHeaderEntry):string {
+        if (header.stateAndCategory) {
+            if (header.visible) {
+                return 'visible';
+            } else {
+                return 'collapsed';
+            }
+        }
+        return '';
     }
 }

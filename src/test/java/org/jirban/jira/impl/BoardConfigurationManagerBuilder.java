@@ -67,12 +67,13 @@ public class BoardConfigurationManagerBuilder {
 
     public BoardConfigurationManagerBuilder addConfigActiveObjects(String... resources) throws IOException {
         for (String resource : resources) {
-            InputStream in = this.getClass().getClassLoader().getResourceAsStream(resource);
-            Assert.assertNotNull(resource, in);
-            try (InputStream bin = new BufferedInputStream(in)){
-                activeObjectEntries.add(ModelNode.fromJSONStream(bin));
-            }
+            activeObjectEntries.add(loadConfig(resource));
         }
+        return this;
+    }
+
+    public BoardConfigurationManagerBuilder addConfigActiveObject(ModelNode activeObject) throws IOException {
+        activeObjectEntries.add(activeObject);
         return this;
     }
 
@@ -105,6 +106,14 @@ public class BoardConfigurationManagerBuilder {
 
 
         return new BoardConfigurationManagerImpl(activeObjects, issueTypeManager, priorityManager, permissionManager, projectManager);
+    }
+
+    public static ModelNode loadConfig(String resource) throws IOException {
+        InputStream in = BoardConfigurationManagerBuilder.class.getClassLoader().getResourceAsStream(resource);
+        Assert.assertNotNull(resource, in);
+        try (InputStream bin = new BufferedInputStream(in)){
+            return ModelNode.fromJSONStream(bin);
+        }
     }
 
     private static class MockBoardCfg {

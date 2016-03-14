@@ -30,7 +30,6 @@ import static org.jirban.jira.impl.Constants.OWNING_PROJECT;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PROJECTS;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
-import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
@@ -38,10 +37,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanValidationException;
@@ -219,7 +216,7 @@ public class BoardConfig {
     public void serializeModelNodeForBoard(ModelNode boardNode) {
         boardNode.get(Constants.RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
 
-        boardNode.get(STATES).set(boardStates.toModelNode());
+        boardStates.toModelNodeForBoard(boardNode);
 
         ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {
@@ -254,7 +251,7 @@ public class BoardConfig {
         boardNode.get(OWNING_PROJECT).set(ownerProjectCode);
         boardNode.get(RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
 
-        boardNode.get(STATES).set(boardStates.toModelNode());
+        boardStates.toModelNodeForConfig(boardNode);
 
         ModelNode prioritiesNode = boardNode.get(PRIORITIES);
         for (NameAndUrl priority : priorities.values()) {

@@ -21,11 +21,20 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.HEADER;
+import static org.jirban.jira.impl.Constants.HEADERS;
+import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.STATES;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanValidationException;
@@ -36,23 +45,45 @@ import org.jirban.jira.JirbanValidationException;
 public class BoardStates {
     private final Map<String, Integer> stateIndices;
     private final List<String> states;
+    private final Map<String, String> stateHeaders;
 
-    public BoardStates(Map<String, Integer> stateIndices, List<String> states) {
+    public BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders) {
         this.stateIndices = stateIndices;
         this.states = states;
+        this.stateHeaders = stateHeaders;
     }
 
     static BoardStates loadBoardStates(ModelNode statesNode) {
         if (!statesNode.isDefined()) {
             throw new JirbanValidationException("A board must have some states associated with it");
         }
-        List<String> states = new ArrayList<>();
-        Map<String, Integer> stateIndices = new LinkedHashMap<>();
+        final Set<String> seenHeaders = new HashSet<>();
+        final List<String> states = new ArrayList<>();
+        final Map<String, String> stateHeaders = new HashMap<>();
+        final Map<String, Integer> stateIndices = new LinkedHashMap<>();
         try {
+            String lastHeader = null;
             int i = 0;
             for (ModelNode stateNode : statesNode.asList()) {
-                states.add(stateNode.asString());
-                stateIndices.put(stateNode.asString(), i++);
+                if (!stateNode.hasDefined(NAME)) {
+                    throw new JirbanValidationException("A state must have a name");
+                }
+                final String stateName = stateNode.get(NAME).asString();
+                states.add(stateName);
+                stateIndices.put(stateName, i++);
+
+                final ModelNode headerNode = stateNode.get(HEADER);
+                if (headerNode.isDefined()) {
+                    String header = headerNode.asString();
+                    if (!header.equals(lastHeader) && seenHeaders.contains(header)) {
+                        throw new JirbanValidationException("A state header must be used on neighbouring states. " +
+                                "There can't be any gaps as in '" + header + "' used for '" + stateName + "'.");
+                    }
+                    stateHeaders.put(stateName, header);
+                    seenHeaders.add(header);
+                }
+
+                lastHeader = headerNode.asString();
             }
         } catch (IllegalStateException e) {
             throw new JirbanValidationException("A board must have some states associated with it, and it should be an array strings");
@@ -60,14 +91,57 @@ public class BoardStates {
 
         return new BoardStates(
                 Collections.unmodifiableMap(stateIndices),
-                Collections.unmodifiableList(states));
+                Collections.unmodifiableList(states),
+                Collections.unmodifiableMap(stateHeaders));
     }
 
-    ModelNode toModelNode() {
-        ModelNode ret = new ModelNode();
-        ret.setEmptyList();
-        states.forEach(ret::add);
-        return ret;
+    ModelNode toModelNodeForConfig(ModelNode parent) {
+        final ModelNode states = new ModelNode();
+        states.setEmptyList();
+
+        for (String state : this.states) {
+            final ModelNode stateNode = new ModelNode();
+            stateNode.get(NAME).set(state);
+
+            final String header = stateHeaders.get(state);
+            if (header != null) {
+                stateNode.get(HEADER).set(header);
+            }
+
+            states.add(stateNode);
+        }
+
+        parent.get(STATES).set(states);
+        return states;
+    }
+
+    ModelNode toModelNodeForBoard(ModelNode parent) {
+        final ModelNode states = new ModelNode();
+        states.setEmptyList();
+
+        Set<String> headers = new LinkedHashSet<>();
+        final ModelNode headersNode = new ModelNode();
+        for (String state : this.states) {
+            final ModelNode stateNode = new ModelNode();
+            stateNode.get(NAME).set(state);
+
+            final String header = stateHeaders.get(state);
+            if (header != null) {
+                if (!headers.contains(header)) {
+                    headers.add(header);
+                    headersNode.add(header);
+                }
+                stateNode.get(HEADER).set(headers.size() - 1);
+            }
+            states.add(stateNode);
+        }
+
+        parent.get(STATES).set(states);
+
+        if (headers.size() > 0) {
+            parent.get(HEADERS).set(headersNode);
+        }
+        return states;
     }
 
     public Integer getStateIndex(String boardState) {

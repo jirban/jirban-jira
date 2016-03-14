@@ -18,20 +18,19 @@ import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {IssuesService} from "../../services/issuesService";
 import {JiraComponent, ComponentDeserializer} from "./component";
+import {BoardHeaders} from "./header";
 
 
 export class BoardData {
     private _boardName:string;
     private _id:number;
     private _view:number;
+    private _headers:BoardHeaders;
     private _swimlane:string;
     private _issueTable:IssueTable;
-    private _visibleColumns:boolean[] = [];
     private _rankCustomFieldId:number;
 
     public jiraUrl:string;
-
-    private _boardStates:Indexed<string>;
 
     private _projects:Projects;
 
@@ -69,12 +68,6 @@ export class BoardData {
         this._boardName = input.name;
         this._id = boardId;
         this.internalDeserialize(input, true);
-
-        let arr:boolean[] = [];
-        for (let i:number = 0; i < this.boardStates.length; i++) {
-            arr.push(true);
-        }
-        this._visibleColumns = arr;
 
         this.initialized = true;
         return this;
@@ -167,10 +160,8 @@ export class BoardData {
 
         this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
-        this._boardStates = new Indexed<string>();
-        this._boardStates.indexArray(input.states, (entry)=>entry, (entry)=>entry);
-
-        this._projects = new ProjectDeserializer(this._boardStates).deserialize(input);
+        this._headers = BoardHeaders.deserialize(this, input);
+        this._projects = new ProjectDeserializer(this.indexedBoardStates).deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);
         this._components = new ComponentDeserializer().deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
@@ -183,12 +174,6 @@ export class BoardData {
         }
     }
 
-
-
-    toggleColumnVisibility(stateIndex:number) {
-        this._visibleColumns[stateIndex] = !this._visibleColumns[stateIndex];
-    }
-
     toggleSwimlaneVisibility(swimlaneIndex:number) {
         this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
     }
@@ -199,10 +184,6 @@ export class BoardData {
 
     get view():number {
         return this._view;
-    }
-
-    get visibleColumns() : boolean[] {
-        return this._visibleColumns
     }
 
     get issueTable():IssueData[][] {
@@ -234,11 +215,11 @@ export class BoardData {
     }
 
     get boardStates() : string[] {
-        return this._boardStates.array;
+        return this.indexedBoardStates.array;
     }
 
     get indexedBoardStates():Indexed<string> {
-        return this._boardStates;
+        return this.headers.boardStates;
     }
 
     get owner() : string {
@@ -263,6 +244,10 @@ export class BoardData {
 
     get issueDisplayDetails():IssueDisplayDetails {
         return this._issueDisplayDetails;
+    }
+
+    get headers():BoardHeaders{
+        return this._headers;
     }
 
     get boardName():string {

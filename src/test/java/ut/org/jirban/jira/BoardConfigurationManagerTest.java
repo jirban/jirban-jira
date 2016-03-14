@@ -21,10 +21,17 @@
  */
 package ut.org.jirban.jira;
 
-import java.io.IOException;
+import static org.jirban.jira.impl.Constants.HEADER;
+import static org.jirban.jira.impl.Constants.STATES;
 
+import java.io.IOException;
+import java.util.List;
+
+import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
+import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,9 +46,65 @@ public class BoardConfigurationManagerTest {
     public void testLoadConfiguration() throws IOException {
         BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
         cfgManagerBuilder.addConfigActiveObjects("config/board-tdp.json");
-        BoardConfigurationManager cfgManager= cfgManagerBuilder.build();
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, 0);
         Assert.assertNotNull(boardConfig);
+    }
+
+    @Test
+    public void testLoadConfigurationWithHeaders() throws IOException {
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
+
+        //Same header for all 4 states should work
+        testHeaderConfigurations(original, new String[]{"A", "A", "A", "A"});
+
+        //Same header for pairs should work
+        testHeaderConfigurations(original, new String[]{"A", "A", "B", "B"});
+
+        //Gaps are ok
+        testHeaderConfigurations(original, new String[]{"A", "A", null, "B"});
+        testHeaderConfigurations(original, new String[]{"A", null, null, "B"});
+        testHeaderConfigurations(original, new String[]{"A", null, null, "B"});
+        testHeaderConfigurations(original, new String[]{null, null, null, "B"});
+        testHeaderConfigurations(original, new String[]{null, null, "A", "B"});
+
+        //No headers are ok
+        testHeaderConfigurations(original, new String[]{null, null, null, null});
+
+        //Test bad configs, we cannot reuse a header if it was not the last one
+        testBadHeaderConfigurations(original, new String[]{"A", "B", "A", null});
+        testBadHeaderConfigurations(original, new String[]{"A", null, "A", null});
+        testBadHeaderConfigurations(original, new String[]{null, "B", "A", "B"});
+
+    }
+
+    private void testBadHeaderConfigurations(ModelNode original, String[] stateHeaders) throws IOException {
+        try {
+            testHeaderConfigurations(original, stateHeaders);
+            Assert.fail("Expected failure");
+        } catch (JirbanValidationException expected) {
+        }
+    }
+
+    private void testHeaderConfigurations(ModelNode original, String[] stateHeaders) throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
+        ModelNode copy = cloneAndAddStateHeaders(original, stateHeaders);
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.addConfigActiveObject(copy).build();
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, 0);
+        Assert.assertNotNull(boardConfig);
+    }
+
+    private ModelNode cloneAndAddStateHeaders(ModelNode original, String[] stateHeaders) {
+        ModelNode copy = original.clone();
+        List<ModelNode> states = copy.get(STATES).asList();
+        for (int i = 0 ; i < stateHeaders.length ; i++) {
+            if (stateHeaders[i] != null) {
+                states.get(i).get(HEADER).set(stateHeaders[i]);
+            }
+        }
+        return copy;
     }
 }

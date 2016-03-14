@@ -2,14 +2,52 @@
     <div id="board-inner" [style.height]="boardHeight">
         <table class="board">
             <thead>
-            <tr>
-                <th *ngFor="#state of boardStates ; #stateIndex=index"
-                    [ngClass]="visibleColumns[stateIndex] ? 'visible' : 'collapsed'"
-                    (click)="toggleColumn(stateIndex)">
-                    <div [hidden]="!visibleColumns[stateIndex]">{{state}} ({{boardData.totalIssuesByState[stateIndex]}})</div>
-                    <div [hidden]="visibleColumns[stateIndex]">{{boardData.totalIssuesByState[stateIndex]}}</div>
+
+            <!--
+                If we are not categorised, only the top headers will exist
+            -->
+            <tr *ngIf="!categorised">
+                <th *ngFor="#header of topHeaders"
+                    [attr.colspan]="header.cols"
+                    [attr.rowspan]="header.rows"
+                    [ngClass]="header.visible ? 'visible' : 'collapsed'"
+                    (click)="toggleHeaderVisibility(header)">
+                    <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                    <div [hidden]="header.visible">{{header.totalIssues}}</div>
                 </th>
             </tr>
+
+            <!--
+                If we are categorised, we will have two levels of headers. The top level will typically be the category,
+                and the bottom level the states.
+
+                Note that states which do not belong to a category will appear in the top
+                row, with a rowspan of 2. Only these states will have a class in the top header since this class
+                sets the width depending on if it is visible or collapsed
+             -->
+            <tr *ngIf="categorised">
+                <th *ngFor="#header of topHeaders"
+                    [attr.colspan]="header.cols"
+                    [attr.rowspan]="header.rows"
+                    [ngClass]="header.stateAndCategory ? header.visible ? 'visible' : 'collapsed' : ''"
+                    (click)="toggleHeaderVisibility(header)">
+                    <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                    <div [hidden]="header.visible">{{header.totalIssues}}</div>
+                </th>
+            </tr>
+
+            <tr *ngIf="categorised">
+                <th *ngFor="#header of bottomHeaders"
+                    [attr.colspan]="header.cols"
+                    [attr.rowspan]="header.rows"
+                    [ngClass]="header.visible ? 'visible' : 'collapsed'"
+                    (click)="toggleHeaderVisibility(header)">
+                    <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                    <div [hidden]="header.visible">{{header.totalIssues}}</div>
+                </th>
+            </tr>
+
+
             </thead>
             <tbody *ngIf="!boardData.swimlane" [style.height]="boardBodyHeight">
             <tr>

@@ -125,7 +125,7 @@ public class RestEndpoint {
 
     @PUT
     @Path(BOARDS + "/{boardId}")
-    public Response createBoard(@Context HttpServletRequest req, @PathParam("boardId") int boardId, String config) {
+    public Response saveBoard(@Context HttpServletRequest req, @PathParam("boardId") int boardId, String config) {
         ApplicationUser user = getUser();
         jiraFacade.saveBoardConfiguration(user, boardId, Util.getDeployedUrl(req), ModelNode.fromJSONString(config));
         String json = jiraFacade.getBoardConfigurations(user);

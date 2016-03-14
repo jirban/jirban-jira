@@ -1,6 +1,5 @@
-
-
 import {Assignee} from "../assignee";
+
 describe('Assignee tests', ()=> {
     describe('Initials', () => {
 
