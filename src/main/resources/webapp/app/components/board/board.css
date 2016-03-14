@@ -53,6 +53,9 @@
     height: 30px;
     cursor: pointer;
 }
+.board th:hover {
+    background-color: #F0F0F0;
+}
 div.state-summary {
     width: 100%;
     font-size: 12px;

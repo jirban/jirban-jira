@@ -13,3 +13,6 @@ td.swimlane-empty {
     border: 1px solid #FFFFFF;
     overflow: hidden;
 }
+td.swimlane-header:hover {
+    background-color: #F0F0F0;
+}
