@@ -25,20 +25,20 @@
                 <div class="setting-header">Issue Detail</div>
                 <div class="setting-content-small">
                     <div>
-                        <input type="checkbox" ngControl="assignee"/>
-                        <label>Assignee</label>
+                        <input type="checkbox" ngControl="assignee" id="detail-assignee"/>
+                        <label for="detail-assignee">Assignee</label>
                     </div>
                     <div>
-                        <input type="checkbox" ngControl="description"/>
-                        <label>Description</label>
+                        <input type="checkbox" ngControl="description" id="detail-description"/>
+                        <label for="detail-description">Description</label>
                     </div>
                     <div>
-                        <input type="checkbox" ngControl="info"/>
-                        <label>Info</label>
+                        <input type="checkbox" ngControl="info" id="detail-info"/>
+                        <label for="detail-info">Info</label>
                     </div>
                     <div>
-                        <input type="checkbox" ngControl="linked"/>
-                        <label>Linked issues</label>
+                        <input type="checkbox" ngControl="linked" id="detail-linked"/>
+                        <label for="detail-linked">Linked issues</label>
                     </div>
                 </div>
             </div>
@@ -48,8 +48,8 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'project')" title="Clear filter">Project Filter</div>
                 <div class="setting-content">
                     <div *ngFor="#project of boardProjectCodes">
-                        <input type="checkbox" ngControl="{{project}}"/>
-                        <label>{{project}}</label>
+                        <input type="checkbox" ngControl="{{project}}" id="project-{{project}}"/>
+                        <label [attr.for]="'project-'+project">{{project}}</label>
                     </div>
                 </div>
             </div>
@@ -59,8 +59,8 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'priority')" title="Clear filter">Priority Filter</div>
                 <div class="setting-content" title="Scroll me!">
                     <div *ngFor="#priority of priorities">
-                        <input type="checkbox" ngControl="{{priority.name}}"/>
-                        <label>{{priority.name}}</label>
+                        <input type="checkbox" ngControl="{{priority.name}}" id="priority-{{priority.name}}"/>
+                        <label [attr.for]="'priority-' + priority.name">{{priority.name}}</label>
                     </div>
                 </div>
             </div>
@@ -70,8 +70,8 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'issue-type')" title="Clear filter">Issue Type Filter</div>
                 <div class="setting-content" title="Scroll me!">
                     <div *ngFor="#issueType of issueTypes">
-                        <input type="checkbox" ngControl="{{issueType.name}}"/>
-                        <label>{{issueType.name}}</label>
+                        <input type="checkbox" ngControl="{{issueType.name}}" id="type-{{issueType.name}}"/>
+                        <label [attr.for]="'type-' + issueType.name">{{issueType.name}}</label>
                     </div>
                 </div>
             </div>
@@ -81,12 +81,12 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'assignee')" title="Clear filter">Assignee Filter</div>
                 <div class="setting-content" title="Scroll me!">
                     <div>
-                        <input type="checkbox" ngControl="{{noAssignee}}"/>
-                        <label>None</label>
+                        <input type="checkbox" ngControl="{{noAssignee}}" id="assignee-$none$none"/>
+                        <label for="assignee-$none$none">None</label>
                     </div>
                     <div *ngFor="#assignee of assignees">
-                        <input type="checkbox" ngControl="{{assignee.key}}"/>
-                        <label>{{assignee.name}}</label>
+                        <input type="checkbox" ngControl="{{assignee.key}}" id="assignee-{{assignee.name}}"/>
+                        <label [attr.for]="'assignee-' + assignee.name">{{assignee.name}}</label>
                     </div>
                 </div>
             </div>
@@ -96,12 +96,12 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'component')" title="Clear filter">Component Filter</div>
                 <div class="setting-content" title="Scroll me!">
                     <div>
-                        <input type="checkbox" ngControl="{{noComponent}}"/>
-                        <label>None</label>
+                        <input type="checkbox" ngControl="{{noComponent}}" id="component-$none$none"/>
+                        <label for="component-$none$none">None</label>
                     </div>
                     <div *ngFor="#component of components">
-                        <input type="checkbox" ngControl="{{component.name}}"/>
-                        <label>{{component.name}}</label>
+                        <input type="checkbox" ngControl="{{component.name}}" id="component-{{component.name}}"/>
+                        <label [attr.for]="'component-' + component.name">{{component.name}}</label>
                     </div>
                 </div>
             </div>

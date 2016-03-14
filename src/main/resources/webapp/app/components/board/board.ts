@@ -146,7 +146,6 @@ export class BoardComponent implements OnDestroy {
         if (this._boardData.headers && this._boardData.headers.categorised) {
             boardHeaders *= 2;
         }
-        console.log("-----> " + boardHeaders);
         this.boardBodyHeight = this.boardHeight - boardHeaders - 3;
         this.width = window.innerWidth - 2; //subtract width of border
     }
