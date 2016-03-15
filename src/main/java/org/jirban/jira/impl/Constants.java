@@ -29,6 +29,7 @@ public class Constants {
     public static final String ASSIGNEES = "assignees";
     public static final String AVATAR = "avatar";
     public static final String BLACKLIST = "blacklist";
+    public static final String BACKLOG = "backlog";
     public static final String BOARDS = "boards";
     public static final String CHANGES = "changes";
     public static final String CLEAR_COMPONENTS = "clear-components";

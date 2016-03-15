@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.BACKLOG;
 import static org.jirban.jira.impl.Constants.HEADER;
 import static org.jirban.jira.impl.Constants.HEADERS;
 import static org.jirban.jira.impl.Constants.NAME;
@@ -46,11 +47,14 @@ public class BoardStates {
     private final Map<String, Integer> stateIndices;
     private final List<String> states;
     private final Map<String, String> stateHeaders;
+    private final Set<String> backlogStates;
 
-    public BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders) {
+    public BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders,
+                       Set<String> backlogStates) {
         this.stateIndices = stateIndices;
         this.states = states;
         this.stateHeaders = stateHeaders;
+        this.backlogStates = backlogStates;
     }
 
     static BoardStates loadBoardStates(ModelNode statesNode) {
@@ -61,29 +65,46 @@ public class BoardStates {
         final List<String> states = new ArrayList<>();
         final Map<String, String> stateHeaders = new HashMap<>();
         final Map<String, Integer> stateIndices = new LinkedHashMap<>();
+        final Set<String> backlogStates = new HashSet<>();
         try {
             String lastHeader = null;
             int i = 0;
+            int lastBacklog = -1;
             for (ModelNode stateNode : statesNode.asList()) {
                 if (!stateNode.hasDefined(NAME)) {
                     throw new JirbanValidationException("A state must have a name");
                 }
                 final String stateName = stateNode.get(NAME).asString();
                 states.add(stateName);
-                stateIndices.put(stateName, i++);
+                stateIndices.put(stateName, i);
 
-                final ModelNode headerNode = stateNode.get(HEADER);
-                if (headerNode.isDefined()) {
+                boolean backlog = stateNode.hasDefined(BACKLOG) && stateNode.get(BACKLOG).asBoolean();
+                if (backlog) {
+                    if (lastBacklog < i - 1) {
+                        throw new JirbanValidationException("The backlog states can only be the first states without any gaps");
+                    }
+                    backlogStates.add(stateName);
+                    lastBacklog = i;
+                }
+
+                if (stateNode.hasDefined(HEADER)) {
+                    if (backlog) {
+                        throw new JirbanValidationException("A backlog state can not have a header");
+                    }
+                    final ModelNode headerNode = stateNode.get(HEADER);
                     String header = headerNode.asString();
                     if (!header.equals(lastHeader) && seenHeaders.contains(header)) {
                         throw new JirbanValidationException("A state header must be used on neighbouring states. " +
-                                "There can't be any gaps as in '" + header + "' used for '" + stateName + "'.");
+                            "There can't be any gaps as in '" + header + "' used for '" + stateName + "'.");
                     }
                     stateHeaders.put(stateName, header);
                     seenHeaders.add(header);
+                    lastHeader = headerNode.asString();
+                } else {
+                    lastHeader = null;
                 }
 
-                lastHeader = headerNode.asString();
+                i++;
             }
         } catch (IllegalStateException e) {
             throw new JirbanValidationException("A board must have some states associated with it, and it should be an array strings");
@@ -92,7 +113,7 @@ public class BoardStates {
         return new BoardStates(
                 Collections.unmodifiableMap(stateIndices),
                 Collections.unmodifiableList(states),
-                Collections.unmodifiableMap(stateHeaders));
+                Collections.unmodifiableMap(stateHeaders), backlogStates);
     }
 
     ModelNode toModelNodeForConfig(ModelNode parent) {
@@ -106,6 +127,9 @@ public class BoardStates {
             final String header = stateHeaders.get(state);
             if (header != null) {
                 stateNode.get(HEADER).set(header);
+            }
+            if (backlogStates.contains(state)) {
+                stateNode.get(BACKLOG).set(true);
             }
 
             states.add(stateNode);
@@ -141,6 +165,7 @@ public class BoardStates {
         if (headers.size() > 0) {
             parent.get(HEADERS).set(headersNode);
         }
+        parent.get(BACKLOG).set(backlogStates.size());
         return states;
     }
 

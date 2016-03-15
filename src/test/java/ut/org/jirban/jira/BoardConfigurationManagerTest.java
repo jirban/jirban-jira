@@ -21,6 +21,7 @@
  */
 package ut.org.jirban.jira;
 
+import static org.jirban.jira.impl.Constants.BACKLOG;
 import static org.jirban.jira.impl.Constants.HEADER;
 import static org.jirban.jira.impl.Constants.STATES;
 
@@ -31,7 +32,6 @@ import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
-import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.junit.Assert;
 import org.junit.Test;
@@ -59,52 +59,127 @@ public class BoardConfigurationManagerTest {
 
 
         //Same header for all 4 states should work
-        testHeaderConfigurations(original, new String[]{"A", "A", "A", "A"});
+        loadAndValidateConfiguration(original, new StateHeaderModifier("A", "A", "A", "A"));
 
         //Same header for pairs should work
-        testHeaderConfigurations(original, new String[]{"A", "A", "B", "B"});
+        loadAndValidateConfiguration(original, new StateHeaderModifier("A", "A", "B", "B"));
 
         //Gaps are ok
-        testHeaderConfigurations(original, new String[]{"A", "A", null, "B"});
-        testHeaderConfigurations(original, new String[]{"A", null, null, "B"});
-        testHeaderConfigurations(original, new String[]{"A", null, null, "B"});
-        testHeaderConfigurations(original, new String[]{null, null, null, "B"});
-        testHeaderConfigurations(original, new String[]{null, null, "A", "B"});
+        loadAndValidateConfiguration(original, new StateHeaderModifier("A", "A", null, "B"));
+        loadAndValidateConfiguration(original, new StateHeaderModifier("A", null, null, "B"));
+        loadAndValidateConfiguration(original, new StateHeaderModifier("A", null, null, "B"));
+        loadAndValidateConfiguration(original, new StateHeaderModifier(null, null, null, "B"));
+        loadAndValidateConfiguration(original, new StateHeaderModifier(null, null, "A", "B"));
 
         //No headers are ok
-        testHeaderConfigurations(original, new String[]{null, null, null, null});
+        loadAndValidateConfiguration(original, new StateHeaderModifier(null, null, null, null));
 
         //Test bad configs, we cannot reuse a header if it was not the last one
-        testBadHeaderConfigurations(original, new String[]{"A", "B", "A", null});
-        testBadHeaderConfigurations(original, new String[]{"A", null, "A", null});
-        testBadHeaderConfigurations(original, new String[]{null, "B", "A", "B"});
+        loadBadConfiguration(original, new StateHeaderModifier("A", "B", "A", null));
+        loadBadConfiguration(original, new StateHeaderModifier("A", null, "A", null));
+        loadBadConfiguration(original, new StateHeaderModifier(null, "B", "A", "B"));
 
     }
 
-    private void testBadHeaderConfigurations(ModelNode original, String[] stateHeaders) throws IOException {
+    @Test
+    public void testLoadConfigurationWithBacklog() throws IOException {
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
+        //All states as backlog is allowed although it makes little sense in real life
+        loadAndValidateConfiguration(original, new BacklogModifier(true, true, true, true));
+
+        //A few in the beginning is ok and normal
+        loadAndValidateConfiguration(original, new BacklogModifier(true, true, false, false));
+        loadAndValidateConfiguration(original, new BacklogModifier(true, false, false, false));
+        //None is ok too
+        loadAndValidateConfiguration(original, new BacklogModifier(false, false, false, false));
+
+        //Gaps are bad, and it must be the first states
+        loadBadConfiguration(original, new BacklogModifier(true, false, true, false));
+        loadBadConfiguration(original, new BacklogModifier(false, false, true, false));
+    }
+
+    @Test
+    public void testLoadConfigurationWithBacklogAndHeaders() throws IOException {
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
+        //Headers and backlog cannot be used for the same states
+        //ok
+        loadAndValidateConfiguration(original,
+                new BacklogModifier(true, true, false, false),
+                new StateHeaderModifier(null, null, "A", "B"));
+        //not ok
+        loadBadConfiguration(original,
+                new BacklogModifier(true, true, false, false),
+                new StateHeaderModifier(null, "A", "A", "B"));
+        loadBadConfiguration(original,
+                new BacklogModifier(true, false, false, false),
+                new StateHeaderModifier("A", "A", "A", "B"));
+    }
+
+    private void loadBadConfiguration(ModelNode original, StateModifier... modifiers) throws IOException {
         try {
-            testHeaderConfigurations(original, stateHeaders);
+            loadAndValidateConfiguration(original, modifiers);
             Assert.fail("Expected failure");
         } catch (JirbanValidationException expected) {
         }
     }
 
-    private void testHeaderConfigurations(ModelNode original, String[] stateHeaders) throws IOException {
+    private void loadAndValidateConfiguration(ModelNode original, StateModifier... modifiers) throws IOException {
+        //Loading the config validates it
+
         BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
-        ModelNode copy = cloneAndAddStateHeaders(original, stateHeaders);
+        ModelNode copy = cloneAndModifyStates(original, modifiers);
         BoardConfigurationManager cfgManager = cfgManagerBuilder.addConfigActiveObject(copy).build();
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, 0);
         Assert.assertNotNull(boardConfig);
     }
 
-    private ModelNode cloneAndAddStateHeaders(ModelNode original, String[] stateHeaders) {
+    private ModelNode cloneAndModifyStates(ModelNode original, StateModifier... modifiers) {
         ModelNode copy = original.clone();
         List<ModelNode> states = copy.get(STATES).asList();
-        for (int i = 0 ; i < stateHeaders.length ; i++) {
-            if (stateHeaders[i] != null) {
-                states.get(i).get(HEADER).set(stateHeaders[i]);
+        for (int i = 0 ; i < states.size() ; i++) {
+            ModelNode state = states.get(i);
+            for (StateModifier modifier : modifiers) {
+                modifier.modify(i, state);
             }
         }
         return copy;
+    }
+
+    private interface StateModifier {
+        void modify(int index, ModelNode state);
+    }
+
+    private static class StateHeaderModifier implements StateModifier {
+        private final String[] headers;
+
+        StateHeaderModifier(String...headers) {
+            this.headers = headers;
+        }
+
+        @Override
+        public void modify(int index, ModelNode state) {
+            if (headers[index] != null) {
+                state.get(HEADER).set(headers[index]);
+            }
+        }
+    }
+
+    private static class BacklogModifier implements StateModifier {
+        private final boolean[] backlog;
+
+        public BacklogModifier(boolean... backlog) {
+            this.backlog = backlog;
+        }
+
+        @Override
+        public void modify(int index, ModelNode state) {
+            if (backlog[index]) {
+                state.get(BACKLOG).set(backlog[index]);
+            }
+        }
     }
 }
