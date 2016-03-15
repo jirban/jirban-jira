@@ -77,3 +77,8 @@ ul.issues-list {
     background-color: lightgrey;
     border-radius: 5px;
 }
+.category-colour {
+    border: 0px;
+    padding: 0px;
+    max-height: 3px;
+}

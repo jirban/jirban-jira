@@ -1,4 +1,4 @@
-import {Component, View} from 'angular2/core';
+import {Component, OnDestroy, View} from 'angular2/core';
 import {Router, RouteParams} from 'angular2/router';
 import {IssuesService} from '../../services/issuesService';
 import {BoardData} from '../../data/board/boardData';
@@ -7,7 +7,6 @@ import {IssueComponent} from './issue/issue';
 import {SwimlaneEntryComponent} from './swimlaneEntry/swimlaneEntry';
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
-import {OnDestroy} from "angular2/core";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {BoardHeaderEntry, BoardHeaders} from "../../data/board/header";
 
@@ -196,5 +195,22 @@ export class BoardComponent implements OnDestroy {
             }
         }
         return '';
+    }
+
+    getColourForIndex(index:number) : string {
+        let mod:number = index % 5;
+        switch (mod) {
+            case 0:
+                return "red";
+            case 1:
+                return "orange";
+            case 2:
+                return "green";
+            case 3:
+                return "blue";
+            case 4:
+                return "violet";
+        }
+
     }
 }

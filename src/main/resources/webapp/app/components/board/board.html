@@ -18,17 +18,18 @@
             </tr>
 
             <!--
-                If we are categorised, we will have two levels of headers. The top level will typically be the category,
-                and the bottom level the states.
+                If we are categorised, we will have a colour coded banner and two levels of headers. The top level will
+                typically be the category, and the bottom level the states.
 
                 Note that states which do not belong to a category will appear in the top
                 row, with a rowspan of 2. Only these states will have a class in the top header since this class
-                sets the width depending on if it is visible or collapsed
+                sets the width of the columns depending on if it is visible or collapsed
              -->
             <tr *ngIf="categorised">
-                <th *ngFor="#header of topHeaders"
+                <th *ngFor="#header of topHeaders ; #headerIndex=index"
                     [attr.colspan]="header.cols"
                     [attr.rowspan]="header.rows"
+                    [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
                     [ngClass]="header.stateAndCategory ? header.visible ? 'visible' : 'collapsed' : ''"
                     (click)="toggleHeaderVisibility(header)">
                     <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
