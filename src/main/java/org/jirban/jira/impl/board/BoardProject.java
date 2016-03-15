@@ -67,10 +67,6 @@ public class BoardProject {
         this.board = board;
     }
 
-    boolean isDataSame(BoardProject boardProject) {
-        return false;
-    }
-
     int getAssigneeIndex(Assignee assignee) {
         return board.getAssigneeIndex(assignee);
     }
@@ -79,14 +75,20 @@ public class BoardProject {
         return board.getComponentIndex(component);
     }
 
-    void serialize(ModelNode parent) {
+    void serialize(ModelNode parent, boolean backlog) {
         ModelNode projectIssues = parent.get(ISSUES);
-        for (List<String> issuesForState : issueKeysByState) {
+        for (int i = 0 ; i < issueKeysByState.size() ; i++) {
+
             ModelNode issuesForStateNode = new ModelNode();
             issuesForStateNode.setEmptyList();
-            for (String key: issuesForState) {
-                issuesForStateNode.add(key);
+
+            if (backlog || i >= board.getConfig().getBacklogSize()) {
+                List<String> issuesForState = issueKeysByState.get(i);
+                for (String key: issuesForState) {
+                    issuesForStateNode.add(key);
+                }
             }
+
             projectIssues.add(issuesForStateNode);
         }
     }
@@ -118,6 +120,10 @@ public class BoardProject {
     public Updater updater(SearchService searchService, Board.Updater boardUpdater,
                            ApplicationUser boardOwner) {
         return new Updater(searchService, boardUpdater, this, boardOwner);
+    }
+
+    public boolean isBlackLogState(String state) {
+        return projectConfig.isBlackLogState(state);
     }
 
     static class Accessor {

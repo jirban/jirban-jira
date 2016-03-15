@@ -34,11 +34,12 @@ public interface BoardManager {
      * Gets the json for a board populated with issues
      *
      * @param user the logged in user
+     * @param backlog if {@true} we will include issues belonging to the backlog states
      * @param id the id of the board
      * @return the board in json format
      * @throws SearchException
      */
-    String getBoardJson(ApplicationUser user, int id) throws SearchException;
+    String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException;
 
     /**
      * Deletes a board
@@ -67,9 +68,10 @@ public interface BoardManager {
      * json format so they can apply it to their own model.
      *
      * @param user the logged in user
+     * @param backlog if {@true} we will include changes to issues belonging to the backlog states
      * @param id the board id
      * @param viewId the view id of the client.
      * @return the json containing the changes
      */
-    String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException;
+    String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException;
 }

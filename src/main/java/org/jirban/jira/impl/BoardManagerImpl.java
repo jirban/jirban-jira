@@ -22,11 +22,9 @@
 package org.jirban.jira.impl;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -95,7 +93,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public String getBoardJson(ApplicationUser user, int id) throws SearchException {
+    public String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException {
         Board board = boards.get(id);
         if (board == null) {
             synchronized (this) {
@@ -120,7 +118,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
             }
         }
-        return board.serialize().toJSONString(true);
+        return board.serialize(backlog).toJSONString(true);
     }
 
     @Override
@@ -181,7 +179,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException {
+    public String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException {
         //Check we are allowed to view the board
         boardConfigurationManager.getBoardConfigForBoardDisplay(user, id);
 
@@ -192,14 +190,14 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
         if (boardChangeRegistry == null) {
             //There is config but no board, so do a full refresh
-            return getBoardJson(user, id);
+            return getBoardJson(user, false, id);
         }
 
         final ModelNode changes;
         try {
             changes = boardChangeRegistry.getChangesSince(viewId);
         } catch (BoardChangeRegistry.FullRefreshNeededException e) {
-            return getBoardJson(user, id);
+            return getBoardJson(user, backlog, id);
         }
 
         return changes.toJSONString(true);

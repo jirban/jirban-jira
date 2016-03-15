@@ -51,7 +51,7 @@ import ut.org.jirban.jira.mock.UserManagerBuilder;
 /**
  * @author Kabir Khan
  */
-public class AbstractBoardTest {
+public abstract class AbstractBoardTest {
 
     @Rule
     public MockitoContainer mockitoContainer = MockitoMocksInContainer.rule(this);
@@ -62,9 +62,12 @@ public class AbstractBoardTest {
 
     @Before
     public void initializeMocks() throws Exception {
+        initializeMocks("config/board-tdp.json");
+    }
 
+    protected void initializeMocks(String cfgResource) throws Exception {
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
-                .addConfigActiveObjects("config/board-tdp.json")
+                .addConfigActiveObjects(cfgResource)
                 .build();
 
         MockComponentWorker worker = new MockComponentWorker();

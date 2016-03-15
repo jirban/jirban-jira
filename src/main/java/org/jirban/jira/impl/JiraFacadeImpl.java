@@ -72,8 +72,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public String getBoardJson(ApplicationUser user, int id) throws SearchException {
-        return boardManager.getBoardJson(user, id);
+    public String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException {
+        return boardManager.getBoardJson(user, backlog, id);
     }
 
     @Override
@@ -82,8 +82,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public String getChangesJson(ApplicationUser user, int id, int viewId) throws SearchException {
-        return boardManager.getChangesJson(user, id, viewId);
+    public String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException {
+        return boardManager.getChangesJson(user, backlog, id, viewId);
     }
 
     @Override

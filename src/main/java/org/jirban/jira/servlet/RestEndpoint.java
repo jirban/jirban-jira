@@ -93,16 +93,28 @@ public class RestEndpoint {
 
     @GET
     @Path(ISSUES + "/{boardId}")
-    public Response getBoards(@PathParam("boardId") int boardId) throws SearchException {
+    public Response getBoards(
+            @PathParam("boardId") int boardId,
+            @QueryParam("backlog") Boolean backlog) throws SearchException {
         //TODO figure out if a permission violation becomes a search exception
-        return createResponse(jiraFacade.getBoardJson(getUser(), boardId));
+        return createResponse(
+                jiraFacade.getBoardJson(
+                        getUser(),
+                        backlog != null && backlog.booleanValue(),
+                        boardId));
     }
 
     @GET
     @Path(ISSUES + "/{boardId}/" + UPDATES + "/{viewId}")
-    public Response getBoards(@PathParam("boardId") int boardId, @PathParam("viewId") int viewId) throws SearchException {
+    public Response getBoards(@PathParam("boardId") int boardId,
+                              @PathParam("viewId") int viewId,
+                              @QueryParam("backlog") Boolean backlog) throws SearchException {
         //TODO figure out if a permission violation becomes a search exception
-        return createResponse(jiraFacade.getChangesJson(getUser(), boardId, viewId));
+        return createResponse(
+                jiraFacade.getChangesJson(getUser(),
+                        backlog != null && backlog.booleanValue(),
+                        boardId,
+                        viewId));
     }
 
     @DELETE
@@ -125,7 +137,10 @@ public class RestEndpoint {
 
     @PUT
     @Path(BOARDS + "/{boardId}")
-    public Response saveBoard(@Context HttpServletRequest req, @PathParam("boardId") int boardId, String config) {
+    public Response saveBoard(
+            @Context HttpServletRequest req,
+            @PathParam("boardId") int boardId,
+            String config) {
         ApplicationUser user = getUser();
         jiraFacade.saveBoardConfiguration(user, boardId, Util.getDeployedUrl(req), ModelNode.fromJSONString(config));
         String json = jiraFacade.getBoardConfigurations(user);

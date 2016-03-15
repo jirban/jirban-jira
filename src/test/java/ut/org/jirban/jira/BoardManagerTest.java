@@ -55,6 +55,8 @@ import com.atlassian.jira.issue.search.SearchException;
 /**
  * Tests the layout of the board on the server, and how it is serialized to the client on first load/full refresh.
  * {@link BoardChangeRegistryTest} tests the output of what happens when changes are made to the board issues.
+ * <p/>
+ * This test does not have any backlog states configured. See {@link BoardManagerWithBacklogTest} for those
  *
  * @author Kabir Khan
  */
@@ -931,8 +933,77 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3");
     }
 
+    @Test
+    public void testLoadBoardWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        initializeMocks("config/board-tdp-backlog.json");
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");     //2
+        issueRegistry.addIssue("TDP", "task", "high", "Three", "brian", null, "TDP-C");                  //3
+        issueRegistry.addIssue("TDP", "task", "high", "Four", "brian", null, "TDP-D");                //4
+        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", new String[]{"C3"}, "TBG-X");  //1
+        issueRegistry.addIssue("TBG", "task", "high", "Two", "brian", null, "TBG-Y");                    //2
+
+        //Although not all the assignees and components are used in the non-blacklist part of the board,
+        //include them anyway
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        checkComponents(boardNode, "C1", "C2", "C3");
+        checkNoBlacklist(boardNode);
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 3);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {},
+                {},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {},
+                {"TBG-2"},
+                {}});
+
+
+        //Now check with the backlog
+        boardNode = getJsonCheckingViewIdAndUsers(0, true, "brian", "kabir");
+        checkComponents(boardNode, "C1", "C2", "C3");
+        checkNoBlacklist(boardNode);
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        allIssues = getIssuesCheckingSize(boardNode, 6);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", new int[]{0}, 0, 1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", new int[]{2}, 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {"TBG-2"},
+                {}});
+
+    }
+
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);
+    }
+
+    private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, boolean backlog, String...users) throws SearchException {
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), backlog, 0);
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedViewId, boardNode.get("view").asInt());

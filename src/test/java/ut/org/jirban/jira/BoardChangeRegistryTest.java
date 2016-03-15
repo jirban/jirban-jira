@@ -958,14 +958,18 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     private void checkViewId(int expectedViewId) throws SearchException {
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), 0);
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), false, 0);
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedViewId, boardNode.get(VIEW).asInt());
     }
 
     private ModelNode getChangesJson(int fromView) throws SearchException {
-        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), 0, fromView);
+        return getChangesJson(fromView, false);
+    }
+
+    private ModelNode getChangesJson(int fromView, boolean backlog) throws SearchException {
+        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), backlog, 0, fromView);
         ModelNode changesNode = ModelNode.fromJSONString(json);
         return changesNode;
     }

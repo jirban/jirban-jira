@@ -121,7 +121,7 @@ public class Board {
         return boardUpdater.handleEvent(event);
     }
 
-    public ModelNode serialize() {
+    public ModelNode serialize(boolean backlog) {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
         outputNode.get(VIEW).set(currentView);
@@ -144,7 +144,13 @@ public class Board {
 
         ModelNode allIssues = outputNode.get(ISSUES);
         this.allIssues.forEach((code, issue) -> {
-            allIssues.get(code).set(issue.getModelNodeForFullRefresh(this));
+            boolean relevant = true;
+            if (!backlog) {
+                relevant = !getBoardProject(issue.getProjectCode()).isBlackLogState(issue.getState());
+            }
+            if (relevant) {
+                allIssues.get(code).set(issue.getModelNodeForFullRefresh(this));
+            }
         });
 
         ModelNode mainProjectsParent = outputNode.get(PROJECTS, MAIN);
@@ -152,7 +158,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            projectEntry.getValue().serialize(project);
+            projectEntry.getValue().serialize(project, backlog);
         }
 
         blacklist.serialize(outputNode);
@@ -276,14 +282,6 @@ public class Board {
             result.put(component.getName(), component);
         }
         return result;
-    }
-
-    private static Map<String, Integer> getComponentIndices(Map<String, Component> assignees) {
-        Map<String, Integer> componentIndices = new HashMap<>();
-        for (String assigneeKey : assignees.keySet()) {
-            componentIndices.put(assigneeKey, componentIndices.size());
-        }
-        return componentIndices;
     }
 
     /**

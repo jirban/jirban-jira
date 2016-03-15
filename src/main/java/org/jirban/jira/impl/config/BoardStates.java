@@ -49,7 +49,7 @@ public class BoardStates {
     private final Map<String, String> stateHeaders;
     private final Set<String> backlogStates;
 
-    public BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders,
+    private BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders,
                        Set<String> backlogStates) {
         this.stateIndices = stateIndices;
         this.states = states;
@@ -175,5 +175,13 @@ public class BoardStates {
 
     public List<String> getStateNames() {
         return states;
+    }
+
+    public Set<String> getBacklogStates() {
+        return backlogStates;
+    }
+
+    public int getBlacklogSize() {
+        return backlogStates.size();
     }
 }

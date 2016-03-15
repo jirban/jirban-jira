@@ -27,9 +27,11 @@ import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -145,4 +147,7 @@ public class BoardProjectConfig extends ProjectConfig {
         return projectNode;
     }
 
+    public boolean isBlackLogState(String ownState) {
+        return mapOwnStateOntoBoardStateIndex(ownState) < boardStates.getBlacklogSize();
+    }
 }

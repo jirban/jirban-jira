@@ -292,11 +292,11 @@ public class BoardConfig {
         return id;
     }
 
-    public int getRankCustomFieldId() {
-        return rankCustomFieldId;
-    }
-
     public List<String> getStateNames() {
         return boardStates.getStateNames();
+    }
+
+    public int getBacklogSize() {
+        return boardStates.getBlacklogSize();
     }
 }
