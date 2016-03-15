@@ -1,3 +1,6 @@
+.swimlane-name {
+    position: relative;
+}
 td.swimlane-header {
     vertical-align: middle;
     font-size: 11px;

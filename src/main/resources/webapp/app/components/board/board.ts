@@ -1,4 +1,4 @@
-import {Component, OnDestroy, View} from 'angular2/core';
+import {Component, ElementRef, OnDestroy, OnInit, View} from 'angular2/core';
 import {Router, RouteParams} from 'angular2/router';
 import {IssuesService} from '../../services/issuesService';
 import {BoardData} from '../../data/board/boardData';
@@ -20,7 +20,7 @@ import {BoardHeaderEntry, BoardHeaders} from "../../data/board/header";
     styleUrls: ['app/components/board/board.css'],
     directives: [IssueComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
 })
-export class BoardComponent implements OnDestroy {
+export class BoardComponent implements OnDestroy, OnInit {
     boardId:number;
 
     private boardHeight; //board + headers
@@ -34,7 +34,13 @@ export class BoardComponent implements OnDestroy {
     private _currentTimeout;
     private _destroyed:boolean = false;
 
-    constructor(private _issuesService:IssuesService, private _boardData:BoardData, private _progressError:ProgressErrorService, routeParams:RouteParams) {
+    private boardLeftOffset:number = 0;
+
+    constructor(private _elementRef:ElementRef,
+                private _issuesService:IssuesService,
+                private _boardData:BoardData,
+                private _progressError:ProgressErrorService, routeParams:RouteParams) {
+
         let boardId:string = routeParams.get('board');
         if (boardId) {
             this.boardId = Number(boardId);
@@ -54,7 +60,11 @@ export class BoardComponent implements OnDestroy {
             }
         );
         this.setWindowSize();
+    }
 
+    ngOnInit():any {
+
+        return null;
     }
 
     ngOnDestroy():any {
@@ -212,5 +222,9 @@ export class BoardComponent implements OnDestroy {
                 return "violet";
         }
 
+    }
+
+    scrollOuterX(event:Event) {
+        this.boardLeftOffset = event.srcElement.scrollLeft;
     }
 }

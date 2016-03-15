@@ -1,5 +1,7 @@
 <tr>
-    <td class="swimlane-header" [attr.colspan]="boardStates.length" (click)="toggleSwimlane(swimlaneIndex)" title="{{swimlane.name}}">{{swimlane.name}}</td>
+    <td class="swimlane-header" [attr.colspan]="boardStates.length" (click)="toggleSwimlane(swimlaneIndex)" title="{{swimlane.name}}">
+        <div class="swimlane-name" [ngStyle]="{'left':15 + boardLeftOffset}">{{swimlane.name}}</div>
+    </td>
 </tr>
 <tr [hidden]="!swimlane.visible">
     <td *ngFor="#state of boardStates ; #stateIndex=index" title="State: {{state}}" id="column.{{swimlaneIndex}}.{{stateIndex}}"

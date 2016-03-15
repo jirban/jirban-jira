@@ -9,7 +9,7 @@ import {SwimlaneData} from "../../../data/board/issueTable";
  * as several rows
  */
 @Component({
-    inputs: ['swimlaneIndex', 'boardData', 'swimlane'],
+    inputs: ['swimlaneIndex', 'boardData', 'swimlane', 'boardLeftOffset'],
     outputs: ['issueContextMenu'],
     selector: 'swimlane-entry'
 })
@@ -22,6 +22,7 @@ export class SwimlaneEntryComponent {
     public swimlane : SwimlaneData;
     public boardData : BoardData;
     public swimlaneIndex : number;
+    public boardLeftOffset:number;
     private issueContextMenu:EventEmitter<any> = new EventEmitter();
 
     constructor() {

@@ -1,4 +1,7 @@
-<div id="board-outer" *ngIf="boardData.initialized" (window:resize)="onResize($event)" [style.width]="width" (click)="hideMenus()">
+<div id="board-outer" *ngIf="boardData.initialized" (window:resize)="onResize($event)"
+     [style.width]="width"
+     (click)="hideMenus()"
+     (scroll)="scrollOuterX($event)">
     <div id="board-inner" [style.height]="boardHeight">
         <table class="board">
             <thead>
@@ -70,6 +73,7 @@
                             [boardData]="boardData"
                             [swimlaneIndex]="swimlaneIndex"
                             [swimlane]="swimlane"
+                            [boardLeftOffset]="boardLeftOffset"
                             [hidden]="swimlane.filtered"
                             (issueContextMenu)="showIssueContextMenu($event)"></swimlane-entry>
             </tbody>
