@@ -43,7 +43,6 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.JiraFacade;
-import org.jirban.jira.impl.Constants;
 
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.search.SearchException;

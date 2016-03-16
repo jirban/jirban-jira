@@ -296,7 +296,7 @@ public class BoardConfig {
         return boardStates.getStateNames();
     }
 
-    public int getBacklogSize() {
-        return boardStates.getBlacklogSize();
+    public boolean isBacklogState(int stateIndex) {
+        return boardStates.isBacklogState(stateIndex);
     }
 }

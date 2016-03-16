@@ -68,6 +68,11 @@ import com.atlassian.jira.issue.search.SearchException;
  */
 public class BoardChangeRegistryTest extends AbstractBoardTest {
 
+    private void setupInitialBoard(String cfgResource) throws Exception {
+        initializeMocks(cfgResource);
+        setupInitialBoard();
+    }
+
     @Before
     public void setupInitialBoard() throws SearchException {
         issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
@@ -739,9 +744,44 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoStateChanges(1, 2);
     }
 
+    @Test
+    public void testChangesToBackLogIssueWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-1", null, "high", null, null, false, null, false, null, false);
+        boardManager.handleEvent(event);
+        checkViewId(1);
+
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, Priority.HIGH, null, null, null, null));
+
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+    }
+
+    @Test
+    public void testCreateIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-B");
+        boardManager.handleEvent(create);
+        checkViewId(1);
+
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-B"));
+
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+    }
+
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkNoIssueChanges(changesNode);
+    }
 
+    private void checkNoIssueChanges(ModelNode changesNode) throws SearchException {
         Assert.assertFalse(changesNode.hasDefined(CHANGES, ISSUES));
     }
 
@@ -776,7 +816,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void checkAdds(int fromView, int expectedView, IssueData...expectedIssues) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkAdds(changesNode, expectedIssues);
+    }
 
+    private void checkAdds(ModelNode changesNode, IssueData...expectedIssues) throws SearchException {
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedIssues.length == 0) {
             Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined(NEW));
@@ -801,6 +844,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void checkUpdates(int fromView, int expectedView, IssueData...expectedIssues) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkUpdates(changesNode, expectedIssues);
+    }
+
+    private void checkUpdates(ModelNode changesNode, IssueData...expectedIssues) throws SearchException {
 
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedIssues.length == 0) {

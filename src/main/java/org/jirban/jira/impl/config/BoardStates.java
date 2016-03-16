@@ -181,7 +181,7 @@ public class BoardStates {
         return backlogStates;
     }
 
-    public int getBlacklogSize() {
-        return backlogStates.size();
+    public boolean isBacklogState(int boardStateIndex) {
+        return boardStateIndex < backlogStates.size();
     }
 }

@@ -146,7 +146,7 @@ public class Board {
         this.allIssues.forEach((code, issue) -> {
             boolean relevant = true;
             if (!backlog) {
-                relevant = !getBoardProject(issue.getProjectCode()).isBlackLogState(issue.getState());
+                relevant = !getBoardProject(issue.getProjectCode()).isBacklogState(issue.getState());
             }
             if (relevant) {
                 allIssues.get(code).set(issue.getModelNodeForFullRefresh(this));
@@ -557,6 +557,12 @@ public class Board {
                         final String state = issue.getState();
                         changeBuilder.addStateRecalculation(state);
                     }
+                }
+
+                if (newIssue != null) {
+                    String state = newIssue.getState();
+                    boolean backlogState = projectUpdater.getConfig().isBacklogState(state);
+                    changeBuilder.setBacklogState(backlogState);
                 }
                 changeBuilder.buildAndRegister();
 

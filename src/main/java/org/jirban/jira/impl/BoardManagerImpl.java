@@ -195,7 +195,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
         final ModelNode changes;
         try {
-            changes = boardChangeRegistry.getChangesSince(viewId);
+            changes = boardChangeRegistry.getChangesSince(backlog, viewId);
         } catch (BoardChangeRegistry.FullRefreshNeededException e) {
             return getBoardJson(user, backlog, id);
         }

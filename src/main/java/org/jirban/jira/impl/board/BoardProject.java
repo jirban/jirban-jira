@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
@@ -77,12 +78,14 @@ public class BoardProject {
 
     void serialize(ModelNode parent, boolean backlog) {
         ModelNode projectIssues = parent.get(ISSUES);
+
         for (int i = 0 ; i < issueKeysByState.size() ; i++) {
 
             ModelNode issuesForStateNode = new ModelNode();
             issuesForStateNode.setEmptyList();
 
-            if (backlog || i >= board.getConfig().getBacklogSize()) {
+
+            if (backlog || !board.getConfig().isBacklogState(i)) {
                 List<String> issuesForState = issueKeysByState.get(i);
                 for (String key: issuesForState) {
                     issuesForStateNode.add(key);
@@ -122,8 +125,8 @@ public class BoardProject {
         return new Updater(searchService, boardUpdater, this, boardOwner);
     }
 
-    public boolean isBlackLogState(String state) {
-        return projectConfig.isBlackLogState(state);
+    public boolean isBacklogState(String state) {
+        return projectConfig.isBacklogState(state);
     }
 
     static class Accessor {

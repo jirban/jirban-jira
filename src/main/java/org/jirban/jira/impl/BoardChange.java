@@ -60,10 +60,13 @@ public class BoardChange {
     //If the state was changed
     private final String changedState;
 
+    //Whether or not the issue state is a backlog state (may be null in case the change doesn't do anything to an issue, just the
+    private final Boolean backlogState;
+
 
     private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
-                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState) {
+                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState, Boolean backlogState) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
@@ -74,6 +77,7 @@ public class BoardChange {
         this.addedBlacklistIssue = addedBlacklistIssue;
         this.deletedBlacklistIssue = deletedBlacklistIssue;
         this.changedState = changedState;
+        this.backlogState = backlogState;
     }
 
     long getTime() {
@@ -124,6 +128,10 @@ public class BoardChange {
         return changedState;
     }
 
+    public Boolean getBacklogState() {
+        return backlogState;
+    }
+
 
     public static class Builder {
         private final BoardChangeRegistry registry;
@@ -145,6 +153,7 @@ public class BoardChange {
 
         //If the state was recalculated
         private String changedState;
+        private Boolean backlogState;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -182,8 +191,12 @@ public class BoardChange {
 
         public void buildAndRegister() {
             BoardChange change = new BoardChange(view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState);
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, backlogState);
             registry.registerChange(change);
+        }
+
+        public void setBacklogState(boolean backlogState) {
+            this.backlogState = backlogState;
         }
     }
 }

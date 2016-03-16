@@ -21,6 +21,9 @@
  */
 package org.jirban.jira.impl.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,11 +37,16 @@ import org.jirban.jira.impl.Constants;
  */
 public abstract class ProjectConfig {
     protected final String code;
+    protected final List<String> statesList;
     protected final Map<String, Integer> states;
 
     public ProjectConfig(final String code, final Map<String, Integer> states) {
         this.code = code;
         this.states = states;
+
+        List<String> statesList = new ArrayList<>(states.size());
+        states.keySet().forEach(s -> statesList.add(s));
+        this.statesList = Collections.unmodifiableList(statesList);
     }
 
     public String getCode() {
@@ -55,6 +63,10 @@ public abstract class ProjectConfig {
 
     public Integer getStateIndex(String stateName) {
         return states.get(stateName);
+    }
+
+    public String getStateName(int index) {
+        return statesList.get(index);
     }
 
     private ModelNode getModelNodeForCode(ModelNode parent) {

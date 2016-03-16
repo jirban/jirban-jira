@@ -115,7 +115,7 @@ public class BoardChangeRegistry {
     }
 
 
-    ModelNode getChangesSince(int sinceView) throws FullRefreshNeededException {
+    ModelNode getChangesSince(boolean backlog, int sinceView) throws FullRefreshNeededException {
         //Get a snapshot of the changes
         if (sinceView > endView) {
             //Our board was probably reset since we last connected, so we need to send a full refresh instead
@@ -128,7 +128,7 @@ public class BoardChangeRegistry {
 
         final Board board = this.board;
         final List<BoardChange> changes = getChangesListCleaningUpIfNeeded();
-        final ChangeSetCollector collector = new ChangeSetCollector(board.getCurrentView());
+        final ChangeSetCollector collector = new ChangeSetCollector(backlog, board.getCurrentView());
         for (BoardChange change : changes) {
             if (change.getView() <= sinceView) {
                 continue;
@@ -179,12 +179,14 @@ public class BoardChangeRegistry {
     }
 
     private static class ChangeSetCollector {
+        private final boolean backlog;
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
         private final BlacklistChange blacklistChange = new BlacklistChange();
         private final Set<String> issuesWithStateChanges = new HashSet<>();
 
-        public ChangeSetCollector(int endView) {
+        public ChangeSetCollector(boolean backlog, int endView) {
+            this.backlog = backlog;
             this.view = endView;
         }
 
@@ -323,13 +325,17 @@ public class BoardChangeRegistry {
                 Assignee newAssignee = null;
                 Map<String, Component> newComponentsForIssue = null;
                 if (change.type == CREATE) {
-                    newIssues.add(change);
-                    newAssignee = change.newAssignee;
-                    newComponentsForIssue = change.newComponents;
+                    if (backlog || !change.backlogEndState) {
+                        newIssues.add(change);
+                        newAssignee = change.newAssignee;
+                        newComponentsForIssue = change.newComponents;
+                    }
                 } else if (change.type == UPDATE) {
-                    updatedIssues.add(change);
-                    newAssignee = change.newAssignee;
-                    newComponentsForIssue = change.newComponents;
+                    if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
+                        updatedIssues.add(change);
+                        newAssignee = change.newAssignee;
+                        newComponentsForIssue = change.newComponents;
+                    }
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
                 }
@@ -366,6 +372,8 @@ public class BoardChangeRegistry {
         private Set<String> components;
         private boolean clearedComponents;
         private String state;
+        private Boolean backlogStartState;
+        private Boolean backlogEndState;
 
         private Assignee newAssignee;
         private Map<String, Component> newComponents;
@@ -376,14 +384,15 @@ public class BoardChangeRegistry {
         //view should be sent to the client.
         private String changedState;
 
-        public IssueChange(String projectCode, String issueKey) {
+        public IssueChange(String projectCode, String issueKey, Boolean backlogState) {
             this.projectCode = projectCode;
             this.issueKey = issueKey;
+            this.backlogStartState = backlogState;
         }
 
         static IssueChange create(BoardChange boardChange) {
             JirbanIssueEvent event = boardChange.getEvent();
-            IssueChange change = new IssueChange(event.getProjectCode(), event.getIssueKey());
+            IssueChange change = new IssueChange(event.getProjectCode(), event.getIssueKey(), boardChange.getBacklogState());
             change.merge(boardChange);
 
             return change;
@@ -404,6 +413,9 @@ public class BoardChangeRegistry {
                     if (boardChange.getChangedState() != null) {
                         changedState = boardChange.getChangedState();
                     }
+                    if (boardChange.getBacklogState() != null) {
+                        backlogEndState = boardChange.getBacklogState();
+                    }
                     break;
                 case DELETE:
                     //No need to do anything, we will not serialize this issue's details
@@ -412,8 +424,6 @@ public class BoardChangeRegistry {
                     break;
                 default:
             }
-
-
         }
 
         void mergeFields(JirbanIssueEvent event, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
