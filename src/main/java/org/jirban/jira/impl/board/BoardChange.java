@@ -19,13 +19,11 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jirban.jira.impl;
+package org.jirban.jira.impl.board;
 
-import java.util.List;
 import java.util.Set;
 
-import org.jirban.jira.impl.board.Assignee;
-import org.jirban.jira.impl.board.Component;
+import org.jirban.jira.impl.JirbanIssueEvent;
 
 /**
  * Contains the details of a change to the board, which the clients will apply when polling for changes since their
@@ -62,11 +60,13 @@ public class BoardChange {
 
     //Whether or not the issue state is a backlog state (may be null in case the change doesn't do anything to an issue, just the
     private final Boolean backlogState;
+    private final Boolean fromBacklogState;
 
 
     private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
-                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState, Boolean backlogState) {
+                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState,
+                        Boolean fromBacklogState, Boolean backlogState) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
@@ -77,6 +77,7 @@ public class BoardChange {
         this.addedBlacklistIssue = addedBlacklistIssue;
         this.deletedBlacklistIssue = deletedBlacklistIssue;
         this.changedState = changedState;
+        this.fromBacklogState = fromBacklogState;
         this.backlogState = backlogState;
     }
 
@@ -132,6 +133,10 @@ public class BoardChange {
         return backlogState;
     }
 
+    public Boolean getFromBacklogState() {
+        return fromBacklogState;
+    }
+
 
     public static class Builder {
         private final BoardChangeRegistry registry;
@@ -153,6 +158,7 @@ public class BoardChange {
 
         //If the state was recalculated
         private String changedState;
+        private Boolean fromBacklogState;
         private Boolean backlogState;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
@@ -189,14 +195,20 @@ public class BoardChange {
             return this;
         }
 
-        public void buildAndRegister() {
-            BoardChange change = new BoardChange(view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, backlogState);
-            registry.registerChange(change);
+        public Builder setFromBacklogState(boolean fromBacklogState) {
+            this.fromBacklogState = fromBacklogState;
+            return this;
         }
 
-        public void setBacklogState(boolean backlogState) {
+        public Builder setBacklogState(boolean backlogState) {
             this.backlogState = backlogState;
+            return this;
+        }
+
+        public void buildAndRegister() {
+            BoardChange change = new BoardChange(view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, fromBacklogState, backlogState);
+            registry.registerChange(change);
         }
     }
 }

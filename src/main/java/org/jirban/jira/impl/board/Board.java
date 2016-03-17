@@ -42,8 +42,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.impl.BoardChange;
-import org.jirban.jira.impl.BoardChangeRegistry;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
@@ -205,6 +203,11 @@ public class Board {
 
     public int getCurrentView() {
         return currentView;
+    }
+
+    BoardChangeRegistry.IssueChange createCreateIssueChange(BoardChangeRegistry registry, String issueKey) {
+        Issue issue = allIssues.get(issueKey);
+        return issue.convertToCreateIssueChange(registry, getConfig());
     }
 
     static abstract class Accessor {
@@ -503,16 +506,18 @@ public class Board {
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
 
             final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner);
+            final Issue existingIssue;
             final Issue newIssue;
             if (create) {
+                existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents, evtDetail.getState());
             } else {
-                Issue existing = board.allIssues.get(event.getIssueKey());
-                if (existing == null) {
+                existingIssue = board.allIssues.get(event.getIssueKey());
+                if (existingIssue == null) {
                     throw new IllegalArgumentException("Can't find issue to update " + event.getIssueKey() + " in board " + board.boardConfig.getId());
                 }
-                newIssue = projectUpdater.updateIssue(existing, evtDetail.getIssueType(),
+                newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                         issueComponents,
                         evtDetail.isRankOrStateChanged(), evtDetail.getState());
@@ -559,16 +564,22 @@ public class Board {
                     }
                 }
 
+                if (existingIssue != null) {
+                    changeBuilder.setFromBacklogState(isBacklogState(projectUpdater, existingIssue));
+                }
                 if (newIssue != null) {
-                    String state = newIssue.getState();
-                    boolean backlogState = projectUpdater.getConfig().isBacklogState(state);
-                    changeBuilder.setBacklogState(backlogState);
+                    changeBuilder.setBacklogState(isBacklogState(projectUpdater, newIssue));
                 }
                 changeBuilder.buildAndRegister();
 
                 return boardCopy;
             }
             return null;
+        }
+
+        private boolean isBacklogState(BoardProject.Updater projectUpdater, Issue issue) {
+            String state = issue.getState();
+            return projectUpdater.getConfig().isBacklogState(state);
         }
 
         @Override

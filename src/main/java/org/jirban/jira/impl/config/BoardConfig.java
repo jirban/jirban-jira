@@ -33,6 +33,7 @@ import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,8 +71,10 @@ public class BoardConfig {
     private final Map<String, LinkedProjectConfig> linkedProjects;
     private final Map<String, NameAndUrl> priorities;
     private final Map<String, Integer> priorityIndex;
+    private final List<String> priorityNames;
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
+    private final List<String> issueTypeNames;
 
     private BoardConfig(int id, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
@@ -87,10 +90,20 @@ public class BoardConfig {
         this.boardStates = boardStates;
         this.boardProjects = boardProjects;
         this.linkedProjects = linkedProjects;
+
         this.priorities = priorities;
-        this.priorityIndex = getIndexMap(priorities);
+        Map<String, Integer> priorityIndex = new HashMap<>();
+        List<String> priorityNames = new ArrayList<>();
+        getIndexMap(priorities, priorityIndex, priorityNames);
+        this.priorityIndex = Collections.unmodifiableMap(priorityIndex);
+        this.priorityNames = Collections.unmodifiableList(priorityNames);
+
         this.issueTypes = issueTypes;
-        this.issueTypeIndex = getIndexMap(issueTypes);
+        Map<String, Integer> issueTypeIndex = new HashMap<>();
+        List<String> issueTypeNames = new ArrayList<>();
+        getIndexMap(issueTypes, issueTypeIndex, issueTypeNames);
+        this.issueTypeIndex = Collections.unmodifiableMap(issueTypeIndex);
+        this.issueTypeNames = Collections.unmodifiableList(issueTypeNames);
     }
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id,
@@ -180,12 +193,11 @@ public class BoardConfig {
         return priorityMap;
     }
 
-    private Map<String, Integer> getIndexMap(Map<String, NameAndUrl> original) {
-        Map<String, Integer> result = new HashMap<>();
+    private void getIndexMap(Map<String, NameAndUrl> original, Map<String, Integer> index, List<String> list) {
         for (String key : original.keySet()) {
-            result.put(key, result.size());
+            index.put(key, index.size());
+            list.add(key);
         }
-        return Collections.unmodifiableMap(result);
     }
 
     public String getOwningUserKey() {
@@ -298,5 +310,13 @@ public class BoardConfig {
 
     public boolean isBacklogState(int stateIndex) {
         return boardStates.isBacklogState(stateIndex);
+    }
+
+    public String getIssueTypeName(int issueTypeIndex) {
+        return issueTypeNames.get(issueTypeIndex);
+    }
+
+    public String getPriorityName(int priorityIndex) {
+        return priorityNames.get(priorityIndex);
     }
 }

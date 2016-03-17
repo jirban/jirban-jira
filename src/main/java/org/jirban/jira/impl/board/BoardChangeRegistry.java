@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jirban.jira.impl;
+package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ASSIGNEE;
 import static org.jirban.jira.impl.Constants.ASSIGNEES;
@@ -53,13 +53,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.JirbanIssueEvent.Type;
-import org.jirban.jira.impl.board.Assignee;
-import org.jirban.jira.impl.board.Board;
-import org.jirban.jira.impl.board.BoardProject;
-import org.jirban.jira.impl.board.Component;
 
-import com.atlassian.jira.project.Project;
 
 /**
  * Since Jira 6.4.x does not support web sockets, this maintains a queue of changes. A client connects and gets the full
@@ -87,7 +84,7 @@ public class BoardChangeRegistry {
     private volatile int startView;
     private volatile int endView;
 
-    BoardChangeRegistry(Board board) {
+    public BoardChangeRegistry(Board board) {
         this.board = board;
         this.startView = board.getCurrentView();
         this.endView = startView;
@@ -110,12 +107,12 @@ public class BoardChangeRegistry {
     }
 
     //This gets called by the board manager after the board has been built
-    void setBoard(Board board) {
+    public void setBoard(Board board) {
         this.board = board;
     }
 
 
-    ModelNode getChangesSince(boolean backlog, int sinceView) throws FullRefreshNeededException {
+    public ModelNode getChangesSince(boolean backlog, int sinceView) throws FullRefreshNeededException {
         //Get a snapshot of the changes
         if (sinceView > endView) {
             //Our board was probably reset since we last connected, so we need to send a full refresh instead
@@ -178,7 +175,24 @@ public class BoardChangeRegistry {
         nextCleanup = System.currentTimeMillis() + CLEANUP_TICK_MS;
     }
 
-    private static class ChangeSetCollector {
+    //Callback for the BoardIssue to convert itself to an IssueChange
+    IssueChange createCreateIssueChange(Issue issue, Assignee assignee, String issueType, String priority, Set<Component> components) {
+        IssueChange change = new IssueChange(issue.getProjectCode(), issue.getKey(), null);
+        change.type = CREATE;
+        change.state = issue.getState();
+        change.summary = issue.getSummary();
+        change.assignee = assignee.getKey();
+        change.issueType = issueType;
+        change.priority = priority;
+
+        change.components = new HashSet<>();
+        for (Component component : components) {
+            change.components.add(component.getName());
+        }
+        return change;
+    }
+
+    private class ChangeSetCollector {
         private final boolean backlog;
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
@@ -227,15 +241,17 @@ public class BoardChangeRegistry {
             for (String issueKey : issuesWithStateChanges) {
                 IssueChange change = issueChanges.get(issueKey);
                 if (change != null) {
-                    String changedState = change.changedState;
+                    if (backlog || !change.backlogEndState) {
+                        String changedState = change.changedState;
 
-                    Set<String> stateChangesByState = stateChangesByProject.computeIfAbsent(change.projectCode, pc -> new HashSet<>());
-                    Map<String, Integer> viewsByState = stateChangeViewsByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
+                        Set<String> stateChangesByState = stateChangesByProject.computeIfAbsent(change.projectCode, pc -> new HashSet<>());
+                        Map<String, Integer> viewsByState = stateChangeViewsByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
 
-                    Integer maxView = viewsByState.get(changedState);
-                    if (maxView == null || maxView < change.view) {
-                        viewsByState.put(changedState, change.view);
-                        stateChangesByState.add(changedState);
+                        Integer maxView = viewsByState.get(changedState);
+                        if (maxView == null || maxView < change.view) {
+                            viewsByState.put(changedState, change.view);
+                            stateChangesByState.add(changedState);
+                        }
                     }
                 }
             }
@@ -252,7 +268,7 @@ public class BoardChangeRegistry {
             Set<IssueChange> deletedIssues = new HashSet<>();
             Map<String, Assignee> newAssignees = new HashMap<>();
             Map<String, Component> newComponents = new HashMap<>();
-            sortIssues(newIssues, updatedIssues, deletedIssues, newAssignees, newComponents);
+            sortIssues(board, newIssues, updatedIssues, deletedIssues, newAssignees, newComponents);
 
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
@@ -318,7 +334,7 @@ public class BoardChangeRegistry {
             }
         }
 
-        private void sortIssues(Set<IssueChange> newIssues, Set<IssueChange> updatedIssues,
+        private void sortIssues(Board board, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues,
                                 Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees,
                                 Map<String, Component> newComponents) {
             for (IssueChange change : issueChanges.values()) {
@@ -333,9 +349,25 @@ public class BoardChangeRegistry {
                 } else if (change.type == UPDATE) {
                     if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
                         updatedIssues.add(change);
-                        newAssignee = change.newAssignee;
-                        newComponentsForIssue = change.newComponents;
+                    } else if (change.backlogStartState && !change.backlogEndState) {
+                        //This is being moved from the backlog to the non-backlog with the backlog hidden. Treat this
+                        //as an add for the client. We need to create a new IssueChange containing all the relevant data
+                        //since an update only contains the changed data
+                        IssueChange createWithAllData = board.createCreateIssueChange(BoardChangeRegistry.this, change.issueKey);
+                        newIssues.add(createWithAllData);
+                    } else if (!change.backlogStartState && change.backlogEndState) {
+                        //This is being moved from the non-backlog to the backlog with the backlog hidden. Treat this
+                        //as a delete for the client.
+                        IssueChange delete = new IssueChange(change.projectCode, change.issueKey, null);
+                        delete.type = DELETE;
+                        delete.type = DELETE;
+                        deletedIssues.add(delete);
                     }
+                    //Always add these even if it is for backlog and we are not viewing the backlog, since
+                    //another later issue might use the assignee or components and we are not tracking what brings
+                    //those in at the moment for simplicity
+                    newAssignee = change.newAssignee;
+                    newComponentsForIssue = change.newComponents;
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
                 }
@@ -357,8 +389,8 @@ public class BoardChangeRegistry {
         }
     }
 
-    //Will all be called in one thread by ChangeSetCollector, so
-    private static class IssueChange {
+    //Will all be called in one thread by ChangeSetCollector, so no need for thread safety
+    static class IssueChange {
         private final String projectCode;
         private final String issueKey;
         private int view;
@@ -384,7 +416,7 @@ public class BoardChangeRegistry {
         //view should be sent to the client.
         private String changedState;
 
-        public IssueChange(String projectCode, String issueKey, Boolean backlogState) {
+        private IssueChange(String projectCode, String issueKey, Boolean backlogState) {
             this.projectCode = projectCode;
             this.issueKey = issueKey;
             this.backlogStartState = backlogState;
@@ -392,9 +424,16 @@ public class BoardChangeRegistry {
 
         static IssueChange create(BoardChange boardChange) {
             JirbanIssueEvent event = boardChange.getEvent();
-            IssueChange change = new IssueChange(event.getProjectCode(), event.getIssueKey(), boardChange.getBacklogState());
+            IssueChange change = new IssueChange(event.getProjectCode(), event.getIssueKey(),  boardChange.getFromBacklogState());
             change.merge(boardChange);
 
+            return change;
+        }
+
+        static IssueChange create(Board board, Issue issue) {
+            IssueChange change = new IssueChange(issue.getProjectCode(), issue.getKey(), false);
+            //TODO
+            //change.issueType = board.getIssueTypeForIndex(issue.);
             return change;
         }
 
@@ -628,16 +667,6 @@ public class BoardChangeRegistry {
             }
 
             return modelNode;
-        }
-    }
-
-    private static class StateChange {
-        final String state;
-        final List<String> issues;
-
-        public StateChange(String state, List<String> issues) {
-            this.state = state;
-            this.issues = issues;
         }
     }
 

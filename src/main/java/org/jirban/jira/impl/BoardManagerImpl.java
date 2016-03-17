@@ -37,6 +37,7 @@ import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.board.Board;
+import org.jirban.jira.impl.board.BoardChangeRegistry;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;

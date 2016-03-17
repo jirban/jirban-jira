@@ -37,6 +37,7 @@ import java.util.TreeSet;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 import org.jirban.jira.impl.config.ProjectConfig;
@@ -65,25 +66,26 @@ public abstract class Issue {
         this.summary = summary;
     }
 
-    String getKey() {
+    public String getKey() {
         return key;
     }
 
-    String getState() {
+    public String getState() {
         return state;
     }
 
-    String getSummary() {
+    public String getSummary() {
         return summary;
     }
 
-    String getProjectCode() {
+    public String getProjectCode() {
         return project.getCode();
     }
 
     Integer getStateIndex() {
         return stateIndex;
     }
+
     boolean hasLinkedIssues() {
         return false;
     }
@@ -104,19 +106,6 @@ public abstract class Issue {
         issueNode.get(SUMMARY).set(summary);
         return issueNode;
     }
-
-    boolean isDataSame(Issue that) {
-        if (that == null) {
-            return false;
-        }
-        //I don't want to do a standard equals() since I am not comparing all the data
-        if (!key.equals(that.key)) return false;
-        if (!state.equals(that.state)) return false;
-        if (!summary.equals(that.summary)) return false;
-
-        return true;
-    }
-
 
     /**
      * Returns a builder for the board issues during a full load of the board. Linked issues are handled internally.
@@ -227,6 +216,8 @@ public abstract class Issue {
         return null;
     }
 
+    abstract BoardChangeRegistry.IssueChange convertToCreateIssueChange(BoardChangeRegistry registry, BoardConfig boardConfig);
+
     private static class BoardIssue extends Issue {
         private final Assignee assignee;
         private final Set<Component> components;
@@ -256,29 +247,6 @@ public abstract class Issue {
         }
 
         @Override
-        boolean isDataSame(Issue that) {
-            boolean same = super.isDataSame(that);
-            if (!same) {
-                return false;
-            }
-            if (that instanceof BoardIssue == false) {
-                return false;
-            }
-            BoardIssue thatBi = (BoardIssue)that;
-            if (!assignee.isDataSame(thatBi.assignee)) return false;
-            if (!priorityIndex.equals(thatBi.priorityIndex)) return false;
-            if (!issueTypeIndex.equals(thatBi.issueTypeIndex)) return false;
-            if (linkedIssues.size() != thatBi.linkedIssues.size()) {
-                for (int i = 0 ; i < linkedIssues.size() ; i++) {
-                    if (!linkedIssues.get(i).equals(thatBi.linkedIssues.get(i))) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        @Override
         ModelNode getModelNodeForFullRefresh(Board board) {
             BoardProject boardProject = board.getBoardProject(getProjectCode());
             ModelNode issueNode = super.getModelNodeForFullRefresh(board);
@@ -303,6 +271,13 @@ public abstract class Issue {
             }
             return issueNode;
         }
+
+        @Override
+        BoardChangeRegistry.IssueChange convertToCreateIssueChange(BoardChangeRegistry registry, BoardConfig boardConfig) {
+            String issueType = boardConfig.getIssueTypeName(issueTypeIndex);
+            String priority = boardConfig.getPriorityName(priorityIndex);
+            return registry.createCreateIssueChange(this, assignee, issueType, priority, components);
+        }
     }
 
     private static class LinkedIssue extends Issue {
@@ -310,6 +285,10 @@ public abstract class Issue {
             super(project, key, state, stateIndex, summary);
         }
 
+        @Override
+        BoardChangeRegistry.IssueChange convertToCreateIssueChange(BoardChangeRegistry registry, BoardConfig boardConfig) {
+            throw new IllegalStateException("Not for linked issues");
+        }
     }
 
     /**

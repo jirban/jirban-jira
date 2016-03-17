@@ -631,7 +631,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoStateChanges(1, 2);
     }
 
-
     @Test
     public void testBlacklistBadCreatedIssueType() throws SearchException {
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", "BadType", Priority.HIGH.name, "Eight", null, null, "TDP-C");
@@ -753,11 +752,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         boardManager.handleEvent(event);
         checkViewId(1);
 
+        //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, Priority.HIGH, null, null, null, null));
+        checkDeletes(backlogChanges);
+        checkNoStateChanges(backlogChanges);
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
 
+        //Backlog not visible
         ModelNode nonBacklogChanges = getChangesJson(0, 1);
         checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(backlogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
     }
 
     @Test
@@ -765,16 +776,151 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-B");
+        //Do a create in the backlog
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-A");
+        boardManager.handleEvent(event);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-A"));
+        checkUpdates(backlogChanges);
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog not visible
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+    }
+
+    @Test
+    public void testMoveIssueFromBacklogToBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-B", false);
         boardManager.handleEvent(create);
         checkViewId(1);
 
+        //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
-        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-B"));
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
 
+        //Backlog not visible
+        //An issue moved from the backlog to the non-backlog will appear as an add when the backlog is hidden
         ModelNode nonBacklogChanges = getChangesJson(0, 1);
         checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
     }
+
+    @Test
+    public void testMoveIssueFromBacklogToNonBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-C", false);
+        boardManager.handleEvent(create);
+        checkViewId(1);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-2", null, null, null, null, null, "TDP-C"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-C", "TDP-2", "TDP-3", "TDP-7"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog not visible
+        //An issue moved from the backlog to the non-backlog will appear as an add when the backlog is hidden
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkAdds(nonBacklogChanges, new IssueData("TDP-2", IssueType.TASK, Priority.HIGH, "Two", "kabir", new String[]{"C2"}, "TDP-C"));
+        checkDeletes(nonBacklogChanges);
+        checkUpdates(nonBacklogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-C", "TDP-2", "TDP-3", "TDP-7"));
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+    }
+
+    @Test
+    public void testMoveIssueFromNonBacklogToBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-B", false);
+        boardManager.handleEvent(create);
+        checkViewId(1);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-B"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-2", "TDP-3", "TDP-6"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog not visible
+        //An issue moved from the non-backlog to the backlog will appear as a delete when the backlog is hidden
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkAdds(nonBacklogChanges);
+        checkDeletes(0, 1, "TDP-3");
+        checkUpdates(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+    }
+
+    @Test
+    public void testMoveIssueFromNonBacklogToNonBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        boardManager.handleEvent(create);
+        checkViewId(1);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-D"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-3", "TDP-4"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog not visible
+        //An issue moved from the non-backlog to the non-backlog will behave normally
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-D"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-3", "TDP-4"));
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+    }
+
 
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
@@ -787,20 +933,28 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void checkNoBlacklistChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkNoBlacklistChanges(changesNode);
+    }
 
+    private void checkNoBlacklistChanges(ModelNode changesNode) throws SearchException {
         Assert.assertFalse(changesNode.hasDefined(CHANGES, BLACKLIST));
     }
 
     private void checkNoStateChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkNoStateChanges(changesNode);
+    }
 
-        Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+    private void checkNoStateChanges(ModelNode changesNode) throws SearchException {
         Assert.assertFalse(changesNode.hasDefined(CHANGES, STATES));
     }
 
     private void checkDeletes(int fromView, int expectedView, String...expectedKeys) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkDeletes(changesNode, expectedKeys);
+    }
 
+    private void checkDeletes(ModelNode changesNode, String...expectedKeys) throws SearchException {
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedKeys.length == 0) {
             Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined(DELETE));
@@ -886,7 +1040,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void checkAssignees(int fromView, int expectedView, String...expectedAssignees) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkAssignees(changesNode, expectedAssignees);
+    }
 
+    private void checkAssignees(ModelNode changesNode, String...expectedAssignees) throws SearchException {
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedAssignees.length == 0) {
             Assert.assertFalse(changesNode.get(CHANGES).hasDefined(ASSIGNEES));
@@ -908,7 +1065,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void checkComponents(int fromView, int expectedView, String...expectedComponents) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkComponents(changesNode, expectedComponents);
+    }
 
+    private void checkComponents(ModelNode changesNode, String...expectedComponents) throws SearchException {
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedComponents.length == 0) {
             Assert.assertFalse(changesNode.get(CHANGES).hasDefined(COMPONENTS));
@@ -960,13 +1120,17 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     private void checkStateChanges(int fromView, int expectedView, StateChangeData... expectedChanges) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkStateChanges(changesNode, expectedChanges);
+    }
+
+    private void checkStateChanges(ModelNode changesNode, StateChangeData... expectedChanges) throws SearchException {
         Map<String, Map<String, List<String>>> expected = new HashMap<>();
         for (StateChangeData change : expectedChanges) {
             Map<String, List<String>> expectedForProject = expected.computeIfAbsent(change.projectCode, p -> new HashMap<>());
             expectedForProject.put(change.state, Arrays.asList(change.issues));
         }
 
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
         ModelNode statesNode = changesNode.get(CHANGES, STATES);
         Assert.assertEquals(expected.size(), statesNode.keys().size());
 
