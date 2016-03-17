@@ -343,9 +343,12 @@ public class BoardChangeRegistry {
                 if (change.type == CREATE) {
                     if (backlog || !change.backlogEndState) {
                         newIssues.add(change);
-                        newAssignee = change.newAssignee;
-                        newComponentsForIssue = change.newComponents;
                     }
+                    //Always add these even if it is for backlog and we are not viewing the backlog, since
+                    //another later issue might use the assignee or components and we are not tracking what brings
+                    //those in at the moment for simplicity
+                    newAssignee = change.newAssignee;
+                    newComponentsForIssue = change.newComponents;
                 } else if (change.type == UPDATE) {
                     if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
                         updatedIssues.add(change);

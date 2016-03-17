@@ -921,6 +921,142 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkComponents(nonBacklogChanges);
     }
 
+    @Test
+    public void testBlacklistWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-2", "Bad Type", "Bad Priority", null, null, false, null, false, null, false);
+        boardManager.handleEvent(create);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkNoIssueChanges(backlogChanges);
+        checkBlacklist(backlogChanges, null, new String[]{"Bad Type"}, new String[]{"Bad Priority"}, new String[]{"TDP-2"}, null);
+
+        //Backlog invisible
+        //Having something blacklisted is a configuration problem, so report this although this issue is in the backlog and not visible
+        ModelNode nonBacklogChanges = getChangesJson(0, 1, true);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkBlacklist(nonBacklogChanges, null, new String[]{"Bad Type"}, new String[]{"Bad Priority"}, new String[]{"TDP-2"}, null);
+    }
+
+    @Test
+    public void testNewAssigneesForNewIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "jason", null, "TDP-A");
+        boardManager.handleEvent(create);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "jason", null, "TDP-A"));
+        checkUpdates(backlogChanges);
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges, "jason");
+        checkComponents(backlogChanges);
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
+        //created using that assignee, and the server has no record of which clients have which assignee.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges, "jason");
+        checkComponents(nonBacklogChanges);
+    }
+
+    @Test
+    public void testNewAssigneesForUpdatedIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, "jason", false, null, false, "TDP-B", false);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, "jason", null, "TDP-B"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges, "jason");
+        checkComponents(backlogChanges);
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
+        //created using that assignee, and the server has no record of which clients have which assignee.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges, "jason");
+        checkComponents(nonBacklogChanges);
+    }
+
+    @Test
+    public void testNewComponentsForNewIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", new String[]{"C-X", "C-Y"}, "TDP-A");
+        boardManager.handleEvent(create);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", new String[]{"C-X", "C-Y"}, "TDP-A"));
+        checkUpdates(backlogChanges);
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new component. This is needed, since e.g. another visible issue might be
+        //created using that component, and the server has no record of which clients have which component.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
+    }
+
+    @Test
+    public void testNewComponentsForUpdatedIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, new String[]{"C-X", "C-Y"}, false, "TDP-B", false);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, new String[]{"C-X", "C-Y"}, "TDP-B"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new component. This is needed, since e.g. another visible issue might be
+        //created using that component, and the server has no record of which clients have which component.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
+    }
+
 
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
@@ -1097,7 +1233,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void checkBlacklist(int fromView, int expectedView, String[] states, String[] issueTypes, String[] priorities, String[] issueKeys, String[] removedIssueKeys) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkBlacklist(changesNode, states, issueTypes, priorities, issueKeys, removedIssueKeys);
+    }
 
+    private void checkBlacklist(ModelNode changesNode, String[] states, String[] issueTypes, String[] priorities, String[] issueKeys, String[] removedIssueKeys) throws SearchException {
         ModelNode blacklistNode = changesNode.get(CHANGES, BLACKLIST);
         checkEntries(blacklistNode, STATES, states);
         checkEntries(blacklistNode, ISSUE_TYPES, issueTypes);
