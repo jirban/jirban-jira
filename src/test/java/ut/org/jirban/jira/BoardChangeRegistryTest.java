@@ -295,8 +295,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(0, 3);
     }
 
-
-
     @Test
     public void testUpdateSameIssueNonAssigneesOrComponents() throws Exception {
         //Do a noop update
@@ -392,12 +390,12 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "brian", false, null, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(4);
-        checkAssignees(0, 4);
+        checkAssignees(0, 4, "jason");
         checkComponents(0, 4);
         checkUpdates(0, 4, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
-        checkAssignees(1, 4);
+        checkAssignees(1, 4, "jason");
         checkUpdates(1, 4, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
-        checkAssignees(2, 4);
+        checkAssignees(2, 4, "jason");
         checkUpdates(2, 4, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
         checkAssignees(3, 4);
         checkUpdates(3, 4, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
@@ -449,13 +447,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         boardManager.handleEvent(update);
         checkViewId(4);
         checkAssignees(0, 4);
-        checkComponents(0, 4);
+        checkComponents(0, 4, "C-10");
         checkUpdates(0, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkAssignees(1, 4);
-        checkComponents(1, 4);
+        checkComponents(1, 4, "C-10");
         checkUpdates(1, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkAssignees(2, 4);
-        checkComponents(2, 4);
+        checkComponents(2, 4, "C-10");
         checkUpdates(2, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkAssignees(3, 4);
         checkComponents(3, 4);
@@ -543,7 +541,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
         boardManager.handleEvent(delete);
         checkViewId(5);
-        checkAssignees(0, 5);
+        checkAssignees(0, 5, "jason");
         checkUpdates(0, 5,
                 new IssueData("TDP-7", null, null, "Seven-1", null, null, null),
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
@@ -551,18 +549,18 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoStateChanges(0, 5);
 
 
-        checkAssignees(1, 5);
+        checkAssignees(1, 5, "jason");
         checkUpdates(1, 5,
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
         checkAdds(1, 5);
         checkNoStateChanges(1, 5);
 
-        checkAssignees(2, 5);
+        checkAssignees(2, 5, "jason");
         checkUpdates(2, 5);
         checkAdds(2, 5);
         checkNoStateChanges(2, 5);
 
-        checkAssignees(3, 5);
+        checkAssignees(3, 5, "jason");
         checkUpdates(3, 5);
         checkAdds(3, 5);
         checkNoStateChanges(3, 5);
@@ -572,6 +570,34 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(4, 5);
         checkNoBlacklistChanges(4, 5);
         checkNoStateChanges(4, 5);
+    }
+
+    @Test
+    public void testCreateAndDeleteIssueWithNewAssigneesAndComponents() throws Exception {
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A");
+        boardManager.handleEvent(event);
+
+        checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A"));
+        checkUpdates(0, 1);
+        checkDeletes(0, 1);
+        checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
+        checkNoBlacklistChanges(0, 1);
+        checkAssignees(0, 1, "jason");
+        checkComponents(0, 1, new String[]{"C-X", "C-Y"});
+
+
+        event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
+        boardManager.handleEvent(event);
+
+        //Although we have deleted the issue introducing the new assignee and components, we should still send those
+        //down since they will exist on the server now, so if another issue changes to use those the clients will need a copy.
+        checkAdds(0, 2);
+        checkUpdates(0, 2);
+        checkDeletes(0, 2);
+        checkNoStateChanges(0, 2);
+        checkNoBlacklistChanges(0, 2);
+        checkAssignees(0, 2, "jason");
+        checkComponents(0, 2, new String[]{"C-X", "C-Y"});
     }
 
     @Test
@@ -1056,7 +1082,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
     }
-
 
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);

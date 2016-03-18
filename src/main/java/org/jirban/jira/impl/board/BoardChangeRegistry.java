@@ -192,12 +192,34 @@ public class BoardChangeRegistry {
         return change;
     }
 
+    private static class NewReferenceCollector {
+        private final Map<String, Assignee> newAssignees = new HashMap<>();
+        private final Map<String, Component> newComponents = new HashMap<>();
+
+        void addNewAssignee(Assignee assignee) {
+            newAssignees.put(assignee.getKey(), assignee);
+        }
+
+        void addNewComponent(Component component) {
+            newComponents.put(component.getName(), component);
+        }
+
+        Map<String, Assignee> getNewAssignees() {
+            return newAssignees;
+        }
+
+        Map<String, Component> getNewComponents() {
+            return newComponents;
+        }
+    }
+
     private class ChangeSetCollector {
         private final boolean backlog;
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
         private final BlacklistChange blacklistChange = new BlacklistChange();
         private final Set<String> issuesWithStateChanges = new HashSet<>();
+        private NewReferenceCollector newReferenceCollector = new NewReferenceCollector();
 
         public ChangeSetCollector(boolean backlog, int endView) {
             this.backlog = backlog;
@@ -210,10 +232,10 @@ public class BoardChangeRegistry {
             if (!boardChange.isBlacklistEvent()) {
                 IssueChange issueChange = issueChanges.get(issueKey);
                 if (issueChange == null) {
-                    issueChange = IssueChange.create(boardChange);
+                    issueChange = IssueChange.create(newReferenceCollector, boardChange);
                     issueChanges.put(issueKey, issueChange);
                 } else {
-                    issueChange.merge(boardChange);
+                    issueChange.merge(newReferenceCollector, boardChange);
                     if (issueChange.type == null) {
                         issueChanges.remove(issueChange.issueKey);
                     }
@@ -266,9 +288,7 @@ public class BoardChangeRegistry {
             Set<IssueChange> newIssues = new HashSet<>();
             Set<IssueChange> updatedIssues = new HashSet<>();
             Set<IssueChange> deletedIssues = new HashSet<>();
-            Map<String, Assignee> newAssignees = new HashMap<>();
-            Map<String, Component> newComponents = new HashMap<>();
-            sortIssues(board, newIssues, updatedIssues, deletedIssues, newAssignees, newComponents);
+            sortIssues(board, newIssues, updatedIssues, deletedIssues);
 
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
@@ -276,8 +296,8 @@ public class BoardChangeRegistry {
                 changes.get(ISSUES).set(issues);
             }
 
-            serializeAssignees(changes, newAssignees);
-            serializeComponents(changes, newComponents);
+            serializeAssignees(changes, newReferenceCollector.getNewAssignees());
+            serializeComponents(changes, newReferenceCollector.getNewComponents());
             serializeStateChanges(board, changes, processStateChanges());
             serializeBlacklist(changes);
             return output;
@@ -335,8 +355,7 @@ public class BoardChangeRegistry {
         }
 
         private void sortIssues(Board board, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues,
-                                Set<IssueChange> deletedIssues, Map<String, Assignee> newAssignees,
-                                Map<String, Component> newComponents) {
+                                Set<IssueChange> deletedIssues) {
             for (IssueChange change : issueChanges.values()) {
                 Assignee newAssignee = null;
                 Map<String, Component> newComponentsForIssue = null;
@@ -344,11 +363,6 @@ public class BoardChangeRegistry {
                     if (backlog || !change.backlogEndState) {
                         newIssues.add(change);
                     }
-                    //Always add these even if it is for backlog and we are not viewing the backlog, since
-                    //another later issue might use the assignee or components and we are not tracking what brings
-                    //those in at the moment for simplicity
-                    newAssignee = change.newAssignee;
-                    newComponentsForIssue = change.newComponents;
                 } else if (change.type == UPDATE) {
                     if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
                         updatedIssues.add(change);
@@ -366,20 +380,8 @@ public class BoardChangeRegistry {
                         delete.type = DELETE;
                         deletedIssues.add(delete);
                     }
-                    //Always add these even if it is for backlog and we are not viewing the backlog, since
-                    //another later issue might use the assignee or components and we are not tracking what brings
-                    //those in at the moment for simplicity
-                    newAssignee = change.newAssignee;
-                    newComponentsForIssue = change.newComponents;
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
-                }
-
-                if (newAssignee != null) {
-                    newAssignees.put(newAssignee.getKey(), newAssignee);
-                }
-                if (newComponentsForIssue != null) {
-                    newComponents.putAll(newComponentsForIssue);
                 }
             }
         }
@@ -410,9 +412,6 @@ public class BoardChangeRegistry {
         private Boolean backlogStartState;
         private Boolean backlogEndState;
 
-        private Assignee newAssignee;
-        private Map<String, Component> newComponents;
-
         //We are interested in the latest state for the issue if it was moved or re-ranked
         //This information will then be used by the board change collector to figure out which states
         //should be shipped to the client. If several issues are moved to the same state, the one with the highest
@@ -425,22 +424,19 @@ public class BoardChangeRegistry {
             this.backlogStartState = backlogState;
         }
 
-        static IssueChange create(BoardChange boardChange) {
+        static IssueChange create(NewReferenceCollector newReferenceCollector, BoardChange boardChange) {
             JirbanIssueEvent event = boardChange.getEvent();
             IssueChange change = new IssueChange(event.getProjectCode(), event.getIssueKey(),  boardChange.getFromBacklogState());
-            change.merge(boardChange);
+            change.merge(newReferenceCollector, boardChange);
 
             return change;
         }
 
         static IssueChange create(Board board, Issue issue) {
-            IssueChange change = new IssueChange(issue.getProjectCode(), issue.getKey(), false);
-            //TODO
-            //change.issueType = board.getIssueTypeForIndex(issue.);
-            return change;
+            return new IssueChange(issue.getProjectCode(), issue.getKey(), false);
         }
 
-        void merge(BoardChange boardChange) {
+        void merge(NewReferenceCollector newReferenceCollector, BoardChange boardChange) {
             JirbanIssueEvent event = boardChange.getEvent();
             view = boardChange.getView();
             mergeType(event);
@@ -451,7 +447,7 @@ public class BoardChangeRegistry {
             switch (type) {
                 case CREATE:
                 case UPDATE:
-                    mergeFields(event, boardChange.getNewAssignee(), boardChange.getNewComponents());
+                    mergeFields(event, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
                     if (boardChange.getChangedState() != null) {
                         changedState = boardChange.getChangedState();
                     }
@@ -468,7 +464,7 @@ public class BoardChangeRegistry {
             }
         }
 
-        void mergeFields(JirbanIssueEvent event, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
+        void mergeFields(JirbanIssueEvent event, NewReferenceCollector newReferenceCollector, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
             final JirbanIssueEvent.Detail detail = event.getDetails();
             if (detail.getIssueType() != null) {
                 issueType = detail.getIssueType();
@@ -483,15 +479,15 @@ public class BoardChangeRegistry {
                 if (detail.getAssignee() == JirbanIssueEvent.UNASSIGNED) {
                     assignee = null;
                     unassigned = true;
-                    this.newAssignee = null;
                 } else {
                     assignee = detail.getAssignee().getName();
                     unassigned = false;
-                    if (this.newAssignee != null && !this.newAssignee.getKey().equals(detail.getAssignee().getName())) {
-                        this.newAssignee = null;
-                    }
                     if (evtNewAssignee != null) {
-                        newAssignee = evtNewAssignee;
+                        //We always add the new assignees, even if a later change might remove the need, since the board
+                        //only tracks when an assignee is first referenced before creating the BoardChange entries.
+                        //Later changes to the board might use this assignee, in which case this information will be needed
+                        //on the client
+                        newReferenceCollector.addNewAssignee(evtNewAssignee);
                     }
                 }
             }
@@ -499,26 +495,17 @@ public class BoardChangeRegistry {
                 if (detail.getComponents() == JirbanIssueEvent.NO_COMPONENT) {
                     components = null;
                     clearedComponents = true;
-                    newComponents = null;
                 } else {
                     components = new HashSet<>(detail.getComponents().size());
                     detail.getComponents().forEach(comp -> components.add(comp.getName()));
                     clearedComponents = false;
                     if (evtNewComponents != null) {
-                        newComponents = newComponents == null ? new HashMap<>() : newComponents;
+                        //We always add the new components, even if a later change might remove the need, since the board
+                        //only tracks when an component is first referenced before creating the BoardChange entries
+                        //Later changes to the board might use this component, in which case this information will be needed
+                        //on the client
                         for (Component newComponent : evtNewComponents) {
-                            newComponents.put(newComponent.getName(), newComponent);
-                        }
-                    }
-                    if (newComponents != null) {
-                        Set<String> removes = new HashSet<>();
-                        for (Component newComponent : newComponents.values()) {
-                            if (!components.contains(newComponent.getName())) {
-                                removes.add(newComponent.getName());
-                            }
-                        }
-                        for (String remove : removes) {
-                            newComponents.remove(remove);
+                            newReferenceCollector.addNewComponent(newComponent);
                         }
                     }
                 }
