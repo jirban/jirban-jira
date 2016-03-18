@@ -24,6 +24,8 @@ import {BoardHeaders} from "./header";
 export class BoardData {
     private _boardName:string;
     private _id:number;
+    private _backlogSize:number;
+    private _showBacklog:boolean = false;
     private _view:number;
     private _headers:BoardHeaders;
     private _swimlane:string;
@@ -158,6 +160,8 @@ export class BoardData {
             this._rankCustomFieldId = input["rank-custom-field-id"];
         }
 
+        this._backlogSize = input.backlog ? input.backlog : 0;
+
         this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
         this._headers = BoardHeaders.deserialize(this, input);
@@ -254,6 +258,22 @@ export class BoardData {
         return this._boardName;
     }
 
+    get rankCustomFieldId():number {
+        return this._rankCustomFieldId;
+    }
+
+    get backlogSize():number {
+        return this._backlogSize;
+    }
+
+    get showBacklog():boolean {
+        return this._showBacklog;
+    }
+
+    toggleBacklog():void {
+        this._showBacklog = !this._showBacklog;
+    }
+
     set swimlane(swimlane:string) {
         this._swimlane = swimlane;
         this._issueTable.swimlane = swimlane;
@@ -329,10 +349,6 @@ export class BoardData {
     getValidMoveBeforeIssues(issueKey:string, toState:string) {
         let moveIssue:IssueData = this._issueTable.getIssue(issueKey);
         return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
-    }
-
-    get rankCustomFieldId():number {
-        return this._rankCustomFieldId;
     }
 }
 

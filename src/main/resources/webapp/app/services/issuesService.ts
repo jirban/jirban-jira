@@ -21,15 +21,23 @@ export class IssuesService {
         this.http = http;
     }
 
-    getIssuesData(board:number) : Observable<Response> {
-        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/issues/' + board);
+    getIssuesData(board:number, backlog:boolean) : Observable<Response> {
+        let url = 'rest/jirban/1.0/issues/' + board;
+        if (backlog) {
+            url += "?backlog=" + true;
+        }
+        let path:string = RestUrlUtil.caclulateRestUrl(url);
         return this.http.get(path)
             .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());
     }
 
     pollBoard(boardData:BoardData) : Observable<Response> {
-        let path = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/issues/' + boardData.id + "/updates/" + boardData.view);
+        let url:string = 'rest/jirban/1.0/issues/' + boardData.id + "/updates/" + boardData.view;
+        if (boardData.showBacklog) {
+            url += "?backlog=" + true;
+        }
+        let path:string = RestUrlUtil.caclulateRestUrl(url);
         return this.http.get(path)
             .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());

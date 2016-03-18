@@ -47,28 +47,31 @@ export class BoardHeaders {
     }
 
     static deserialize(boardData:BoardData, input:any):BoardHeaders {
+
         let boardStates:Indexed<string> = new Indexed<string>();
         let headers:string[] = input.headers;
 
         let indexedStates:State[] = [];
         let categories:Indexed<StateCategory> = new Indexed<StateCategory>();
+        let index = 0;
         for (let state of input.states) {
             boardStates.add(state.name, state.name);
+
+            let backlogState:boolean = index < boardData.backlogSize;
 
             let category:StateCategory;
             if (isNumber(state.header)) {
                 let header:string = headers[state.header];
-                category = categories.forKey(header);
-                if (!category) {
-                    category = new StateCategory(header);
-                    categories.add(header, category);
-                }
+                category = BoardHeaders.getOrCreateStateCategory(categories, header, false);
+            } else if (backlogState && boardData.backlogSize > 1) {
+                category = BoardHeaders.getOrCreateStateCategory(categories, "Backlog", true);
             }
-            let stateEntry = new State(boardData, state.name, indexedStates.length, category);
+            let stateEntry = new State(boardData, state.name, indexedStates.length, backlogState, category);
             indexedStates.push(stateEntry);
             if (category) {
                 category.states.push(stateEntry);
             }
+            index++;
         }
 
         let stateVisibilities:boolean[];
@@ -77,7 +80,7 @@ export class BoardHeaders {
         } else {
             stateVisibilities = new Array<boolean>(boardStates.array.length);
             for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
-                stateVisibilities[i] = true;
+                stateVisibilities[i] = i >= boardData.backlogSize;
             }
         }
 
@@ -98,17 +101,27 @@ export class BoardHeaders {
             }
         }
 
-
         return new BoardHeaders(boardData, boardStates, topHeaders, bottomHeaders, stateVisibilities);
+    }
+
+    static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {
+        let category:StateCategory = categories.forKey(header);
+        if (!category) {
+            category = new StateCategory(header, backlog);
+            categories.add(header, category);
+        }
+        return category;
     }
 }
 
 class StateCategory {
     private _name:string;
+    private _backlog:boolean;
     private _states:State[] = [];
 
-    constructor(name:string) {
+    constructor(name:string, backlog:boolean) {
         this._name = name;
+        this._backlog = backlog;
     }
 
     get name():string {
@@ -125,6 +138,10 @@ class StateCategory {
             total += state.totalIssues;
         }
         return total;
+    }
+
+    get backlog():boolean {
+        return this._backlog;
     }
 
     isVisible(stateVisibilities:boolean[]):boolean {
@@ -158,7 +175,8 @@ class StateCategory {
 
 class State {
 
-    constructor(private _boardData:BoardData, private _name:string, private _index:number, private _category:StateCategory) {
+    constructor(private _boardData:BoardData, private _name:string, private _index:number,
+                private _backlog:boolean, private _category:StateCategory) {
     }
 
     get name():string {
@@ -175,6 +193,10 @@ class State {
 
     get index():number {
         return this._index;
+    }
+
+    get backlog():boolean {
+        return this._backlog;
     }
 
     isVisible(stateVisibilities:boolean[]):boolean{
@@ -224,6 +246,11 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
+    get backlog():boolean {
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
+    }
+
     abstract toggleVisibility();
 }
 
@@ -244,9 +271,14 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
         return this._category.isVisible(this._stateVisibilities);
     }
 
+    get backlog():boolean{
+        return this._category.backlog;
+    }
+
     toggleVisibility() {
         this._category.toggleVisibility(this._stateVisibilities);
     }
+
 }
 
 class StateHeaderEntry extends BoardHeaderEntry {
@@ -268,6 +300,10 @@ class StateHeaderEntry extends BoardHeaderEntry {
 
     get visible():boolean {
         return this._state.isVisible(this._stateVisibilities);
+    }
+
+    get backlog():boolean{
+        return this._state.backlog;
     }
 
     toggleVisibility() {

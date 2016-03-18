@@ -34,8 +34,7 @@ export class BoardComponent implements OnDestroy, OnInit {
 
     private boardLeftOffset:number = 0;
 
-    constructor(private _elementRef:ElementRef,
-                private _issuesService:IssuesService,
+    constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService, routeParams:RouteParams) {
 
@@ -43,9 +42,13 @@ export class BoardComponent implements OnDestroy, OnInit {
         if (boardId) {
             this.boardId = Number(boardId);
         }
+        this.populateIssues();
+        this.setWindowSize();
+    }
 
+    private populateIssues() {
         this._progressError.startProgress(true);
-        _issuesService.getIssuesData(this.boardId).subscribe(
+        this._issuesService.getIssuesData(this.boardId, this._boardData.showBacklog).subscribe(
             data => {
                 this.setIssueData(data);
             },
@@ -57,7 +60,6 @@ export class BoardComponent implements OnDestroy, OnInit {
                 this._progressError.finishProgress();
             }
         );
-        this.setWindowSize();
     }
 
     ngOnInit():any {
@@ -66,13 +68,16 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     ngOnDestroy():any {
-        //this.issuesService.closeWebSocket();
+        this.clearPollTimeout();
+        this._destroyed = true;
+        return null;
+    }
+
+    private clearPollTimeout() {
         let timeout:number = this._currentTimeout;
         if (timeout) {
             clearTimeout(timeout);
         }
-        this._destroyed = true;
-        return null;
     }
 
     private setIssueData(issueData:any) {
@@ -191,6 +196,10 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     toggleHeaderVisibility(header:BoardHeaderEntry) {
+        if (header.backlog) {
+            this._boardData.toggleBacklog();
+            this.populateIssues();
+        }
         this._boardData.headers.toggleHeaderVisibility(header);
     }
 

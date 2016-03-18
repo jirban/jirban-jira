@@ -1083,6 +1083,134 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
     }
 
+    @Test
+    public void testIssueMovedThroughSeveralStatesWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        //Move to a non-backlog state
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-C", false);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-C"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-C", "TDP-1", "TDP-3", "TDP-7"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog invisible
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        //The move from the backlog to a nornal state appears as an add
+        checkAdds(nonBacklogChanges, new IssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "kabir", new String[]{"C1"}, "TDP-C"));
+        checkUpdates(nonBacklogChanges);
+        checkDeletes(nonBacklogChanges);
+        checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-C", "TDP-1", "TDP-3", "TDP-7"));
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+
+        //Move to another non-backlog state
+        update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        backlogChanges = getChangesJson(0, 2, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        backlogChanges = getChangesJson(1, 2, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog invisible
+        nonBacklogChanges = getChangesJson(0, 2);
+        //The move from the backlog to a nornal state appears as an add
+        checkAdds(nonBacklogChanges, new IssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "kabir", new String[]{"C1"}, "TDP-D"));
+        checkUpdates(nonBacklogChanges);
+        checkDeletes(nonBacklogChanges);
+        checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        nonBacklogChanges = getChangesJson(1, 2);
+        //From a non-backlog to a non-backlog state appears as an update
+        checkAdds(nonBacklogChanges);
+        checkUpdates(nonBacklogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkDeletes(nonBacklogChanges);
+        checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+
+        //Move to a bl state
+        update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        backlogChanges = getChangesJson(0, 3, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        backlogChanges = getChangesJson(1, 3, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        backlogChanges = getChangesJson(2, 3, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+
+        //Backlog invisible
+        nonBacklogChanges = getChangesJson(0, 3);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+        nonBacklogChanges = getChangesJson(1, 3);
+        //The non-blacklog->blacklog move appears as a delete
+        checkAdds(nonBacklogChanges);
+        checkUpdates(nonBacklogChanges);
+        checkDeletes(nonBacklogChanges, "TDP-1");
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+        nonBacklogChanges = getChangesJson(2, 3);
+        //The non-blacklog->blacklog move appears as a delete
+        checkAdds(nonBacklogChanges);
+        checkUpdates(nonBacklogChanges);
+        checkDeletes(nonBacklogChanges, "TDP-1");
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+
+    }
+
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
         checkNoIssueChanges(changesNode);

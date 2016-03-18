@@ -92,7 +92,7 @@ public class RestEndpoint {
 
     @GET
     @Path(ISSUES + "/{boardId}")
-    public Response getBoards(
+    public Response getBoard(
             @PathParam("boardId") int boardId,
             @QueryParam("backlog") Boolean backlog) throws SearchException {
         //TODO figure out if a permission violation becomes a search exception
@@ -105,7 +105,7 @@ public class RestEndpoint {
 
     @GET
     @Path(ISSUES + "/{boardId}/" + UPDATES + "/{viewId}")
-    public Response getBoards(@PathParam("boardId") int boardId,
+    public Response getBoard(@PathParam("boardId") int boardId,
                               @PathParam("viewId") int viewId,
                               @QueryParam("backlog") Boolean backlog) throws SearchException {
         //TODO figure out if a permission violation becomes a search exception
