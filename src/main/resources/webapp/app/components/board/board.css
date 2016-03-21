@@ -58,9 +58,9 @@
 }
 div.state-summary {
     width: 100%;
-    font-size: 12px;
+    font-size: 10px;
     text-align: center;
-    min-height: 17px;
+    min-height: 11px;
 }
 ul.issues-list {
     margin: 0px;
