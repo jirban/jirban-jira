@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Input, View} from 'angular2/core';
+import {Component, EventEmitter, Input} from 'angular2/core';
 import {BoardData} from '../../../data/board/boardData';
 import {IssueData} from '../../../data/board/issueData';
 import {IssuesService} from '../../../services/issuesService';
@@ -8,9 +8,7 @@ import {ProgressErrorService} from "../../../services/progressErrorService";
 @Component({
     inputs: ['data'],
     outputs: ['closeContextMenu'],
-    selector: 'issue-context-menu'
-})
-@View({
+    selector: 'issue-context-menu',
     templateUrl: 'app/components/board/issueContextMenu/issueContextMenu.html',
     styleUrls: ['app/components/board/issueContextMenu/issueContextMenu.css'],
     directives: [IssueComponent]

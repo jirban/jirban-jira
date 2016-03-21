@@ -1,4 +1,4 @@
-import {Component, EventEmitter, View} from 'angular2/core';
+import {Component, EventEmitter} from 'angular2/core';
 import {BoardData} from '../../../data/board/boardData';
 import {IssueData} from '../../../data/board/issueData';
 import {IssueComponent} from '../issue/issue'
@@ -11,9 +11,7 @@ import {SwimlaneData} from "../../../data/board/issueTable";
 @Component({
     inputs: ['swimlaneIndex', 'boardData', 'swimlane', 'boardLeftOffset'],
     outputs: ['issueContextMenu'],
-    selector: 'swimlane-entry'
-})
-@View({
+    selector: 'swimlane-entry',
     templateUrl: 'app/components/board/swimlaneEntry/swimlaneEntry.html',
     styleUrls: ['app/components/board//board.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
     directives: [IssueComponent]

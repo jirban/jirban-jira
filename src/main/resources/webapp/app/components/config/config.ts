@@ -11,9 +11,7 @@ import {ProgressErrorService} from "../../services/progressErrorService";
 @Component({
     selector: 'boards',
     inputs: ['boards'],
-    providers: [BoardsService]
-})
-@View({
+    providers: [BoardsService],
     templateUrl: 'app/components/config/config.html',
     directives: [ROUTER_DIRECTIVES]
 })

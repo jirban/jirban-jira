@@ -1,11 +1,9 @@
-import {Component, EventEmitter, View} from 'angular2/core';
+import {Component, EventEmitter} from 'angular2/core';
 import {BoardData} from '../../../data/board/boardData';
 
 @Component({
     selector: 'health-panel',
-    outputs: ['closeHealthPanel']
-})
-@View({
+    outputs: ['closeHealthPanel'],
     templateUrl: 'app/components/board/healthPanel/healthPanel.html',
     styleUrls: ['app/components/board/healthPanel/healthPanel.css'],
 })

@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnDestroy, OnInit, View} from 'angular2/core';
+import {Component, ElementRef, OnDestroy, OnInit} from 'angular2/core';
 import {Router, RouteParams} from 'angular2/router';
 import {IssuesService} from '../../services/issuesService';
 import {BoardData} from '../../data/board/boardData';
@@ -13,9 +13,7 @@ import {BoardHeaderEntry, BoardHeaders} from "../../data/board/header";
 
 @Component({
     selector: 'board',
-    providers: [IssuesService, BoardData]
-})
-@View({
+    providers: [IssuesService, BoardData],
     templateUrl: 'app/components/board/board.html',
     styleUrls: ['app/components/board/board.css'],
     directives: [IssueComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]

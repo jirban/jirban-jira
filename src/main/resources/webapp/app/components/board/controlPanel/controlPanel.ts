@@ -1,4 +1,4 @@
-import {Component, EventEmitter, View,} from 'angular2/core';
+import {Component, EventEmitter} from 'angular2/core';
 import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Router, RouteParams} from 'angular2/router';
 
@@ -17,9 +17,7 @@ import 'rxjs/add/operator/debounceTime';
 
 @Component({
     selector: 'control-panel',
-    outputs: ['closeControlPanel']
-})
-@View({
+    outputs: ['closeControlPanel'],
     templateUrl: 'app/components/board/controlPanel/controlPanel.html',
     styleUrls: ['app/components/board/controlPanel/controlPanel.css'],
     directives: [FORM_DIRECTIVES]

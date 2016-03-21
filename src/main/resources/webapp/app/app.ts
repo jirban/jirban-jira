@@ -1,5 +1,5 @@
 //our root app component
-import {Component, View, provide} from 'angular2/core'
+import {Component, provide} from 'angular2/core'
 import {HTTP_PROVIDERS} from 'angular2/http';
 import {APP_BASE_HREF, ROUTER_DIRECTIVES, ROUTER_PROVIDERS, HashLocationStrategy, Location, LocationStrategy, Route, RouteConfig, Router, RouterLink, RouterOutlet} from 'angular2/router';
 import {BoardComponent} from './components/board/board';
@@ -14,15 +14,7 @@ const VERSION:number = 1;
 
 @Component({
     selector: 'my-app',
-    providers: [VersionCheckService]
-})
-@RouteConfig([
-    new Route({path: '/', component: BoardsComponent, name: 'Boards'}),
-    new Route({path: '/board', component: BoardComponent, name: 'Board'}),
-    new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
-    new Route({path: '/config', component: ConfigComponent, name: 'Config'})
-])
-@View({
+    providers: [VersionCheckService],
     template: `
 
 <div class="toolbar">
@@ -49,6 +41,12 @@ const VERSION:number = 1;
     `,
     directives: [ROUTER_DIRECTIVES, BoardComponent]
 })
+@RouteConfig([
+    new Route({path: '/', component: BoardsComponent, name: 'Boards'}),
+    new Route({path: '/board', component: BoardComponent, name: 'Board'}),
+    new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
+    new Route({path: '/config', component: ConfigComponent, name: 'Config'})
+])
 export class App {
     _router:Router;
     _progressError:ProgressErrorService;

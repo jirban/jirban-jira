@@ -1,4 +1,4 @@
-import {Component, View} from 'angular2/core';
+import {Component} from 'angular2/core';
 import {ROUTER_DIRECTIVES, ROUTER_PROVIDERS, Router, RouterLink} from 'angular2/router';
 import {BoardsService} from '../../services/boardsService';
 import {BoardComponent} from '../board/board';
@@ -8,9 +8,7 @@ import {ProgressErrorService} from "../../services/progressErrorService";
 @Component({
     selector: 'boards',
     inputs: ['boards'],
-    providers: [BoardsService]
-})
-@View({
+    providers: [BoardsService],
     templateUrl: 'app/components/boards/boards.html',
     directives: [ROUTER_DIRECTIVES]
 })

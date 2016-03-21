@@ -1,4 +1,4 @@
-import {Component, EventEmitter, View} from 'angular2/core';
+import {Component, EventEmitter} from 'angular2/core';
 import {Router, RouteParams} from 'angular2/router';
 import {BoardData} from '../../../data/board/boardData';
 import {IssueData} from '../../../data/board/issueData';
@@ -8,9 +8,7 @@ import {Project} from "../../../data/board/project";
 @Component({
     inputs: ['issue'],
     outputs: ['issueContextMenu'],
-    selector: 'issue'
-})
-@View({
+    selector: 'issue',
     templateUrl: 'app/components/board/issue/issue.html',
     styleUrls: ['app/components/board/issue/issue.css'],
 

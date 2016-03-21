@@ -1,13 +1,11 @@
-import {Component, View} from 'angular2/core';
+import {Component} from 'angular2/core';
 import {BoardData} from '../../../data/board/boardData';
 import {ControlPanelComponent} from '../controlPanel/controlPanel';
 import {HealthPanelComponent} from "../healthPanel/healthPanel";
 import {Hideable} from "../../../common/hide";
 
 @Component({
-    selector: 'panel-menu'
-})
-@View({
+    selector: 'panel-menu',
     templateUrl: 'app/components/board/panelMenu/panelMenu.html',
     styleUrls: ['app/components/board/panelMenu/panelMenu.css'],
     directives: [ControlPanelComponent, HealthPanelComponent]
