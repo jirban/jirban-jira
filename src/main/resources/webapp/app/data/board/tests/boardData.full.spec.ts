@@ -48,7 +48,7 @@ describe('BoardData tests', ()=> {
 
             checkStandardProjects(boardData);
 
-            expect(boardData.boardStates.length).toBe(4);
+            expect(boardData.boardStateNames.length).toBe(4);
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
             checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
@@ -74,7 +74,7 @@ describe('BoardData tests', ()=> {
 
             checkStandardProjects(boardData);
 
-            expect(boardData.boardStates.length).toBe(4);
+            expect(boardData.boardStateNames.length).toBe(4);
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
             checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
@@ -103,7 +103,7 @@ describe('BoardData tests', ()=> {
 
             checkProjects(boardData, null, "TDP");
 
-            expect(boardData.boardStates.length).toBe(4);
+            expect(boardData.boardStateNames.length).toBe(4);
             checkBoardLayout(boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
 
             checkIssueDatas(boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
@@ -127,7 +127,7 @@ describe('BoardData tests', ()=> {
 
             checkProjects(boardData, null, "TDP", "TBG");
 
-            expect(boardData.boardStates.length).toBe(4);
+            expect(boardData.boardStateNames.length).toBe(4);
             checkBoardLayout(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
 
             checkIssueDatas(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);

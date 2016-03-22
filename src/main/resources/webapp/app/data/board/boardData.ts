@@ -18,7 +18,7 @@ import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {IssuesService} from "../../services/issuesService";
 import {JiraComponent, ComponentDeserializer} from "./component";
-import {BoardHeaders} from "./header";
+import {BoardHeaders, State} from "./header";
 
 
 export class BoardData {
@@ -165,7 +165,7 @@ export class BoardData {
         this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
         this._headers = BoardHeaders.deserialize(this, input);
-        this._projects = new ProjectDeserializer(this.indexedBoardStates).deserialize(input);
+        this._projects = new ProjectDeserializer(this.indexedBoardStateNames).deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);
         this._components = new ComponentDeserializer().deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
@@ -218,12 +218,28 @@ export class BoardData {
         return this._issueTypes;
     }
 
-    get boardStates() : string[] {
+    get boardStateNames():string[] {
+        return this.indexedBoardStateNames.array;
+    }
+
+    get indexedBoardStateNames():Indexed<string> {
+        return this.headers.boardStateNames;
+    }
+
+    get boardStates():State[] {
         return this.indexedBoardStates.array;
     }
 
-    get indexedBoardStates():Indexed<string> {
+    get indexedBoardStates():Indexed<State> {
         return this.headers.boardStates;
+    }
+
+    get nonBacklogStates():State[] {
+        return this.headers.nonBacklogStates;
+    }
+
+    get backlogStates():State[] {
+        return this.headers.backlogStates;
     }
 
     get owner() : string {

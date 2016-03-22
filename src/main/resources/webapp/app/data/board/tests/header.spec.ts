@@ -1,16 +1,21 @@
-import {BoardHeaders} from "../header";
+import {BoardHeaders, State} from "../header";
 import {BoardHeaderEntry} from "../header";
+import {BoardData} from "../boardData";
+import {Indexed} from "../../../common/indexed";
 
 describe('Header tests', ()=> {
 
     it('No headers', () => {
+        //Mock a board data with the required fields used by BoardHeaders.deserialize
+        let boardData:any = {backlogSize:0}
+
         let input:any = {
             states:[
                 {name: "One"},
                 {name: "Two"}
             ]
         };
-        let headers:BoardHeaders = BoardHeaders.deserialize(null, input);
+        let headers:BoardHeaders = BoardHeaders.deserialize(boardData, input);
         expect(headers).toEqual(jasmine.anything());
         let row:BoardHeaderEntry[] = headers.topHeaders;
         expect(row.length).toEqual(2);
@@ -18,9 +23,20 @@ describe('Header tests', ()=> {
         checkEntry(row[1], "Two", 1, 2);
         row = headers.bottomHeaders;
         expect(row.length).toEqual(0);
+
+        //Also check that the states have an index
+        let states:Indexed<State> = headers.boardStates;
+        for (let i:number = 0 ; i < states.array.length ; i++) {
+            let state:State = states.array[i];
+            console.log(state.index);
+            expect(state.index).toEqual(i);
+        }
     });
 
     it('All same header', () => {
+        //Mock a board data with the required fields used by BoardHeaders.deserialize
+        let boardData:any = {backlogSize:0}
+
         let input:any = {
             states:[
                 {name: "One", header: 0},
@@ -28,7 +44,7 @@ describe('Header tests', ()=> {
             ],
             headers: ["A"]
         };
-        let headers:BoardHeaders = BoardHeaders.deserialize(null, input);
+        let headers:BoardHeaders = BoardHeaders.deserialize(boardData, input);
         expect(headers).toEqual(jasmine.anything());
         let row:BoardHeaderEntry[] = headers.topHeaders;
         expect(row.length).toEqual(1);
@@ -40,6 +56,9 @@ describe('Header tests', ()=> {
     });
 
     it('No header start', () => {
+        //Mock a board data with the required fields used by BoardHeaders.deserialize
+        let boardData:any = {backlogSize:0}
+
         let input:any = {
             states:[
                 {name: "One"},
@@ -50,7 +69,7 @@ describe('Header tests', ()=> {
             ],
             headers: ["A", "B"]
         };
-        let headers:BoardHeaders = BoardHeaders.deserialize(null, input);
+        let headers:BoardHeaders = BoardHeaders.deserialize(boardData, input);
         expect(headers).toEqual(jasmine.anything());
         let row:BoardHeaderEntry[] = headers.topHeaders;
         expect(row.length).toEqual(3);
@@ -65,6 +84,9 @@ describe('Header tests', ()=> {
     });
 
     it('No header end', () => {
+        //Mock a board data with the required fields used by BoardHeaders.deserialize
+        let boardData:any = {backlogSize:0}
+
         let input:any = {
             states:[
                 {name: "One", header: 0},
@@ -75,7 +97,7 @@ describe('Header tests', ()=> {
             ],
             headers: ["A", "B"]
         };
-        let headers:BoardHeaders = BoardHeaders.deserialize(null, input);
+        let headers:BoardHeaders = BoardHeaders.deserialize(boardData, input);
         expect(headers).toEqual(jasmine.anything());
         let row:BoardHeaderEntry[] = headers.topHeaders;
         expect(row.length).toEqual(3);
@@ -90,6 +112,9 @@ describe('Header tests', ()=> {
     });
 
     it('Mixed headers', () => {
+        //Mock a board data with the required fields used by BoardHeaders.deserialize
+        let boardData:any = {backlogSize:0}
+
         let input:any = {
             states:[
                 {name: "One"},
@@ -102,7 +127,7 @@ describe('Header tests', ()=> {
             ],
             headers: ["A", "B"]
         };
-        let headers:BoardHeaders = BoardHeaders.deserialize(null, input);
+        let headers:BoardHeaders = BoardHeaders.deserialize(boardData, input);
         expect(headers).toEqual(jasmine.anything());
         let row:BoardHeaderEntry[] = headers.topHeaders;
         expect(row.length).toEqual(5);

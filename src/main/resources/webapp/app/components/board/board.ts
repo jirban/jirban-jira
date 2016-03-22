@@ -8,7 +8,7 @@ import {SwimlaneEntryComponent} from './swimlaneEntry/swimlaneEntry';
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {BoardHeaderEntry, BoardHeaders} from "../../data/board/header";
+import {BoardHeaderEntry, BoardHeaders, State} from "../../data/board/header";
 
 
 @Component({
@@ -141,10 +141,6 @@ export class BoardComponent implements OnDestroy, OnInit {
         return arr;
     }
 
-    private get boardStates():string[] {
-        return this._boardData.boardStates;
-    }
-
     private onResize(event : any) {
         this.setWindowSize();
     }
@@ -155,7 +151,7 @@ export class BoardComponent implements OnDestroy, OnInit {
 
         //board height - header - borders
         let boardHeaders = 30;
-        if (this._boardData.headers && this._boardData.headers.categorised) {
+        if (this._boardData.headers && this._boardData.headers.bottomHeaders.length > 0) {
             boardHeaders *= 2;
         }
         this.boardBodyHeight = this.boardHeight - boardHeaders - 3;
@@ -179,20 +175,41 @@ export class BoardComponent implements OnDestroy, OnInit {
         return this._boardData;
     }
 
-    /**
-     * If not categorised, only the top headers will exist.
-     * @returns {boolean}
-     */
-    get categorised():boolean {
-        return this._boardData.headers.categorised;
-    }
-
     get topHeaders():BoardHeaderEntry[] {
         return this._boardData.headers.topHeaders;
     }
 
     get bottomHeaders():BoardHeaderEntry[] {
         return this._boardData.headers.bottomHeaders;
+    }
+
+    get backlogTopHeader():BoardHeaderEntry {
+        return this._boardData.headers.backlogTopHeader;
+    }
+
+    get backlogBottomHeadersIfVisible():BoardHeaderEntry[] {
+        if (this.backlogTopHeader && this.backlogTopHeader.visible) {
+            return this._boardData.headers.backlogBottomHeaders;
+        }
+        return null;
+    }
+
+    get nonBacklogStates():State[] {
+        return this._boardData.nonBacklogStates;
+    }
+
+    get backlogAndIsCollapsed():boolean {
+        if (!this.backlogTopHeader) {
+            return false;
+        }
+        return !this.backlogTopHeader.visible;
+    }
+
+    get backlogStatesIfVisible():State[] {
+        if (this.backlogTopHeader && this.backlogTopHeader.visible) {
+            return this._boardData.backlogStates;
+        }
+        return null;
     }
 
     toggleHeaderVisibility(header:BoardHeaderEntry) {

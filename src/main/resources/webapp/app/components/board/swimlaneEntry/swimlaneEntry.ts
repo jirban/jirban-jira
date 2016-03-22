@@ -3,6 +3,7 @@ import {BoardData} from '../../../data/board/boardData';
 import {IssueData} from '../../../data/board/issueData';
 import {IssueComponent} from '../issue/issue'
 import {SwimlaneData} from "../../../data/board/issueTable";
+import {State, BoardHeaderEntry} from "../../../data/board/header";
 
 /**
  * This is here to be able to add a header and the contents for a swimlane
@@ -26,7 +27,7 @@ export class SwimlaneEntryComponent {
     constructor() {
     }
 
-    private get boardStates() : string[] {
+    private get boardStates() : State[] {
         return this.boardData.boardStates;
     }
 
@@ -51,5 +52,27 @@ export class SwimlaneEntryComponent {
 
     private get visibleColumns() : boolean[] {
         return this.boardData.headers.stateVisibilities;
+    }
+
+    get backlogTopHeader():BoardHeaderEntry {
+        return this.boardData.headers.backlogTopHeader;
+    }
+
+    get nonBacklogStates():State[] {
+        return this.boardData.nonBacklogStates;
+    }
+
+    get backlogAndIsCollapsed():boolean {
+        if (!this.backlogTopHeader) {
+            return false;
+        }
+        return !this.backlogTopHeader.visible;
+    }
+
+    get backlogStatesIfVisible():State[] {
+        if (this.backlogTopHeader && this.backlogTopHeader.visible) {
+            return this.boardData.backlogStates;
+        }
+        return null;
     }
 }

@@ -13,8 +13,12 @@ td.swimlane-empty {
     max-width: 200px;
     height: 1px;
     max-height: 1px;
-    border: 1px solid #FFFFFF;
-    overflow: hidden;
+}
+td.swimlane-empty-collapsed {
+    min-width: 30px;
+    max-width: 30px;
+    height: 1px;
+    max-height: 1px;
 }
 td.swimlane-header:hover {
     background-color: #F0F0F0;

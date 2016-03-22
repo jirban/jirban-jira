@@ -137,7 +137,7 @@ export class IssueTable {
                 for (let stateName in projectStates.indices) {
 
                     let boardState:string = project.mapStateStringToBoard(stateName);
-                    let boardIndex:number = boardData.indexedBoardStates.indices[boardState];
+                    let boardIndex:number = boardData.indexedBoardStateNames.indices[boardState];
                     project.updateStateIssues(boardIndex, projectStates.forKey(stateName));
                 }
             }
@@ -193,7 +193,7 @@ export class IssueTable {
     }
 
     private createIssueTable() : IssueData[][] {
-        let numStates = this._boardData.boardStates.length;
+        let numStates = this._boardData.boardStateNames.length;
         this._totalIssuesByState = [numStates];
         let issueTable:IssueData[][] = new Array<IssueData[]>(numStates);
 
@@ -224,13 +224,13 @@ export class IssueTable {
     }
 
     private createSwimlaneTable() : SwimlaneData[] {
-        let numStates = this._boardData.boardStates.length;
+        let numStates = this._boardData.boardStateNames.length;
         this._totalIssuesByState = [numStates];
         let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
         let swimlaneTable:SwimlaneData[] = indexer.swimlaneTable;
 
         //Now copy across the issues for each project for each state
-        for (let stateIndex:number = 0 ; stateIndex < this._boardData.boardStates.length ; stateIndex++) {
+        for (let stateIndex:number = 0 ; stateIndex < this._boardData.boardStateNames.length ; stateIndex++) {
             let counter:StateIssueCounter = new StateIssueCounter();
             this.createSwimlaneTableStateColumn(indexer, swimlaneTable, stateIndex, counter);
             this._totalIssuesByState[stateIndex] = counter.count;
@@ -277,7 +277,7 @@ export class SwimlaneData {
     constructor(private boardData:BoardData, name:string, index:number) {
         this._name = name;
         this._index = index;
-        let states = boardData.boardStates.length;
+        let states = boardData.boardStateNames.length;
         this.issueTable = new Array<IssueData[]>(states);
         for (let i:number = 0 ; i < states ; i++) {
             this.issueTable[i] = [];

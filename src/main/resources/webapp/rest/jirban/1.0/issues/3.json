@@ -23,7 +23,7 @@
     {"name": "Done"}
   ],
   "headers" : ["Analysis", "Development", "Awaiting Release"],
-  "backlog": 3,
+  "backlog":3,
   "assignees" : [
     {
       "key" : "emuckenhuber",

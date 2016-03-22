@@ -31,10 +31,6 @@ export class Projects {
         return this._owner;
     }
 
-    //get boardStates():Indexed<string> {
-    //    return this._boardStates;
-    //}
-
     get ownerProject():BoardProject {
         return this._boardProjects.forKey(this._owner);
     }

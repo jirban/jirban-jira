@@ -65,7 +65,7 @@ export class IssueContextMenuComponent {
     }
 
     private get moveStates() : string[] {
-        return this._boardData.boardStates;
+        return this._boardData.boardStateNames;
     }
 
     private isValidMoveState(state:string) : boolean {

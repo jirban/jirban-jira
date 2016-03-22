@@ -8,23 +8,49 @@ import {BoardData} from "./boardData";
 export class BoardHeaders {
 
     private _boardData:BoardData;
-    private _boardStates:Indexed<string> = new Indexed<string>();
+    //TODO It would be nice to get rid of this and only use _boardStates here and everywhere that uses it
+    private _boardStateNames:Indexed<string> = new Indexed<string>();
+
+    private _boardStates:Indexed<State> = new Indexed<State>();
+    private _backlogStates:State[] = [];
+    private _nonBacklogStates:State[] = [];
+
+    private _backlogTopHeader:BoardHeaderEntry;
+    private _backlogBottomHeaders:BoardHeaderEntry[] = [];
+
     private _topHeaders:BoardHeaderEntry[] = [];
     private _bottomHeaders:BoardHeaderEntry[] = [];
 
     private _stateVisibilities:boolean[];
 
-    constructor(boardData:BoardData, boardStates:Indexed<string>, topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[], stateVisibilities:boolean[]) {
+    constructor(boardData:BoardData, boardStateNames:Indexed<string>, boardStates:Indexed<State>, backlogTopHeader:BoardHeaderEntry,
+                backlogBottomHeaders:BoardHeaderEntry[], topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[],
+                stateVisibilities:boolean[]) {
         this._boardData = boardData;
+        this._boardStateNames = boardStateNames;
         this._boardStates = boardStates;
+        this._backlogTopHeader = backlogTopHeader;
+        this._backlogBottomHeaders = backlogBottomHeaders;
         this._topHeaders = topHeaders;
         this._bottomHeaders = bottomHeaders;
 
         this._stateVisibilities = stateVisibilities;
+
+        for (let i = 0 ; i < boardStates.array.length ; i++) {
+            if (i < boardData.backlogSize) {
+                this._backlogStates.push(boardStates.array[i]);
+            } else {
+                this._nonBacklogStates.push(boardStates.array[i]);
+            }
+        }
     }
 
-    get categorised():boolean {
-        return this._bottomHeaders.length > 0;
+    get backlogTopHeader():BoardHeaderEntry {
+        return this._backlogTopHeader;
+    }
+
+    get backlogBottomHeaders():BoardHeaderEntry[] {
+        return this._backlogBottomHeaders;
     }
 
     get topHeaders():BoardHeaderEntry[] {
@@ -35,9 +61,22 @@ export class BoardHeaders {
         return this._bottomHeaders;
     }
 
-    get boardStates():Indexed<string> {
+    get boardStateNames():Indexed<string> {
+        return this._boardStateNames;
+    }
+
+    get boardStates():Indexed<State> {
         return this._boardStates;
     }
+
+    get nonBacklogStates():State[] {
+        return this._nonBacklogStates;
+    }
+
+    get backlogStates():State[] {
+        return this._backlogStates;
+    }
+
     get stateVisibilities():boolean[] {
         return this._stateVisibilities;
     }
@@ -48,14 +87,14 @@ export class BoardHeaders {
 
     static deserialize(boardData:BoardData, input:any):BoardHeaders {
 
-        let boardStates:Indexed<string> = new Indexed<string>();
+        let boardStateNames:Indexed<string> = new Indexed<string>();
+        let boardStates:Indexed<State> = new Indexed<State>();
         let headers:string[] = input.headers;
 
-        let indexedStates:State[] = [];
         let categories:Indexed<StateCategory> = new Indexed<StateCategory>();
         let index = 0;
         for (let state of input.states) {
-            boardStates.add(state.name, state.name);
+            boardStateNames.add(state.name, state.name);
 
             let backlogState:boolean = index < boardData.backlogSize;
 
@@ -63,11 +102,11 @@ export class BoardHeaders {
             if (isNumber(state.header)) {
                 let header:string = headers[state.header];
                 category = BoardHeaders.getOrCreateStateCategory(categories, header, false);
-            } else if (backlogState && boardData.backlogSize > 1) {
+            } else if (backlogState) {
                 category = BoardHeaders.getOrCreateStateCategory(categories, "Backlog", true);
             }
-            let stateEntry = new State(boardData, state.name, indexedStates.length, backlogState, category);
-            indexedStates.push(stateEntry);
+            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, category);
+            boardStates.add(state.name, stateEntry);
             if (category) {
                 category.states.push(stateEntry);
             }
@@ -76,6 +115,7 @@ export class BoardHeaders {
 
         let stateVisibilities:boolean[];
         if (boardData && boardData.headers) {
+            //For a simple refresh following polling, use the same states
             stateVisibilities = boardData.headers._stateVisibilities;
         } else {
             stateVisibilities = new Array<boolean>(boardStates.array.length);
@@ -84,24 +124,32 @@ export class BoardHeaders {
             }
         }
 
-
+        let backlogTopHeader:BoardHeaderEntry;
+        let backlogBottomHeaders:BoardHeaderEntry[] = [];
         let topHeaders:BoardHeaderEntry[] = [];
         let bottomHeaders:BoardHeaderEntry[] = [];
         let addedCategories:IMap<boolean> = {};
-        for (let i:number = 0 ; i < indexedStates.length ; i++) {
-            let indexedState:State = indexedStates[i];
+        for (let i:number = 0 ; i < boardStates.array.length ; i++) {
+            let indexedState:State = boardStates.array[i];
             if (!indexedState.category) {
                 topHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 2));
             } else {
-                if (!addedCategories[indexedState.category.name]) {
-                    topHeaders.push(new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length, 1));
-                    addedCategories[indexedState.category.name] = true;
+                if (indexedState.backlog) {
+                    if (!backlogTopHeader) {
+                        backlogTopHeader = new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length);
+                    }
+                    backlogBottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
+                } else {
+                    if (!addedCategories[indexedState.category.name]) {
+                        topHeaders.push(new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length));
+                        addedCategories[indexedState.category.name] = true;
+                    }
+                    bottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
                 }
-                bottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
             }
         }
 
-        return new BoardHeaders(boardData, boardStates, topHeaders, bottomHeaders, stateVisibilities);
+        return new BoardHeaders(boardData, boardStateNames, boardStates, backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities);
     }
 
     static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {
@@ -165,7 +213,6 @@ class StateCategory {
         }
 
         if (!visible) {
-
             for (let state of this._states) {
                 stateVisibilities[state.index] = true;
             }
@@ -173,10 +220,11 @@ class StateCategory {
     }
 }
 
-class State {
+export class State {
 
     constructor(private _boardData:BoardData, private _name:string, private _index:number,
                 private _backlog:boolean, private _category:StateCategory) {
+        console.log(_index);
     }
 
     get name():string {
@@ -228,7 +276,8 @@ export abstract class BoardHeaderEntry {
     }
 
     get stateAndCategory():boolean {
-        return false;
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
     }
 
     get name():string {
@@ -255,8 +304,9 @@ export abstract class BoardHeaderEntry {
 }
 
 class CategoryHeaderEntry extends BoardHeaderEntry {
-    constructor(private _category:StateCategory, stateVisibilities:boolean[], cols:number, rows:number) {
-        super(stateVisibilities, cols, rows);
+    constructor(private _category:StateCategory, stateVisibilities:boolean[], cols:number) {
+        //A header entry is always just one row
+        super(stateVisibilities, cols, 1);
     }
 
     get name():string {
@@ -265,6 +315,10 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
 
     get totalIssues() : number {
         return this._category.totalIssues;
+    }
+
+    get stateAndCategory():boolean {
+        return false;
     }
 
     get visible():boolean {
@@ -278,7 +332,6 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
     toggleVisibility() {
         this._category.toggleVisibility(this._stateVisibilities);
     }
-
 }
 
 class StateHeaderEntry extends BoardHeaderEntry {

@@ -1,7 +1,6 @@
-import {Component, View} from 'angular2/core';
-import {ROUTER_DIRECTIVES, ROUTER_PROVIDERS, Router, RouterLink} from 'angular2/router';
+import {Component} from 'angular2/core';
+import {ROUTER_DIRECTIVES} from 'angular2/router';
 import {BoardsService} from '../../services/boardsService';
-import {BoardComponent} from '../board/board';
 import {ControlGroup, FormBuilder} from "angular2/common";
 import {Validators} from "angular2/common";
 import {Control} from "angular2/common";

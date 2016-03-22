@@ -4,18 +4,47 @@
     </td>
 </tr>
 <tr [hidden]="!swimlane.visible">
-    <td *ngFor="#state of boardStates ; #stateIndex=index" title="State: {{state}}" id="column.{{swimlaneIndex}}.{{stateIndex}}"
-        [ngClass]="visibleColumns[stateIndex] == true ? 'visible' : 'collapsed'">
-        <div [hidden]="!visibleColumns[stateIndex]">
+
+    <!-- Backlog collapsed, just show a single backlog column -->
+    <td *ngIf="backlogAndIsCollapsed" class="collapsed">
+        <div class="collapsed backlog-state-summary" *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
+    </td>
+    <!-- Backlog visible, show all the possible backlog states -->
+    <td *ngFor="#state of backlogStatesIfVisible"
+        [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
+        title="State: {{state.name}}">
+        <div [hidden]="!visibleColumns[state.index]">
             <ul class="issues-list">
-                <issue *ngFor="#issue of swimlane.issueTable[stateIndex]"
+                <issue *ngFor="#issue of swimlane.issueTable[state.index]"
+                       [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
+            </ul>
+        </div>
+        <div class="collapsed state-summary" [hidden]="visibleColumns[state.index]" *ngFor="#character of toCharArray(state.name)">{{character}}</div>
+    </td>
+
+    <!-- Normal states -->
+    <td *ngFor="#state of nonBacklogStates" title="State: {{state.name}}"
+        [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
+        title="State: {{state.name}}">
+        <div [hidden]="!visibleColumns[state.index]">
+            <ul class="issues-list">
+                <issue *ngFor="#issue of swimlane.issueTable[state.index]"
                        [issue]="issue"  (issueContextMenu)="showIssueContextMenu($event)"></issue>
             </ul>
         </div>
-        <div class="state-summary" [hidden]="visibleColumns[stateIndex]" *ngFor="#character of toCharArray(state)">{{character}}</div>
+        <div class="state-summary" [hidden]="visibleColumns[state.index]" *ngFor="#character of toCharArray(state.name)">{{character}}</div>
     </td>
 </tr>
-<!-- this is just an empty row for layout purposes -->
+<!--
+    This is just an empty row for layout purposes, its width shold be the same as the table,
+    so use the same logic to select the css classes as above. The reason for this is that
+    angular wraps the output for this component in an extra <tbody> tag, so we need to size it ourselves.
+-->
 <tr [hidden]="swimlane.visible">
-    <td *ngFor="#state of boardStates ; #stateIndex=index" class="swimlane-empty"></td>
+    <td *ngIf="backlogAndIsCollapsed" class="swimlane-empty-collapsed"></td>
+    <td *ngFor="#state of backlogStatesIfVisible"
+        [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
+    <td *ngFor="#state of nonBacklogStates"
+        [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
+
 </tr>
