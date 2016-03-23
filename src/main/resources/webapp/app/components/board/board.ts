@@ -19,8 +19,8 @@ import {BoardHeaderEntry, BoardHeaders, State} from "../../data/board/header";
     directives: [IssueComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
 })
 export class BoardComponent implements OnDestroy, OnInit {
-    boardId:number;
 
+    private boardCode;
     private boardHeight; //board + headers
     private boardBodyHeight; //board + headers
     private width;
@@ -38,17 +38,14 @@ export class BoardComponent implements OnDestroy, OnInit {
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService, routeParams:RouteParams) {
 
-        let boardId:string = routeParams.get('board');
-        if (boardId) {
-            this.boardId = Number(boardId);
-        }
+        this.boardCode = routeParams.get('board');
         this.populateIssues();
         this.setWindowSize();
     }
 
     private populateIssues() {
         this._progressError.startProgress(true);
-        this._issuesService.getIssuesData(this.boardId, this._boardData.showBacklog).subscribe(
+        this._issuesService.getIssuesData(this.boardCode, this._boardData.showBacklog).subscribe(
             data => {
                 this.setIssueData(data);
             },
@@ -81,7 +78,7 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     private setIssueData(issueData:any) {
-        this._boardData.deserialize(this.boardId, issueData);
+        this._boardData.deserialize(this.boardCode, issueData);
         this.setWindowSize();
     }
 

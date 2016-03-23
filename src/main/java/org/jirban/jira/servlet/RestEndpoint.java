@@ -91,28 +91,28 @@ public class RestEndpoint {
     }
 
     @GET
-    @Path(ISSUES + "/{boardId}")
+    @Path(ISSUES + "/{boardCode}")
     public Response getBoard(
-            @PathParam("boardId") int boardId,
+            @PathParam("boardCode") String boardCode,
             @QueryParam("backlog") Boolean backlog) throws SearchException {
         //TODO figure out if a permission violation becomes a search exception
         return createResponse(
                 jiraFacade.getBoardJson(
                         getUser(),
                         backlog != null && backlog.booleanValue(),
-                        boardId));
+                        boardCode));
     }
 
     @GET
-    @Path(ISSUES + "/{boardId}/" + UPDATES + "/{viewId}")
-    public Response getBoard(@PathParam("boardId") int boardId,
+    @Path(ISSUES + "/{boardCode}/" + UPDATES + "/{viewId}")
+    public Response getBoard(@PathParam("boardCode") String boardCode,
                               @PathParam("viewId") int viewId,
                               @QueryParam("backlog") Boolean backlog) throws SearchException {
         //TODO figure out if a permission violation becomes a search exception
         return createResponse(
                 jiraFacade.getChangesJson(getUser(),
                         backlog != null && backlog.booleanValue(),
-                        boardId,
+                        boardCode,
                         viewId));
     }
 

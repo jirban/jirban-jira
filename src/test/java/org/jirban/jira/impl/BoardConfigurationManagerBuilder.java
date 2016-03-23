@@ -21,6 +21,8 @@
  */
 package org.jirban.jira.impl;
 
+import static org.jirban.jira.impl.Constants.CODE;
+import static org.jirban.jira.impl.Constants.NAME;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
@@ -28,11 +30,14 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardCfg;
@@ -46,6 +51,9 @@ import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
+import net.java.ao.EntityManager;
+import net.java.ao.Query;
+import net.java.ao.RawEntity;
 import ut.org.jirban.jira.mock.IssueTypeManagerBuilder;
 import ut.org.jirban.jira.mock.PermissionManagerBuilder;
 import ut.org.jirban.jira.mock.PriorityManagerBuilder;
@@ -63,17 +71,18 @@ public class BoardConfigurationManagerBuilder {
     private PriorityManager priorityManager = PriorityManagerBuilder.getDefaultPriorityManager();
     private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
 
-    private List<ModelNode> activeObjectEntries = new ArrayList<>();
+    private Map<String, ModelNode> activeObjectEntries = new HashMap<>();
 
     public BoardConfigurationManagerBuilder addConfigActiveObjects(String... resources) throws IOException {
         for (String resource : resources) {
-            activeObjectEntries.add(loadConfig(resource));
+            ModelNode entry = loadConfig(resource);
+            addConfigActiveObject(entry);
         }
         return this;
     }
 
     public BoardConfigurationManagerBuilder addConfigActiveObject(ModelNode activeObject) throws IOException {
-        activeObjectEntries.add(activeObject);
+        activeObjectEntries.put(activeObject.get(CODE).asString(), activeObject);
         return this;
     }
 
@@ -94,12 +103,15 @@ public class BoardConfigurationManagerBuilder {
 
     public BoardConfigurationManager build() {
         when(activeObjects.executeInTransaction(any(TransactionCallback.class))).thenAnswer(invocation -> ((TransactionCallback)invocation.getArguments()[0]).doInTransaction());
-        when(activeObjects.get(any(Class.class), anyInt())).thenAnswer(invocation -> {
+        when(activeObjects.find(any(Class.class), any(Query.class))).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();
             Assert.assertEquals(BoardCfg.class, args[0]);
-            int id = (Integer)args[1];
-            if (id < activeObjectEntries.size()) {
-                return new MockBoardCfg(id, "kabir", activeObjectEntries.get(id)).boardCfg;
+            Query query = (Query) args[1];
+            if (query.getWhereClause().equals("code = ?") && query.getWhereParams().length == 1) {
+                ModelNode entry = activeObjectEntries.get(query.getWhereParams()[0]);
+                if (entry != null) {
+                    return new BoardCfg[]{new MockBoardCfg("kabir", entry).boardCfg};
+                }
             }
             return null;
         });
@@ -116,24 +128,54 @@ public class BoardConfigurationManagerBuilder {
         }
     }
 
-    private static class MockBoardCfg {
+    private static class MockBoardCfg implements RawEntity<Integer>{
         private final BoardCfg boardCfg = mock(BoardCfg.class);
-        private int id;
         private String owningUserKey;
         private ModelNode modelNode;
 
-        public MockBoardCfg(int id, String owningUserKey, ModelNode modelNode) {
-            this.id = id;
+        public MockBoardCfg(String owningUserKey, ModelNode modelNode) {
             this.owningUserKey = owningUserKey;
             this.modelNode = modelNode;
 
-            when(boardCfg.getName()).thenReturn(modelNode.get("name").asString());
+            when(boardCfg.getName()).thenReturn(modelNode.get(CODE).asString());
+            when(boardCfg.getName()).thenReturn(modelNode.get(NAME).asString());
             when(boardCfg.getConfigJson()).thenReturn(modelNode.toJSONString(true));
             when(boardCfg.getOwningUser()).thenReturn(owningUserKey);
             doAnswer(invocation -> this.modelNode = ModelNode.fromJSONString((String)invocation.getArguments()[0]))
                     .when(boardCfg).setConfigJson(anyString());
             doAnswer(invocation -> this.owningUserKey = (String)invocation.getArguments()[0])
                     .when(boardCfg).setOwningUserKey(anyString());
+        }
+
+        //
+        @Override
+        public void init() {
+
+        }
+
+        @Override
+        public void save() {
+
+        }
+
+        @Override
+        public EntityManager getEntityManager() {
+            return null;
+        }
+
+        @Override
+        public <X extends RawEntity<Integer>> Class<X> getEntityType() {
+            return null;
+        }
+
+        @Override
+        public void addPropertyChangeListener(PropertyChangeListener listener) {
+
+        }
+
+        @Override
+        public void removePropertyChangeListener(PropertyChangeListener listener) {
+
         }
     }
 }

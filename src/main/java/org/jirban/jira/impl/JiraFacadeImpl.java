@@ -7,6 +7,7 @@ import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.JiraFacade;
+import org.jirban.jira.impl.config.BoardConfig;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -58,22 +59,22 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
 
     @Override
     public void saveBoardConfiguration(ApplicationUser user, int id, String jiraUrl, ModelNode config) {
-        boardConfigurationManager.saveBoard(user, id, config);
+        BoardConfig boardConfig = boardConfigurationManager.saveBoard(user, id, config);
         if (id >= 0) {
             //We are modifying a board's configuration. Delete the board config and board data to force a refresh.
-            boardManager.deleteBoard(user,id);
+            boardManager.deleteBoard(user, boardConfig.getCode());
         }
     }
 
     @Override
     public void deleteBoardConfiguration(ApplicationUser user, int id) {
-        boardConfigurationManager.deleteBoard(user, id);
-        boardManager.deleteBoard(user, id);
+        final String code = boardConfigurationManager.deleteBoard(user, id);
+        boardManager.deleteBoard(user, code);
     }
 
     @Override
-    public String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException {
-        return boardManager.getBoardJson(user, backlog, id);
+    public String getBoardJson(ApplicationUser user, boolean backlog, String code) throws SearchException {
+        return boardManager.getBoardJson(user, backlog, code);
     }
 
     @Override
@@ -82,8 +83,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException {
-        return boardManager.getChangesJson(user, backlog, id, viewId);
+    public String getChangesJson(ApplicationUser user, boolean backlog, String code, int viewId) throws SearchException {
+        return boardManager.getChangesJson(user, backlog, code, viewId);
     }
 
     @Override

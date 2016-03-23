@@ -48,7 +48,7 @@ public class BoardConfigurationManagerTest {
         cfgManagerBuilder.addConfigActiveObjects("config/board-tdp.json");
         BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 
-        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, 0);
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
         Assert.assertNotNull(boardConfig);
     }
 
@@ -133,7 +133,7 @@ public class BoardConfigurationManagerTest {
         BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
         ModelNode copy = cloneAndModifyStates(original, modifiers);
         BoardConfigurationManager cfgManager = cfgManagerBuilder.addConfigActiveObject(copy).build();
-        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, 0);
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
         Assert.assertNotNull(boardConfig);
     }
 

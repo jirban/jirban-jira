@@ -32,10 +32,24 @@ import net.java.ao.schema.Unique;
  */
 @Preload
 public interface BoardCfg extends Entity {
+    /**
+     * The name of the board that will appear in the overview lists of boards
+     * @return the name
+     */
     @NotNull
     @Unique
     String getName();
     void setName(String name);
+
+    /**
+     * The code of the board that will be used when accessing the boards. Using ID is a bit strict, in case we need to
+     * drop a board for whatever reason.
+     * @return the code
+     */
+    @NotNull
+    @Unique
+    String getCode();
+    void setCode(String name);
 
     /**
      * The key of the ApplicationUser who created the board configuration.
@@ -45,6 +59,9 @@ public interface BoardCfg extends Entity {
     @NotNull
     String getOwningUser();
     void setOwningUserKey(String name);
+
+
+
 
     @NotNull
     @StringLength(StringLength.UNLIMITED)

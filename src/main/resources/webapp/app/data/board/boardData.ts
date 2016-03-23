@@ -23,7 +23,7 @@ import {BoardHeaders, State} from "./header";
 
 export class BoardData {
     private _boardName:string;
-    private _id:number;
+    private _code:string;
     private _backlogSize:number;
     private _showBacklog:boolean = false;
     private _view:number;
@@ -66,9 +66,9 @@ export class BoardData {
      * Called on loading the board the first time
      * @param input the json containing the issue tables
      */
-    deserialize(boardId:number, input:any):BoardData {
+    deserialize(boardCode:string, input:any):BoardData {
         this._boardName = input.name;
-        this._id = boardId;
+        this._code = boardCode;
         this.internalDeserialize(input, true);
 
         this.initialized = true;
@@ -182,8 +182,8 @@ export class BoardData {
         this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
     }
 
-    get id():number {
-        return this._id;
+    get code():string {
+        return this._code;
     }
 
     get view():number {

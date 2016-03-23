@@ -95,7 +95,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testFullRefreshOnTooHighView() throws Exception {
-        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), false, 0, 1);
+        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), false, "TST", 1);
         ModelNode changes = ModelNode.fromJSONString(json);
 
         Assert.assertFalse(changes.hasDefined(CHANGES));
@@ -1454,7 +1454,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     private void checkViewId(int expectedViewId) throws SearchException {
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), false, 0);
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), false, "TST");
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedViewId, boardNode.get(VIEW).asInt());
@@ -1466,7 +1466,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     private ModelNode getChangesJson(int fromView, int expectedView, boolean backlog) throws SearchException {
-        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), backlog, 0, fromView);
+        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), backlog, "TST", fromView);
         ModelNode changesNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         return changesNode;

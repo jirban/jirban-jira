@@ -35,18 +35,18 @@ public interface BoardManager {
      *
      * @param user the logged in user
      * @param backlog if {@true} we will include issues belonging to the backlog states
-     * @param id the id of the board
+     * @param code the code of the board
      * @return the board in json format
      * @throws SearchException
      */
-    String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException;
+    String getBoardJson(ApplicationUser user, boolean backlog, String code) throws SearchException;
 
     /**
      * Deletes a board
      * @param user the logged in user
-     * @param id the id of the board to delete
+     * @param code the id of the board to delete
      */
-    void deleteBoard(ApplicationUser user, int id);
+    void deleteBoard(ApplicationUser user, String code);
 
     /**
      * Checks whether there are any boards which has the passed in {@code projectCode} as one of the board projects.
@@ -69,9 +69,9 @@ public interface BoardManager {
      *
      * @param user the logged in user
      * @param backlog if {@true} we will include changes to issues belonging to the backlog states
-     * @param id the board id
+     * @param code the board code
      * @param viewId the view id of the client.
      * @return the json containing the changes
      */
-    String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException;
+    String getChangesJson(ApplicationUser user, boolean backlog, String code, int viewId) throws SearchException;
 }

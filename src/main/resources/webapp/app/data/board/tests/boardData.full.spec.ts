@@ -28,13 +28,13 @@ describe('BoardData tests', ()=> {
             data.projects.main.TDP.issues=[[], [], [], []];
 
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1, data);
+            boardData.deserialize("tst", data);
             expect(boardData.blacklist).toBeNull();
         });
 
         it('Full board; No blacklist', () => {
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
 
             expect(boardData.view).toEqual(0);
@@ -58,7 +58,7 @@ describe('BoardData tests', ()=> {
 
         it('Full board; Blacklist', () => {
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES, TestBoardData.STANDARD_BLACKLIST));
 
             expect(boardData.view).toEqual(0);
@@ -89,7 +89,7 @@ describe('BoardData tests', ()=> {
 
         it('Owner Project Only; No blacklist', () => {
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.OWNER_ONLY_BOARD_PROJECTS, TestBoardData.OWNER_ONLY_BOARD_ISSUES));
 
             expect(boardData.view).toEqual(0);
@@ -113,7 +113,7 @@ describe('BoardData tests', ()=> {
 
         it('Non-owner issues only; No blacklist', () => {
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.NON_OWNER_ONLY_BOARD_PROJECTS, TestBoardData.NON_OWNER_ONLY_BOARD_ISSUES));
 
             expect(boardData.view).toEqual(0);
@@ -139,7 +139,7 @@ describe('BoardData tests', ()=> {
     describe('No Change', () => {
         it('No change', () => {
             let boardData:BoardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
             let changes:any = {
                 changes: {
@@ -160,7 +160,7 @@ describe('BoardData tests', ()=> {
         var boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
             expect(boardData.blacklist).toBeNull();
         });
@@ -274,7 +274,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES, TestBoardData.STANDARD_BLACKLIST));
             expect(boardData.blacklist).toEqual(jasmine.anything());
         });
@@ -388,7 +388,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
         });
 
@@ -482,7 +482,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
         });
 
@@ -731,7 +731,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
         });
 
@@ -831,7 +831,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
         });
 
@@ -1009,7 +1009,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
         });
 
@@ -1224,7 +1224,7 @@ describe('BoardData tests', ()=> {
         let boardData:BoardData;
         beforeEach(() => {
             boardData = new BoardData();
-            boardData.deserialize(1,
+            boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
         });
 

@@ -20,6 +20,7 @@
 
 package org.jirban.jira.impl.config;
 
+import static org.jirban.jira.impl.Constants.CODE;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.LINKED;
 import static org.jirban.jira.impl.Constants.LINKED_PROJECTS;
@@ -61,6 +62,7 @@ import com.atlassian.jira.issue.priority.Priority;
 public class BoardConfig {
 
     private final int id;
+    private final String code;
     private final String name;
     private final String owningUserKey;
     private final String ownerProjectCode;
@@ -76,13 +78,14 @@ public class BoardConfig {
     private final Map<String, Integer> issueTypeIndex;
     private final List<String> issueTypeNames;
 
-    private BoardConfig(int id, String name, String owningUserKey, String ownerProjectCode,
+    private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
                         BoardStates boardStates,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
 
         this.id = id;
+        this.code = code;
         this.name = name;
         this.owningUserKey = owningUserKey;
         this.ownerProjectCode = ownerProjectCode;
@@ -118,8 +121,9 @@ public class BoardConfig {
         return boardConfig.serializeModelNodeForConfig();
     }
 
-    private static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
+    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
                                     int id, String owningUserKey, ModelNode boardNode) {
+        String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
         String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
         int rankCustomFieldId = getRequiredChild(boardNode, "Group", boardName, RANK_CUSTOM_FIELD_ID).asInt();
@@ -149,7 +153,7 @@ public class BoardConfig {
             }
         }
 
-        BoardConfig boardConfig = new BoardConfig(id, boardName, owningUserKey, owningProjectName,
+        BoardConfig boardConfig = new BoardConfig(id, code, boardName, owningUserKey, owningProjectName,
                 rankCustomFieldId,
                 boardStates,
                 Collections.unmodifiableMap(mainProjects),
@@ -257,9 +261,10 @@ public class BoardConfig {
     /**
      * Used to serialize the board for the view/edit board config view
      */
-    private ModelNode serializeModelNodeForConfig() {
+    public ModelNode serializeModelNodeForConfig() {
         ModelNode boardNode = new ModelNode();
         boardNode.get(NAME).set(name);
+        boardNode.get(CODE).set(code);
         boardNode.get(OWNING_PROJECT).set(ownerProjectCode);
         boardNode.get(RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
 
@@ -302,6 +307,10 @@ public class BoardConfig {
 
     public int getId() {
         return id;
+    }
+
+    public String getCode() {
+        return code;
     }
 
     public List<String> getStateNames() {

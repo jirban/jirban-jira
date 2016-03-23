@@ -53,7 +53,7 @@ public interface BoardConfigurationManager {
      * @throws org.jirban.jira.JirbanPermissionException if the user does not have the correct permissions
      * @throws org.jirban.jira.JirbanValidationException if the input is bad
      */
-    void saveBoard(ApplicationUser user, int id, ModelNode config);
+    BoardConfig saveBoard(ApplicationUser user, int id, ModelNode config);
 
 
     /**
@@ -63,25 +63,25 @@ public interface BoardConfigurationManager {
      * @param id      the id of the board
      * @throws org.jirban.jira.JirbanPermissionException if the user does not have the correct permissions
      */
-    void deleteBoard(ApplicationUser user, int id);
+    String deleteBoard(ApplicationUser user, int id);
 
     /**
      * Loads the board configuration. Permissions are checked to see if the user
      * can update anything.
      * @param user the user
-     * @param id the id of the configuration
+     * @param code the configuration code
      * @return the configuration
      * @throws org.jirban.jira.JirbanPermissionException if the user does not have the correct permissions
      * @throws org.jirban.jira.JirbanValidationException if the structure of the config is bad
      */
-    BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, int id);
+    BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, String code);
 
     /**
      * Gets all the boards set up for a given project
      *
      * @param projectCode the project code
-     * @return the board ids
+     * @return the board codes
      */
-    List<Integer> getBoardIdsForProjectCode(String projectCode);
+    List<String> getBoardCodesForProjectCode(String projectCode);
 }
 

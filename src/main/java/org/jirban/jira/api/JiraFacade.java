@@ -41,11 +41,11 @@ public interface JiraFacade
      * Gets a board for displaying to the user
      * @param user the user
      * @param backlog if {@true} we will include issues belonging to the backlog states
-     * @param id the id
+     * @param code the board code
      * @return the board's json
      * @throws SearchException
      */
-    String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException;
+    String getBoardJson(ApplicationUser user, boolean backlog, String code) throws SearchException;
 
     /**
      * Gets the changes for a board. The client passes in their view id, and the delta is passed back to the client in
@@ -53,9 +53,9 @@ public interface JiraFacade
      *
      * @param user the logged in user
      * @param backlog if {@true} we will include issues belonging to the backlog states
-     * @param id the board id
+     * @param code the board code
      * @param viewId the view id of the client.
      * @return the json containing the changes
      */
-    String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException;
+    String getChangesJson(ApplicationUser user, boolean backlog, String code, int viewId) throws SearchException;
 }

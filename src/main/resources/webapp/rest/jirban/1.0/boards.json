@@ -1,6 +1,7 @@
 [
   {
     "id": 1,
+    "code" : "POC",
     "name": "Jira Staging Proof of Concept",
     "edit" : true,
     "config" : {

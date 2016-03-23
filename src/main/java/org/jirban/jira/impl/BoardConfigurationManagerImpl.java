@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl;
 
+import static org.jirban.jira.impl.Constants.CODE;
 import static org.jirban.jira.impl.Constants.CONFIG;
 import static org.jirban.jira.impl.Constants.EDIT;
 import static org.jirban.jira.impl.Constants.ID;
@@ -58,6 +59,7 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
 import net.java.ao.DBParam;
+import net.java.ao.Query;
 
 /**
  * @author Kabir Khan
@@ -65,7 +67,7 @@ import net.java.ao.DBParam;
 @Named("jirbanBoardConfigurationManager")
 public class BoardConfigurationManagerImpl implements BoardConfigurationManager {
 
-    private volatile Map<Integer, BoardConfig> boardConfigs = new ConcurrentHashMap<>();
+    private volatile Map<String, BoardConfig> boardConfigs = new ConcurrentHashMap<>();
 
     @ComponentImport
     private final ActiveObjects activeObjects;
@@ -106,6 +108,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         for (BoardCfg config : configs) {
             ModelNode configNode = new ModelNode();
             configNode.get(ID).set(config.getID());
+            configNode.get(CODE).set(config.getCode());
             configNode.get(NAME).set(config.getName());
             ModelNode configJson = ModelNode.fromJSONString(config.getConfigJson());
             if (forConfig) {
@@ -115,7 +118,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 configNode.get(CONFIG).set(configJson);
                 output.add(configNode);
             } else {
-                //Just a wild guess at what is needed to view the boards
+                //A guess at what is needed to view the boards
                 if (canViewBoard(user, configNode)) {
                     output.add(configNode);
                 }
@@ -125,18 +128,20 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, final int id) {
-        BoardConfig boardConfig =  boardConfigs.get(id);
+    public BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, final String code) {
+        BoardConfig boardConfig =  boardConfigs.get(code);
         if (boardConfig == null) {
-            BoardCfg cfg = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg>(){
+            BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
                 @Override
-                public BoardCfg doInTransaction() {
-                    return activeObjects.get(BoardCfg.class, id);
+                public BoardCfg[] doInTransaction() {
+                    return activeObjects.find(BoardCfg.class, Query.select().where("code = ?", code));
                 }
             });
-            if (cfg != null) {
-                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, cfg.getOwningUser(), cfg.getConfigJson());
-                BoardConfig old = boardConfigs.putIfAbsent(id, boardConfig);
+
+            if (cfgs != null && cfgs.length == 1) {
+                BoardCfg cfg = cfgs[0];
+                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, cfg.getID(), cfg.getOwningUser(), cfg.getConfigJson());
+                BoardConfig old = boardConfigs.putIfAbsent(code, boardConfig);
                 if (old != null) {
                     boardConfig = old;
                 }
@@ -144,19 +149,22 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         }
         if (boardConfig != null && !canViewBoard(user, boardConfig)) {
             throw new JirbanPermissionException("Insufficient permissions to view board " +
-                    boardConfig.getName() + " (" + id + ")");
+                    boardConfig.getName() + " (" + code + ")");
         }
         return boardConfig;
     }
 
     @Override
-    public void saveBoard(ApplicationUser user, final int id, final ModelNode config) {
+    public BoardConfig saveBoard(ApplicationUser user, final int id, final ModelNode config) {
+        final String code = config.get(CODE).asString();
         final String name = config.get(NAME).asString();
 
         //Validate it, and serialize it so that the order of fields is always the same
+        final BoardConfig boardConfig;
         final ModelNode validConfig;
         try {
-            validConfig = BoardConfig.validateAndSerialize(issueTypeManager, priorityManager, id, user.getKey(), config);
+            boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, user.getKey(), config);
+            validConfig = boardConfig.serializeModelNodeForConfig();
         } catch (Exception e) {
             throw new JirbanValidationException("Invalid data: " + e.getMessage());
         }
@@ -176,6 +184,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
                 if (id >= 0) {
                     final BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
+                    cfg.setCode(code);
                     cfg.setName(name);
                     cfg.setOwningUserKey(user.getKey());
                     cfg.setConfigJson(validConfig.toJSONString(true));
@@ -183,6 +192,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 } else {
                     final BoardCfg cfg = activeObjects.create(
                             BoardCfg.class,
+                            new DBParam("CODE", code),
                             new DBParam("NAME", name),
                             new DBParam("OWNING_USER", user.getKey()),
                             //Compact the json before saving it
@@ -190,43 +200,49 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                     cfg.save();
                 }
                 if (id >= 0) {
-                    boardConfigs.remove(id);
+                    boardConfigs.remove(code);
                 }
                 return null;
             }
         });
+        return boardConfig;
     }
 
     @Override
-    public void deleteBoard(ApplicationUser user, int id) {
-        activeObjects.executeInTransaction(new TransactionCallback<Void>() {
+    public String deleteBoard(ApplicationUser user, int id) {
+        final String code = activeObjects.executeInTransaction(new TransactionCallback<String>() {
             @Override
-            public Void doInTransaction() {
+            public String doInTransaction() {
                 BoardCfg cfg = activeObjects.get(BoardCfg.class, id);
                 if (cfg == null) {
                     return null;
                 }
+                final String code = cfg.getCode();
                 final ModelNode boardConfig = ModelNode.fromJSONString(cfg.getConfigJson());
                 if (!canEditBoard(user, boardConfig)) {
                     throw new JirbanPermissionException("Insufficient permissions to delete board '" +
                             boardConfig.get(NAME) + "' (" + id + ")");
                 }
                 activeObjects.delete(cfg);
-                return null;
+                return code;
             }
         });
+        if (code != null) {
+            boardConfigs.remove(code);
+        }
+        return code;
     }
 
     @Override
-    public List<Integer> getBoardIdsForProjectCode(String projectCode) {
+    public List<String> getBoardCodesForProjectCode(String projectCode) {
         //For now just iterate
-        List<Integer> boardIds = new ArrayList<>();
-        for (Map.Entry<Integer, BoardConfig> entry : boardConfigs.entrySet()) {
+        List<String> boardCodes = new ArrayList<>();
+        for (Map.Entry<String, BoardConfig> entry : boardConfigs.entrySet()) {
             if (entry.getValue().getBoardProject(projectCode) != null) {
-                boardIds.add(entry.getKey());
+                boardCodes.add(entry.getKey());
             }
         }
-        return boardIds;
+        return boardCodes;
     }
 
     private Set<BoardCfg> loadBoardConfigs() {

@@ -21,7 +21,7 @@ export class IssuesService {
         this.http = http;
     }
 
-    getIssuesData(board:number, backlog:boolean) : Observable<Response> {
+    getIssuesData(board:string, backlog:boolean) : Observable<Response> {
         let url = 'rest/jirban/1.0/issues/' + board;
         if (backlog) {
             url += "?backlog=" + true;
@@ -33,7 +33,7 @@ export class IssuesService {
     }
 
     pollBoard(boardData:BoardData) : Observable<Response> {
-        let url:string = 'rest/jirban/1.0/issues/' + boardData.id + "/updates/" + boardData.view;
+        let url:string = 'rest/jirban/1.0/issues/' + boardData.code + "/updates/" + boardData.view;
         if (boardData.showBacklog) {
             url += "?backlog=" + true;
         }

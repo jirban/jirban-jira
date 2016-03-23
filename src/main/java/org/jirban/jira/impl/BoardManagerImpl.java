@@ -62,9 +62,9 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     private static final int REFRESH_TIMEOUT_SECONDS = 5 * 60;
 
     //Guarded by this
-    private Map<Integer, Board> boards = new HashMap<>();
+    private Map<String, Board> boards = new HashMap<>();
     //Guarded by this
-    private Map<Integer, BoardChangeRegistry> boardChangeRegistries = new HashMap<>();
+    private Map<String, BoardChangeRegistry> boardChangeRegistries = new HashMap<>();
 
     @ComponentImport
     private final SearchService searchService;
@@ -94,14 +94,14 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public String getBoardJson(ApplicationUser user, boolean backlog, int id) throws SearchException {
-        Board board = boards.get(id);
+    public String getBoardJson(ApplicationUser user, boolean backlog, String code) throws SearchException {
+        Board board = boards.get(code);
         if (board == null) {
             synchronized (this) {
-                board = boards.get(id);
+                board = boards.get(code);
                 if (board == null) {
                     //Use the logged in user to check if we are allowed to view the board
-                    final BoardConfig boardConfig = boardConfigurationManager.getBoardConfigForBoardDisplay(user, id);
+                    final BoardConfig boardConfig = boardConfigurationManager.getBoardConfigForBoardDisplay(user, code);
                     /*
                     Use the board owner to load the board data. The board is only loaded once, and shared amongst all
                     users.
@@ -113,9 +113,9 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
                     final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
                     board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
-                    boards.put(id, board);
-                    boardChangeRegistries.put(id, new BoardChangeRegistry(board));
-                    boardRefreshQueue.add(new RefreshEntry(id, REFRESH_TIMEOUT_SECONDS));
+                    boards.put(code, board);
+                    boardChangeRegistries.put(code, new BoardChangeRegistry(board));
+                    boardRefreshQueue.add(new RefreshEntry(code, REFRESH_TIMEOUT_SECONDS));
                 }
             }
         }
@@ -123,23 +123,23 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public void deleteBoard(ApplicationUser user, int id) {
+    public void deleteBoard(ApplicationUser user, String code) {
         synchronized (this) {
-            boards.remove(id);
-            boardChangeRegistries.remove(id);
+            boards.remove(code);
+            boardChangeRegistries.remove(code);
         }
     }
 
     @Override
     public boolean hasBoardsForProjectCode(String projectCode) {
-        List<Integer> boardIds = boardConfigurationManager.getBoardIdsForProjectCode(projectCode);
-        if (boardIds.size() == 0) {
+        List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(projectCode);
+        if (boardCodes.size() == 0) {
             return false;
         }
         synchronized (this) {
-            for (Integer boardId : boardIds) {
+            for (String boardCode : boardCodes) {
                 //There might be a config, but no board. So check if there is a board first.
-                if (boards.get(boardId) != null) {
+                if (boards.get(boardCode) != null) {
                     return true;
                 }
             }
@@ -151,16 +151,16 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     public void handleEvent(JirbanIssueEvent event) {
         //Jira seems to only handle one event at a time, which is good
 
-        List<Integer> boardIds = boardConfigurationManager.getBoardIdsForProjectCode(event.getProjectCode());
-        for (Integer boardId : boardIds) {
+        List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(event.getProjectCode());
+        for (String boardCode : boardCodes) {
             final Board board;
             final BoardChangeRegistry changeRegistry;
             synchronized (this) {
-                board = boards.get(boardId);
+                board = boards.get(boardCode);
                 if (board == null) {
                     continue;
                 }
-                changeRegistry = boardChangeRegistries.get(boardId);
+                changeRegistry = boardChangeRegistries.get(boardCode);
             }
             final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
             try {
@@ -171,7 +171,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
                 synchronized (this) {
                     changeRegistry.setBoard(newBoard);
-                    boards.put(boardId, newBoard);
+                    boards.put(boardCode, newBoard);
                 }
             } catch (Exception e) {
                 new Exception("Error handling  " + event + " for board " + board.getConfig().getId(), e).printStackTrace();
@@ -180,25 +180,25 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public String getChangesJson(ApplicationUser user, boolean backlog, int id, int viewId) throws SearchException {
+    public String getChangesJson(ApplicationUser user, boolean backlog, String code, int viewId) throws SearchException {
         //Check we are allowed to view the board
-        boardConfigurationManager.getBoardConfigForBoardDisplay(user, id);
+        boardConfigurationManager.getBoardConfigForBoardDisplay(user, code);
 
         BoardChangeRegistry boardChangeRegistry;
         synchronized (this) {
-            boardChangeRegistry = boardChangeRegistries.get(id);
+            boardChangeRegistry = boardChangeRegistries.get(code);
         }
 
         if (boardChangeRegistry == null) {
             //There is config but no board, so do a full refresh
-            return getBoardJson(user, false, id);
+            return getBoardJson(user, false, code);
         }
 
         final ModelNode changes;
         try {
             changes = boardChangeRegistry.getChangesSince(backlog, viewId);
         } catch (BoardChangeRegistry.FullRefreshNeededException e) {
-            return getBoardJson(user, backlog, id);
+            return getBoardJson(user, backlog, code);
         }
 
         return changes.toJSONString(true);
@@ -222,8 +222,8 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
                                 //Remove the board, an attempt to read it will result in a new instance being fully loaded
                                 //and created
-                                boardChangeRegistries.remove(entry.boardId);
-                                boards.remove(entry.boardId);
+                                boardChangeRegistries.remove(entry.boardCode);
+                                boards.remove(entry.boardCode);
                                 //When an attempt is made to get the board again, a new entry will be added to the  queue
 
                                 entry = boardRefreshQueue.peek();
@@ -245,11 +245,11 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     private static class RefreshEntry {
-        private final int boardId;
+        private final String boardCode;
         private final long endTime;
 
-        public RefreshEntry(int boardId, int timeoutSeconds) {
-            this.boardId = boardId;
+        public RefreshEntry(String boardCode, int timeoutSeconds) {
+            this.boardCode = boardCode;
             this.endTime = System.currentTimeMillis() + timeoutSeconds *1000;
         }
 
@@ -258,12 +258,12 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             RefreshEntry that = (RefreshEntry) o;
-            return boardId == that.boardId;
+            return boardCode == that.boardCode;
         }
 
         @Override
         public int hashCode() {
-            return boardId;
+            return boardCode.hashCode();
         }
     }
 }

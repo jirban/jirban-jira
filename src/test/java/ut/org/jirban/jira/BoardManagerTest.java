@@ -1003,7 +1003,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, boolean backlog, String...users) throws SearchException {
-        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), backlog, 0);
+        String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), backlog, "TST");
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedViewId, boardNode.get("view").asInt());
