@@ -224,7 +224,7 @@ export class State {
 
     constructor(private _boardData:BoardData, private _name:string, private _index:number,
                 private _backlog:boolean, private _category:StateCategory) {
-        console.log(_index);
+        //console.log(_index);
     }
 
     get name():string {

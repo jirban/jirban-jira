@@ -56,9 +56,12 @@
 
             <tbody *ngIf="!boardData.swimlane" [style.height]="boardBodyHeight">
             <tr>
-                <!-- Backlog collapsed, just show a single backlog column -->
-                <td *ngIf="backlogAndIsCollapsed" class="collapsed">
-                    <div class="collapsed backlog-state-summary" [hidden]="visibleColumns[stateIndex]" *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
+                <!-- Backlog header exists, but is collapsed. just show a single backlog column -->
+                <td *ngIf="backlogAndIsCollapsed"
+                    (click)="toggleHeaderVisibility(backlogTopHeader)"
+                    class="collapsed backlog-state-summary">
+                    <div class="collapsed backlog-state-summary"
+                         *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
                 </td>
                 <!-- Backlog visible, show all the possible backlog states -->
                 <td *ngFor="#state of backlogStatesIfVisible"
@@ -94,7 +97,8 @@
                             [swimlane]="swimlane"
                             [boardLeftOffset]="boardLeftOffset"
                             [hidden]="swimlane.filtered"
-                            (issueContextMenu)="showIssueContextMenu($event)"></swimlane-entry>
+                            (issueContextMenu)="showIssueContextMenu($event)"
+                            (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
             </tbody>
         </table>
     </div>

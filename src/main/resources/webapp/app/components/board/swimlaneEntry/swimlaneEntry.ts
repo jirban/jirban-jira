@@ -11,7 +11,7 @@ import {State, BoardHeaderEntry} from "../../../data/board/header";
  */
 @Component({
     inputs: ['swimlaneIndex', 'boardData', 'swimlane', 'boardLeftOffset'],
-    outputs: ['issueContextMenu'],
+    outputs: ['issueContextMenu', 'toggleBacklogVisibility'],
     selector: 'swimlane-entry',
     templateUrl: 'app/components/board/swimlaneEntry/swimlaneEntry.html',
     styleUrls: ['app/components/board//board.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
@@ -23,6 +23,7 @@ export class SwimlaneEntryComponent {
     public swimlaneIndex : number;
     public boardLeftOffset:number;
     private issueContextMenu:EventEmitter<any> = new EventEmitter();
+    private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
     constructor() {
     }
@@ -74,5 +75,10 @@ export class SwimlaneEntryComponent {
             return this.boardData.backlogStates;
         }
         return null;
+    }
+
+    toggleBacklog(event:any) {
+        console.log("---> sl tb");
+        this.toggleBacklogVisibility.emit(event);
     }
 }

@@ -6,7 +6,9 @@
 <tr [hidden]="!swimlane.visible">
 
     <!-- Backlog collapsed, just show a single backlog column -->
-    <td *ngIf="backlogAndIsCollapsed" class="collapsed">
+    <td *ngIf="backlogAndIsCollapsed"
+        (click)="toggleBacklog($event)"
+        class="collapsed backlog-state-summary">
         <div class="collapsed backlog-state-summary" *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
     </td>
     <!-- Backlog visible, show all the possible backlog states -->
