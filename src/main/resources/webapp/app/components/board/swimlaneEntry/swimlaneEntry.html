@@ -8,12 +8,12 @@
     <!-- Backlog collapsed, just show a single backlog column -->
     <td *ngIf="backlogAndIsCollapsed"
         (click)="toggleBacklog($event)"
-        class="collapsed backlog-state-summary">
+        class="collapsed backlog-state-summary backlog-cell">
         <div class="collapsed backlog-state-summary" *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
     </td>
     <!-- Backlog visible, show all the possible backlog states -->
     <td *ngFor="#state of backlogStatesIfVisible"
-        [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
+        [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
         title="State: {{state.name}}">
         <div [hidden]="!visibleColumns[state.index]">
             <ul class="issues-list">

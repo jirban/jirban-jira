@@ -94,3 +94,6 @@ ul.issues-list {
     padding: 0px;
     max-height: 3px;
 }
+.backlog-cell {
+    background-color: #E0E0E0;
+}

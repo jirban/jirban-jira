@@ -19,7 +19,7 @@
                     [attr.colspan]="backlogTopHeader.visible ? backlogTopHeader.cols : 1"
                     [attr.rowspan]="backlogTopHeader.visible ? backlogTopHeader.rows : 2"
                     [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': 'grey'}"
-                    [ngClass]="backlogTopHeader.visible ? 'visible' : 'collapsed'"
+                    [ngClass]="backlogTopHeader.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                     (click)="toggleHeaderVisibility(backlogTopHeader)">
                     <div [hidden]="backlogTopHeader.visible">&nbsp;</div>
                     <div [hidden]="!backlogTopHeader.visible">{{backlogTopHeader.name}}</div>
@@ -39,7 +39,7 @@
             <tr>
                 <!-- Only show the following bottom headers if the backlog is actually expanded -->
                 <th *ngFor="#header of backlogBottomHeadersIfVisible"
-                    [ngClass]="header.visible ? 'visible' : 'collapsed'"
+                    [ngClass]="header.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                     (click)="toggleHeaderVisibility(header)">
                     <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
                     <div [hidden]="header.visible">{{header.totalIssues}}</div>
@@ -59,13 +59,13 @@
                 <!-- Backlog header exists, but is collapsed. just show a single backlog column -->
                 <td *ngIf="backlogAndIsCollapsed"
                     (click)="toggleHeaderVisibility(backlogTopHeader)"
-                    class="collapsed backlog-state-summary">
+                    class="collapsed backlog-state-summary backlog-cell">
                     <div class="collapsed backlog-state-summary"
                          *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
                 </td>
                 <!-- Backlog visible, show all the possible backlog states -->
                 <td *ngFor="#state of backlogStatesIfVisible"
-                    [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
+                    [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                     title="State: {{state.name}}">
                     <div [hidden]="!visibleColumns[state.index]">
                         <ul class="issues-list">
