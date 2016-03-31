@@ -22,7 +22,9 @@
 package ut.org.jirban.jira;
 
 import static org.jirban.jira.impl.Constants.BACKLOG;
+import static org.jirban.jira.impl.Constants.CODE;
 import static org.jirban.jira.impl.Constants.HEADER;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 import static org.jirban.jira.impl.Constants.STATES;
 
 import java.io.IOException;
@@ -44,8 +46,9 @@ public class BoardConfigurationManagerTest {
     //TODO Add more tests for things like saving, and not having the correct permissions
     @Test
     public void testLoadConfiguration() throws IOException {
-        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
-        cfgManagerBuilder.addConfigActiveObjects("config/board-tdp.json");
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
+            .addConfigActiveObjectsFromFile("config/board-tdp.json")
+            .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
         BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
@@ -132,7 +135,7 @@ public class BoardConfigurationManagerTest {
 
         BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder();
         ModelNode copy = cloneAndModifyStates(original, modifiers);
-        BoardConfigurationManager cfgManager = cfgManagerBuilder.addConfigActiveObject(copy).build();
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.addConfigActiveObject(copy.get(CODE).asString(), copy).build();
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
         Assert.assertNotNull(boardConfig);
     }

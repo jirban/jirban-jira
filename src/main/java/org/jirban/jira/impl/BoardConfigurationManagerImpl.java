@@ -23,10 +23,13 @@ package org.jirban.jira.impl;
 
 import static org.jirban.jira.impl.Constants.CODE;
 import static org.jirban.jira.impl.Constants.CONFIG;
+import static org.jirban.jira.impl.Constants.CONFIGS;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.jirban.jira.impl.Constants.EDIT;
 import static org.jirban.jira.impl.Constants.ID;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,17 +44,20 @@ import javax.inject.Named;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanPermissionException;
 import org.jirban.jira.JirbanValidationException;
-import org.jirban.jira.api.BoardCfg;
 import org.jirban.jira.api.BoardConfigurationManager;
+import org.jirban.jira.impl.activeobjects.BoardCfg;
+import org.jirban.jira.impl.activeobjects.Setting;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.permission.GlobalPermissionKey;
 import com.atlassian.jira.permission.ProjectPermissions;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.security.plugin.ProjectPermissionKey;
 import com.atlassian.jira.user.ApplicationUser;
@@ -84,27 +90,32 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     @ComponentImport
     private final ProjectManager projectManager;
 
+    @ComponentImport
+    private final GlobalPermissionManager globalPermissionManager;
+
+    /** The 'Rank' custom field as output by  */
+    private volatile int rankCustomFieldId = -1;
+
     @Inject
     public BoardConfigurationManagerImpl(final ActiveObjects activeObjects,
                                          final IssueTypeManager issueTypeManager,
                                          final PriorityManager priorityManager,
                                          final PermissionManager permissionManager,
-                                         final ProjectManager projectManager) {
+                                         final ProjectManager projectManager,
+                                         final GlobalPermissionManager globalPermissionManager) {
         this.activeObjects = activeObjects;
         this.issueTypeManager = issueTypeManager;
         this.priorityManager = priorityManager;
         this.permissionManager = permissionManager;
         this.projectManager = projectManager;
+        this.globalPermissionManager = globalPermissionManager;
     }
 
     @Override
     public String getBoardsJson(ApplicationUser user, boolean forConfig) {
         Set<BoardCfg> configs = loadBoardConfigs();
-        if (configs.size() == 0) {
-            return "[]";
-        }
-
-        ModelNode output = new ModelNode();
+        ModelNode configsList = new ModelNode();
+        configsList.setEmptyList();
         for (BoardCfg config : configs) {
             ModelNode configNode = new ModelNode();
             configNode.get(ID).set(config.getID());
@@ -116,15 +127,30 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                     configNode.get(EDIT).set(true);
                 }
                 configNode.get(CONFIG).set(configJson);
-                output.add(configNode);
+                configsList.add(configNode);
             } else {
                 //A guess at what is needed to view the boards
                 if (canViewBoard(user, configNode)) {
-                    output.add(configNode);
+                    configsList.add(configNode);
                 }
             }
         }
-        return output.toJSONString(true);
+
+        //Add a few more fields
+        ModelNode config = new ModelNode();
+        config.get(CONFIGS).set(configsList);
+
+        if (forConfig) {
+            addCustomFieldInfo(user, config.get(RANK_CUSTOM_FIELD));
+        }
+
+        return config.toJSONString(true);
+    }
+
+    private void addCustomFieldInfo(ApplicationUser user, ModelNode customFieldConfig) {
+        int customFieldId = getRankCustomFieldId();
+        customFieldConfig.get(ID).set(customFieldId);
+        customFieldConfig.get(EDIT).set(canEditCustomField(user));
     }
 
     @Override
@@ -140,7 +166,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
             if (cfgs != null && cfgs.length == 1) {
                 BoardCfg cfg = cfgs[0];
-                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, cfg.getID(), cfg.getOwningUser(), cfg.getConfigJson());
+                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, cfg.getID(), cfg.getOwningUser(), cfg.getConfigJson(), getRankCustomFieldId());
                 BoardConfig old = boardConfigs.putIfAbsent(code, boardConfig);
                 if (old != null) {
                     boardConfig = old;
@@ -163,7 +189,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         final BoardConfig boardConfig;
         final ModelNode validConfig;
         try {
-            boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, user.getKey(), config);
+            boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, user.getKey(), config, getRankCustomFieldId());
             validConfig = boardConfig.serializeModelNodeForConfig();
         } catch (Exception e) {
             throw new JirbanValidationException("Invalid data: " + e.getMessage());
@@ -245,6 +271,44 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         return boardCodes;
     }
 
+    @Override
+    public void saveCustomFieldId(ApplicationUser user, ModelNode idNode) {
+        if (!canEditCustomField(user)) {
+            throw new JirbanPermissionException("Only Jira Administrators can edit the custom field id");
+        }
+        final int id;
+        try {
+            id = idNode.get(ID).asInt();
+        } catch (Exception e) {
+            throw new JirbanValidationException("The id needs to be a number");
+        }
+        String idValue = String.valueOf(id);
+
+        activeObjects.executeInTransaction(new TransactionCallback<Void>() {
+            @Override
+            public Void doInTransaction() {
+                Setting[] settings =  activeObjects.find(Setting.class, Query.select().where("name = ?", RANK_CUSTOM_FIELD_ID));
+
+                if (settings.length == 0) {
+                    //Insert
+                    final Setting setting = activeObjects.create(
+                            Setting.class,
+                            new DBParam("NAME", RANK_CUSTOM_FIELD_ID),
+                            new DBParam("VALUE", idValue));
+                    setting.save();
+                } else {
+                    //update
+                    Setting setting = settings[0];
+                    setting.setValue(idValue);
+                    setting.save();
+                }
+                rankCustomFieldId = Integer.valueOf(idValue);
+
+                return null;
+            }
+        });
+    }
+
     private Set<BoardCfg> loadBoardConfigs() {
         return activeObjects.executeInTransaction(new TransactionCallback<Set<BoardCfg>>(){
             @Override
@@ -261,6 +325,23 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         });
     }
 
+    private int getRankCustomFieldId() {
+        int customFieldId = this.rankCustomFieldId;
+        if (customFieldId < 0) {
+            Setting[] settings = activeObjects.executeInTransaction(new TransactionCallback<Setting[]>() {
+                @Override
+                public Setting[] doInTransaction() {
+                    return activeObjects.find(Setting.class, Query.select().where("name = ?", RANK_CUSTOM_FIELD_ID));
+                }
+            });
+            if (settings.length == 1) {
+                customFieldId = Integer.valueOf(settings[0].getValue());
+                this.rankCustomFieldId = customFieldId;
+            }
+        }
+        return customFieldId;
+    }
+
     //Permission methods
     private boolean canEditBoard(ApplicationUser user, ModelNode boardConfig) {
         return hasPermissionBoard(user, boardConfig, ProjectPermissions.ADMINISTER_PROJECTS);
@@ -274,6 +355,11 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     private boolean canViewBoard(ApplicationUser user, BoardConfig boardConfig) {
         //A wild guess at a reasonable permission needed to view the boards
         return hasPermissionBoard(user, boardConfig, ProjectPermissions.TRANSITION_ISSUES);
+    }
+
+    private boolean canEditCustomField(ApplicationUser user) {
+        //Only Jira Administrators can tweak the custom field id
+        return globalPermissionManager.hasPermission(GlobalPermissionKey.ADMINISTER, user);
     }
 
     private boolean hasPermissionBoard(ApplicationUser user, BoardConfig boardConfig, ProjectPermissionKey... permissions) {

@@ -22,9 +22,10 @@
 package org.jirban.jira.impl;
 
 import static org.jirban.jira.impl.Constants.CODE;
+import static org.jirban.jira.impl.Constants.ID;
 import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -34,26 +35,28 @@ import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.api.BoardCfg;
 import org.jirban.jira.api.BoardConfigurationManager;
+import org.jirban.jira.impl.activeobjects.BoardCfg;
+import org.jirban.jira.impl.activeobjects.Setting;
 import org.junit.Assert;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
+import electric.soap.rpc.In;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import ut.org.jirban.jira.mock.GlobalPermissionManagerBuilder;
 import ut.org.jirban.jira.mock.IssueTypeManagerBuilder;
 import ut.org.jirban.jira.mock.PermissionManagerBuilder;
 import ut.org.jirban.jira.mock.PriorityManagerBuilder;
@@ -70,19 +73,27 @@ public class BoardConfigurationManagerBuilder {
     private IssueTypeManager issueTypeManager = IssueTypeManagerBuilder.getDefaultIssueTypeManager();
     private PriorityManager priorityManager = PriorityManagerBuilder.getDefaultPriorityManager();
     private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
+    private GlobalPermissionManager globalPermissionManager = GlobalPermissionManagerBuilder.getAllowsAll();
 
     private Map<String, ModelNode> activeObjectEntries = new HashMap<>();
 
-    public BoardConfigurationManagerBuilder addConfigActiveObjects(String... resources) throws IOException {
+    public BoardConfigurationManagerBuilder addConfigActiveObjectsFromFile(String... resources) throws IOException {
         for (String resource : resources) {
             ModelNode entry = loadConfig(resource);
-            addConfigActiveObject(entry);
+            addConfigActiveObject(entry.get(CODE).asString(), entry);
         }
         return this;
     }
 
-    public BoardConfigurationManagerBuilder addConfigActiveObject(ModelNode activeObject) throws IOException {
-        activeObjectEntries.put(activeObject.get(CODE).asString(), activeObject);
+    public BoardConfigurationManagerBuilder addSettingActiveObject(String name, String value) {
+        final ModelNode setting = new ModelNode();
+        setting.get(NAME).set(name);
+        setting.get(ID).set(value);
+        return addConfigActiveObject(name, setting);
+    }
+
+    public BoardConfigurationManagerBuilder addConfigActiveObject(String name, ModelNode activeObject) {
+        activeObjectEntries.put(name, activeObject);
         return this;
     }
 
@@ -101,23 +112,43 @@ public class BoardConfigurationManagerBuilder {
         return this;
     }
 
+    public BoardConfigurationManagerBuilder setGlobalPermissionManager(GlobalPermissionManager globalPermissionManager) {
+        this.globalPermissionManager = globalPermissionManager;
+        return this;
+    }
+
     public BoardConfigurationManager build() {
         when(activeObjects.executeInTransaction(any(TransactionCallback.class))).thenAnswer(invocation -> ((TransactionCallback)invocation.getArguments()[0]).doInTransaction());
         when(activeObjects.find(any(Class.class), any(Query.class))).thenAnswer(invocation -> {
             Object[] args = invocation.getArguments();
-            Assert.assertEquals(BoardCfg.class, args[0]);
-            Query query = (Query) args[1];
-            if (query.getWhereClause().equals("code = ?") && query.getWhereParams().length == 1) {
-                ModelNode entry = activeObjectEntries.get(query.getWhereParams()[0]);
-                if (entry != null) {
-                    return new BoardCfg[]{new MockBoardCfg("kabir", entry).boardCfg};
+            Class<?> clazz = (Class<?>)args[0];
+            if (clazz == BoardCfg.class) {
+                Query query = (Query) args[1];
+                if (query.getWhereClause().equals("code = ?") && query.getWhereParams().length == 1) {
+                    ModelNode entry = activeObjectEntries.get(query.getWhereParams()[0]);
+                    if (entry != null) {
+                        return new BoardCfg[]{new MockBoardCfg("kabir", entry).boardCfg};
+                    }
                 }
+                return new BoardCfg[0];
+            } else if (clazz == Setting.class) {
+                Query query = (Query) args[1];
+                if (query.getWhereClause().equals("name = ?") && query.getWhereParams().length == 1) {
+                    ModelNode entry = activeObjectEntries.get(query.getWhereParams()[0]);
+                    if (entry != null) {
+                        return new Setting[]{new MockSetting(entry.get(NAME).asString(), entry.get(ID).asString()).setting};
+                    }
+                }
+                return new Setting[0];
+            } else {
+                Assert.fail("Unknown");
             }
             return null;
         });
 
 
-        return new BoardConfigurationManagerImpl(activeObjects, issueTypeManager, priorityManager, permissionManager, projectManager);
+        return new BoardConfigurationManagerImpl(activeObjects, issueTypeManager, priorityManager,
+                permissionManager, projectManager, globalPermissionManager);
     }
 
     public static ModelNode loadConfig(String resource) throws IOException {
@@ -128,26 +159,7 @@ public class BoardConfigurationManagerBuilder {
         }
     }
 
-    private static class MockBoardCfg implements RawEntity<Integer>{
-        private final BoardCfg boardCfg = mock(BoardCfg.class);
-        private String owningUserKey;
-        private ModelNode modelNode;
-
-        public MockBoardCfg(String owningUserKey, ModelNode modelNode) {
-            this.owningUserKey = owningUserKey;
-            this.modelNode = modelNode;
-
-            when(boardCfg.getName()).thenReturn(modelNode.get(CODE).asString());
-            when(boardCfg.getName()).thenReturn(modelNode.get(NAME).asString());
-            when(boardCfg.getConfigJson()).thenReturn(modelNode.toJSONString(true));
-            when(boardCfg.getOwningUser()).thenReturn(owningUserKey);
-            doAnswer(invocation -> this.modelNode = ModelNode.fromJSONString((String)invocation.getArguments()[0]))
-                    .when(boardCfg).setConfigJson(anyString());
-            doAnswer(invocation -> this.owningUserKey = (String)invocation.getArguments()[0])
-                    .when(boardCfg).setOwningUserKey(anyString());
-        }
-
-        //
+    private static class MockRawEntity implements RawEntity<Integer> {
         @Override
         public void init() {
 
@@ -176,6 +188,44 @@ public class BoardConfigurationManagerBuilder {
         @Override
         public void removePropertyChangeListener(PropertyChangeListener listener) {
 
+        }
+    }
+
+    private static class MockBoardCfg extends MockRawEntity {
+        private final BoardCfg boardCfg = mock(BoardCfg.class);
+        private String owningUserKey;
+        private ModelNode modelNode;
+
+        public MockBoardCfg(String owningUserKey, ModelNode modelNode) {
+            this.owningUserKey = owningUserKey;
+            this.modelNode = modelNode;
+
+            when(boardCfg.getName()).thenReturn(modelNode.get(CODE).asString());
+            when(boardCfg.getCode()).thenReturn(modelNode.get(NAME).asString());
+            when(boardCfg.getConfigJson()).thenReturn(modelNode.toJSONString(true));
+            when(boardCfg.getOwningUser()).thenReturn(owningUserKey);
+            doAnswer(invocation -> this.modelNode = ModelNode.fromJSONString((String)invocation.getArguments()[0]))
+                    .when(boardCfg).setConfigJson(anyString());
+            doAnswer(invocation -> this.owningUserKey = (String)invocation.getArguments()[0])
+                    .when(boardCfg).setOwningUserKey(anyString());
+        }
+    }
+
+    private static class MockSetting extends MockRawEntity {
+        private final Setting setting = mock(Setting.class);
+        private String name;
+        private String value;
+
+        public MockSetting(String name, String value) {
+            this.name = name;
+            this.value = value;
+
+            when(setting.getName()).thenReturn(this.name);
+            when(setting.getValue()).thenReturn(this.value);
+            doAnswer(invocation -> this.name = (String)invocation.getArguments()[0])
+                    .when(setting).setName(anyString());
+            doAnswer(invocation -> this.value = (String)invocation.getArguments()[0])
+                    .when(setting).setValue(anyString());
         }
     }
 }

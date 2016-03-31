@@ -26,8 +26,13 @@ export class ConfigComponent {
     private jsonErrorEdit:string = null;
     private jsonErrorCreate:string = null;
 
+    private canEditCustomFieldId:boolean;
+    private customFieldId:number;
+    private _customFieldIdForm:ControlGroup;
+
     constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
         this.loadBoards();
+
     }
 
     private loadBoards() {
@@ -35,7 +40,9 @@ export class ConfigComponent {
         this._boardsService.loadBoardsList(false).subscribe(
             data => {
                 console.log('Boards: Got data' + JSON.stringify(data));
-                this._boards = this.indexBoard(data);
+                this._boards = this.indexBoard(data.configs);
+                this.canEditCustomFieldId = data["rank-custom-field"].edit;
+                this.customFieldId = data["rank-custom-field"].id;
             },
             err => {
                 this._progressError.setError(err);
@@ -125,7 +132,7 @@ export class ConfigComponent {
             .subscribe(
                 data => {
                     console.log("Deleted board");
-                    this._boards = this.indexBoard(data);
+                    this._boards = this.indexBoard(data.configs);
                     this.edit = false;
                     this.deleting = false;
                 },
@@ -149,7 +156,7 @@ export class ConfigComponent {
             .subscribe(
                 data => {
                     console.log("Edited board");
-                    this._boards = this.indexBoard(data);
+                    this._boards = this.indexBoard(data.configs);
                     this.edit = false;
                 },
                 err => {
@@ -172,7 +179,7 @@ export class ConfigComponent {
             .subscribe(
                 data => {
                     console.log("Saved new board");
-                    this._boards = this.indexBoard(data);
+                    this._boards = this.indexBoard(data.configs);
                     this.updateNewForm();
                 },
                 err => {
@@ -191,6 +198,32 @@ export class ConfigComponent {
         } catch (e) {
             return false;
         }
+    }
+
+    get customFieldIdForm():ControlGroup {
+        if (!this._customFieldIdForm) {
+            this._customFieldIdForm = this._formBuilder.group({
+                "customFieldId": [this.customFieldId, Validators.pattern("[0-9]*")]
+            });
+        }
+        return this._customFieldIdForm;
+    }
+
+    saveCustomFieldId() {
+        this._progressError.startProgress(true);
+        this._boardsService.saveRankCustomFieldId(this._customFieldIdForm.value.customFieldId)
+            .subscribe(
+                data => {
+                    console.log("Saved new board");
+                    this.customFieldId = this._customFieldIdForm.value.customFieldId;
+                },
+                err => {
+                    this._progressError.setError(err);
+                },
+                () => {
+                    this._progressError.finishProgress();
+                }
+            )
     }
 
     private clearJsonErrors() {

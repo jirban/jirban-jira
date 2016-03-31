@@ -37,7 +37,7 @@
             </div>
         </li>
     </ul>
-<hr>
+<hr/>
 </div>
 <div>
     <div>
@@ -48,6 +48,21 @@
         <form (ngSubmit)="newBoard()" [ngFormModel]="newForm" #f="ngForm">
             <textarea cols="100" rows="15" name="newJson" ngControl="newJson" (keyup)="clearJsonErrors()"></textarea>
             <div *ngIf="jsonErrorCreate">{{jsonErrorCreate}}</div>
+            <div>
+                <button type="submit" [disabled]="!f.form.valid">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div *ngIf="canEditCustomFieldId">
+    <hr/>
+    <div>Enter the custom field id for Jira Agile's 'Rank' attribute:</div>
+    <div>
+        <form (ngSubmit)="saveCustomFieldId()" [ngFormModel]="customFieldIdForm" #f="ngForm">
+            <div>
+            <input type="customFieldId" required="required" type="number"
+                   ngControl="customFieldId"/>
+            </div>
             <div>
                 <button type="submit" [disabled]="!f.form.valid">Save</button>
             </div>

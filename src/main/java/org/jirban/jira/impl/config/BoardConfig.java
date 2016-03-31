@@ -66,7 +66,7 @@ public class BoardConfig {
     private final String name;
     private final String owningUserKey;
     private final String ownerProjectCode;
-    /** The 'Rank' custom field as output by http://<jiraurl>/rest/api/2/field */
+    /** The 'Rank' custom field as output by  */
     private final int rankCustomFieldId;
     private final BoardStates boardStates;
     private final Map<String, BoardProjectConfig> boardProjects;
@@ -110,23 +110,22 @@ public class BoardConfig {
     }
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id,
-                                   String owningUserKey, String configJson) {
+                                   String owningUserKey, String configJson, int rankCustomFieldId) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
-        return load(issueTypeManager, priorityManager, id, owningUserKey, boardNode);
+        return load(issueTypeManager, priorityManager, id, owningUserKey, boardNode, rankCustomFieldId);
     }
 
     public static ModelNode validateAndSerialize(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
-                                                 int id, String owningUserKey, ModelNode boardNode) {
-        BoardConfig boardConfig = load(issueTypeManager, priorityManager, id, owningUserKey, boardNode);
+                                                 int id, String owningUserKey, ModelNode boardNode, int rankCustomFieldId) {
+        BoardConfig boardConfig = load(issueTypeManager, priorityManager, id, owningUserKey, boardNode, rankCustomFieldId);
         return boardConfig.serializeModelNodeForConfig();
     }
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
-                                    int id, String owningUserKey, ModelNode boardNode) {
+                                    int id, String owningUserKey, ModelNode boardNode, int rankCustomFieldId) {
         String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
         String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
-        int rankCustomFieldId = getRequiredChild(boardNode, "Group", boardName, RANK_CUSTOM_FIELD_ID).asInt();
 
         final BoardStates boardStates = BoardStates.loadBoardStates(boardNode.get(STATES));
 
@@ -266,7 +265,6 @@ public class BoardConfig {
         boardNode.get(NAME).set(name);
         boardNode.get(CODE).set(code);
         boardNode.get(OWNING_PROJECT).set(ownerProjectCode);
-        boardNode.get(RANK_CUSTOM_FIELD_ID).set(rankCustomFieldId);
 
         boardStates.toModelNodeForConfig(boardNode);
 

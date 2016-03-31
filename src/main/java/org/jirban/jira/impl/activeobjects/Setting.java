@@ -19,7 +19,7 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-package org.jirban.jira.api;
+package org.jirban.jira.impl.activeobjects;
 
 import net.java.ao.Entity;
 import net.java.ao.Preload;
@@ -31,9 +31,9 @@ import net.java.ao.schema.Unique;
  * @author Kabir Khan
  */
 @Preload
-public interface BoardCfg extends Entity {
+public interface Setting extends Entity {
     /**
-     * The name of the board that will appear in the overview lists of boards
+     * The name of the setting
      * @return the name
      */
     @NotNull
@@ -41,30 +41,8 @@ public interface BoardCfg extends Entity {
     String getName();
     void setName(String name);
 
-    /**
-     * The code of the board that will be used when accessing the boards. Using ID is a bit strict, in case we need to
-     * drop a board for whatever reason.
-     * @return the code
-     */
-    @NotNull
-    @Unique
-    String getCode();
-    void setCode(String name);
-
-    /**
-     * The key of the ApplicationUser who created the board configuration.
-     * That user will be used to load the boards.
-     * @return the ApplicationUser key
-     */
-    @NotNull
-    String getOwningUser();
-    void setOwningUserKey(String name);
-
-
-
-
     @NotNull
     @StringLength(StringLength.UNLIMITED)
-    String getConfigJson();
-    void setConfigJson(String json);
+    String getValue();
+    void setValue(String value);
 }

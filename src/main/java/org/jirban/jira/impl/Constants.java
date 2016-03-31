@@ -37,6 +37,7 @@ public class Constants {
     public static final String COLOUR = "colour";
     public static final String COMPONENT = "component";
     public static final String COMPONENTS = "components";
+    public static final String CONFIGS = "configs";
     public static final String CONFIG = "config";
     public static final String DELETE = "delete";
     public static final String EDIT = "edit";
@@ -60,6 +61,7 @@ public class Constants {
     public static final String PRIORITY = "priority";
     public static final String PROJECTS = "projects";
     public static final String QUERY_FILTER = "query-filter";
+    public static final String RANK_CUSTOM_FIELD = "rank-custom-field";
     public static final String RANK_CUSTOM_FIELD_ID = "rank-custom-field-id";
     public static final String REMOVED_ISSUES = "removed-issues";
     public static final String STATE = "state";

@@ -58,4 +58,12 @@ public interface JiraFacade
      * @return the json containing the changes
      */
     String getChangesJson(ApplicationUser user, boolean backlog, String code, int viewId) throws SearchException;
+
+    /**
+     * Saves the id of the custom field that Jira Agile uses for its 'Rank'.
+     *
+     * @param user the logged in user
+     * @param idNode an object containing the id
+     */
+    void saveCustomFieldId(ApplicationUser user, ModelNode idNode);
 }

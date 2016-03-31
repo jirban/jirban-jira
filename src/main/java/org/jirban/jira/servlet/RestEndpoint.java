@@ -146,6 +146,15 @@ public class RestEndpoint {
         return createResponse(json);
     }
 
+    @PUT
+    @Path("rankCustomFieldId")
+    public Response saveCustomFieldId(String value) {
+        ApplicationUser user = getUser();
+        jiraFacade.saveCustomFieldId(user, ModelNode.fromJSONString(value));
+        String json = "{}";
+        return createResponse(json);
+    }
+
 
     private Response createResponse(ModelNode modelNode) {
         return createResponse(modelNode.toJSONString(true));

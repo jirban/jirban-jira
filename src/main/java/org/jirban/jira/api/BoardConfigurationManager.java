@@ -83,5 +83,13 @@ public interface BoardConfigurationManager {
      * @return the board codes
      */
     List<String> getBoardCodesForProjectCode(String projectCode);
+
+    /**
+     * Saves the id of the custom field that Jira Agile uses for its 'Rank'.
+     *
+     * @param user the logged in user
+     * @param idNode an object containing the id
+     */
+    void saveCustomFieldId(ApplicationUser user, ModelNode idNode);
 }
 

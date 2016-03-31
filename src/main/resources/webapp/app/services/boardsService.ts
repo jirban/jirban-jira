@@ -68,4 +68,19 @@ export class BoardsService {
                 .map((res: Response) => res.json());
         return ret;
     }
+
+    saveRankCustomFieldId(id:number) : Observable<any> {
+        let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/rankCustomFieldId');
+        let headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        console.log("Saving custom field id " + path);
+        let payload:string = JSON.stringify({id: id});
+        let ret:Observable<any> =
+            this._http.put(path, payload, {
+                    headers : headers
+                })
+                .timeout(this.timeout, "The server did not respond in a timely manner for PUT " + path)
+                .map((res: Response) => res.json());
+        return ret;
+    }
 }

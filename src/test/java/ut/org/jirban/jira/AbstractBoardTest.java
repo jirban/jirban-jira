@@ -21,8 +21,14 @@
  */
 package ut.org.jirban.jira;
 
+import static org.jirban.jira.impl.Constants.ID;
+import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
+
 import java.util.Collection;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
@@ -67,7 +73,8 @@ public abstract class AbstractBoardTest {
 
     protected void initializeMocks(String cfgResource) throws Exception {
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
-                .addConfigActiveObjects(cfgResource)
+                .addConfigActiveObjectsFromFile(cfgResource)
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000")
                 .build();
 
         MockComponentWorker worker = new MockComponentWorker();
