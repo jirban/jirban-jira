@@ -40,6 +40,7 @@ public class Constants {
     public static final String CONFIGS = "configs";
     public static final String CONFIG = "config";
     public static final String DELETE = "delete";
+    public static final String DONE = "done";
     public static final String EDIT = "edit";
     public static final String EMAIL = "email";
     public static final String HEADER = "header";
@@ -69,6 +70,7 @@ public class Constants {
     public static final String STATES = "states";
     public static final String SUMMARY = "summary";
     public static final String TYPE = "type";
+    public static final String UNORDERED = "unordered";
     public static final String UPDATE = "update";
     public static final String UPDATES = "updates";
     public static final String UNASSIGNED = "unassigned";

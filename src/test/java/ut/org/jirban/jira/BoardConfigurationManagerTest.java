@@ -23,9 +23,11 @@ package ut.org.jirban.jira;
 
 import static org.jirban.jira.impl.Constants.BACKLOG;
 import static org.jirban.jira.impl.Constants.CODE;
+import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.HEADER;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.UNORDERED;
 
 import java.io.IOException;
 import java.util.List;
@@ -104,15 +106,57 @@ public class BoardConfigurationManagerTest {
     }
 
     @Test
+    public void testLoadConfigurationWithDone() throws IOException {
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
+        //All states as done is allowed although it makes absolutely no sense in real life
+        loadAndValidateConfiguration(original, new DoneModifier(true, true, true, true));
+
+        //A few at the end is ok and normal
+        //A few in the beginning is ok and normal
+        loadAndValidateConfiguration(original, new DoneModifier(false, false, false, true));
+        loadAndValidateConfiguration(original, new DoneModifier(false, false, true, true));
+
+        //Gaps are bad, and it must be the last states
+        loadBadConfiguration(original, new DoneModifier(false, true, false, true));
+        loadBadConfiguration(original, new DoneModifier(false, false, true, false));
+    }
+
+    @Test
+    public void testLoadConfigurationWithUnordered() throws IOException {
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
+        //Any state can be unordered, and we don't care about gaps
+        loadAndValidateConfiguration(original, new UnorderedModifier(true, true, true, true));
+        loadAndValidateConfiguration(original, new UnorderedModifier(true, false, false, true));
+        loadAndValidateConfiguration(original, new UnorderedModifier(false, false, true, true));
+        loadAndValidateConfiguration(original, new UnorderedModifier(false, false, true, false));
+    }
+
+    @Test
     public void testLoadConfigurationWithBacklogAndHeaders() throws IOException {
         ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
         original.protect();
 
-        //Headers and backlog cannot be used for the same states
+        //A state can have at the most of one of [header, backlog, done], also an 'unordered' cannot be 'backlog' or 'done' but may have a header
         //ok
         loadAndValidateConfiguration(original,
                 new BacklogModifier(true, true, false, false),
                 new StateHeaderModifier(null, null, "A", "B"));
+
+        loadAndValidateConfiguration(original,
+                new BacklogModifier(true, false, false, false),
+                new StateHeaderModifier(null, null, "A", "B"));
+
+        loadAndValidateConfiguration(original,
+                new BacklogModifier(true, true, false, false),
+                new StateHeaderModifier(null, null, "A", null),
+                new UnorderedModifier(false, false, true, false),
+                new DoneModifier(false, false, false, true));
+
+
         //not ok
         loadBadConfiguration(original,
                 new BacklogModifier(true, true, false, false),
@@ -120,6 +164,18 @@ public class BoardConfigurationManagerTest {
         loadBadConfiguration(original,
                 new BacklogModifier(true, false, false, false),
                 new StateHeaderModifier("A", "A", "A", "B"));
+        loadBadConfiguration(original,
+                new DoneModifier(false, false, true, true),
+                new StateHeaderModifier("A", "A", "A", "B"));
+        loadBadConfiguration(original,
+                new BacklogModifier(true, false, false, false),
+                new UnorderedModifier(true, false, false, false));
+        loadBadConfiguration(original,
+                new BacklogModifier(true, true, true, false),
+                new DoneModifier(false, false, true, true));
+        loadBadConfiguration(original,
+                new DoneModifier(false, false, false, true),
+                new UnorderedModifier(false, false, false, true));
     }
 
     private void loadBadConfiguration(ModelNode original, StateModifier... modifiers) throws IOException {
@@ -185,4 +241,36 @@ public class BoardConfigurationManagerTest {
             }
         }
     }
+
+    private static class DoneModifier implements StateModifier {
+        private final boolean[] done;
+
+        public DoneModifier(boolean... done) {
+            this.done = done;
+        }
+
+        @Override
+        public void modify(int index, ModelNode state) {
+            if (done[index]) {
+                state.get(DONE).set(done[index]);
+            }
+        }
+    }
+
+    private static class UnorderedModifier implements StateModifier {
+        private final boolean[] unordered;
+
+        public UnorderedModifier(boolean... unordered) {
+            this.unordered = unordered;
+        }
+
+        @Override
+        public void modify(int index, ModelNode state) {
+            if (unordered[index]) {
+                state.get(UNORDERED).set(unordered[index]);
+            }
+        }
+    }
+
+
 }

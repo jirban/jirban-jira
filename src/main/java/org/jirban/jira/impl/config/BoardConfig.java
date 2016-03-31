@@ -319,6 +319,14 @@ public class BoardConfig {
         return boardStates.isBacklogState(stateIndex);
     }
 
+    public boolean isUnorderedState(int boardStateIndex) {
+        return boardStates.isUnorderedState(boardStateIndex);
+    }
+
+    public boolean isDoneState(int boardStateIndex) {
+        return boardStates.isDoneState(boardStateIndex);
+    }
+
     public String getIssueTypeName(int issueTypeIndex) {
         return issueTypeNames.get(issueTypeIndex);
     }

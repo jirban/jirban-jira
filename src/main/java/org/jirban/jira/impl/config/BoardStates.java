@@ -22,10 +22,12 @@
 package org.jirban.jira.impl.config;
 
 import static org.jirban.jira.impl.Constants.BACKLOG;
+import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.HEADER;
 import static org.jirban.jira.impl.Constants.HEADERS;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.UNORDERED;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,13 +50,17 @@ public class BoardStates {
     private final List<String> states;
     private final Map<String, String> stateHeaders;
     private final Set<String> backlogStates;
+    private final Set<String> doneStates;
+    private final Set<String> unorderedStates;
 
     private BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders,
-                       Set<String> backlogStates) {
+                        Set<String> backlogStates, Set<String> doneStates, Set<String> unorderedStates) {
         this.stateIndices = stateIndices;
         this.states = states;
         this.stateHeaders = stateHeaders;
         this.backlogStates = backlogStates;
+        this.doneStates = doneStates;
+        this.unorderedStates = unorderedStates;
     }
 
     static BoardStates loadBoardStates(ModelNode statesNode) {
@@ -66,10 +72,13 @@ public class BoardStates {
         final Map<String, String> stateHeaders = new HashMap<>();
         final Map<String, Integer> stateIndices = new LinkedHashMap<>();
         final Set<String> backlogStates = new HashSet<>();
+        final Set<String> doneStates = new HashSet<>();
+        final Set<String> unorderedStates = new HashSet<>();
         try {
             String lastHeader = null;
             int i = 0;
             int lastBacklog = -1;
+            int lastDone = -1;
             for (ModelNode stateNode : statesNode.asList()) {
                 if (!stateNode.hasDefined(NAME)) {
                     throw new JirbanValidationException("A state must have a name");
@@ -79,6 +88,18 @@ public class BoardStates {
                 stateIndices.put(stateName, i);
 
                 boolean backlog = stateNode.hasDefined(BACKLOG) && stateNode.get(BACKLOG).asBoolean();
+                boolean unordered = stateNode.hasDefined(UNORDERED) && stateNode.get(UNORDERED).asBoolean();
+                boolean done = stateNode.hasDefined(DONE) && stateNode.get(DONE).asBoolean();
+                String headerName = stateNode.hasDefined(HEADER) ? stateNode.get(HEADER).asString() : null;
+
+                if ( (backlog ? 1:0)+ (done ? 1:0) + (headerName != null ? 1:0) > 1) {
+                    throw new JirbanValidationException("A state can use at the most one of [backlog, done, header]");
+                }
+
+                if ( (backlog ? 1:0)+ (done ? 1:0) + (unordered ? 1:0) > 1) {
+                    throw new JirbanValidationException("A state can use at the most one of [backlog, done, unordered]");
+                }
+
                 if (backlog) {
                     if (lastBacklog < i - 1) {
                         throw new JirbanValidationException("The backlog states can only be the first states without any gaps");
@@ -87,24 +108,34 @@ public class BoardStates {
                     lastBacklog = i;
                 }
 
-                if (stateNode.hasDefined(HEADER)) {
-                    if (backlog) {
-                        throw new JirbanValidationException("A backlog state can not have a header");
+                if (unordered) {
+                    unorderedStates.add(stateName);
+                }
+
+                if (done) {
+                    if (lastDone > -1 && lastDone < i - 1) {
+                        throw new JirbanValidationException("The done states should be consecutive.");
                     }
-                    final ModelNode headerNode = stateNode.get(HEADER);
-                    String header = headerNode.asString();
-                    if (!header.equals(lastHeader) && seenHeaders.contains(header)) {
+                    doneStates.add(stateName);
+                    lastDone = i;
+                }
+
+                if (headerName != null) {
+                    if (!headerName.equals(lastHeader) && seenHeaders.contains(headerName)) {
                         throw new JirbanValidationException("A state header must be used on neighbouring states. " +
-                            "There can't be any gaps as in '" + header + "' used for '" + stateName + "'.");
+                            "There can't be any gaps as in '" + headerName + "' used for '" + stateName + "'.");
                     }
-                    stateHeaders.put(stateName, header);
-                    seenHeaders.add(header);
-                    lastHeader = headerNode.asString();
+                    stateHeaders.put(stateName, headerName);
+                    seenHeaders.add(headerName);
+                    lastHeader = headerName;
                 } else {
                     lastHeader = null;
                 }
 
                 i++;
+            }
+            if (lastDone > -1 && lastDone < i - 1) {
+                throw new JirbanValidationException("The done states should be at the end, they cannot be in the middle of the list of states");
             }
         } catch (IllegalStateException e) {
             throw new JirbanValidationException("A board must have some states associated with it, and it should be an array strings");
@@ -113,8 +144,12 @@ public class BoardStates {
         return new BoardStates(
                 Collections.unmodifiableMap(stateIndices),
                 Collections.unmodifiableList(states),
-                Collections.unmodifiableMap(stateHeaders), backlogStates);
+                Collections.unmodifiableMap(stateHeaders),
+                Collections.unmodifiableSet(backlogStates),
+                Collections.unmodifiableSet(doneStates),
+                Collections.unmodifiableSet(unorderedStates));
     }
+
 
     ModelNode toModelNodeForConfig(ModelNode parent) {
         final ModelNode states = new ModelNode();
@@ -131,7 +166,12 @@ public class BoardStates {
             if (backlogStates.contains(state)) {
                 stateNode.get(BACKLOG).set(true);
             }
-
+            if (doneStates.contains(state)) {
+                stateNode.get(DONE);
+            }
+            if (unorderedStates.contains(state)) {
+                stateNode.get(UNORDERED);
+            }
             states.add(stateNode);
         }
 
@@ -145,7 +185,10 @@ public class BoardStates {
 
         Set<String> headers = new LinkedHashSet<>();
         final ModelNode headersNode = new ModelNode();
-        for (String state : this.states) {
+        final ModelNode unorderedStates = new ModelNode();
+
+        for (int i = 0 ; i < this.states.size() ; i++) {
+            final String state = this.states.get(i);
             final ModelNode stateNode = new ModelNode();
             stateNode.get(NAME).set(state);
 
@@ -157,6 +200,9 @@ public class BoardStates {
                 }
                 stateNode.get(HEADER).set(headers.size() - 1);
             }
+            if (this.unorderedStates.contains(state)) {
+                unorderedStates.add(i);
+            }
             states.add(stateNode);
         }
 
@@ -165,7 +211,15 @@ public class BoardStates {
         if (headers.size() > 0) {
             parent.get(HEADERS).set(headersNode);
         }
-        parent.get(BACKLOG).set(backlogStates.size());
+        if (backlogStates.size() > 0) {
+            parent.get(BACKLOG).set(backlogStates.size());
+        }
+        if (doneStates.size() > 0) {
+            parent.get(DONE).set(doneStates.size());
+        }
+        if (unorderedStates.isDefined()) {
+            parent.get(UNORDERED).set(unorderedStates);
+        }
         return states;
     }
 
@@ -183,5 +237,15 @@ public class BoardStates {
 
     public boolean isBacklogState(int boardStateIndex) {
         return boardStateIndex < backlogStates.size();
+    }
+
+    public boolean isUnorderedState(int boardStateIndex) {
+        String state = states.get(boardStateIndex);
+        return unorderedStates.contains(state);
+    }
+
+    public boolean isDoneState(int boardStateIndex) {
+        String state = states.get(boardStateIndex);
+        return doneStates.contains(state);
     }
 }

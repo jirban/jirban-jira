@@ -84,7 +84,6 @@ public class BoardProject {
             ModelNode issuesForStateNode = new ModelNode();
             issuesForStateNode.setEmptyList();
 
-
             if (backlog || !board.getConfig().isBacklogState(i)) {
                 List<String> issuesForState = issueKeysByState.get(i);
                 for (String key: issuesForState) {

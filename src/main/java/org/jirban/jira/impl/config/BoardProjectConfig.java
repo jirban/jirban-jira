@@ -148,7 +148,23 @@ public class BoardProjectConfig extends ProjectConfig {
         return isBacklogState(mapOwnStateOntoBoardStateIndex(ownState));
     }
 
-    public boolean isBacklogState(int boardStateIndex) {
+    public boolean isUnorderedState(String ownState) {
+        return isUnorderedState(mapOwnStateOntoBoardStateIndex(ownState));
+    }
+
+    public boolean isDoneState(String ownState) {
+        return isDoneState(mapOwnStateOntoBoardStateIndex(ownState));
+    }
+
+    private boolean isBacklogState(int boardStateIndex) {
         return boardStates.isBacklogState(boardStateIndex);
+    }
+
+    private boolean isUnorderedState(int boardStateIndex) {
+        return boardStates.isUnorderedState(boardStateIndex);
+    }
+
+    private boolean isDoneState(int boardStateIndex) {
+        return boardStates.isDoneState(boardStateIndex);
     }
 }
