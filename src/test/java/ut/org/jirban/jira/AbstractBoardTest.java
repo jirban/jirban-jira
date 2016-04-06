@@ -21,14 +21,10 @@
  */
 package ut.org.jirban.jira;
 
-import static org.jirban.jira.impl.Constants.ID;
-import static org.jirban.jira.impl.Constants.NAME;
-import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
 
-import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
@@ -41,6 +37,7 @@ import org.junit.Rule;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
+import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
 import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
@@ -65,6 +62,7 @@ public abstract class AbstractBoardTest {
     protected BoardManager boardManager;
     protected UserManager userManager;
     protected IssueRegistry issueRegistry;
+    protected SearchCallback searchCallback = new SearchCallback();
 
     @Before
     public void initializeMocks() throws Exception {
@@ -85,6 +83,7 @@ public abstract class AbstractBoardTest {
         issueRegistry = new IssueRegistry(userManager);
         SearchService searchService = new SearchServiceBuilder()
                 .setIssueRegistry(issueRegistry)
+                .setSearchCallback(searchCallback)
                 .build(worker);
         IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
         worker.init();
@@ -141,8 +140,9 @@ public abstract class AbstractBoardTest {
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         Collection<ProjectComponent> projectComponents = clearComponents ? JirbanIssueEvent.NO_COMPONENT : MockProjectComponent.createProjectComponents(components);
+        Issue issue = issueRegistry.getIssue(projectCode, issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
-                priorityName, summary, user, projectComponents, state, state != null || rank);
+                priorityName, summary, user, projectComponents, issue.getStatusObject().getName(), state, state != null || rank);
 
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
         return update;
@@ -173,6 +173,14 @@ public abstract class AbstractBoardTest {
         Priority(int index) {
             this.index = index;
             this.name = super.name().toLowerCase();
+        }
+    }
+
+    protected static class SearchCallback implements SearchServiceBuilder.SearchCallback {
+        public boolean searched = false;
+        @Override
+        public void searching() {
+            searched = true;
         }
     }
 }

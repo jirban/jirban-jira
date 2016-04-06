@@ -27,8 +27,10 @@ import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.Property;
@@ -45,6 +47,7 @@ public class BoardProjectConfig extends ProjectConfig {
     /** Maps the owner states onto our states */
     private final Map<String, String> boardToOwnStates;
 
+    private final Set<String> ownDoneStateNames;
 
 
     private BoardProjectConfig(final BoardStates boardStates,
@@ -58,6 +61,15 @@ public class BoardProjectConfig extends ProjectConfig {
         this.colour = colour;
         this.boardToOwnStates = boardToOwnStates;
         this.ownToBoardStates = ownToBoardStates;
+
+        Set<String> ownDoneStateNames = new HashSet<>();
+        for (String boardDoneState : boardStates.getDoneStates()) {
+            String ownDoneState = boardToOwnStates.get(boardDoneState);
+            if (ownDoneState != null) {
+                ownDoneStateNames.add(ownDoneState);
+            }
+        }
+        this.ownDoneStateNames = Collections.unmodifiableSet(ownDoneStateNames);
     }
 
     static BoardProjectConfig load(final BoardStates boardStates, final String projectCode, ModelNode project) {
@@ -148,23 +160,24 @@ public class BoardProjectConfig extends ProjectConfig {
         return isBacklogState(mapOwnStateOntoBoardStateIndex(ownState));
     }
 
-    public boolean isUnorderedState(String ownState) {
-        return isUnorderedState(mapOwnStateOntoBoardStateIndex(ownState));
-    }
-
     public boolean isDoneState(String ownState) {
-        return isDoneState(mapOwnStateOntoBoardStateIndex(ownState));
+        Integer boardStateIndex = mapOwnStateOntoBoardStateIndex(ownState);
+        return boardStateIndex == null ? false : isDoneState(boardStateIndex);
     }
 
     private boolean isBacklogState(int boardStateIndex) {
         return boardStates.isBacklogState(boardStateIndex);
     }
 
-    private boolean isUnorderedState(int boardStateIndex) {
+    public boolean isUnorderedState(int boardStateIndex) {
         return boardStates.isUnorderedState(boardStateIndex);
     }
 
-    private boolean isDoneState(int boardStateIndex) {
+    public boolean isDoneState(int boardStateIndex) {
         return boardStates.isDoneState(boardStateIndex);
+    }
+
+    public Set<String> getOwnDoneStateNames() {
+        return ownDoneStateNames;
     }
 }

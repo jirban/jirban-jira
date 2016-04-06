@@ -26,8 +26,10 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.atlassian.crowd.embedded.api.User;
@@ -54,8 +56,11 @@ public class SearchServiceBuilder {
     private final SearchService searchService = mock(SearchService.class);
 
     private IssueRegistry issueRegistry = new IssueRegistry(new UserManagerBuilder().addDefaultUsers().build());
+    private String searchIssueKey;
     private String searchProject;
     private String searchStatus;
+    private Collection<String> doneStatesFilter;
+    private SearchCallback searchCallback;
 
     public SearchServiceBuilder setIssueRegistry(IssueRegistry issueRegistry) {
         this.issueRegistry = issueRegistry;
@@ -72,7 +77,20 @@ public class SearchServiceBuilder {
 
     private SearchResults getSearchResults() {
         SearchResults searchResults = mock(SearchResults.class);
-        when(searchResults.getIssues()).thenReturn(issueRegistry.getIssueList(searchProject, searchStatus));
+        when(searchResults.getIssues()).thenAnswer(invocationOnMock -> {
+            if (searchCallback != null) {
+                searchCallback.searching();
+            }
+            try {
+                List<Issue> issues = issueRegistry.getIssueList(searchIssueKey, searchProject, searchStatus, doneStatesFilter);
+                return issues;
+            } finally {
+                searchIssueKey = null;
+                searchProject = null;
+                searchStatus = null;
+                doneStatesFilter = null;
+            }
+        });
 
         when(searchResults.toString()).thenReturn("<SNIP>");
         return searchResults;
@@ -81,6 +99,11 @@ public class SearchServiceBuilder {
     private void registerMockQueryManagers(MockComponentWorker mockComponentWorker) {
         mockComponentWorker.addMock(JqlClauseBuilderFactory.class, jqlQueryBuilder -> new ClauseBuilderFactory(jqlQueryBuilder).jqlClauseBuilder);
         mockComponentWorker.addMock(SearchHandlerManager.class, SearchHandlerManagerFactory.create());
+    }
+
+    public SearchServiceBuilder setSearchCallback(SearchCallback searchCallback) {
+        this.searchCallback = searchCallback;
+        return this;
     }
 
     private class ClauseBuilderFactory {
@@ -93,12 +116,23 @@ public class SearchServiceBuilder {
                 searchProject = (String) invocation.getArguments()[0];
                 return jqlClauseBuilder;
             });
+            when(jqlClauseBuilder.issue(any(String[].class))).then(invocation -> {
+                searchIssueKey = (String)invocation.getArguments()[0];
+                return jqlClauseBuilder;
+            });
             when(jqlClauseBuilder.and()).then(invocation -> jqlClauseBuilder);
+            when(jqlClauseBuilder.not()).then(invocation -> jqlClauseBuilder);
             when(jqlClauseBuilder.status(anyString())).then(invocation -> {
                 searchStatus = (String) invocation.getArguments()[0];
                 return jqlClauseBuilder;
             });
-
+            when(jqlClauseBuilder.addStringCondition(anyString(), any(Set.class))).then(invocation -> {
+                String clauseName = (String) invocation.getArguments()[0];
+                if (clauseName.equals("status")) {
+                    doneStatesFilter = (Collection<String>)invocation.getArguments()[1];
+                }
+                return jqlClauseBuilder;
+            });
         }
     }
 
@@ -141,5 +175,9 @@ public class SearchServiceBuilder {
 
             this.issue = new MockIssue(key, this.issueType, this.priority, summary, this.assignee, componentSet, this.state);
         }
+    }
+
+    public interface SearchCallback {
+        void searching();
     }
 }

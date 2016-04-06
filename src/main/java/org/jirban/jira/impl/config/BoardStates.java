@@ -248,4 +248,8 @@ public class BoardStates {
         String state = states.get(boardStateIndex);
         return doneStates.contains(state);
     }
+
+    public Set<String> getDoneStates() {
+        return doneStates;
+    }
 }

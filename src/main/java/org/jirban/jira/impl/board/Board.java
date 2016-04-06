@@ -500,6 +500,28 @@ public class Board {
 
             JirbanIssueEvent.Detail evtDetail = event.getDetails();
 
+            boolean moveFromDone = false;
+            if (!create) {
+                if (event.getDetails().getState() != null) {
+                    //This was a move, work out if we are moving to a done state or to an old state
+                    boolean newDone = project.isDoneState(event.getDetails().getState());
+                    boolean oldDone = project.isDoneState(event.getDetails().getOldState());
+                    if (newDone && oldDone) {
+                        //The whole move happened within the 'done' states, so ignore this update
+                        return board;
+                    }
+                    if (newDone && !oldDone) {
+                        //We are moving from a non-done to a 'done' state. Delete this issue from our cache
+                        return handleDeleteEvent(JirbanIssueEvent.createDeleteEvent(event.getIssueKey(), event.getProjectCode()));
+                    }
+                    moveFromDone = oldDone && !newDone;
+                } else if (project.isDoneState(event.getDetails().getOldState())) {
+                    //This was not a move, so if the 'old state' (which is the current one) is a done state
+                    //we should return since we ignore these 'done' issues
+                    return board;
+                }
+            }
+
             //Might bring in a new assignee and/or component, need to add those first
             //Will populate assigneeCopy and newAssignee if we need to add the assignee
             final Assignee issueAssignee = getOrCreateIssueAssignee(evtDetail);
@@ -515,12 +537,22 @@ public class Board {
             } else {
                 existingIssue = board.allIssues.get(event.getIssueKey());
                 if (existingIssue == null) {
-                    throw new IllegalArgumentException("Can't find issue to update " + event.getIssueKey() + " in board " + board.boardConfig.getId());
+                    if (moveFromDone) {
+                        //We are doing a state change from one of the 'done' states for which we do not cache issues,
+                        //into a cached state. Load it up and add it to the board
+                        newIssue = projectUpdater.loadSingleIssue(event.getIssueKey());
+                        if (newIssue == null) {
+                            throw new IllegalArgumentException("Can't load issue that was updated from a 'done' state: " + event.getIssueKey() + " in board " + board.boardConfig.getId());
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Can't find issue to update " + event.getIssueKey() + " in board " + board.boardConfig.getId());
+                    }
+                } else {
+                    newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
+                            evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
+                            issueComponents,
+                            evtDetail.isRankOrStateChanged(), evtDetail.getState());
                 }
-                newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
-                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
-                        issueComponents,
-                        evtDetail.isRankOrStateChanged(), evtDetail.getState());
             }
 
 
@@ -544,54 +576,65 @@ public class Board {
 
                 //Register the event
                 boardCopy.updateBoardInProjects();
-                BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
-                if (newAssignee != null) {
-                    changeBuilder.addNewAssignee(newAssignee);
-                }
-                if (newComponents != null) {
-                    changeBuilder.addNewComponents(newComponents);
-                }
-                if (blacklist.isUpdated()) {
-                    changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
-                            blacklist.getAddedPriority(), blacklist.getAddedIssue());
-                }
-                //Propagate the new state somehow
-                if (evtDetail.isRankOrStateChanged()) {
-                    Issue issue = boardCopy.getIssue(event.getIssueKey());
-                    if (issue != null) {
-                        final String state = issue.getState();
-                        changeBuilder.addStateRecalculation(state);
-                    }
-                }
 
-                if (existingIssue != null) {
-                    changeBuilder.setFromBacklogState(isBacklogState(projectUpdater, existingIssue));
+                if (moveFromDone) {
+                    //We are making an issue visible again by moving it from a done state to a non-done state
+                    //In this case invalidate. While it could be done, the change set becomes quite hard to keep
+                    //track of if we think of moving to a done state as a delete, and moving out of a done state to
+                    //a non-done state as a (re)create for e.g. the following scenarios:
+                    //  non-done state -> done state (delete) == we have this now, and it becomes a delete
+                    //  done state -> non-done state == a create
+                    //  non-done state -> done state (delete) -> non-done state (recreate) == a noop (if no data changed), or an update
+                    //  done state -> non-done state (create) -> done state == a noop
+                    //
+                    //To simplify things make moving an issue from a 'done' state to a normal state force a full board
+                    //refresh for the clients. Issues being moved to 'done' is the norm. Issues being moved out from
+                    //'done' to a prior state is not.
+                    changeRegistry.forceRefresh();
+                } else {
+                    BoardChange.Builder changeBuilder = changeRegistry.addChange(boardCopy.currentView, event);
+
+                    if (newAssignee != null) {
+                        changeBuilder.addNewAssignee(newAssignee);
+                    }
+                    if (newComponents != null) {
+                        changeBuilder.addNewComponents(newComponents);
+                    }
+                    if (blacklist.isUpdated()) {
+                        changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
+                                blacklist.getAddedPriority(), blacklist.getAddedIssue());
+                    }
+                    //Propagate the new state somehow
+                    if (evtDetail.isRankOrStateChanged()) {
+                        Issue issue = boardCopy.getIssue(event.getIssueKey());
+                        if (issue != null) {
+                            final String state = issue.getState();
+                            changeBuilder.addStateRecalculation(state);
+                        }
+                    }
+
+                    if (existingIssue != null) {
+                        changeBuilder.setFromBacklogState(project.isBacklogState(existingIssue.getState()));
+                    }
+                    if (newIssue != null) {
+                        changeBuilder.setBacklogState(project.isBacklogState(newIssue.getState()));
+                    }
+                    changeBuilder.buildAndRegister();
                 }
-                if (newIssue != null) {
-                    changeBuilder.setBacklogState(isBacklogState(projectUpdater, newIssue));
-                }
-                changeBuilder.buildAndRegister();
 
                 return boardCopy;
             }
             return null;
         }
 
-        private boolean isBacklogState(BoardProject.Updater projectUpdater, Issue issue) {
-            String state = issue.getState();
-            return projectUpdater.getConfig().isBacklogState(state);
-        }
-
         @Override
         Assignee getAssignee(User assigneeUser) {
-            //This should not happen for this code path
-            throw new IllegalStateException();
+            return getOrCreateIssueAssignee(assigneeUser);
         }
 
         @Override
         Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
-            //This should not happen for this code path
-            throw new IllegalStateException();
+            return getOrCreateIssueComponents(componentObjects);
         }
 
         @Override
@@ -611,26 +654,30 @@ public class Board {
         }
 
         private Assignee getOrCreateIssueAssignee(JirbanIssueEvent.Detail evtDetail) {
-            final User eventAssignee = evtDetail.getAssignee();
+            return getOrCreateIssueAssignee(evtDetail.getAssignee());
+        }
 
-            if (eventAssignee == null) {
+        private Assignee getOrCreateIssueAssignee(User evtAssignee) {
+            if (evtAssignee == null) {
                 return null;
-            } else if (eventAssignee == JirbanIssueEvent.UNASSIGNED) {
+            } else if (evtAssignee == JirbanIssueEvent.UNASSIGNED) {
                 return Assignee.UNASSIGNED;
             } else {
-                Assignee assignee = board.sortedAssignees.get(evtDetail.getAssignee().getName());
+                Assignee assignee = board.sortedAssignees.get(evtAssignee.getName());
                 if (assignee == null) {
-                    assignee = Board.createAssignee(avatarService, boardOwner, evtDetail.getAssignee());
+                    assignee = Board.createAssignee(avatarService, boardOwner, evtAssignee);
                     newAssignee = assignee;
-                    assigneesCopy = copyAndPut(board.sortedAssignees, eventAssignee.getName(), assignee, HashMap::new);
+                    assigneesCopy = copyAndPut(board.sortedAssignees, evtAssignee.getName(), assignee, HashMap::new);
                 }
                 return assignee;
             }
         }
 
         private Set<Component> getOrCreateIssueComponents(JirbanIssueEvent.Detail evtDetail) {
-            Collection<ProjectComponent> evtComponents = evtDetail.getComponents();
+            return getOrCreateIssueComponents(evtDetail.getComponents());
+        }
 
+        private Set<Component> getOrCreateIssueComponents(Collection<ProjectComponent> evtComponents) {
             if (evtComponents == null) {
                 return null;
             } else if (evtComponents == JirbanIssueEvent.NO_COMPONENT) {

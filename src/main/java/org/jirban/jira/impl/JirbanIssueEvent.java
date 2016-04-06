@@ -92,14 +92,14 @@ public class JirbanIssueEvent {
     }
 
     public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                              String summary,  User assignee, Collection<ProjectComponent> components, String state) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, state, true);
+                                                     String summary,  User assignee, Collection<ProjectComponent> components, String state) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, null, state, true);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                                     String summary, User assignee, Collection<ProjectComponent> components, String state, boolean rankOrStateChanged) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, state, rankOrStateChanged);
+                                                     String summary, User assignee, Collection<ProjectComponent> components, String currentState, String state, boolean rankOrStateChanged) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, rankOrStateChanged);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
@@ -131,16 +131,18 @@ public class JirbanIssueEvent {
         private final String summary;
         private final User assignee;
         private final Collection<ProjectComponent> components;
+        private final String oldState;
         private final String state;
         private final boolean rankOrStateChanged;
 
         private Detail(String issueType, String priority, String summary, User assignee, Collection<ProjectComponent> components,
-                       String state, boolean rankOrStateChanged) {
+                       String oldState, String state, boolean rankOrStateChanged) {
             this.summary = summary;
             this.assignee = assignee;
             this.components = components;
             this.issueType = issueType;
             this.priority = priority;
+            this.oldState = oldState;
             this.state = state;
             this.rankOrStateChanged = rankOrStateChanged;
         }
@@ -165,6 +167,10 @@ public class JirbanIssueEvent {
             return components;
         }
 
+        public String getOldState() {
+            return oldState;
+        }
+
         public String getState() {
             return state;
         }
@@ -176,7 +182,12 @@ public class JirbanIssueEvent {
     }
 
     public enum Type {
-        CREATE, UPDATE, DELETE;
+        /** The issue was created */
+        CREATE,
+        /** The issue was updated */
+        UPDATE,
+        /** The issue was deleted */
+        DELETE
     }
 
     /**

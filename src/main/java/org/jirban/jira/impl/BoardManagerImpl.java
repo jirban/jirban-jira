@@ -22,9 +22,11 @@
 package org.jirban.jira.impl;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -83,6 +85,9 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     private final Queue<RefreshEntry> boardRefreshQueue = new LinkedBlockingQueue<>();
 
+    //Guarded by this
+    private final Map<String, RefreshEntry> refreshEntries = new HashMap<>();
+
     @Inject
     public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
                             BoardConfigurationManager boardConfigurationManager) {
@@ -114,8 +119,10 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
                     board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
                     boards.put(code, board);
-                    boardChangeRegistries.put(code, new BoardChangeRegistry(board));
-                    boardRefreshQueue.add(new RefreshEntry(code, REFRESH_TIMEOUT_SECONDS));
+                    boardChangeRegistries.put(code, new BoardChangeRegistry(this, board));
+                    final RefreshEntry refreshEntry = new RefreshEntry(code, REFRESH_TIMEOUT_SECONDS);
+                    boardRefreshQueue.add(refreshEntry);
+                    refreshEntries.put(code, refreshEntry);
                 }
             }
         }
@@ -124,9 +131,20 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Override
     public void deleteBoard(ApplicationUser user, String code) {
+        deleteBoard(code);
+    }
+
+    public void forceRefresh(String code) {
+        deleteBoard(code);
+    }
+
+    private void deleteBoard(String code) {
         synchronized (this) {
             boards.remove(code);
-            boardChangeRegistries.remove(code);
+            BoardChangeRegistry registry = boardChangeRegistries.remove(code);
+            registry.invalidate();
+            RefreshEntry refreshEntry = refreshEntries.remove(code);
+            refreshEntry.invalidate();
         }
     }
 
@@ -170,8 +188,13 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     return;
                 }
                 synchronized (this) {
-                    changeRegistry.setBoard(newBoard);
-                    boards.put(boardCode, newBoard);
+                    //An event ending up in forceRefresh() might have deleted the board and the change registry
+                    //with the intent of forcing the next read to perform a full refresh
+                    //We have the new board returned, but check if we need to recreate the registry
+                    if (changeRegistry.isValid()) {
+                        changeRegistry.setBoard(newBoard);
+                        boards.put(boardCode, newBoard);
+                    }
                 }
             } catch (Exception e) {
                 new Exception("Error handling  " + event + " for board " + board.getConfig().getId(), e).printStackTrace();
@@ -220,12 +243,13 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                                 //Remove the entry we peeked at
                                 entry = boardRefreshQueue.poll();
 
-                                //Remove the board, an attempt to read it will result in a new instance being fully loaded
-                                //and created
-                                boardChangeRegistries.remove(entry.boardCode);
-                                boards.remove(entry.boardCode);
-                                //When an attempt is made to get the board again, a new entry will be added to the  queue
-
+                                if (entry.isValid()) {
+                                    //Remove the board, an attempt to read it will result in a new instance being fully loaded
+                                    //and created
+                                    boardChangeRegistries.remove(entry.boardCode);
+                                    boards.remove(entry.boardCode);
+                                    //When an attempt is made to get the board again, a new entry will be added to the  queue
+                                }
                                 entry = boardRefreshQueue.peek();
                             }
                         }
@@ -247,10 +271,19 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     private static class RefreshEntry {
         private final String boardCode;
         private final long endTime;
+        private volatile boolean valid = true;
 
         public RefreshEntry(String boardCode, int timeoutSeconds) {
             this.boardCode = boardCode;
             this.endTime = System.currentTimeMillis() + timeoutSeconds *1000;
+        }
+
+        void invalidate() {
+            valid = false;
+        }
+
+        boolean isValid() {
+            return valid;
         }
 
         @Override

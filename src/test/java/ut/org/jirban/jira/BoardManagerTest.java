@@ -56,7 +56,6 @@ import com.atlassian.jira.issue.search.SearchException;
  * Tests the layout of the board on the server, and how it is serialized to the client on first load/full refresh.
  * {@link BoardChangeRegistryTest} tests the output of what happens when changes are made to the board issues.
  * <p/>
- * This test does not have any backlog states configured. See {@link BoardManagerWithBacklogTest} for those
  *
  * @author Kabir Khan
  */
@@ -996,6 +995,300 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-2"},
                 {}});
 
+    }
+
+    @Test
+    public void testLoadBoardWithUnorderedStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with unordered states set up
+        initializeMocks("config/board-tdp-unordered.json");
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");     //2
+        issueRegistry.addIssue("TDP", "task", "high", "Three", "brian", null, "TDP-C");                  //3
+        issueRegistry.addIssue("TDP", "task", "high", "Four", "brian", null, "TDP-D");                //4
+        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", new String[]{"C3"}, "TBG-X");  //1
+        issueRegistry.addIssue("TBG", "task", "high", "Two", "brian", null, "TBG-Y");                    //2
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        checkComponents(boardNode, "C1", "C2", "C3");
+        checkNoBlacklist(boardNode);
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 6);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", new int[]{0}, 0, 1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", new int[]{2}, 0, 1);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2"},
+                {"TDP-3"},
+                {"TDP-4"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {"TBG-2"},
+                {}});
+
+        //Move an issue and make sure that no state recalculation query is done
+        searchCallback.searched = false;
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, "TDP-D", false);
+        boardManager.handleEvent(update);
+        Assert.assertFalse(searchCallback.searched);
+
+        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
+        getIssuesCheckingSize(boardNode, 6);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {},
+                {"TDP-2"},
+                {"TDP-3"},
+                {"TDP-4", "TDP-1"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {"TBG-2"},
+                {}});
+
+        searchCallback.searched = false;
+        update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
+                null, null, false, null, false, "TBG-Y", false);
+        boardManager.handleEvent(update);
+        Assert.assertFalse(searchCallback.searched);
+
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
+        getIssuesCheckingSize(boardNode, 6);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {},
+                {"TDP-2"},
+                {"TDP-3"},
+                {"TDP-4", "TDP-1"}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {},
+                {"TBG-2", "TBG-1"},
+                {}});
+
+        //A sanity check to make sure that the searchCallback.searched does get set to true whan moving to a state
+        // without 'unordered' set
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+        Assert.assertTrue(searchCallback.searched);
+
+        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2"},
+                {"TDP-3"},
+                {"TDP-4"}});
+    }
+
+
+    @Test
+    public void testLoadBoardWithDoneStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with done states set up
+        initializeMocks("config/board-tdp-done.json");
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
+        issueRegistry.addIssue("TDP", "task", "high", "Four", "brian", new String[]{"C1"}, "TDP-D"); //4
+        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.addIssue("TBG", "task", "high", "Two", "jason", new String[]{"C2"}, "TBG-Y");  //2
+
+        //Although the assignees and components used in the done part of the board should not be included, and neither
+        //include them anyway
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        checkComponents(boardNode);
+        checkNoBlacklist(boardNode);
+        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
+        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
+
+        //The issues in the 'done' columns should not be included in the board.
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 3);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
+
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {},
+                {}});
+
+        //An event putting a 'done' issue into one of the normal states should result in the issue and any assignees/components being brought in
+
+        //This one does not bring in any new assignees/components
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (IssueType)null, null,
+                null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+        //view id is 0 here because board has been recreated (due to moving issue out of 'done')
+        boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 4);
+        checkComponents(boardNode);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {},
+                {}});
+
+        //Bring in new assignees/components
+        update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
+                null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+        //view id is 0 here because board has been recreated (due to moving issue out of 'done')
+        boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 5);
+        checkComponents(boardNode, "C1");
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 1);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", new int[]{0}, 0, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 1);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3", "TDP-4"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1"},
+                {},
+                {}});
+
+
+        update = createUpdateEventAndAddToRegistry("TBG-2", (IssueType)null, null,
+                null, null, false, null, false, "TBG-X", false);
+        boardManager.handleEvent(update);
+        //view id is 0 here because board has been recreated (due to moving issue out of 'done')
+        boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 6);
+        checkComponents(boardNode, "C1", "C2");
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", new int[]{0}, 0, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3", "TDP-4"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-2"},
+                {},
+                {}});
+
+        //Check moving an issue to a done state
+        update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
+                null, null, false, null, false, "TDP-C", false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 5);
+        checkComponents(boardNode, "C1", "C2");
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-1", "TBG-2"},
+                {},
+                {}});
+
+        update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
+                null, null, false, null, false, "TBG-Y", false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 4);
+        checkComponents(boardNode, "C1", "C2");
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-2"},
+                {},
+                {}});
+
+        //Check that moving an issue from a done state to another done state does not trigger a change
+        update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
+                null, null, false, null, false, "TDP-D", false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 4);
+        checkComponents(boardNode, "C1", "C2");
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-2"},
+                {},
+                {}});
+
+        //Test that updating an issue in a 'done' does not trigger a change
+        update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.LOW,
+                "Will be ignored", "nonexistent", false, null, false, null, false);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        allIssues = getIssuesCheckingSize(boardNode, 4);
+        checkComponents(boardNode, "C1", "C2");
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkProjectIssues(boardNode, "TDP", new String[][]{
+                {"TDP-1", "TDP-3"},
+                {"TDP-2"},
+                {},
+                {}});
+        checkProjectIssues(boardNode, "TBG", new String[][]{
+                {},
+                {"TBG-2"},
+                {},
+                {}});
     }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {

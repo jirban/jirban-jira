@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -42,6 +43,7 @@ import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
+import com.atlassian.jira.jql.builder.JqlClauseBuilder;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
@@ -126,6 +128,10 @@ public class BoardProject {
 
     public boolean isBacklogState(String state) {
         return projectConfig.isBacklogState(state);
+    }
+
+    public boolean isDoneState(String state) {
+        return projectConfig.isDoneState(state);
     }
 
     static class Accessor {
@@ -220,7 +226,12 @@ public class BoardProject {
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().project(projectConfig.getCode());
             if (projectConfig.getQueryFilter() != null) {
+                //TODO Looking at https://developer.atlassian.com/static/javadoc/jira/6.4.1/reference/com/atlassian/jira/jql/builder/JqlClauseBuilder.html
+                //we will need to do something a more fancy since i
                 queryBuilder.where().addCondition(projectConfig.getQueryFilter());
+            }
+            if (projectConfig.getOwnDoneStateNames().size() > 0) {
+                queryBuilder.where().not().addStringCondition("status", projectConfig.getOwnDoneStateNames());
             }
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
 
@@ -290,6 +301,24 @@ public class BoardProject {
 
         }
 
+
+        Issue loadSingleIssue(String issueKey) throws SearchException {
+            JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
+            queryBuilder.where().issue(issueKey);
+            SearchResults searchResults =
+                    searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+
+            List<com.atlassian.jira.issue.Issue> issues = searchResults.getIssues();
+            if (issues.size() == 0) {
+                return null;
+            }
+            Issue.Builder issueBuilder = Issue.builder(this);
+            issueBuilder.load(issues.get(0));
+            newIssue = issueBuilder.build();
+            this.updatedState = true;
+            return newIssue;
+        }
+
         BoardProject build() throws SearchException {
 
             final int deleteIndex = getStateIndexToDeleteFrom();
@@ -303,7 +332,13 @@ public class BoardProject {
                 toStateIssues = null;
             } else {
                 toIndex = project.projectConfig.mapOwnStateOntoBoardStateIndex(newIssue.getState());
-                toStateIssues = updateState();
+                if (project.projectConfig.isUnorderedState(toIndex)) {
+                    //Copy the old issues, and add this new one on the end
+                    toStateIssues = new ArrayList<>(project.issueKeysByState.get(toIndex));
+                    toStateIssues.add(newIssue.getKey());
+                } else {
+                    toStateIssues = updateState();
+                }
             }
 
             final List<List<String>> issuesKeysByStateCopy = new ArrayList<>();
@@ -390,6 +425,30 @@ public class BoardProject {
 
         public String getCode() {
             return linkedProjectConfig.getCode();
+        }
+    }
+
+    static class SingleLoadedIssueWrapper {
+        private final com.atlassian.jira.issue.Issue jiraIssue;
+        private final Issue issue;
+
+        public SingleLoadedIssueWrapper(com.atlassian.jira.issue.Issue jiraIssue, Issue issue) {
+            this.jiraIssue = jiraIssue;
+            this.issue = issue;
+        }
+
+        JirbanIssueEvent createCreateEvent(JirbanIssueEvent original) {
+            return JirbanIssueEvent.createCreateEvent(original.getIssueKey(), original.getProjectCode(),
+                    jiraIssue.getIssueTypeObject().getName(),
+                    jiraIssue.getPriorityObject().getName(),
+                    jiraIssue.getSummary(),
+                    jiraIssue.getAssignee(),
+                    jiraIssue.getComponentObjects(),
+                    jiraIssue.getStatusObject().getName());
+        }
+
+        Issue getIssue() {
+            return issue;
         }
     }
 }

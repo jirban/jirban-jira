@@ -37,6 +37,7 @@ import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.NEW;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.PROJECTS;
 import static org.jirban.jira.impl.Constants.REMOVED_ISSUES;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
@@ -1208,7 +1209,169 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+    }
 
+    @Test
+    public void testMoveIssueWithUnorderedStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with unordered states set up
+        setupInitialBoard("config/board-tdp-unordered.json");
+
+        //Move an issue to the unordered state
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        searchCallback.searched = false;
+        boardManager.handleEvent(update);
+        Assert.assertFalse(searchCallback.searched);
+
+        ModelNode changes = getChangesJson(0, 1);
+        checkAdds(changes);
+        checkUpdates(changes, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkDeletes(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-1"));
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+
+        //Move an issue out of an unordered state
+        update = createUpdateEventAndAddToRegistry("TDP-4", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        searchCallback.searched = false;
+        boardManager.handleEvent(update);
+        Assert.assertTrue(searchCallback.searched);
+
+        changes = getChangesJson(0, 2);
+        checkAdds(changes);
+        checkUpdates(changes,
+                new IssueData("TDP-1", null, null, null, null, null, "TDP-D"),
+                new IssueData("TDP-4", null, null, null, null, null, "TDP-A"));
+        checkDeletes(changes);
+        checkStateChanges(changes,
+                new StateChangeData("TDP", "TDP-D", "TDP-1"),
+                new StateChangeData("TDP", "TDP-A", "TDP-4", "TDP-5"));
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+
+        changes = getChangesJson(1, 2);
+        checkAdds(changes);
+        checkUpdates(changes,
+                new IssueData("TDP-4", null, null, null, null, null, "TDP-A"));
+        checkDeletes(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-A", "TDP-4", "TDP-5"));
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+
+        //TODO the same for issues in the TBG project
+    }
+
+    @Test
+    public void testMoveIssueWithDoneStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with done states set up
+        setupInitialBoard("config/board-tdp-done.json");
+
+        //Move an issue into a done state should appear as a delete
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        searchCallback.searched = false;
+        boardManager.handleEvent(update);
+        Assert.assertFalse(searchCallback.searched);
+
+        ModelNode changes = getChangesJson(0, 1);
+        checkAdds(changes);
+        checkUpdates(changes);
+        checkDeletes(changes, "TDP-1");
+        checkNoStateChanges(changes);
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+
+        //Move an issue from a done state into a normal state will force a full refresh
+        update = createUpdateEventAndAddToRegistry("TDP-4", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        searchCallback.searched = false;
+        boardManager.handleEvent(update);
+        Assert.assertTrue(searchCallback.searched);
+
+        getChangesEnsuringFullRefresh(0);
+    }
+
+    @Test
+    public void testMoveFromDoneToDoneWithDoneStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with done states set up
+        setupInitialBoard("config/board-tdp-done.json");
+
+        //Move an issue already in a done state into a done state should not appear as a change
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        searchCallback.searched = false;
+        boardManager.handleEvent(update);
+        Assert.assertFalse(searchCallback.searched);
+
+        //No changes
+        ModelNode changes = getChangesJson(0, 0);
+        checkAdds(changes);
+        checkUpdates(changes);
+        checkDeletes(changes);
+        checkNoStateChanges(changes);
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+        checkNoStateChanges(changes);
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+    }
+
+    @Test
+    public void testComplexMoveFromDoneResultingInCreateWithDoneStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with done states set up
+        setupInitialBoard("config/board-tdp-done.json");
+
+        //Moving a done issue to a non-done state should cause a full refresh
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+        getChangesEnsuringFullRefresh(0);
+
+        //Moving the issue back to a done state should appear as a delete
+        update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        boardManager.handleEvent(update);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAdds(changes);
+        checkUpdates(changes);
+        checkDeletes(changes, "TDP-3");
+        checkNoStateChanges(changes);
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+
+
+        //Moving the issue back to a non-done state should cause a full refresh
+        update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+        getChangesEnsuringFullRefresh(0);
+    }
+
+    @Test
+    public void testComplexMoveFromNonDoneResultingInCreateWithDoneStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with done states set up
+        setupInitialBoard("config/board-tdp-done.json");
+
+        //Moving a done issue to a done state should appear as a delete
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        boardManager.handleEvent(update);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAdds(changes);
+        checkUpdates(changes);
+        checkDeletes(changes, "TDP-2");
+        checkNoStateChanges(changes);
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
+
+        //Moving the issue back to a non-done state should cause a full refresh
+        update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        boardManager.handleEvent(update);
+        getChangesEnsuringFullRefresh(0);
+
+
+        //Moving the issue back to a done state should appear as a delete
+        update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-C", false);
+        boardManager.handleEvent(update);
+        changes = getChangesJson(0, 1);
+        checkAdds(changes);
+        checkUpdates(changes);
+        checkDeletes(changes, "TDP-2");
+        checkNoStateChanges(changes);
+        checkNoBlacklistChanges(changes);
+        checkAssignees(changes);
     }
 
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
@@ -1470,6 +1633,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         ModelNode changesNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
         return changesNode;
+    }
+
+    private ModelNode getChangesEnsuringFullRefresh(int fromView) throws SearchException {
+        String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), true, "TST", fromView);
+        ModelNode fullRefreshNode = ModelNode.fromJSONString(json);
+        Assert.assertEquals(0, fullRefreshNode.get(VIEW).asInt());
+
+        //Make sure we have the top-level attributes at least
+        Assert.assertTrue(fullRefreshNode.hasDefined(STATES));
+        Assert.assertTrue(fullRefreshNode.hasDefined(PRIORITIES));
+        Assert.assertTrue(fullRefreshNode.hasDefined(ISSUE_TYPES));
+        Assert.assertTrue(fullRefreshNode.hasDefined(ASSIGNEES));
+        Assert.assertTrue(fullRefreshNode.hasDefined(COMPONENTS));
+        Assert.assertTrue(fullRefreshNode.hasDefined(PROJECTS));
+        Assert.assertTrue(fullRefreshNode.hasDefined(ISSUES));
+
+        return fullRefreshNode;
     }
 
     private static class IssueData {

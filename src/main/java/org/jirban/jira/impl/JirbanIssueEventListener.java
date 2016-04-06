@@ -269,6 +269,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         String summary = null;
         User assignee = null;
         Collection<ProjectComponent> components = null;
+        String oldState = null;
         String state = null;
         boolean rankOrStateChanged = false;
         List<GenericValue> changeItems = getWorkLog(issueEvent);
@@ -288,6 +289,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             } else if (field.equals(CHANGE_LOG_STATUS)) {
                 rankOrStateChanged = true;
                 state = issue.getStatusObject().getName();
+                oldState = change.getString(CHANGE_LOG_OLD_STRING);
             } else if (field.equals(CHANGE_LOG_RANK)) {
                 rankOrStateChanged = true;
             } else if (field.equals(CHANGE_LOG_COMPONENT)) {
@@ -296,7 +298,10 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
                 issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
-                summary, assignee, components, state, rankOrStateChanged);
+                summary, assignee, components,
+                //Always pass in the existing/old state of the issue
+                oldState != null ? oldState : issue.getStatusObject().getName(),
+                state, rankOrStateChanged);
         passEventToBoardManagerOrDelay(event);
     }
 

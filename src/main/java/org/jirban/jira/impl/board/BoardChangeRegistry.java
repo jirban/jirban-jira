@@ -53,6 +53,8 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.impl.BoardManagerImpl;
 import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.JirbanIssueEvent.Type;
@@ -74,7 +76,9 @@ public class BoardChangeRegistry {
     //Delete items older than one minute
     private static final int CLEANUP_AGE_SECONDS = 60000;
 
+    private final BoardManagerImpl boardManager;
     private volatile Board board;
+    private volatile boolean valid = true;
 
     //The time for the next cleanup
     private volatile long nextCleanup;
@@ -84,7 +88,8 @@ public class BoardChangeRegistry {
     private volatile int startView;
     private volatile int endView;
 
-    public BoardChangeRegistry(Board board) {
+    public BoardChangeRegistry(BoardManagerImpl boardManager, Board board) {
+        this.boardManager = boardManager;
         this.board = board;
         this.startView = board.getCurrentView();
         this.endView = startView;
@@ -190,6 +195,18 @@ public class BoardChangeRegistry {
             change.components.add(component.getName());
         }
         return change;
+    }
+
+    public void forceRefresh() {
+        boardManager.forceRefresh(board.getConfig().getCode());
+    }
+
+    public void invalidate() {
+        valid = false;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     private static class NewReferenceCollector {
@@ -534,7 +551,7 @@ public class BoardChangeRegistry {
                     type = evtType;
                     break;
                 case DELETE:
-                    //No more changes should happen here
+                    //If an issue was moved to a done state
                     break;
             }
         }

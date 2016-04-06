@@ -22,15 +22,19 @@
 package ut.org.jirban.jira.mock;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Assert;
 
 import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
@@ -69,15 +73,25 @@ public class IssueRegistry {
         Priority priority = priorityName == null ? issue.getPriorityObject() : MockPriority.create(priorityName);
         String summ = summary == null ? issue.getSummary() : summary;
         User assigneeUser = assignee == null ? issue.getAssignee() : userBridge.getUserByKey(assignee);
+        Set<ProjectComponent> comps;
+        if (components != null) {
+            comps = MockProjectComponent.createProjectComponents(components);
+        } else {
+            comps = issue.getComponentObjects() == null ? null : new HashSet<>(issue.getComponentObjects());
+        }
         Status status = state == null ? issue.getStatusObject() : MockStatus.create(state);
 
-        Issue newIssue = new MockIssue(issueKey, issueType, priority, summary,
-                assigneeUser, MockProjectComponent.createProjectComponents(components), status);
+        Issue newIssue = new MockIssue(issueKey, issueType, priority, summ,
+                assigneeUser, comps, status);
         issues.put(issueKey, newIssue);
     }
 
 
-    List<Issue> getIssueList(String project, String searchStatus) {
+    List<Issue> getIssueList(String searchIssueKey, String project, String searchStatus, Collection<String> doneStatesFilter) {
+        if (searchIssueKey != null) {
+            String projectCode = searchIssueKey.substring(0, searchIssueKey.indexOf("-"));
+            return Collections.singletonList(getIssue(projectCode, searchIssueKey));
+        }
         Map<String, Issue> issues = issuesByProject.get(project);
         if (issues == null) {
             return Collections.emptyList();
@@ -85,13 +99,19 @@ public class IssueRegistry {
 
         List<Issue> ret = new ArrayList<>();
         for (Issue issue : issues.values()) {
-            if (searchStatus != null) {
-                if (!issue.getStatusId().equals(searchStatus)) {
-                    continue;
-                }
+            if (searchStatus != null && !issue.getStatusId().equals(searchStatus)) {
+                continue;
+            }
+            if (doneStatesFilter != null && doneStatesFilter.contains(issue.getStatusId())) {
+                continue;
             }
             ret.add(issue);
         }
         return ret;
+    }
+
+    public Issue getIssue(String projectCode, String issueKey) {
+        Map<String, Issue> issues = issuesByProject.get(projectCode);
+        return issues.get(issueKey);
     }
 }
