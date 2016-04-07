@@ -24,8 +24,10 @@ package ut.org.jirban.jira;
 import static org.jirban.jira.impl.Constants.ASSIGNEE;
 import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.AVATAR;
+import static org.jirban.jira.impl.Constants.BACKLOG;
 import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
+import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.EMAIL;
 import static org.jirban.jira.impl.Constants.ICON;
 import static org.jirban.jira.impl.Constants.ISSUES;
@@ -39,6 +41,7 @@ import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
+import static org.jirban.jira.impl.Constants.UNORDERED;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -60,6 +63,39 @@ import com.atlassian.jira.issue.search.SearchException;
  * @author Kabir Khan
  */
 public class BoardManagerTest extends AbstractBoardTest {
+
+    @Test
+    public void testStatesFields() throws Exception {
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
+        //No 'special' states
+        Assert.assertFalse(boardNode.hasDefined(BACKLOG));
+        Assert.assertFalse(boardNode.hasDefined(UNORDERED));
+        Assert.assertFalse(boardNode.hasDefined(DONE));
+
+        initializeMocks("config/board-tdp-backlog.json");
+        boardNode = getJsonCheckingViewIdAndUsers(0);
+        //The first 2 states are 'backlog' states (they must always be at the start)
+        Assert.assertEquals(2, boardNode.get(BACKLOG).asInt());
+        Assert.assertFalse(boardNode.hasDefined(UNORDERED));
+        Assert.assertFalse(boardNode.hasDefined(DONE));
+
+        initializeMocks("config/board-tdp-unordered.json");
+        boardNode = getJsonCheckingViewIdAndUsers(0);
+        Assert.assertFalse(boardNode.hasDefined(BACKLOG));
+        //The second, and third states are 'unordered'
+        Assert.assertEquals(2, boardNode.get(UNORDERED).asList().size());
+        Assert.assertEquals(2, boardNode.get(UNORDERED).asList().get(0).asInt());
+        Assert.assertEquals(3, boardNode.get(UNORDERED).asList().get(1).asInt());
+        Assert.assertFalse(boardNode.hasDefined(DONE));
+
+
+        initializeMocks("config/board-tdp-done.json");
+        boardNode = getJsonCheckingViewIdAndUsers(0);
+        Assert.assertFalse(boardNode.hasDefined(BACKLOG));
+        Assert.assertFalse(boardNode.hasDefined(UNORDERED));
+        //The last 2 states are 'done' states (they must always be at the end)
+        Assert.assertEquals(2, boardNode.get(DONE).asInt());
+    }
 
     @Test
     public void testLoadBoardOnlyOwnerProjectIssues() throws Exception {
