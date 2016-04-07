@@ -167,10 +167,10 @@ public class BoardStates {
                 stateNode.get(BACKLOG).set(true);
             }
             if (doneStates.contains(state)) {
-                stateNode.get(DONE);
+                stateNode.get(DONE).set(true);
             }
             if (unorderedStates.contains(state)) {
-                stateNode.get(UNORDERED);
+                stateNode.get(UNORDERED).set(true);
             }
             states.add(stateNode);
         }

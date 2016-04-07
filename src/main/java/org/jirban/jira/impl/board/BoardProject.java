@@ -231,7 +231,7 @@ public class BoardProject {
                 queryBuilder.where().addCondition(projectConfig.getQueryFilter());
             }
             if (projectConfig.getOwnDoneStateNames().size() > 0) {
-                queryBuilder.where().not().addStringCondition("status", projectConfig.getOwnDoneStateNames());
+                queryBuilder.where().and().not().addStringCondition("status", projectConfig.getOwnDoneStateNames());
             }
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
 
