@@ -4,6 +4,7 @@ import {IssueData} from '../../../data/board/issueData';
 import {IssuesService} from '../../../services/issuesService';
 import {IssueComponent} from '../issue/issue';
 import {ProgressErrorService} from "../../../services/progressErrorService";
+import {State} from "../../../data/board/header";
 
 @Component({
     inputs: ['data'],
@@ -73,8 +74,19 @@ export class IssueContextMenuComponent {
         return this._boardData.isValidStateForProject(this.issue.projectCode, state) && state != this.issue.boardStatus;
     }
 
-    private isValidRankState(state:string) : boolean {
-        return this._boardData.isValidStateForProject(this.issue.projectCode, state);
+    private isValidRankState(stateName:string) : boolean {
+        if (!this._boardData.isValidStateForProject(this.issue.projectCode, stateName)) {
+            return false;
+        }
+        let state:State = this._boardData.indexedBoardStates.forKey(stateName);
+        if (state.done) {
+            return false;
+        }
+        if (state.backlog && !this._boardData.showBacklog) {
+            return false;
+        }
+
+        return true;
     }
 
     private onShowMovePanel(event:MouseEvent) {

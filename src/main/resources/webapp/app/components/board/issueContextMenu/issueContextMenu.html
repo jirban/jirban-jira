@@ -33,7 +33,7 @@
                            [ngClass]="state === toState ? 'entry-selected' : 'entry'"
                            title="Move to {{state}}"><b>{{state}}</b></a>
                     </div>
-                    <span *ngIf="!isValidMoveState(state)" title="This is not a valid state for {{issue.projectCode}}"><i>{{state}}</i></span>
+                    <span *ngIf="!isValidMoveState(state)" title="'{{state}}' is not a valid state for {{issue.projectCode}}"><i>{{state}}</i></span>
                 </div>
             </div>
         </div>
