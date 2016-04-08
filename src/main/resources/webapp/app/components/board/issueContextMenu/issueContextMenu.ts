@@ -49,8 +49,6 @@ export class IssueContextMenuComponent {
             this.toState = this.issue.boardStatus;
             this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, this.toState);
         }
-
-
     }
 
     private clearMoveMenu() {
@@ -85,7 +83,9 @@ export class IssueContextMenuComponent {
         if (state.backlog && !this._boardData.showBacklog) {
             return false;
         }
-
+        if (state.unordered) {
+            return false;
+        }
         return true;
     }
 
