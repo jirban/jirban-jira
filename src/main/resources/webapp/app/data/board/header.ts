@@ -56,6 +56,7 @@ export class BoardHeaders {
             boardStateNames.add(state.name, state.name);
 
             let backlogState:boolean = index < backlogSize;
+            let doneState:boolean = index >= input.states.length - doneSize;
 
             let category:StateCategory;
             if (isNumber(state.header)) {
@@ -64,7 +65,7 @@ export class BoardHeaders {
             } else if (backlogState) {
                 category = BoardHeaders.getOrCreateStateCategory(categories, "Backlog", true);
             }
-            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, category);
+            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, doneState, category);
             boardStates.add(state.name, stateEntry);
             if (category) {
                 category.states.push(stateEntry);
@@ -95,7 +96,10 @@ export class BoardHeaders {
         for (let i:number = 0 ; i < boardStates.array.length ; i++) {
             let indexedState:State = boardStates.array[i];
             if (!indexedState.category) {
-                topHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 2));
+                if (!indexedState.done) {
+                    //The 'done' states should not be added to the headers
+                    topHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 2));
+                }
             } else {
                 if (indexedState.backlog) {
                     if (!backlogTopHeader) {
@@ -238,7 +242,7 @@ class StateCategory {
 export class State {
 
     constructor(private _boardData:BoardData, private _name:string, private _index:number,
-                private _backlog:boolean, private _category:StateCategory) {
+                private _backlog:boolean, private _done:boolean, private _category:StateCategory) {
         //console.log(_index);
     }
 
@@ -260,6 +264,10 @@ export class State {
 
     get backlog():boolean {
         return this._backlog;
+    }
+
+    get done():boolean {
+        return this._done;
     }
 
     isVisible(stateVisibilities:boolean[]):boolean{
