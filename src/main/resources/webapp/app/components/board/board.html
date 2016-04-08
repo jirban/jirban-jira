@@ -77,7 +77,7 @@
                 </td>
 
                 <!-- Normal states -->
-                <td *ngFor="#state of nonBacklogStates"
+                <td *ngFor="#state of mainStates"
                     [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
                     title="State: {{state.name}}">
                     <div [hidden]="!visibleColumns[state.index]">

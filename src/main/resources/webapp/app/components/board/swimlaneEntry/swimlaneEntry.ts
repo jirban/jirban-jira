@@ -59,8 +59,8 @@ export class SwimlaneEntryComponent {
         return this.boardData.headers.backlogTopHeader;
     }
 
-    get nonBacklogStates():State[] {
-        return this.boardData.nonBacklogStates;
+    get mainStates():State[] {
+        return this.boardData.mainStates;
     }
 
     get backlogAndIsCollapsed():boolean {

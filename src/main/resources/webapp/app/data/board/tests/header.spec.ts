@@ -1,13 +1,12 @@
 import {BoardHeaders, State} from "../header";
 import {BoardHeaderEntry} from "../header";
-import {BoardData} from "../boardData";
 import {Indexed} from "../../../common/indexed";
 
 describe('Header tests', ()=> {
 
     it('No headers', () => {
         //Mock a board data with the required fields used by BoardHeaders.deserialize
-        let boardData:any = {backlogSize:0}
+        let boardData:any = {}
 
         let input:any = {
             states:[
@@ -35,7 +34,7 @@ describe('Header tests', ()=> {
 
     it('All same header', () => {
         //Mock a board data with the required fields used by BoardHeaders.deserialize
-        let boardData:any = {backlogSize:0}
+        let boardData:any = {}
 
         let input:any = {
             states:[
@@ -57,7 +56,7 @@ describe('Header tests', ()=> {
 
     it('No header start', () => {
         //Mock a board data with the required fields used by BoardHeaders.deserialize
-        let boardData:any = {backlogSize:0}
+        let boardData:any = {}
 
         let input:any = {
             states:[
@@ -85,7 +84,7 @@ describe('Header tests', ()=> {
 
     it('No header end', () => {
         //Mock a board data with the required fields used by BoardHeaders.deserialize
-        let boardData:any = {backlogSize:0}
+        let boardData:any = {}
 
         let input:any = {
             states:[
@@ -113,7 +112,7 @@ describe('Header tests', ()=> {
 
     it('Mixed headers', () => {
         //Mock a board data with the required fields used by BoardHeaders.deserialize
-        let boardData:any = {backlogSize:0}
+        let boardData:any = {}
 
         let input:any = {
             states:[

@@ -24,7 +24,6 @@ import {BoardHeaders, State} from "./header";
 export class BoardData {
     private _boardName:string;
     private _code:string;
-    private _backlogSize:number;
     private _showBacklog:boolean = false;
     private _view:number;
     private _headers:BoardHeaders;
@@ -159,9 +158,6 @@ export class BoardData {
             this.jiraUrl = RestUrlUtil.calculateJiraUrl();
             this._rankCustomFieldId = input["rank-custom-field-id"];
         }
-
-        this._backlogSize = input.backlog ? input.backlog : 0;
-
         this.blacklist = input.blacklist ? BlacklistData.fromInput(input.blacklist) : null;
 
         this._headers = BoardHeaders.deserialize(this, input);
@@ -234,8 +230,8 @@ export class BoardData {
         return this.headers.boardStates;
     }
 
-    get nonBacklogStates():State[] {
-        return this.headers.nonBacklogStates;
+    get mainStates():State[] {
+        return this.headers.mainStates;
     }
 
     get backlogStates():State[] {
@@ -276,10 +272,6 @@ export class BoardData {
 
     get rankCustomFieldId():number {
         return this._rankCustomFieldId;
-    }
-
-    get backlogSize():number {
-        return this._backlogSize;
     }
 
     get showBacklog():boolean {

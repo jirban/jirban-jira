@@ -1,8 +1,7 @@
-import {Component, ElementRef, OnDestroy, OnInit} from 'angular2/core';
-import {Router, RouteParams} from 'angular2/router';
+import {Component, OnDestroy, OnInit} from 'angular2/core';
+import {RouteParams} from 'angular2/router';
 import {IssuesService} from '../../services/issuesService';
 import {BoardData} from '../../data/board/boardData';
-import {IssueData} from '../../data/board/issueData';
 import {IssueComponent} from './issue/issue';
 import {SwimlaneEntryComponent} from './swimlaneEntry/swimlaneEntry';
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
@@ -191,8 +190,8 @@ export class BoardComponent implements OnDestroy, OnInit {
         return null;
     }
 
-    get nonBacklogStates():State[] {
-        return this._boardData.nonBacklogStates;
+    get mainStates():State[] {
+        return this._boardData.mainStates;
     }
 
     get backlogAndIsCollapsed():boolean {

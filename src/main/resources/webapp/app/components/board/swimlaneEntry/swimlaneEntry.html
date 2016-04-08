@@ -25,7 +25,7 @@
     </td>
 
     <!-- Normal states -->
-    <td *ngFor="#state of nonBacklogStates" title="State: {{state.name}}"
+    <td *ngFor="#state of mainStates" title="State: {{state.name}}"
         [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
         title="State: {{state.name}}">
         <div [hidden]="!visibleColumns[state.index]">
@@ -46,7 +46,7 @@
     <td *ngIf="backlogAndIsCollapsed" class="swimlane-empty-collapsed"></td>
     <td *ngFor="#state of backlogStatesIfVisible"
         [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
-    <td *ngFor="#state of nonBacklogStates"
+    <td *ngFor="#state of mainStates"
         [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
 
 </tr>

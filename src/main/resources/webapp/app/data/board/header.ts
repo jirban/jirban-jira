@@ -13,7 +13,7 @@ export class BoardHeaders {
 
     private _boardStates:Indexed<State> = new Indexed<State>();
     private _backlogStates:State[] = [];
-    private _nonBacklogStates:State[] = [];
+    private _mainStates:State[] = [];
 
     private _backlogTopHeader:BoardHeaderEntry;
     private _backlogBottomHeaders:BoardHeaderEntry[] = [];
@@ -23,27 +23,109 @@ export class BoardHeaders {
 
     private _stateVisibilities:boolean[];
 
-    constructor(boardData:BoardData, boardStateNames:Indexed<string>, boardStates:Indexed<State>, backlogTopHeader:BoardHeaderEntry,
-                backlogBottomHeaders:BoardHeaderEntry[], topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[],
+    constructor(boardData:BoardData,
+                boardStateNames:Indexed<string>, boardStates:Indexed<State>,
+                backlogStates:State[], mainStates:State[],
+                backlogTopHeader:BoardHeaderEntry, backlogBottomHeaders:BoardHeaderEntry[],
+                topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[],
                 stateVisibilities:boolean[]) {
         this._boardData = boardData;
         this._boardStateNames = boardStateNames;
         this._boardStates = boardStates;
+        this._backlogStates = backlogStates;
+        this._mainStates = mainStates;
         this._backlogTopHeader = backlogTopHeader;
         this._backlogBottomHeaders = backlogBottomHeaders;
         this._topHeaders = topHeaders;
         this._bottomHeaders = bottomHeaders;
 
         this._stateVisibilities = stateVisibilities;
+    }
 
-        for (let i = 0 ; i < boardStates.array.length ; i++) {
-            if (i < boardData.backlogSize) {
-                this._backlogStates.push(boardStates.array[i]);
-            } else {
-                this._nonBacklogStates.push(boardStates.array[i]);
+    static deserialize(boardData:BoardData, input:any):BoardHeaders {
+        let backlogSize:number = input.backlog ? input.backlog : 0;
+        let doneSize:number = input.done ? input.done : 0;
+
+        let boardStateNames:Indexed<string> = new Indexed<string>();
+        let boardStates:Indexed<State> = new Indexed<State>();
+        let headers:string[] = input.headers;
+
+        let categories:Indexed<StateCategory> = new Indexed<StateCategory>();
+        let index = 0;
+        for (let state of input.states) {
+            boardStateNames.add(state.name, state.name);
+
+            let backlogState:boolean = index < backlogSize;
+
+            let category:StateCategory;
+            if (isNumber(state.header)) {
+                let header:string = headers[state.header];
+                category = BoardHeaders.getOrCreateStateCategory(categories, header, false);
+            } else if (backlogState) {
+                category = BoardHeaders.getOrCreateStateCategory(categories, "Backlog", true);
+            }
+            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, category);
+            boardStates.add(state.name, stateEntry);
+            if (category) {
+                category.states.push(stateEntry);
+            }
+            index++;
+        }
+
+        let stateVisibilities:boolean[];
+        if (boardData && boardData.headers) {
+            //For a simple refresh following polling, use the same states
+            stateVisibilities = boardData.headers._stateVisibilities;
+        } else {
+            stateVisibilities = new Array<boolean>(boardStates.array.length);
+            for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
+                stateVisibilities[i] = i >= backlogSize;
             }
         }
+
+        let backlogTopHeader:BoardHeaderEntry;
+        let backlogBottomHeaders:BoardHeaderEntry[] = [];
+        let topHeaders:BoardHeaderEntry[] = [];
+        let bottomHeaders:BoardHeaderEntry[] = [];
+        let addedCategories:IMap<boolean> = {};
+        let backlogStates:State[] = [];
+        let mainStates:State[] = [];
+        let doneStates:State[] =[];
+
+        for (let i:number = 0 ; i < boardStates.array.length ; i++) {
+            let indexedState:State = boardStates.array[i];
+            if (!indexedState.category) {
+                topHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 2));
+            } else {
+                if (indexedState.backlog) {
+                    if (!backlogTopHeader) {
+                        backlogTopHeader = new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length);
+                    }
+                    backlogBottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
+                } else {
+                    if (!addedCategories[indexedState.category.name]) {
+                        topHeaders.push(new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length));
+                        addedCategories[indexedState.category.name] = true;
+                    }
+                    bottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
+                }
+            }
+
+            if (i < backlogSize) {
+                backlogStates.push(boardStates.array[i]);
+            } else if (i >= boardStates.array.length - doneSize) {
+                doneStates.push(boardStates.array[i]);
+            } else {
+                mainStates.push(boardStates.array[i]);
+            }
+        }
+
+
+        return new BoardHeaders(boardData, boardStateNames, boardStates,
+            backlogStates, mainStates,
+            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities);
     }
+
 
     get backlogTopHeader():BoardHeaderEntry {
         return this._backlogTopHeader;
@@ -69,8 +151,8 @@ export class BoardHeaders {
         return this._boardStates;
     }
 
-    get nonBacklogStates():State[] {
-        return this._nonBacklogStates;
+    get mainStates():State[] {
+        return this._mainStates;
     }
 
     get backlogStates():State[] {
@@ -85,74 +167,7 @@ export class BoardHeaders {
         header.toggleVisibility();
     }
 
-    static deserialize(boardData:BoardData, input:any):BoardHeaders {
-
-        let boardStateNames:Indexed<string> = new Indexed<string>();
-        let boardStates:Indexed<State> = new Indexed<State>();
-        let headers:string[] = input.headers;
-
-        let categories:Indexed<StateCategory> = new Indexed<StateCategory>();
-        let index = 0;
-        for (let state of input.states) {
-            boardStateNames.add(state.name, state.name);
-
-            let backlogState:boolean = index < boardData.backlogSize;
-
-            let category:StateCategory;
-            if (isNumber(state.header)) {
-                let header:string = headers[state.header];
-                category = BoardHeaders.getOrCreateStateCategory(categories, header, false);
-            } else if (backlogState) {
-                category = BoardHeaders.getOrCreateStateCategory(categories, "Backlog", true);
-            }
-            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, category);
-            boardStates.add(state.name, stateEntry);
-            if (category) {
-                category.states.push(stateEntry);
-            }
-            index++;
-        }
-
-        let stateVisibilities:boolean[];
-        if (boardData && boardData.headers) {
-            //For a simple refresh following polling, use the same states
-            stateVisibilities = boardData.headers._stateVisibilities;
-        } else {
-            stateVisibilities = new Array<boolean>(boardStates.array.length);
-            for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
-                stateVisibilities[i] = i >= boardData.backlogSize;
-            }
-        }
-
-        let backlogTopHeader:BoardHeaderEntry;
-        let backlogBottomHeaders:BoardHeaderEntry[] = [];
-        let topHeaders:BoardHeaderEntry[] = [];
-        let bottomHeaders:BoardHeaderEntry[] = [];
-        let addedCategories:IMap<boolean> = {};
-        for (let i:number = 0 ; i < boardStates.array.length ; i++) {
-            let indexedState:State = boardStates.array[i];
-            if (!indexedState.category) {
-                topHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 2));
-            } else {
-                if (indexedState.backlog) {
-                    if (!backlogTopHeader) {
-                        backlogTopHeader = new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length);
-                    }
-                    backlogBottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
-                } else {
-                    if (!addedCategories[indexedState.category.name]) {
-                        topHeaders.push(new CategoryHeaderEntry(indexedState.category, stateVisibilities, indexedState.category.states.length));
-                        addedCategories[indexedState.category.name] = true;
-                    }
-                    bottomHeaders.push(new StateHeaderEntry(indexedState, stateVisibilities, 1, 1));
-                }
-            }
-        }
-
-        return new BoardHeaders(boardData, boardStateNames, boardStates, backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities);
-    }
-
-    static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {
+    private static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {
         let category:StateCategory = categories.forKey(header);
         if (!category) {
             category = new StateCategory(header, backlog);
