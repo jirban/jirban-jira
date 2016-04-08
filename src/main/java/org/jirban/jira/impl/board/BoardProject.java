@@ -33,7 +33,6 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JirbanIssueEvent;
-import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
@@ -43,10 +42,11 @@ import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
-import com.atlassian.jira.jql.builder.JqlClauseBuilder;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
+import com.atlassian.query.Query;
+import com.atlassian.query.clause.Clause;
 import com.atlassian.query.order.SortOrder;
 
 /**
@@ -223,20 +223,28 @@ public class BoardProject {
         }
 
         void load() throws SearchException {
-            JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
+            final JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().project(projectConfig.getCode());
-            if (projectConfig.getQueryFilter() != null) {
-                //TODO Looking at https://developer.atlassian.com/static/javadoc/jira/6.4.1/reference/com/atlassian/jira/jql/builder/JqlClauseBuilder.html
-                //we will need to do something a more fancy since i
-                queryBuilder.where().addCondition(projectConfig.getQueryFilter());
-            }
             if (projectConfig.getOwnDoneStateNames().size() > 0) {
                 queryBuilder.where().and().not().addStringCondition("status", projectConfig.getOwnDoneStateNames());
             }
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
+            Query query = queryBuilder.buildQuery();
+
+            if (projectConfig.getQueryFilter() != null) {
+                final SearchService.ParseResult parseResult = searchService.parseQuery(
+                        boardOwner.getDirectoryUser(),
+                        "(" + projectConfig.getQueryFilter() + ")");
+                if (!parseResult.isValid()) {
+                    throw new RuntimeException("The query-filter for " + projectConfig.getCode() + ": '" + projectConfig.getQueryFilter() + "' could not be parsed");
+                }
+                final JqlQueryBuilder queryWithFilterBuilder = JqlQueryBuilder.newBuilder(query);
+                final Clause clause =  JqlQueryBuilder.newClauseBuilder(parseResult.getQuery()).buildClause();
+                query = queryWithFilterBuilder.where().and().addClause(clause).buildQuery();
+            }
 
             SearchResults searchResults =
-                    searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+                        searchService.search(boardOwner.getDirectoryUser(), query, PagerFilter.getUnlimitedFilter());
 
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
                 Issue.Builder issueBuilder = Issue.builder(this);
