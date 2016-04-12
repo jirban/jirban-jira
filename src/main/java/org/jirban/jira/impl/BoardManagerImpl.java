@@ -142,9 +142,13 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
         synchronized (this) {
             boards.remove(code);
             BoardChangeRegistry registry = boardChangeRegistries.remove(code);
-            registry.invalidate();
+            if (registry != null) {
+                registry.invalidate();
+            }
             RefreshEntry refreshEntry = refreshEntries.remove(code);
-            refreshEntry.invalidate();
+            if (refreshEntry != null) {
+                refreshEntry.invalidate();
+            }
         }
     }
 
