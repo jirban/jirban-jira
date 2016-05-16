@@ -1,13 +1,11 @@
 //our root app component
-import {Component, provide} from 'angular2/core'
-import {HTTP_PROVIDERS} from 'angular2/http';
-import {APP_BASE_HREF, ROUTER_DIRECTIVES, ROUTER_PROVIDERS, HashLocationStrategy, Location, LocationStrategy, Route, RouteConfig, Router, RouterLink, RouterOutlet} from 'angular2/router';
-import {BoardComponent} from './components/board/board';
-import {BoardsComponent} from './components/boards/boards';
+import {Component} from "angular2/core";
+import {BoardComponent} from "./components/board/board";
+import {BoardsComponent} from "./components/boards/boards";
 import {ConfigComponent} from "./components/config/config";
-import {version} from "angular2/src/upgrade/angular_js";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {VersionCheckService} from "./services/versionCheckService";
+import {ROUTER_DIRECTIVES, Route, RouteConfig, Router} from "angular2/router";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 1;

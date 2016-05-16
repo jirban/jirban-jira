@@ -3,7 +3,6 @@ import {BoardFilters} from "./boardFilters";
 import {IssueData} from "./issueData";
 import {IMap} from "../../common/map";
 import {SwimlaneData} from "./issueTable";
-import {Assignee} from "./assignee";
 
 export interface SwimlaneIndexer {
     swimlaneTable : SwimlaneData[];

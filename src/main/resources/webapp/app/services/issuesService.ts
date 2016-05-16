@@ -1,14 +1,12 @@
 //a simple service
-import {Injectable} from 'angular2/core';
-import {Headers, Http, Response} from 'angular2/http';
-import {Router} from 'angular2/router';
-import {Observable} from 'rxjs/Observable';
-import 'rxjs/add/operator/map';
+import {Injectable} from "angular2/core";
+import {Headers, Http, Response} from "angular2/http";
+import {Observable} from "rxjs/Observable";
+import "rxjs/add/operator/map";
 import {BoardData} from "../data/board/boardData";
 import {RestUrlUtil} from "../common/RestUrlUtil";
 import {IssueData} from "../data/board/issueData";
 import {BoardProject} from "../data/board/project";
-import {ProgressErrorService} from "./progressErrorService";
 import {Observer} from "rxjs/Observer";
 
 @Injectable()

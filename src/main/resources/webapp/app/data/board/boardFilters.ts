@@ -1,11 +1,9 @@
 import {Assignee, NO_ASSIGNEE} from "./assignee";
 import {Priority} from "./priority";
-import {IssueData} from "./issueData"
+import {IssueData} from "./issueData";
 import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
-import {JiraComponent} from "./component";
-import {NO_COMPONENT} from "./component";
-import {IMap} from "../../common/map";
+import {JiraComponent, NO_COMPONENT} from "./component";
 
 export class BoardFilters {
     private _projectFilter:any;

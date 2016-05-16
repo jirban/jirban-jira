@@ -1,7 +1,6 @@
-import {Component, EventEmitter} from 'angular2/core';
-import {BoardData} from '../../../data/board/boardData';
-import {IssueData} from '../../../data/board/issueData';
-import {IssueComponent} from '../issue/issue'
+import {Component, EventEmitter} from "angular2/core";
+import {BoardData} from "../../../data/board/boardData";
+import {IssueComponent} from "../issue/issue";
 import {SwimlaneData} from "../../../data/board/issueTable";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
 

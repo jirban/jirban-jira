@@ -1,10 +1,9 @@
-import {Indexed} from '../../common/indexed';
+import {Indexed} from "../../common/indexed";
 import {IMap} from "../../common/map";
-import ownKeys = Reflect.ownKeys;
-import {isNumber} from "angular2/src/facade/lang";
 import {IssueData} from "./issueData";
 import {IssueTable} from "./issueTable";
 import {SwimlaneMatcher, SwimlaneIndexerFactory} from "./swimlaneIndexer";
+import ownKeys = Reflect.ownKeys;
 
 /**
  * Registry of project related data got from the server

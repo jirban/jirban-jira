@@ -1,13 +1,13 @@
-import {Component, OnDestroy, OnInit} from 'angular2/core';
-import {RouteParams} from 'angular2/router';
-import {IssuesService} from '../../services/issuesService';
-import {BoardData} from '../../data/board/boardData';
-import {IssueComponent} from './issue/issue';
-import {SwimlaneEntryComponent} from './swimlaneEntry/swimlaneEntry';
+import {Component, OnDestroy, OnInit} from "angular2/core";
+import {RouteParams} from "angular2/router";
+import {IssuesService} from "../../services/issuesService";
+import {BoardData} from "../../data/board/boardData";
+import {IssueComponent} from "./issue/issue";
+import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {BoardHeaderEntry, BoardHeaders, State} from "../../data/board/header";
+import {BoardHeaderEntry, State} from "../../data/board/header";
 
 
 @Component({

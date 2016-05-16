@@ -1,8 +1,8 @@
-import {Component, EventEmitter, Input} from 'angular2/core';
-import {BoardData} from '../../../data/board/boardData';
-import {IssueData} from '../../../data/board/issueData';
-import {IssuesService} from '../../../services/issuesService';
-import {IssueComponent} from '../issue/issue';
+import {Component, EventEmitter} from "angular2/core";
+import {BoardData} from "../../../data/board/boardData";
+import {IssueData} from "../../../data/board/issueData";
+import {IssuesService} from "../../../services/issuesService";
+import {IssueComponent} from "../issue/issue";
 import {ProgressErrorService} from "../../../services/progressErrorService";
 import {State} from "../../../data/board/header";
 

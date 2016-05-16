@@ -1,12 +1,10 @@
-import {Projects} from "./project";
+import {Projects, BoardProject} from "./project";
 import {BoardData} from "./boardData";
 import {IssueData} from "./issueData";
 import {IMap} from "../../common/map";
 import {BoardFilters} from "./boardFilters";
-import {SwimlaneIndexer, SwimlaneIndexerFactory} from './swimlaneIndexer';
+import {SwimlaneIndexer, SwimlaneIndexerFactory} from "./swimlaneIndexer";
 import {Indexed} from "../../common/indexed";
-import {BoardProject} from "./project";
-import {IssueChange} from "./change";
 import {ChangeSet} from "./change";
 
 export class IssueTable {

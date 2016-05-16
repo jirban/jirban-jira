@@ -1,19 +1,12 @@
-import {Component, EventEmitter} from 'angular2/core';
-import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
-import {Router, RouteParams} from 'angular2/router';
-
+import {Component, EventEmitter} from "angular2/core";
+import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from "angular2/common";
 import {NO_ASSIGNEE, Assignee} from "../../../data/board/assignee";
 import {NO_COMPONENT, JiraComponent} from "../../../data/board/component";
-import {BoardData} from '../../../data/board/boardData';
-import {IssueDisplayDetails} from '../../../data/board/boardFilters';
-import {IssueData} from '../../../data/board/issueData';
-import {IssueType} from '../../../data/board/issueType';
+import {BoardData} from "../../../data/board/boardData";
+import {IssueType} from "../../../data/board/issueType";
 import {Priority} from "../../../data/board/priority";
-
-import {IMap} from '../../../common/map';
-
-
-import 'rxjs/add/operator/debounceTime';
+import {IMap} from "../../../common/map";
+import "rxjs/add/operator/debounceTime";
 
 @Component({
     selector: 'control-panel',
