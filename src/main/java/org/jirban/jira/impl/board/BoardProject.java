@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -132,6 +133,10 @@ public class BoardProject {
 
     public boolean isDoneState(String state) {
         return projectConfig.isDoneState(state);
+    }
+
+    public String getCode() {
+        return projectConfig.getCode();
     }
 
     static class Accessor {
@@ -283,23 +288,28 @@ public class BoardProject {
         Updater(SearchService searchService, Board.Accessor board, BoardProject project,
                        ApplicationUser boardOwner) {
             super(searchService, board, project.projectConfig, boardOwner);
+            JirbanLogger.LOGGER.debug("BoardProject.Updater - init {}", project.projectConfig.getCode());
             this.project = project;
         }
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
                           Assignee assignee, Set<Component> issueComponents, String state) {
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
             newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee, issueComponents);
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
             updatedState = newIssue != null;
             return newIssue;
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
                           Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged, String state) {
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), rankOrStateChanged);
             this.existing = existing;
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, issueComponents, state);
             if (newIssue == null && rankOrStateChanged) {
                 newIssue = existing;
             }
+            JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}", existing, newIssue);
             this.updatedState = rankOrStateChanged && newIssue != null;
             return newIssue;
         }
@@ -311,6 +321,7 @@ public class BoardProject {
 
 
         Issue loadSingleIssue(String issueKey) throws SearchException {
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - {}", issueKey);
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().issue(issueKey);
             SearchResults searchResults =
@@ -318,11 +329,13 @@ public class BoardProject {
 
             List<com.atlassian.jira.issue.Issue> issues = searchResults.getIssues();
             if (issues.size() == 0) {
+                JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - no issue found");
                 return null;
             }
             Issue.Builder issueBuilder = Issue.builder(this);
             issueBuilder.load(issues.get(0));
             newIssue = issueBuilder.build();
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - found {}", newIssue);
             this.updatedState = true;
             return newIssue;
         }
@@ -345,7 +358,7 @@ public class BoardProject {
                     toStateIssues = new ArrayList<>(project.issueKeysByState.get(toIndex));
                     toStateIssues.add(newIssue.getKey());
                 } else {
-                    toStateIssues = updateState();
+                    toStateIssues = rankIssuesForState();
                 }
             }
 
@@ -387,7 +400,7 @@ public class BoardProject {
             return -1;
         }
 
-        private List<String> updateState() throws SearchException {
+        private List<String> rankIssuesForState() throws SearchException {
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().project(projectConfig.getCode()).and().status(newIssue.getState());
             if (projectConfig.getQueryFilter() != null) {
@@ -403,6 +416,10 @@ public class BoardProject {
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
                 String issueKey = jiraIssue.getKey();
                 Issue issue = board.getIssue(issueKey);
+                if (issue == null) {
+                    JirbanLogger.LOGGER.warn("BoardProject.Updater.rankIssuesForState - No existing issue found for {}", issueKey);
+                    continue;
+                }
                 issues.add(issue.getKey());
             }
             return Collections.unmodifiableList(issues);

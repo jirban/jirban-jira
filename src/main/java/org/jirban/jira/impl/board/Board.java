@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
@@ -436,6 +437,7 @@ public class Board {
         }
 
         private Board handleDeleteEvent(JirbanIssueEvent event) throws SearchException {
+            JirbanLogger.LOGGER.debug("Board.Updater.handleDeleteEvent - Handling delete event for {}", event.getIssueKey());
             final BoardProject project = board.projects.get(event.getProjectCode());
             if (project == null) {
                 throw new IllegalArgumentException("Can't find project " + event.getProjectCode() +
@@ -445,6 +447,7 @@ public class Board {
             final Map<String, BoardProject> projectsCopy;
             final Map<String, Issue> allIssuesCopy;
             if (board.blacklist.isBlacklisted(event.getIssueKey())) {
+                JirbanLogger.LOGGER.debug("Board.Updater.handleDeleteEvent - Handling delete event for blacklisted issue {}", event.getIssueKey());
                 //For a delete of an issue that has been blacklisted we simply remove the issue from the blacklist.
                 //It is not part of any of the issue tables so just use the old projects
                 projectsCopy = board.projects;
@@ -454,6 +457,7 @@ public class Board {
                 // issue and not the bad state/issue-type/priority)
                 blacklist.deleteIssue(event.getIssueKey());
             } else {
+                JirbanLogger.LOGGER.debug("Board.Updater.handleDeleteEvent - Handling delete event for issue {}", event.getIssueKey());
                 final Issue issue = board.allIssues.get(event.getIssueKey());
                 if (issue == null) {
                     throw new IllegalArgumentException("Can't find issue to delete " + event.getIssueKey() +
@@ -486,9 +490,11 @@ public class Board {
 
         Board handleCreateOrUpdateIssue(JirbanIssueEvent event, boolean create) throws SearchException {
 
+            JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Handling create or update event for {}; create: {}", event.getIssueKey(), create);
             if (!create && board.blacklist.isBlacklisted(event.getIssueKey())) {
                 //For an update of an issue that has been blacklisted we will not be able to figure out the state
                 //So just return the original board
+                JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - update event for blacklisted {} - returning original board", event.getIssueKey());
                 return board;
             }
 
@@ -497,30 +503,43 @@ public class Board {
                 throw new IllegalArgumentException("Can't find project " + event.getProjectCode()
                         + " in board " + board.boardConfig.getId());
             }
+            JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - using board project {}", project.getCode());
 
             JirbanIssueEvent.Detail evtDetail = event.getDetails();
 
             boolean moveFromDone = false;
             if (!create) {
+                JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - updating issue {}", event.getIssueKey());
                 if (event.getDetails().getState() != null) {
+
                     //This was a move, work out if we are moving to a done state or to an old state
                     boolean newDone = project.isDoneState(event.getDetails().getState());
                     boolean oldDone = project.isDoneState(event.getDetails().getOldState());
+
+                    JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - possible state change from {} to {}. oldDone: {}; newDone: {}",
+                            event.getDetails().getOldState(), event.getDetails().getState(), oldDone, newDone);
+
                     if (newDone && oldDone) {
                         //The whole move happened within the 'done' states, so ignore this update
+                        JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - whole move happened in done states - return original");
                         return board;
                     }
                     if (newDone && !oldDone) {
                         //We are moving from a non-done to a 'done' state. Delete this issue from our cache
+                        JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Moving from non-done to done state, delete issue");
                         return handleDeleteEvent(JirbanIssueEvent.createDeleteEvent(event.getIssueKey(), event.getProjectCode()));
                     }
                     moveFromDone = oldDone && !newDone;
                 } else if (project.isDoneState(event.getDetails().getOldState())) {
+                    JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- ignoring done issue {}, state: {}. Return original",
+                            event.getIssueKey(), event.getDetails().getOldState());
                     //This was not a move, so if the 'old state' (which is the current one) is a done state
                     //we should return since we ignore these 'done' issues
                     return board;
                 }
             }
+
+            JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - moveFromDone: {}", moveFromDone);
 
             //Might bring in a new assignee and/or component, need to add those first
             //Will populate assigneeCopy and newAssignee if we need to add the assignee
@@ -531,6 +550,7 @@ public class Board {
             final Issue existingIssue;
             final Issue newIssue;
             if (create) {
+                JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- create issue {}", event.getIssueKey());
                 existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents, evtDetail.getState());
@@ -538,6 +558,8 @@ public class Board {
                 existingIssue = board.allIssues.get(event.getIssueKey());
                 if (existingIssue == null) {
                     if (moveFromDone) {
+                        JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- Moving from done {}", event.getIssueKey());
+
                         //We are doing a state change from one of the 'done' states for which we do not cache issues,
                         //into a cached state. Load it up and add it to the board
                         newIssue = projectUpdater.loadSingleIssue(event.getIssueKey());
@@ -548,6 +570,7 @@ public class Board {
                         throw new IllegalArgumentException("Can't find issue to update " + event.getIssueKey() + " in board " + board.boardConfig.getId());
                     }
                 } else {
+                    JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- Updating issue {}", event.getIssueKey());
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
@@ -561,8 +584,12 @@ public class Board {
                     copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new) :
                     board.allIssues;
 
+            JirbanLogger.LOGGER.trace("Board.Updater.handleCreateOrUpdateIssue - newIssue {}; updatedBlacklist {}; changedRankOrState {}",
+                    newIssue, blacklist.isUpdated(), evtDetail.isRankOrStateChanged());
+
             if (newIssue != null || blacklist.isUpdated() || evtDetail.isRankOrStateChanged()) {
                 //The project's issue tables will be updated if needed
+                JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Copying project {}", project.getCode());
                 final BoardProject projectCopy = projectUpdater.build();
                 final Map<String, BoardProject> projectsCopy = new HashMap<>(board.projects);
                 projectsCopy.put(event.getProjectCode(), projectCopy);
@@ -619,11 +646,14 @@ public class Board {
                     if (newIssue != null) {
                         changeBuilder.setBacklogState(project.isBacklogState(newIssue.getState()));
                     }
+
+                    JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Registering change");
                     changeBuilder.buildAndRegister();
                 }
 
                 return boardCopy;
             }
+            JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Returning null board");
             return null;
         }
 
@@ -706,6 +736,7 @@ public class Board {
         }
 
         private <K, V> Map<K, V> copyAndPut(Map<K, V> map, K key, V value, Supplier<Map<K, V>> supplier) {
+            JirbanLogger.LOGGER.debug("Board.Updater.copyAndPut - Overwrite {}", key);
             Map<K, V> copy = supplier.get();
             copy.putAll(map);
             copy.put(key, value);

@@ -22,11 +22,9 @@
 package org.jirban.jira.impl;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,6 +34,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.board.Board;
@@ -186,6 +185,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
             }
             final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
             try {
+                JirbanLogger.LOGGER.trace("BoardManagerImpl.handleEvent - Handling event on board {}", board.getConfig().getCode());
                 Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event, changeRegistry);
                 if (newBoard == null) {
                     //The changes in the issue were not relevant
@@ -201,7 +201,11 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     }
                 }
             } catch (Exception e) {
-                new Exception("Error handling  " + event + " for board " + board.getConfig().getId(), e).printStackTrace();
+                //Last parameter is the exception (it does not match a {} entry)
+                JirbanLogger.LOGGER.error("BoardManagerImpl.handleEvent - Error handling event {} - {}", event.getIssueKey(), e.getMessage());
+
+                //Last parameter is the exception (it does not match a {} entry)
+                JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Error handling event {}", event.getIssueKey(), e);
             }
         }
     }

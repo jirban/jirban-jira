@@ -172,6 +172,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             delayedEvent.reindexed = true;
             if (delayedEvent.isComplete()) {
                 try {
+                    JirbanLogger.LOGGER.debug("Handle delayed event {}", delayedEvent.issueEvent.getIssueKey());
                     boardManager.handleEvent(delayedEvent.issueEvent);
                 } finally {
                     delayedEvents.remove();
@@ -367,6 +368,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
     private void passEventToBoardManagerOrDelay(JirbanIssueEvent event) throws IndexException {
         if (event.isRecalculateState()) {
+            JirbanLogger.LOGGER.debug("Possible delayed event {}", event.getIssueKey());
             //Possible delay
             JirbanEventWrapper wrapper = delayedEvents.get();
             if (wrapper == null) {
@@ -375,6 +377,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 wrapper = new JirbanEventWrapper(false);
                 wrapper.issueEvent = event;
                 delayedEvents.set(wrapper);
+                JirbanLogger.LOGGER.debug("Delaying event {}", event.getIssueKey());
             } else {
                 //We already have an event wrapper. The only thing which would have put it here is if a ranking op was done
                 //so that the LexoRankBalanceEvent was triggered.
@@ -382,12 +385,14 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 wrapper.issueEvent = event;
                 if (wrapper.isComplete()) {
                     //It is complete
+                    JirbanLogger.LOGGER.debug("Handle delayed event {}", event.getIssueKey());
                     boardManager.handleEvent(event);
                     delayedEvents.remove();
                 }
             }
         } else {
             //We can handle the event right away
+            JirbanLogger.LOGGER.debug("Handling immediate event {}", event.getIssueKey());
             boardManager.handleEvent(event);
         }
     }

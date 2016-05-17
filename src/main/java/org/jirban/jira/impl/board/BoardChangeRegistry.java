@@ -53,7 +53,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.BoardManagerImpl;
 import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -198,6 +198,7 @@ public class BoardChangeRegistry {
     }
 
     public void forceRefresh() {
+        JirbanLogger.LOGGER.debug("Forcing refresh");
         boardManager.forceRefresh(board.getConfig().getCode());
     }
 
