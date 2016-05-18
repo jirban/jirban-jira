@@ -12,14 +12,14 @@
         <div [hidden]="!issues.length">
             <div class="h1">Blacklisted Issues</div>
             <div>Due to the below problems, the following issues are not shown on the board:</div>
-            <span *ngFor="#issue of issues"><a href="{{formatUrl(issue)}}">{{issue}}</a> </span>
+            <span *ngFor="let issue of issues"><a href="{{formatUrl(issue)}}">{{issue}}</a> </span>
         </div>
         <div [hidden]="!states.length">
             <div class="h1">States</div>
             <span>The following states from the Jira project are missing in the board's configuration, which affects
                 the Jira issues which can be shown.</span>
             <ul>
-                <li *ngFor="#entry of states">{{entry}}</li>
+                <li *ngFor="let entry of states">{{entry}}</li>
             </ul>
         </div>
         <div [hidden]="!issueTypes.length">
@@ -27,7 +27,7 @@
             <span>The following issue types from the Jira project are missing in the board's configuration, which affects
                 the Jira issues which can be shown.</span>
             <ul>
-                <li *ngFor="#entry of issueTypes">{{entry}}</li>
+                <li *ngFor="let entry of issueTypes">{{entry}}</li>
             </ul>
         </div>
         <div [hidden]="!priorities.length">
@@ -35,7 +35,7 @@
             <span>The following priorities from the Jira project are missing in the board's configuration, which affects
                 the Jira issues which can be shown.</span>
             <ul>
-                <li *ngFor="#entry of priorities">{{entry}}</li>
+                <li *ngFor="let entry of priorities">{{entry}}</li>
             </ul>
         </div>
     </div>

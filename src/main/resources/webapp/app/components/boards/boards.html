@@ -1,6 +1,6 @@
 <p>Please select your board</p>
 <ul>
-    <li *ngFor="#board of boards">
+    <li *ngFor="let board of boards">
         <a [routerLink]="['/Board', {board: board.code}]">{{board.name}}</a>
     </li>
 </ul>

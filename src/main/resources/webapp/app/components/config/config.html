@@ -7,7 +7,7 @@
 <div *ngIf="!hasBoards()">No boards configured</div>
 <div *ngIf="hasBoards()">
     <ul>
-        <li *ngFor="#board of boards">
+        <li *ngFor="let board of boards">
             <a href="view" (click)="toggleBoard($event, board.id)">{{board.name}}</a>
             <div [hidden]="!isSelected(board.id)">
                 <div [hidden]="edit">

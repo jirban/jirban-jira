@@ -47,7 +47,7 @@
             <div class="setting">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'project')" title="Clear filter">Project Filter</div>
                 <div class="setting-content">
-                    <div *ngFor="#project of boardProjectCodes">
+                    <div *ngFor="let project of boardProjectCodes">
                         <input type="checkbox" ngControl="{{project}}" id="project-{{project}}"/>
                         <label [attr.for]="'project-'+project">{{project}}</label>
                     </div>
@@ -58,7 +58,7 @@
             <div class="setting">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'priority')" title="Clear filter">Priority Filter</div>
                 <div class="setting-content" title="Scroll me!">
-                    <div *ngFor="#priority of priorities">
+                    <div *ngFor="let priority of priorities">
                         <input type="checkbox" ngControl="{{priority.name}}" id="priority-{{priority.name}}"/>
                         <label [attr.for]="'priority-' + priority.name">{{priority.name}}</label>
                     </div>
@@ -69,7 +69,7 @@
             <div class="setting">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'issue-type')" title="Clear filter">Issue Type Filter</div>
                 <div class="setting-content" title="Scroll me!">
-                    <div *ngFor="#issueType of issueTypes">
+                    <div *ngFor="let issueType of issueTypes">
                         <input type="checkbox" ngControl="{{issueType.name}}" id="type-{{issueType.name}}"/>
                         <label [attr.for]="'type-' + issueType.name">{{issueType.name}}</label>
                     </div>
@@ -84,7 +84,7 @@
                         <input type="checkbox" ngControl="{{noAssignee}}" id="assignee-$none$none"/>
                         <label for="assignee-$none$none">None</label>
                     </div>
-                    <div *ngFor="#assignee of assignees">
+                    <div *ngFor="let assignee of assignees">
                         <input type="checkbox" ngControl="{{assignee.key}}" id="assignee-{{assignee.name}}"/>
                         <label [attr.for]="'assignee-' + assignee.name">{{assignee.name}}</label>
                     </div>
@@ -99,7 +99,7 @@
                         <input type="checkbox" ngControl="{{noComponent}}" id="component-$none$none"/>
                         <label for="component-$none$none">None</label>
                     </div>
-                    <div *ngFor="#component of components">
+                    <div *ngFor="let component of components">
                         <input type="checkbox" ngControl="{{component.name}}" id="component-{{component.name}}"/>
                         <label [attr.for]="'component-' + component.name">{{component.name}}</label>
                     </div>

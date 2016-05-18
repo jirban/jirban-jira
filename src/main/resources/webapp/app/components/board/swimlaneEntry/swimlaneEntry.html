@@ -9,32 +9,32 @@
     <td *ngIf="backlogAndIsCollapsed"
         (click)="toggleBacklog($event)"
         class="collapsed backlog-state-summary backlog-cell">
-        <div class="collapsed backlog-state-summary" *ngFor="#character of toCharArray('Backlog')">{{character}}</div>
+        <div class="collapsed backlog-state-summary" *ngFor="let character of toCharArray('Backlog')">{{character}}</div>
     </td>
     <!-- Backlog visible, show all the possible backlog states -->
-    <td *ngFor="#state of backlogStatesIfVisible"
+    <td *ngFor="let state of backlogStatesIfVisible"
         [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
         title="State: {{state.name}}">
         <div [hidden]="!visibleColumns[state.index]">
             <ul class="issues-list">
-                <issue *ngFor="#issue of swimlane.issueTable[state.index]"
+                <issue *ngFor="let issue of swimlane.issueTable[state.index]"
                        [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
             </ul>
         </div>
-        <div class="collapsed state-summary" [hidden]="visibleColumns[state.index]" *ngFor="#character of toCharArray(state.name)">{{character}}</div>
+        <div class="collapsed state-summary" [hidden]="visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
     </td>
 
     <!-- Normal states -->
-    <td *ngFor="#state of mainStates" title="State: {{state.name}}"
+    <td *ngFor="let state of mainStates" title="State: {{state.name}}"
         [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
         title="State: {{state.name}}">
         <div [hidden]="!visibleColumns[state.index]">
             <ul class="issues-list">
-                <issue *ngFor="#issue of swimlane.issueTable[state.index]"
+                <issue *ngFor="let issue of swimlane.issueTable[state.index]"
                        [issue]="issue"  (issueContextMenu)="showIssueContextMenu($event)"></issue>
             </ul>
         </div>
-        <div class="state-summary" [hidden]="visibleColumns[state.index]" *ngFor="#character of toCharArray(state.name)">{{character}}</div>
+        <div class="state-summary" [hidden]="visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
     </td>
 </tr>
 <!--
@@ -44,8 +44,8 @@
 -->
 <tr [hidden]="swimlane.visible">
     <td *ngIf="backlogAndIsCollapsed" class="swimlane-empty-collapsed"></td>
-    <td *ngFor="#state of backlogStatesIfVisible"
+    <td *ngFor="let state of backlogStatesIfVisible"
         [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
-    <td *ngFor="#state of mainStates"
+    <td *ngFor="let state of mainStates"
         [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
 </tr>

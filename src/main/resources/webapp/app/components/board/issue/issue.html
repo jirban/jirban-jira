@@ -19,7 +19,7 @@
         <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
         <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
     </div>
-    <div class="linked-issues" *ngFor="#linked of issue.linkedIssues"
+    <div class="linked-issues" *ngFor="let linked of issue.linkedIssues"
          title="{{linked.key}}&#013;{{linked.ownStatus}}&#013;{{linked.summary}}"
          [hidden]="hideLinkedIssues">
         <div class="linked-issue">

@@ -20,7 +20,7 @@
         <div class="column">
             <div class="column-header">Select state:</div>
             <div class="states">
-                <div *ngFor="#state of moveStates" [ngClass]="state === toState ? 'entry-selected' : 'entry'">
+                <div *ngFor="let state of moveStates" [ngClass]="state === toState ? 'entry-selected' : 'entry'">
                     <div class="rank">
                         <a href="rank" (click)="onSelectRankState($event, state)"
                            *ngIf="isValidRankState(state)"
@@ -45,7 +45,7 @@
                        [ngClass]="'' === insertBeforeIssueKey ? 'entry-selected' : 'entry'"><b>- END -</b></a>
                 </div>
                 <div>&nbsp;</div>
-                <div *ngFor="#issue of issuesForState"
+                <div *ngFor="let issue of issuesForState"
                      [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'">
                     <a href="move" (click)="onSelectRankIssue($event, issue.key)" title="{{issue.key}} - {{issue.summary}}"
                        [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'"><b>{{issue.key}}</b> - {{issue.summary}}</a>
