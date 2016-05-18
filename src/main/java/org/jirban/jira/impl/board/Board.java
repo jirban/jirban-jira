@@ -584,7 +584,7 @@ public class Board {
                     copyAndPut(board.allIssues, event.getIssueKey(), newIssue, HashMap::new) :
                     board.allIssues;
 
-            JirbanLogger.LOGGER.trace("Board.Updater.handleCreateOrUpdateIssue - newIssue {}; updatedBlacklist {}; changedRankOrState {}",
+            JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - newIssue {}; updatedBlacklist {}; changedRankOrState {}",
                     newIssue, blacklist.isUpdated(), evtDetail.isRankOrStateChanged());
 
             if (newIssue != null || blacklist.isUpdated() || evtDetail.isRankOrStateChanged()) {

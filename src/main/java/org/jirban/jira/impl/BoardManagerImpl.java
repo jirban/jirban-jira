@@ -104,6 +104,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
             synchronized (this) {
                 board = boards.get(code);
                 if (board == null) {
+
                     //Use the logged in user to check if we are allowed to view the board
                     final BoardConfig boardConfig = boardConfigurationManager.getBoardConfigForBoardDisplay(user, code);
                     /*
@@ -117,6 +118,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
                     final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
                     board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
+                    JirbanLogger.LOGGER.debug("Full refresh of board {}; backlog: {}", code, backlog);
                     boards.put(code, board);
                     boardChangeRegistries.put(code, new BoardChangeRegistry(this, board));
                     final RefreshEntry refreshEntry = new RefreshEntry(code, REFRESH_TIMEOUT_SECONDS);
@@ -185,7 +187,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
             }
             final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
             try {
-                JirbanLogger.LOGGER.trace("BoardManagerImpl.handleEvent - Handling event on board {}", board.getConfig().getCode());
+                JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Handling event on board {}", board.getConfig().getCode());
                 Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event, changeRegistry);
                 if (newBoard == null) {
                     //The changes in the issue were not relevant
@@ -222,7 +224,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
         if (boardChangeRegistry == null) {
             //There is config but no board, so do a full refresh
-            return getBoardJson(user, false, code);
+            return getBoardJson(user, backlog, code);
         }
 
         final ModelNode changes;
@@ -252,6 +254,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                                 entry = boardRefreshQueue.poll();
 
                                 if (entry.isValid()) {
+                                    JirbanLogger.LOGGER.debug("Periodic task deleting board " + entry.boardCode);
                                     //Remove the board, an attempt to read it will result in a new instance being fully loaded
                                     //and created
                                     boardChangeRegistries.remove(entry.boardCode);
