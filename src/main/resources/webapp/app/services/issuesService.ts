@@ -105,9 +105,11 @@ class MoveIssueAction {
         let transitionId:number = -1;
         let transitions:any = transitionsValue.transitions;
         for (let transition of transitions) {
-            if (transition.name === this._toOwnState) {
-                transitionId = transition.id;
-                break;
+            if (transition.to) {
+                if (transition.to.name === this._toOwnState) {
+                    transitionId = transition.id;
+                    break;
+                }
             }
         }
 
