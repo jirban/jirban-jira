@@ -220,7 +220,9 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 eventTypeId == EventType.ISSUE_GENERICEVENT_ID ||
                 eventTypeId == EventType.ISSUE_RESOLVED_ID ||
                 eventTypeId == EventType.ISSUE_CLOSED_ID ||
-                eventTypeId == EventType.ISSUE_REOPENED_ID) {
+                eventTypeId == EventType.ISSUE_REOPENED_ID ||
+                eventTypeId == EventType.ISSUE_WORKSTARTED_ID ||
+                eventTypeId == EventType.ISSUE_WORKSTOPPED_ID) {
             //Which of these events gets triggered depends on the workflow for the project, and other factors.
             //E.g. in a normal workflow project, the ISSUE_RESOLVED_ID, ISSUE_CLOSED_ID, ISSUE_REOPENED_ID events
             //are triggered, while in the Kanban workflow those events use the ISSUE_GENERIC_EVENT_ID.
