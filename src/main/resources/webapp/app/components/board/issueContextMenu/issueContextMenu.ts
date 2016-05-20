@@ -21,8 +21,12 @@ export class IssueContextMenuComponent {
     private endIssue:boolean;
     private toState:string;
     private issuesForState:IssueData[];
+
+    //Calculated dimensions
     private movePanelTop:number;
+    private movePanelHeight:number;
     private movePanelLeft:number;
+    private statesColumnHeight:number;
 
     private insertBeforeIssueKey:string;
 
@@ -157,17 +161,23 @@ export class IssueContextMenuComponent {
     }
 
     private setWindowSize() {
-        let movePanelTop,movePanelLeft : number = 0;
-        //css hardcodes the height as 350px
-        if (window.innerHeight > 350) {
-            movePanelTop = window.innerHeight/2 - 350/2;
-        }
+        let movePanelTop, movePanelHeight, movePanelLeft, statesColumnHeight : number = 0;
+
+        //40px top and bottom padding if window is high enough, 5px otherwise
+        let yPad = window.innerHeight > 350 ? 40 : 5;
+        movePanelHeight = window.innerHeight - 2 * yPad;
+        movePanelTop = window.innerHeight/2 - movePanelHeight/2;
+
+        statesColumnHeight = movePanelHeight - 55;
+
         //css hardcodes the width as 720px;
         if (window.innerWidth > 720) {
             movePanelLeft = window.innerWidth/2 - 720/2;
         }
         this.movePanelTop = movePanelTop;
+        this.movePanelHeight = movePanelHeight;
         this.movePanelLeft = movePanelLeft;
+        this.statesColumnHeight = statesColumnHeight;
     }
 
     private isIssueSelected(issue:IssueData) : boolean {

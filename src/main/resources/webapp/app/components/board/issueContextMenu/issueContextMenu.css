@@ -17,9 +17,8 @@ a.context {
 #issue-move-panel {
     border: 1px solid #888888;
     position: absolute;
-    /* top, bottom will be calculated */
+    /* top, bottom, height will be calculated */
     width: 720px;
-    height: 350px;
     z-index: 10;
     background-color: white;
     border-radius: 5px;
@@ -69,6 +68,8 @@ a.close {
     overflow:hidden;
 }
 .column-header {
+    height: 15px;
+    max-height: 15px;
     white-space: nowrap;
     font-size: 12px;
     font-weight: bold;
