@@ -7,6 +7,7 @@ import {IssueType} from "../../../data/board/issueType";
 import {Priority} from "../../../data/board/priority";
 import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
+import {BoardFilters} from "../../../data/board/boardFilters";
 
 @Component({
     selector: 'control-panel',
@@ -26,6 +27,8 @@ export class ControlPanelComponent {
     private noAssignee:string = NO_ASSIGNEE;
     private noComponent:string = NO_COMPONENT;
 
+    private linkUrl:string;
+
     constructor(private boardData:BoardData, private formBuilder:FormBuilder) {
     }
 
@@ -35,42 +38,44 @@ export class ControlPanelComponent {
         }
 
         let form:ControlGroup = this.formBuilder.group({});
-        form.addControl("swimlane", new Control(null));
+        form.addControl("swimlane", new Control(this.boardData.swimlane));
 
         let detailForm:ControlGroup = this.formBuilder.group({});
         form.addControl("detail", detailForm);
-        detailForm.addControl("assignee", new Control(true));
-        detailForm.addControl("description", new Control(true));
-        detailForm.addControl("info", new Control(true));
-        detailForm.addControl("linked", new Control(true));
+        detailForm.addControl("assignee", new Control(this.boardData.issueDisplayDetails.assignee));
+        detailForm.addControl("description", new Control(this.boardData.issueDisplayDetails.summary));
+        detailForm.addControl("info", new Control(this.boardData.issueDisplayDetails.info));
+        detailForm.addControl("linked", new Control(this.boardData.issueDisplayDetails.linkedIssues));
+
+        let filters:BoardFilters = this.boardData.filters;
 
         let projectFilterForm:ControlGroup = this.formBuilder.group({});
         for (let projectName of this.boardData.boardProjectCodes) {
-            projectFilterForm.addControl(projectName, new Control(false));
+            projectFilterForm.addControl(projectName, new Control(filters.initialProjectValueForForm(projectName)));
         }
 
         let priorityFilterForm:ControlGroup = this.formBuilder.group({});
         for (let priority of this.priorities) {
-            priorityFilterForm.addControl(priority.name, new Control(false));
+            priorityFilterForm.addControl(priority.name, new Control(filters.initialPriorityValueForForm(priority.name)));
         }
 
         let issueTypeFilterForm:ControlGroup = this.formBuilder.group({});
         for (let issueType of this.issueTypes) {
-            issueTypeFilterForm.addControl(issueType.name, new Control(false));
+            issueTypeFilterForm.addControl(issueType.name, new Control(filters.initialIssueTypeValueForForm(issueType.name)));
         }
 
         let assigneeFilterForm:ControlGroup = this.formBuilder.group({});
         //The unassigned assignee and the ones configured in the project
-        assigneeFilterForm.addControl(NO_ASSIGNEE, new Control(false));
+        assigneeFilterForm.addControl(NO_ASSIGNEE, new Control(filters.initialAssigneeValueForForm(NO_ASSIGNEE)));
         for (let assignee of this.assignees) {
-            assigneeFilterForm.addControl(assignee.key, new Control(false));
+            assigneeFilterForm.addControl(assignee.key, new Control(filters.initialAssigneeValueForForm(assignee.key)));
         }
 
         let componentFilterForm:ControlGroup = this.formBuilder.group({});
         //The unassigned assignee and the ones configured in the project
-        componentFilterForm.addControl(NO_COMPONENT, new Control(false));
+        componentFilterForm.addControl(NO_COMPONENT, new Control(filters.initialComponentValueForForm(NO_COMPONENT)));
         for (let component of this.components) {
-            componentFilterForm.addControl(component.name, new Control(false));
+            componentFilterForm.addControl(component.name, new Control(filters.initialComponentValueForForm(component.name)));
         }
 
         //Add to the main form
@@ -98,11 +103,13 @@ export class ControlPanelComponent {
                 if (dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
                     this.updateFilters(value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"]);
                 }
+                this.updateLinkUrl();
             });
 
         this._assigneeFilterForm = assigneeFilterForm;
         this._componentFilterForm = componentFilterForm;
         this._controlForm = form;
+        this.updateLinkUrl();
         return this._controlForm;
     }
 
@@ -199,6 +206,25 @@ export class ControlPanelComponent {
         return values;
     }
 
+
+    private updateLinkUrl() {
+        let url:string = window.location.href;
+        let index = url.lastIndexOf("?");
+        if (index >= 0) {
+            url = url.substr(0, index);
+        }
+        url = url + "?board=" + this.boardData.code;
+
+        if (this.boardData.swimlane) {
+            url += "&swimlane=" + this.boardData.swimlane;
+        }
+
+        url += this.boardData.issueDisplayDetails.createQueryStringParticle();
+        url += this.boardData.filters.createQueryStringParticles();
+
+        console.log(url);
+        this.linkUrl = url;
+    }
 }
 
 /**

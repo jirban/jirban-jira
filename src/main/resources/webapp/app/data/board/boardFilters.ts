@@ -4,6 +4,7 @@ import {IssueData} from "./issueData";
 import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
 import {JiraComponent, NO_COMPONENT} from "./component";
+import {IMap} from "../../common/map";
 
 export class BoardFilters {
     private _projectFilter:any;
@@ -12,33 +13,32 @@ export class BoardFilters {
     private _assigneeFilter:any;
     private _componentFilter:any;
     private _componentFilterLength:number;
-    private projects:boolean = false;
-    private assignees:boolean = false;
-    private priorities:boolean = false;
-    private issueTypes:boolean = false;
-    private components:boolean = false;
+    private _projects:boolean = false;
+    private _assignees:boolean = false;
+    private _priorities:boolean = false;
+    private _issueTypes:boolean = false;
+    private _components:boolean = false;
 
     setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
-        this.projects = false;
+        this._projects = false;
         if (boardProjectCodes) {
             for (let key of boardProjectCodes) {
                 if (filter[key]) {
-                    this.projects = true;
+                    this._projects = true;
                     break;
                 }
             }
         }
-
     }
 
     setPriorityFilter(filter:any, priorities:Indexed<Priority>) {
         this._priorityFilter = filter;
-        this.priorities = false;
+        this._priorities = false;
         if (priorities) {
             for (let priority of priorities.array) {
                 if (filter[priority.name]) {
-                    this.priorities = true;
+                    this._priorities = true;
                     break;
                 }
             }
@@ -47,11 +47,11 @@ export class BoardFilters {
 
     setIssueTypeFilter(filter:any, issueTypes:Indexed<IssueType>) {
         this._issueTypeFilter = filter;
-        this.issueTypes = false;
+        this._issueTypes = false;
         if (issueTypes) {
             for (let issueType of issueTypes.array) {
                 if (filter[issueType.name]) {
-                    this.issueTypes = true;
+                    this._issueTypes = true;
                     break;
                 }
             }
@@ -61,13 +61,13 @@ export class BoardFilters {
 
     setAssigneeFilter(filter:any, assignees:Indexed<Assignee>) {
         this._assigneeFilter = filter;
-        this.assignees = false;
+        this._assignees = false;
         if (filter[NO_ASSIGNEE]) {
-            this.assignees = true;
+            this._assignees = true;
         } else if (assignees) {
             for (let assignee of assignees.array) {
                 if (filter[assignee.key]) {
-                    this.assignees = true;
+                    this._assignees = true;
                     break;
                 }
             }
@@ -78,9 +78,9 @@ export class BoardFilters {
         //Trim to only contain the visible ones in _componentFilter
         this._componentFilter = {};
         this._componentFilterLength = 0;
-        this.components = false;
+        this._components = false;
         if (filter[NO_COMPONENT]) {
-            this.components = true;
+            this._components = true;
             this._componentFilter[NO_COMPONENT] = true;
             this._componentFilterLength = 1;
         }
@@ -88,7 +88,7 @@ export class BoardFilters {
         if (components) {
             for (let component of components.array) {
                 if (filter[component.name]) {
-                    this.components = true;
+                    this._components = true;
                     this._componentFilter[component.name] = true;
                     this._componentFilterLength += 1;
                 }
@@ -116,36 +116,71 @@ export class BoardFilters {
         return false;
     }
 
+    initialProjectValueForForm(projectCode:string):boolean {
+        if (!this._projects) {
+            return false;
+        }
+        return this._projectFilter[projectCode];
+    }
+
     filterProject(projectCode:string):boolean {
-        if (this.projects) {
+        if (this._projects) {
             return !this._projectFilter[projectCode];
         }
         return false;
     }
 
+    initialAssigneeValueForForm(assigneeKey:string):boolean {
+        if (!this._assignees) {
+            return false;
+        }
+        return this._assigneeFilter[assigneeKey];
+    }
+
     filterAssignee(assigneeKey:string):boolean {
-        if (this.assignees) {
+        if (this._assignees) {
             return !this._assigneeFilter[assigneeKey ? assigneeKey : NO_ASSIGNEE]
         }
         return false;
     }
 
+    initialPriorityValueForForm(priorityName:string):boolean {
+        if (!this._priorities) {
+            return false;
+        }
+        return this._priorityFilter[priorityName];
+    }
+
     filterPriority(priorityName:string):boolean {
-        if (this.priorities) {
+        if (this._priorities) {
             return !this._priorityFilter[priorityName];
         }
         return false;
     }
 
+    initialIssueTypeValueForForm(issueTypeName:string):boolean {
+        if (!this._issueTypes) {
+            return false;
+        }
+        return this._issueTypeFilter[issueTypeName];
+    }
+
     filterIssueType(issueTypeName:string):boolean {
-        if (this.issueTypes) {
+        if (this._issueTypes) {
             return !this._issueTypeFilter[issueTypeName];
         }
         return false;
     }
 
+    initialComponentValueForForm(componentKey:string):boolean {
+        if (!this._components) {
+            return false;
+        }
+        return this._componentFilter[componentKey];
+    }
+
     private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
-        if (this.components) {
+        if (this._components) {
             if (!issueComponents) {
                 return !this._componentFilter[NO_COMPONENT];
             } else {
@@ -171,11 +206,69 @@ export class BoardFilters {
     }
 
     filterComponent(componentName:string):boolean {
-        if (this.components) {
+        if (this._components) {
             return !this._componentFilter[componentName ? componentName : NO_COMPONENT]
         }
         return false;
 
+    }
+
+    createFromQueryParams(queryParams:IMap<string>,
+                                 callback:(
+                                     projectFilter:string,
+                                     priorityFilter:string,
+                                     issueTypeFilter:string,
+                                     assigneeFilter:string,
+                                     componentFilter:string)=>void):void {
+        let projectFilter:any = this.parseBooleanFilter(queryParams, "project");
+        let priorityFilter:any = this.parseBooleanFilter(queryParams, "priority");
+        let issueTypeFilter:any = this.parseBooleanFilter(queryParams, "issue-type");
+        let assigneeFilter:any = this.parseBooleanFilter(queryParams, "assignee");
+        let componentFilter:any = this.parseBooleanFilter(queryParams, "component");
+
+        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter);
+    }
+
+    parseBooleanFilter(queryParams:IMap<string>, name:string):any{
+        let valueString:string = queryParams[name];
+        if (valueString) {
+            let jsonFilter:any = {};
+            let values:string[] = valueString.split(",");
+            for (let value of values) {
+                jsonFilter[value] = true;
+            }
+            return jsonFilter;
+        }
+        return {};
+    }
+
+    createQueryStringParticles() {
+        let query = "";
+        query += this.createQueryStringParticle("project", this._projects, this._projectFilter);
+        query += this.createQueryStringParticle("priority", this._priorities, this._priorityFilter);
+        query += this.createQueryStringParticle("issue-type", this._issueTypes, this._issueTypeFilter);
+        query += this.createQueryStringParticle("assignee", this._assignees, this._assigneeFilter);
+        query += this.createQueryStringParticle("component", this._components, this._componentFilter);
+        return query;
+    }
+
+    private createQueryStringParticle(name:string, hasFilter:boolean, filter:any) {
+        let query:string = "";
+        if (hasFilter) {
+            let initialised:boolean = false;
+            for (let key in filter) {
+                if (filter[key]) {
+                    if (!initialised) {
+                        initialised = true;
+                        query = "&" + name + "="
+                    } else {
+                        query += ","
+                    }
+                    query += key;
+                }
+            }
+        }
+        return query;
     }
 }
 
@@ -210,4 +303,40 @@ export class IssueDisplayDetails {
     get linkedIssues():boolean {
         return this._linkedIssues;
     }
+
+    createQueryStringParticle() {
+        let query = "";
+        if (!this._assignee || !this._summary || !this._info || !this._linkedIssues) {
+            let first:boolean = true;
+            query = "&detail=";
+            if (!this._assignee) {
+                first = false;
+                query += "assignee";
+            }
+            if (!this._summary) {
+                if (!first) {
+                    query += ",";
+                } else {
+                    first = false;
+                }
+                query += "description";
+            }
+            if (!this._info) {
+                if (!first) {
+                    query += ",";
+                } else {
+                    first = false;
+                }
+                query += "info";
+            }
+            if (!this._linkedIssues) {
+                if (!first) {
+                    query += ",";
+                }
+                query += "linked"
+            }
+        }
+        return query;
+    }
+
 }

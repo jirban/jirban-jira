@@ -1,6 +1,6 @@
-import {Component} from 'angular2/core';
-import {BoardData} from '../../../data/board/boardData';
-import {ControlPanelComponent} from '../controlPanel/controlPanel';
+import {Component} from "angular2/core";
+import {BoardData} from "../../../data/board/boardData";
+import {ControlPanelComponent} from "../controlPanel/controlPanel";
 import {HealthPanelComponent} from "../healthPanel/healthPanel";
 import {Hideable} from "../../../common/hide";
 

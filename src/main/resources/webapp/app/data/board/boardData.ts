@@ -1,22 +1,16 @@
-import {Assignee, AssigneeDeserializer} from './assignee';
-import {Priority, PriorityDeserializer} from './priority';
-import {IssueType, IssueTypeDeserializer} from './issueType';
-import {BoardFilters, IssueDisplayDetails} from './boardFilters';
-import {IssueData} from './issueData';
-
-import {IMap} from '../../common/map';
-import {Indexed} from '../../common/indexed';
-import {isNumber} from "angular2/src/facade/lang";
+import {Assignee, AssigneeDeserializer} from "./assignee";
+import {Priority, PriorityDeserializer} from "./priority";
+import {IssueType, IssueTypeDeserializer} from "./issueType";
+import {BoardFilters, IssueDisplayDetails} from "./boardFilters";
+import {IssueData} from "./issueData";
+import {IMap} from "../../common/map";
+import {Indexed} from "../../common/indexed";
 import {Hideable} from "../../common/hide";
-import {Projects} from "./project";
-import {ProjectDeserializer} from "./project";
-import {LinkedProject} from "./project";
-import {BoardProject} from "./project";
+import {Projects, ProjectDeserializer, LinkedProject, BoardProject} from "./project";
 import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
-import {IssuesService} from "../../services/issuesService";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
 
@@ -148,7 +142,7 @@ export class BoardData {
      * @param issueDisplayDetails
      */
     updateIssueDisplayDetails(issueDisplayDetails:IssueDisplayDetails) {
-        this.issueDisplayDetails = issueDisplayDetails;
+        this._issueDisplayDetails = issueDisplayDetails;
     }
 
 
@@ -325,6 +319,10 @@ export class BoardData {
         this._issueTable.filters = this._boardFilters;
     }
 
+    get filters():BoardFilters {
+        return this._boardFilters;
+    }
+
     hideHideables() {
         for (let hideable of this.hideables) {
             hideable.hide();
@@ -357,6 +355,54 @@ export class BoardData {
     getValidMoveBeforeIssues(issueKey:string, toState:string) {
         let moveIssue:IssueData = this._issueTable.getIssue(issueKey);
         return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
+    }
+
+    setFiltersFromQueryParams(queryParams:IMap<string>) {
+
+        this._boardFilters.createFromQueryParams(queryParams, 
+            (projectFilter:string,
+            priorityFilter:string,
+            issueTypeFilter:string,
+            assigneeFilter:string,
+            componentFilter:string) => {
+                this._boardFilters.setProjectFilter(projectFilter, this.boardProjectCodes);
+                this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
+                this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
+                this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
+                this._boardFilters.setComponentFilter(componentFilter, this._components);
+        });
+
+        this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));
+
+        //TODO swimlane
+        if (queryParams["swimlane"]) {
+            //Use the setter so that we recalculate everything
+            this.swimlane = queryParams["swimlane"];
+        }
+    }
+
+    private parseIssueDisplayDetails(queryParams:IMap<string>):IssueDisplayDetails{
+        let detail:string = queryParams["detail"];
+        if (detail) {
+            let details:string[] = detail.split(",");
+            let assignee:boolean = true;
+            let summary:boolean = true;
+            let info:boolean = true;
+            let linkedIssues:boolean = true;
+            for (let value of details) {
+                if (value === 'assignee') {
+                    assignee = false;
+                } else if (value === 'description') {
+                    summary = false;
+                } else if (value === 'info') {
+                    info = false;
+                } else if (value === 'linked') {
+                    linkedIssues = false;
+                }
+            }
+            return new IssueDisplayDetails(assignee, summary, info, linkedIssues);
+        }
+        return new IssueDisplayDetails();
     }
 }
 

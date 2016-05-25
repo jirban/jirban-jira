@@ -8,6 +8,7 @@ import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {BoardHeaderEntry, State} from "../../data/board/header";
+import {IMap} from "../../common/map";
 
 
 @Component({
@@ -19,10 +20,10 @@ import {BoardHeaderEntry, State} from "../../data/board/header";
 })
 export class BoardComponent implements OnDestroy, OnInit {
 
-    private boardCode;
-    private boardHeight; //board + headers
-    private boardBodyHeight; //board + headers
-    private width;
+    private boardCode:string;
+    private boardHeight:number; //board + headers
+    private boardBodyHeight:number; //board + headers
+    private width:number;
 
     private issueContextMenuData:IssueContextMenuData;
 
@@ -37,16 +38,23 @@ export class BoardComponent implements OnDestroy, OnInit {
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService, routeParams:RouteParams) {
 
+        let queryString:IMap<string> = routeParams.params;
         this.boardCode = routeParams.get('board');
-        this.populateIssues();
+
+        this.populateIssues(() => {
+            //Loading filters does not work until the issue data is loaded
+            _boardData.setFiltersFromQueryParams(queryString);
+        });
+
         this.setWindowSize();
     }
 
-    private populateIssues() {
+    private populateIssues(issueDataLoaded:()=>void) {
         this._progressError.startProgress(true);
         this._issuesService.getIssuesData(this.boardCode, this._boardData.showBacklog).subscribe(
             data => {
                 this.setIssueData(data);
+                issueDataLoaded();
             },
             err => {
                 this._progressError.setError(err);
@@ -262,4 +270,5 @@ export class BoardComponent implements OnDestroy, OnInit {
     scrollOuterX(event:Event) {
         this.boardLeftOffset = event.srcElement.scrollLeft;
     }
+
 }
