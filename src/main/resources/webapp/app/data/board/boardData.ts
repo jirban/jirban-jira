@@ -365,11 +365,7 @@ export class BoardData {
             issueTypeFilter:string,
             assigneeFilter:string,
             componentFilter:string) => {
-                this._boardFilters.setProjectFilter(projectFilter, this.boardProjectCodes);
-                this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
-                this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
-                this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
-                this._boardFilters.setComponentFilter(componentFilter, this._components);
+                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter);
         });
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));
