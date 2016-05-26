@@ -1,6 +1,5 @@
 {
   "configs" : [{
-    "id" : 2,
     "code" : "POC",
     "name" : "Test board",
     "edit" : true,
@@ -67,12 +66,78 @@
     }
   },
     {
-      "id" : 3,
       "code" : "POC2",
       "name" : "Test board with backlog, unordered and done states set up",
       "edit" : true,
       "config" : {
         "_comment" : "This config doesn't actually match the setup for the POC2.json file. It is only here for illustrative purposes, and to see this board in the boards list.",
+        "name" : "Test board",
+        "code" : "TST",
+        "owning-project" : "SKP",
+        "rank-custom-field-id" : 10009,
+        "states" : [
+          {
+            "name" : "Backlog",
+            "backlog" : true
+          },
+          {
+            "name" : "Selected for Development",
+            "header" : "Work"
+          },
+          {
+            "name" : "In Progress",
+            "header" : "Work"
+          },
+          {"name" : "Done"}
+        ],
+        "priorities" : [
+          "Blocker",
+          "Critical",
+          "Major",
+          "Minor",
+          "Trivial"
+        ],
+        "issue-types" : [
+          "Task",
+          "Story",
+          "Bug",
+          "Epic"
+        ],
+        "projects" : {
+          "SKP" : {
+            "query-filter" : null,
+            "colour" : "#4667CA",
+            "state-links" : {
+              "Done" : "Done",
+              "Selected for Development" : "Selected for Development",
+              "In Progress" : "In Progress",
+              "Backlog" : "Backlog"
+            }
+          },
+          "SKBG" : {
+            "query-filter" : null,
+            "colour" : "#CA6746",
+            "state-links" : {
+              "Done" : "Done",
+              "Backloglog" : "Backlog",
+              "In Progress" : "In Progress"
+            }
+          }
+        },
+        "linked-projects" : {"UP" : {"states":[
+          "Open",
+          "In Progress",
+          "Resolved",
+          "Done"
+        ]}}
+      }
+    },
+    {
+      "code" : "POC3",
+      "name" : "Board with no headers",
+      "edit" : true,
+      "config" : {
+        "_comment" : "This config doesn't actually match the setup for the POC3.json file. It is only here for illustrative purposes, and to see this board in the boards list.",
         "name" : "Test board",
         "code" : "TST",
         "owning-project" : "SKP",

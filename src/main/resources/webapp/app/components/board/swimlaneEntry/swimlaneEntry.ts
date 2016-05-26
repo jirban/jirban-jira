@@ -20,11 +20,19 @@ export class SwimlaneEntryComponent {
     public swimlane : SwimlaneData;
     public boardData : BoardData;
     public swimlaneIndex : number;
-    public boardLeftOffset:number;
+    private _boardLeftOffset:number;
     private issueContextMenu:EventEmitter<any> = new EventEmitter();
     private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
     constructor() {
+    }
+
+    get boardLeftOffset():number {
+        return this._boardLeftOffset;
+    }
+
+    set boardLeftOffset(value:number) {
+        this._boardLeftOffset = value;
     }
 
     private get boardStates() : State[] {

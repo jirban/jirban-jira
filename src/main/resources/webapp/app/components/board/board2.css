@@ -1,0 +1,125 @@
+/*
+ * board.ts styling (inherited by swimlaneEntry.ts)
+ */
+/*
+    The idea for the scrolling is taken from
+    http://stackoverflow.com/questions/14977864/fixed-header-table-with-horizontal-scrollbar-and-vertical-scrollbar-on
+ */
+#board-outer {
+    background-color: #fff;
+    position: absolute;
+    top:30px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+}
+#board-inner {
+    height: 100%;
+    overflow: hidden;
+}
+table {
+    border-collapse: collapse;
+}
+
+/* Board headers */
+#table-header {
+    position: relative;
+    border: 1px solid #CCCCCC;
+    border-top: 0;
+    border-bottom: 0;
+    border-collapse: collapse;
+}
+#header-table th {
+    margin: 0px;
+    padding: 0px;
+    border: 1px solid #CCCCCC;
+    border-collapse: collapse;
+    table-layout: fixed;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 11px;
+    font-weight: bold;
+    height: 30px;
+    cursor: pointer;
+}
+#header-table th.visible {
+    min-width: 200px;
+    max-width: 200px;
+}
+#header-table th.collapsed {
+    min-width: 30px;
+    max-width: 30px;
+}
+#header-table th:hover {
+    background-color: #F0F0F0;
+}
+
+/* Board body */
+#table-body {
+    overflow: auto;
+    border: 1px solid #CCCCCC;
+    border-top: 0;
+    border-collapse: collapse;
+    /** height: Is needed for vertical scrolling, and will get calculated and set by the component code */
+}
+#body-table table, td{
+    margin: 0px;
+    padding: 0px;
+    border: 1px solid #CCCCCC;
+    border-collapse: collapse;
+    font-weight: normal;
+    table-layout: fixed;
+    vertical-align: top;
+    text-align: left;
+}
+#body-table td.visible {
+    min-width: 200px;
+    max-width: 200px;
+}
+#body-table td.collapsed {
+    min-width: 30px;
+    max-width: 30px;
+}
+
+/* Other styling */
+td.backlog-state-summary:hover {
+    cursor: pointer;
+    background-color: #F0F0F0;
+}
+div.state-summary {
+    width: 100%;
+    font-size: 10px;
+    text-align: center;
+    min-height: 11px;
+}
+div.backlog-state-summary {
+    width: 100%;
+    font-size: 11px;
+    font-weight: bold;
+    font-color: blue;
+    text-align: center;
+    min-height: 11px;
+}
+ul.issues-list {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    display: block;
+    width: 192px;
+}
+.issue-context-menu {
+    font-size: 13px;
+    position: absolute;
+    z-index: 10;
+    padding: 2px;
+    background-color: lightgrey;
+    border-radius: 5px;
+}
+.category-colour {
+    border: 0px;
+    padding: 0px;
+    max-height: 3px;
+}
+.backlog-cell {
+    background-color: #E0E0E0;
+}
