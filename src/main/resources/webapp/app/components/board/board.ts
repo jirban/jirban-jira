@@ -1,5 +1,5 @@
-import {Component, OnDestroy, OnInit} from "angular2/core";
-import {RouteParams} from "angular2/router";
+import {Component, OnDestroy, OnInit} from "@angular/core";
+import {RouteParams} from "@angular/router-deprecated";
 import {IssuesService} from "../../services/issuesService";
 import {BoardData} from "../../data/board/boardData";
 import {IssueComponent} from "./issue/issue";

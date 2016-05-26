@@ -2,7 +2,6 @@ import {Assignee} from "./assignee";
 import {BoardData} from "./boardData";
 import {Priority} from "./priority";
 import {IssueType} from "./issueType";
-import {isNumber} from "angular2/src/facade/lang";
 import {BoardProject, Project} from "./project";
 import {IssueChange} from "./change";
 import {JiraComponent} from "./component";
@@ -233,7 +232,7 @@ export class IssueData {
         if (index) {
             return true;
         }
-        if (isNumber(index)) {
+        if (!isNaN(index)) {
             return true;
         }
         return false;

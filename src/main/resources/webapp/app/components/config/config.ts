@@ -1,9 +1,7 @@
-import {Component} from 'angular2/core';
-import {ROUTER_DIRECTIVES} from 'angular2/router';
-import {BoardsService} from '../../services/boardsService';
-import {ControlGroup, FormBuilder} from "angular2/common";
-import {Validators} from "angular2/common";
-import {Control} from "angular2/common";
+import {Component} from "@angular/core";
+import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
+import {BoardsService} from "../../services/boardsService";
+import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
 

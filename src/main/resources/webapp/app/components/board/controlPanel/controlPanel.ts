@@ -1,5 +1,5 @@
-import {Component, EventEmitter} from "angular2/core";
-import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from "angular2/common";
+import {Component, EventEmitter} from "@angular/core";
+import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from "@angular/common";
 import {NO_ASSIGNEE, Assignee} from "../../../data/board/assignee";
 import {NO_COMPONENT, JiraComponent} from "../../../data/board/component";
 import {BoardData} from "../../../data/board/boardData";

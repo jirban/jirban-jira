@@ -1,6 +1,6 @@
-import {Component} from 'angular2/core';
-import {ROUTER_DIRECTIVES} from 'angular2/router';
-import {BoardsService} from '../../services/boardsService';
+import {Component} from "@angular/core";
+import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
+import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
 
 @Component({

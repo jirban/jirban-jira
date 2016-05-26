@@ -1,12 +1,9 @@
-import {Injectable} from 'angular2/core';
-import {Headers, Http, Response} from 'angular2/http';
-import {Router} from 'angular2/router';
-import {Observable} from 'rxjs/Observable';
+import {Injectable} from "@angular/core";
+import {Headers, Http, Response} from "@angular/http";
+import {Observable} from "rxjs/Observable";
 import {RestUrlUtil} from "../common/RestUrlUtil";
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/timeout';
-import {timeout} from "rxjs/operator/timeout";
-import {ProgressErrorService} from "./progressErrorService";
+import "rxjs/add/operator/map";
+import "rxjs/add/operator/timeout";
 
 
 @Injectable()

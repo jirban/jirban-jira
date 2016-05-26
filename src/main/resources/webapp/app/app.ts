@@ -1,11 +1,11 @@
 //our root app component
-import {Component} from "angular2/core";
+import {Component} from "@angular/core";
+import {RouteConfig, ROUTER_DIRECTIVES, Route, Router} from "@angular/router-deprecated";
 import {BoardComponent} from "./components/board/board";
 import {BoardsComponent} from "./components/boards/boards";
 import {ConfigComponent} from "./components/config/config";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {VersionCheckService} from "./services/versionCheckService";
-import {ROUTER_DIRECTIVES, Route, RouteConfig, Router} from "angular2/router";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 1;
@@ -24,7 +24,6 @@ const VERSION:number = 1;
 
 </div>
 <router-outlet></router-outlet>
-
 <div class="wait-screen" [hidden]="hideProgress"> </div>
 <div id="error-panel" [hidden]="!error" (click)="onClickErrorClose($event)">
     <div class="header">

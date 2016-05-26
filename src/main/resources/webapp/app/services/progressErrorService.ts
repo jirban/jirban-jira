@@ -1,4 +1,4 @@
-import {Injectable} from "angular2/core";
+import {Injectable} from "@angular/core";
 
 /**
  * Shared state injected to places where we should display a progress bar/and or an error.

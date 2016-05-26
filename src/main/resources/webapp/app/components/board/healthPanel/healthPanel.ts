@@ -1,5 +1,5 @@
-import {Component, EventEmitter} from 'angular2/core';
-import {BoardData} from '../../../data/board/boardData';
+import {Component, EventEmitter} from "@angular/core";
+import {BoardData} from "../../../data/board/boardData";
 
 @Component({
     selector: 'health-panel',

@@ -1,5 +1,4 @@
-import {IMap} from './map';
-import {isNumber} from "angular2/src/facade/lang";
+import {IMap} from "./map";
 
 /**
  * Container for an array, and a lookup of the array index by key

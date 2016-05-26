@@ -1,4 +1,4 @@
-import {Component} from "angular2/core";
+import {Component} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
 import {ControlPanelComponent} from "../controlPanel/controlPanel";
 import {HealthPanelComponent} from "../healthPanel/healthPanel";

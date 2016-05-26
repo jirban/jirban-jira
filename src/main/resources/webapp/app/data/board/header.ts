@@ -1,5 +1,4 @@
 import {Indexed} from "../../common/indexed";
-import {isNumber} from "angular2/src/facade/lang";
 import {IMap} from "../../common/map";
 import {BoardData} from "./boardData";
 /**
@@ -59,7 +58,7 @@ export class BoardHeaders {
             let backlogState:boolean = index < backlogSize;
 
             let category:StateCategory;
-            if (isNumber(state.header)) {
+            if (!isNaN(state.header)) {
                 let header:string = headers[state.header];
                 category = BoardHeaders.getOrCreateStateCategory(categories, header, false);
             } else if (backlogState) {
