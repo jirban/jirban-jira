@@ -1,41 +1,54 @@
 /*
- * board.ts styling (inherited by swimlaneEntry.ts
+ * board.ts styling (inherited by swimlaneEntry.ts)
  */
-/** Clipping board for horizontal and vertical scroll **/
+/*
+    The idea for the scrolling is taken from
+    http://stackoverflow.com/questions/14977864/fixed-header-table-with-horizontal-scrollbar-and-vertical-scrollbar-on
+ */
 #board-outer {
-    /**width: ?? - calculated in board.ts */
-    overflow-x: scroll;
-    overflow-y:hidden;
+    background-color: #fff;
+    position: absolute;
+    top:30px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
 }
 #board-inner {
-    /**height: ?? - calculated in board.ts */
+    height: 100%;
+    overflow: hidden;
 }
-.board table {
-    overflow-y: scroll;
-    border: 0px;
-}
-.board tbody {
-    overflow-x: hidden;
-    display: block;
-    /**height   : ?? - calculated in board.ts */
-}
-.board thead {
-    display: table-row;
-}
-.board th.visible, td.visible {
-    min-width: 200px;
-    max-width: 200px;
-}
-.board th.collapsed, td.collapsed {
-    min-width: 30px;
-    max-width: 30px;
+table {
+    border-collapse: collapse;
 }
 
-/** Styling */
-#board-outer{
-    border: 1px solid #CCCCCC;
+/* Board headers */
+#table-header {
+    position: relative;
+    width: 100%;
 }
-#board-inner table, th, td{
+#header-table th {
+    margin: 0px;
+    padding: 0px;
+    border: 1px solid #CCCCCC;
+    border-collapse: collapse;
+    table-layout: fixed;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 11px;
+    font-weight: bold;
+    height: 30px;
+    cursor: pointer;
+}
+#header-table th:hover {
+    background-color: #F0F0F0;
+}
+
+/* Board body */
+#table-body {
+    overflow: auto;
+    /** height: Is needed for vertical scrolling, and will get calculated and set by the component code */
+}
+#body-table table, td{
     margin: 0px;
     padding: 0px;
     border: 1px solid #CCCCCC;
@@ -45,17 +58,18 @@
     vertical-align: top;
     text-align: left;
 }
-.board th{
-    text-align: center;
-    vertical-align: middle;
-    font-size: 11px;
-    font-weight: bold;
-    height: 30px;
-    cursor: pointer;
+
+/** General column styling */
+th.visible, td.visible {
+    min-width: 200px;
+    max-width: 200px;
 }
-.board th:hover {
-    background-color: #F0F0F0;
+th.collapsed,  td.collapsed {
+    min-width: 30px;
+    max-width: 30px;
 }
+
+/* Other styling */
 td.backlog-state-summary:hover {
     cursor: pointer;
     background-color: #F0F0F0;

@@ -22,9 +22,6 @@ import Timer = NodeJS.Timer;
 export class BoardComponent implements OnDestroy, OnInit {
 
     private boardCode:string;
-    private boardHeight:number; //board + headers
-    private boardBodyHeight:number; //board + headers
-    private width:number;
 
     private issueContextMenuData:IssueContextMenuData;
 
@@ -33,21 +30,24 @@ export class BoardComponent implements OnDestroy, OnInit {
     private _currentTimeout:Timer;
     private _destroyed:boolean = false;
 
+    /** The calculate height of the board body */
+    private boardBodyHeight:number;
+    /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
     private boardLeftOffset:number = 0;
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService, routeParams:RouteParams) {
-
+        console.log("INIT");
         let queryString:IMap<string> = routeParams.params;
         this.boardCode = routeParams.get('board');
 
         this.populateIssues(() => {
             //Loading filters does not work until the issue data is loaded
             _boardData.setFiltersFromQueryParams(queryString);
+            this.setWindowSize();
         });
 
-        this.setWindowSize();
     }
 
     private populateIssues(issueDataLoaded:()=>void) {
@@ -151,16 +151,13 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     private setWindowSize() {
-        //Whole height - toolbars - borders
-        this.boardHeight = window.innerHeight - 30 - 4;
 
-        //board height - header - borders
-        let boardHeaders = 30;
-        if (this._boardData.headers && this._boardData.headers.bottomHeaders.length > 0) {
-            boardHeaders *= 2;
-        }
-        this.boardBodyHeight = this.boardHeight - boardHeaders - 3;
-        this.width = window.innerWidth - 2; //subtract width of border
+        //The toolbar height is 30px
+        const toolbarHeight = 30;
+
+        //If we have one row of headers the height is 32px, for two rows the height is 62px
+        let headersHeight = (this.bottomHeaders && this.bottomHeaders.length > 0) ? 62 : 32;
+        this.boardBodyHeight = window.innerHeight - toolbarHeight - headersHeight;
     }
 
     private showIssueContextMenu(event:any) {
@@ -268,8 +265,8 @@ export class BoardComponent implements OnDestroy, OnInit {
 
     }
 
-    scrollOuterX(event:Event) {
-        this.boardLeftOffset = event.srcElement.scrollLeft;
+    scrollTableBodyX(event:Event) {
+        this.boardLeftOffset = event.target["scrollLeft"];
     }
 
 }
