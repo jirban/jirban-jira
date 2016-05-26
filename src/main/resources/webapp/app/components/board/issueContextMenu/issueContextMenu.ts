@@ -161,7 +161,7 @@ export class IssueContextMenuComponent {
     }
 
     private setWindowSize() {
-        let movePanelTop, movePanelHeight, movePanelLeft, statesColumnHeight : number = 0;
+        let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number = 0;
 
         //40px top and bottom padding if window is high enough, 5px otherwise
         let yPad = window.innerHeight > 350 ? 40 : 5;

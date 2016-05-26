@@ -13,15 +13,11 @@
 <script src="node_modules/angular2/bundles/angular2.dev.js"></script>
 <script src="node_modules/angular2/typings/node/node.d.ts"></script>
 
+<script src="systemjs.config.js"></script>
 <script>
-    // #2. Configure systemjs to use the .js extension
-    //     for imports from the app folder
-    System.config({
-        packages: {
-            'app': {defaultExtension: 'js'}
-        }
-    });
+    System.import('app').catch(function(err){ console.error(err); });
 
+    
     // #3. Import the spec file explicitly
     Promise.all([
                 System.import('app/data/board/tests/boardData.full.spec'),

@@ -244,7 +244,7 @@ class StateCategory {
 export class State {
 
     constructor(private _boardData:BoardData, private _name:string, private _index:number,
-                private _backlog:boolean, private _done:boolean, private _unordered, private _category:StateCategory) {
+                private _backlog:boolean, private _done:boolean, private _unordered:boolean, private _category:StateCategory) {
         //console.log(_index);
     }
 
@@ -329,7 +329,7 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
-    abstract toggleVisibility();
+    abstract toggleVisibility():void;
 }
 
 class CategoryHeaderEntry extends BoardHeaderEntry {

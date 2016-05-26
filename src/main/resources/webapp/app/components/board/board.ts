@@ -9,6 +9,7 @@ import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMen
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {BoardHeaderEntry, State} from "../../data/board/header";
 import {IMap} from "../../common/map";
+import Timer = NodeJS.Timer;
 
 
 @Component({
@@ -29,7 +30,7 @@ export class BoardComponent implements OnDestroy, OnInit {
 
     private _pollFailureCount:number = 0;
 
-    private _currentTimeout;
+    private _currentTimeout:Timer;
     private _destroyed:boolean = false;
 
     private boardLeftOffset:number = 0;
@@ -78,7 +79,7 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     private clearPollTimeout() {
-        let timeout:number = this._currentTimeout;
+        let timeout:Timer = this._currentTimeout;
         if (timeout) {
             clearTimeout(timeout);
         }

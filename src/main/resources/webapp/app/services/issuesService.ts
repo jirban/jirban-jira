@@ -50,18 +50,18 @@ export class IssuesService {
 class MoveIssueAction {
     private _toOwnState:string;
 
-    private _changeState;
-    private _changeRank;
+    private _changeState:boolean;
+    private _changeRank:boolean;
 
     private _observable:Observable<any>;
     private _observer:Observer<any>;
 
     constructor(private _issuesService:IssuesService, private _http:Http, private _boardData:BoardData, private _issue:IssueData,
-                     private _toBoardState, private _beforeKey:string, private _afterKey:string) {
+                     private _toBoardState:string, private _beforeKey:string, private _afterKey:string) {
         let project:BoardProject = _boardData.boardProjects.forKey(_issue.projectCode);
         this._toOwnState = project.mapBoardStateToOwnState(_toBoardState);
         this._changeState = this._toOwnState != this._issue.ownStatus;
-        this._changeRank = this._beforeKey || this._afterKey;
+        this._changeRank = (this._beforeKey || this._afterKey) ? true : false;
 
         this._observable = Observable.create((observer:Observer<any>) => {
             this._observer = observer;
