@@ -1,4 +1,9 @@
 ** https://useiconic.com/open/ **
-person*.png
-cog*.png
-heart*.png
+cog-3x.png
+heart-3x.png
+move-2x.png
+person-4x.png
+resize-height-2x.png
+
+** Public Domain **
+wait.gif
