@@ -1,7 +1,12 @@
 <div *ngIf="displayContextMenu" class="issue-context-menu"
      [ngStyle]="{'top': data.y, 'left' : data.x}">
     <div>
-        <a href="move" (click)="onShowMovePanel($event)" class="context"><img src="images/move-2x.png" width="12px" height="12px" align="center"/>Move...</a>
+        <a href="move" (click)="onShowMovePanel($event)"><img src="images/move-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="move" (click)="onShowMovePanel($event)" class="context">Move...</a>
+    </div>
+    <div>
+        <a href="comment" (click)="onShowCommentPanel($event)"><img src="images/comment-square-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="comment" (click)="onShowCommentPanel($event)" class="context">Comment...</a>
     </div>
 </div>
 
@@ -51,33 +56,26 @@
                     <a href="move" (click)="onSelectRankIssue($event, issue.key)" title="{{issue.key}} - {{issue.summary}}"
                        [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'"><b>{{issue.key}}</b> - {{issue.summary}}</a>
                 </div>
-                <div class="entry"><b>FK-1</b> - Fake</div>
-                <div class="entry"><b>FK-2</b> - Fake</div>
-                <div class="entry"><b>FK-3</b> - Fake</div>
-                <div class="entry"><b>FK-4</b> - Fake</div>
-                <div class="entry"><b>FK-5</b> - Fake</div>
-                <div class="entry"><b>FK-6</b> - Fake</div>
-                <div class="entry"><b>FK-7</b> - Fake</div>
-                <div class="entry"><b>FK-8</b> - Fake</div>
-                <div class="entry"><b>FK-9</b> - Fake</div>
-                <div class="entry"><b>FK-10</b> - Fake</div>
-                <div class="entry"><b>FK-11</b> - Fake</div>
-                <div class="entry"><b>FK-12</b> - Fake</div>
-                <div class="entry"><b>FK-13</b> - Fake</div>
-                <div class="entry"><b>FK-14</b> - Fake</div>
-                <div class="entry"><b>FK-15</b> - Fake</div>
-                <div class="entry"><b>FK-16</b> - Fake</div>
-                <div class="entry"><b>FK-17</b> - Fake</div>
-                <div class="entry"><b>FK-18</b> - Fake</div>
-                <div class="entry"><b>FK-19</b> - Fake</div>
-                <div class="entry"><b>FK-20</b> - Fake</div>
-                <div class="entry"><b>FK-21</b> - Fake</div>
-                <div class="entry"><b>FK-22</b> - Fake</div>
-                <div class="entry"><b>FK-23</b> - Fake</div>
-                <div class="entry"><b>FK-24</b> - Fake</div>
-                <div class="entry"><b>FK-25</b> - Fake</div>
-
-                </div>
+            </div>
         </div>
     </div>
+</div>
+
+<div *ngIf="comment" id="issue-comment-panel" (window:resize)="onResize($event)"
+     [style.top]="commentPanelTop" [style.left]="commentPanelLeft">
+    <div class="header">
+        <div class="header-text">Comment on {{issue.key}}</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a>
+        </div>
+    </div>
+    <form (ngSubmit)="saveComment()" [ngFormModel]="commentForm" #f="ngForm">
+        <div class="centered-form">
+            <label for="comment">Please note that all comments will be <b>public</b>! To make private comments, visit the Jira issue.</label>
+            <textarea cols="80" rows="15" id="comment" ngControl="comment"></textarea>
+            <div>
+                <button type="submit" [disabled]="!f.form.valid">Save</button>
+            </div>
+        </div>
+    </form>
 </div>

@@ -45,6 +45,18 @@ export class IssuesService {
         let mi:MoveIssueAction = new MoveIssueAction(this, this.http, boardData, issue, toBoardState, beforeKey, afterKey);
         return mi.execute();
     }
+
+    commentOnIssue(boardData:BoardData, issue:IssueData, comment:string):Observable<any>{
+        let url:string = boardData.jiraUrl + '/rest/api/2/issue/' + issue.key + "/comment";
+        let headers:Headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Accept", "application/json");
+
+        let payload:any = {body: comment};
+
+        return this.http.post(url, JSON.stringify(payload), {headers : headers})
+            .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for POST " + url);
+    }
 }
 
 class MoveIssueAction {
