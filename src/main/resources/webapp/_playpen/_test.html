@@ -1,0 +1,425 @@
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            setTableBody();
+            $(window).resize(setTableBody);
+            $(".table-body").scroll(function ()
+            {
+                console.log("Scrolling");
+                $(".table-header").offset({ left: -1 * this.scrollLeft });
+            });
+        });
+
+        function setTableBody()
+        {
+            $(".table-body").height($("#board-inner").height() - $(".table-header").height());
+        }
+    </script>
+    <style>
+        *
+        {
+            padding: 0;
+            margin: 0;
+        }
+
+        body
+        {
+            height: 100%;
+            width: 100%;
+        }
+        table
+        {
+            border-collapse: collapse;
+        }
+        #board-outer
+        {
+            background-color: #ccc;
+            position: absolute;
+            top:0;
+            left: 0;
+            right: 0px;
+            bottom: 0px;
+        }
+
+        #board-inner
+        {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .table-header
+        {
+            position: relative;
+        }
+        .table-body
+        {
+            overflow: auto;
+        }
+
+        .header-cell
+        {
+            background-color: yellow;
+            text-align: left;
+            height: 40px;
+        }
+        .body-cell
+        {
+            background-color: blue;
+            text-align: left;
+        }
+        tr th {
+            border: solid #2e2e2e 1px;
+            height: 40px;
+            min-height: 40px;
+            max-height: 40px;
+            overflow: hidden;
+        }
+        tr td {
+            border: solid #2e2e2e 1px;
+            height: 40px;
+            min-height: 40px;
+            max-height: 40px;
+            overflow: hidden;
+        }
+        .col
+        {
+            width:200px;
+            min-width: 200px;
+            max-width: 200px;
+        }
+    </style>
+
+</head>
+<body>
+<div id="board-outer">
+    <div id="board-inner">
+        <div class="table-header">
+            <table id="headertable">
+                <thead>
+                <tr>
+                    <th class="header-cell col">One</th>
+                    <th class="header-cell col">Two</th>
+                    <th class="header-cell col">Three</th>
+                    <th class="header-cell col">Four</th>
+                    <th class="header-cell col">Five</th>
+                    <th class="header-cell col">One</th>
+                    <th class="header-cell col">Two</th>
+                    <th class="header-cell col">Three</th>
+                    <th class="header-cell col">Four</th>
+                    <th class="header-cell col">Five</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+        <div class="table-body">
+            <table id="bodytable">
+                <tbody>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                <tr>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                    <td class="body-cell col">body row1</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2</td>
+                    <td class="body-cell col">body row2 en nog meer</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
