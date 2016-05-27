@@ -2,6 +2,7 @@ import {Component} from "@angular/core";
 import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
 import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
+import {TitleFormatService} from "../../services/titleFormatService";
 
 @Component({
     selector: 'boards',
@@ -13,7 +14,8 @@ import {ProgressErrorService} from "../../services/progressErrorService";
 export class BoardsComponent {
     private boards:any[];
 
-    constructor(private _boardsService:BoardsService, progressError:ProgressErrorService) {
+    constructor(private _boardsService:BoardsService, progressError:ProgressErrorService, title:TitleFormatService) {
+        title.setTitle("List of boards");
         progressError.startProgress(true);
         _boardsService.loadBoardsList(true).subscribe(
             data => {

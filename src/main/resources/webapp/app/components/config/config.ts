@@ -4,6 +4,7 @@ import {BoardsService} from "../../services/boardsService";
 import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
+import {TitleFormatService} from "../../services/titleFormatService";
 
 @Component({
     selector: 'boards',
@@ -28,8 +29,10 @@ export class ConfigComponent {
     private customFieldId:number;
     private _customFieldIdForm:ControlGroup;
 
-    constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
+    constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService,
+                private _formBuilder:FormBuilder, title:TitleFormatService) {
         this.loadBoards();
+        title.setTitle("Configuration of boards");
 
     }
 

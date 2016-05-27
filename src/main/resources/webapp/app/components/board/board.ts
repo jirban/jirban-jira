@@ -7,6 +7,7 @@ import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../services/progressErrorService";
+import {TitleFormatService} from "../../services/titleFormatService";
 import {BoardHeaderEntry, State} from "../../data/board/header";
 import {IMap} from "../../common/map";
 import Timer = NodeJS.Timer;
@@ -37,10 +38,12 @@ export class BoardComponent implements OnDestroy, OnInit {
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
-                private _progressError:ProgressErrorService, routeParams:RouteParams) {
-        console.log("INIT");
+                private _progressError:ProgressErrorService,
+                routeParams:RouteParams,
+                title:TitleFormatService) {
         let queryString:IMap<string> = routeParams.params;
         this.boardCode = routeParams.get('board');
+        title.setTitle("Board (" + this.boardCode + ")");
 
         this.populateIssues(() => {
             //Loading filters does not work until the issue data is loaded
