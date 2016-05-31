@@ -9,6 +9,7 @@ export class ProgressErrorService {
     private _blocking:boolean = true;
     private _progress:boolean = false;
     private _error:string;
+    private _completedMessage:string;
 
     /**
      * Called to start displaying the progress indicator
@@ -21,8 +22,16 @@ export class ProgressErrorService {
     /**
      * Called to hide the progress indicator, i.e. our work is done
      */
-    finishProgress():void {
+    finishProgress(completedMessage?:string, millisToShow?:number):void {
         this._progress = false;
+        this._completedMessage = completedMessage;
+        if (completedMessage) {
+            let time:number = 5000;
+            if (millisToShow) {
+                time = millisToShow;
+            }
+            setTimeout(() => {this._completedMessage = null}, time);
+        }
     }
 
     /**
@@ -70,6 +79,10 @@ export class ProgressErrorService {
 
     getError():string {
         return this._error;
+    }
+
+    getCompletedMessage():string {
+        return this._completedMessage;
     }
 
     /**

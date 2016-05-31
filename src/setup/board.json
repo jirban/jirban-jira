@@ -1,0 +1,64 @@
+{
+  "name": "Test board",
+  "code": "TST",
+  "owning-project": "FEAT",
+  "states": [
+    {
+      "name": "Backlog",
+      "backlog": true
+    },
+    {
+      "name": "Selected for Development"
+    },
+    {
+      "name": "In Progress"
+    },
+    {
+      "name": "Done"
+    }
+  ],
+  "priorities": [
+    "Blocker",
+    "Major",
+    "Minor",
+    "Trivial"
+  ],
+  "issue-types": [
+    "Task",
+    "Story",
+    "Bug",
+    "Epic"
+  ],
+  "projects": {
+    "FEAT": {
+      "query-filter": null,
+      "colour": "#4667CA",
+      "state-links": {
+        "Done": "Done",
+        "Selected for Development": "Selected for Development",
+        "In Progress": "In Progress",
+        "Backlog": "Backlog"
+      }
+    },
+    "SUP": {
+      "query-filter": null,
+      "colour": "#CA6746",
+      "state-links": {
+        "Done": "Done",
+        "Selected for Development": "Selected for Development",
+        "In Progress": "In Progress",
+        "Backlog": "Backlog"
+      }
+    }
+  },
+  "linked-projects": {
+    "UP": {
+      "states": [
+        "Backlog",
+        "Selected for Development",
+        "In Progress",
+        "Done"
+      ]
+    }
+  }
+}

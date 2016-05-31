@@ -188,7 +188,10 @@ export class IssueContextMenuComponent {
                     this._progressError.setError(err);
                 },
                 () => {
-                    this._progressError.finishProgress();
+                    this._progressError.finishProgress(
+                        "Comment made on issue <a " +
+                        "class='toolbar-message' href='" + this._boardData.jiraUrl + "/browse/" + this.issue.key + "'>" +
+                        this.issue.key + "</a>");
                 }
             );
 

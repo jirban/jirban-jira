@@ -7,7 +7,7 @@ import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent, IssueContextMenuData} from "./issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {TitleFormatService} from "../../services/titleFormatService";
+import {TitleFormatService} from "../../services/TitleFormatService";
 import {BoardHeaderEntry, State} from "../../data/board/header";
 import {IMap} from "../../common/map";
 import Timer = NodeJS.Timer;

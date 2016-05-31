@@ -4,7 +4,7 @@ import {BoardsService} from "../../services/boardsService";
 import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {TitleFormatService} from "../../services/titleFormatService";
+import {TitleFormatService} from "../../services/TitleFormatService";
 
 @Component({
     selector: 'boards',
