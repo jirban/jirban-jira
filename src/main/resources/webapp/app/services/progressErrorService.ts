@@ -77,11 +77,11 @@ export class ProgressErrorService {
     }
 
 
-    getError():string {
+    get error():string {
         return this._error;
     }
 
-    getCompletedMessage():string {
+    get completedMessage():string {
         return this._completedMessage;
     }
 

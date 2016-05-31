@@ -83,11 +83,11 @@ export class App {
     }
 
     get error():string {
-        return this._progressError.getError();
+        return this._progressError.error;
     }
 
     get completedMessage():string {
-        return this._progressError.getCompletedMessage();
+        return this._progressError.completedMessage;
     }
 
     onClickErrorClose(event:MouseEvent):void {
