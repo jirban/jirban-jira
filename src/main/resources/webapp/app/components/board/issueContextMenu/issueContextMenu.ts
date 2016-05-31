@@ -1,4 +1,5 @@
 import {Component, EventEmitter} from "@angular/core";
+import {ControlGroup, FormBuilder, Validators} from "@angular/common";
 import {BoardData} from "../../../data/board/boardData";
 import {IssueData} from "../../../data/board/issueData";
 import {IssuesService} from "../../../services/issuesService";
@@ -32,9 +33,15 @@ export class IssueContextMenuComponent {
 
     private move:boolean;
 
+    private comment:boolean;
+    private commentForm:ControlGroup;
+    private commentPanelTop:number;
+    private commentPanelLeft:number;
+    
     private closeContextMenu:EventEmitter<any> = new EventEmitter();
 
-    constructor(private _boardData:BoardData, private _issuesService:IssuesService, private _progressError:ProgressErrorService) {
+    constructor(private _boardData:BoardData, private _issuesService:IssuesService,
+                private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
         this.setWindowSize();
     }
 
@@ -55,8 +62,11 @@ export class IssueContextMenuComponent {
         }
     }
 
-    private clearMoveMenu() {
+    private hideAllMenus() {
+        this.showContext = false;
         this.move = false;
+        this.comment = false;
+        this.commentForm = null;
     }
 
     private get data() {
@@ -95,7 +105,7 @@ export class IssueContextMenuComponent {
 
     private onShowMovePanel(event:MouseEvent) {
         event.preventDefault();
-        this.showContext = false;
+        this.hideAllMenus();
         this.move = true;
     }
 
@@ -123,7 +133,7 @@ export class IssueContextMenuComponent {
         if (this.issue.key == beforeIssueKey) {
             //If we are moving to ourself just abort
             console.log("onSelectMoveIssue - key is self, returning")
-            this.clearMoveMenu();
+            this.hideAllMenus();
             return;
         }
         this.moveIssue(true, beforeIssueKey);
@@ -147,13 +157,41 @@ export class IssueContextMenuComponent {
                 data => {},
                 error => {
                     this._progressError.setError(error);
-                    this.clearMoveMenu();
+                    this.hideAllMenus();
                 },
                 () => {
                     this._progressError.finishProgress();
-                    this.clearMoveMenu();
+                    this.hideAllMenus();
                 }
             );
+    }
+
+
+    private onShowCommentPanel(event:MouseEvent) {
+        event.preventDefault();
+        this.hideAllMenus();
+        this.comment = true;
+        this.commentForm = this._formBuilder.group({
+            "comment": ["", Validators.required]
+        });
+    }
+
+    private saveComment() {
+        let comment:string = this.commentForm.value.comment;
+        this._progressError.startProgress(true);
+        this._issuesService.commentOnIssue(this._boardData, this.issue, comment)
+            .subscribe(
+                data => {
+                    this.hideAllMenus();
+                },
+                err => {
+                    this._progressError.setError(err);
+                },
+                () => {
+                    this._progressError.finishProgress();
+                }
+            );
+
     }
 
     private onResize(event : any) {
@@ -178,6 +216,9 @@ export class IssueContextMenuComponent {
         this.movePanelHeight = movePanelHeight;
         this.movePanelLeft = movePanelLeft;
         this.statesColumnHeight = statesColumnHeight;
+
+        this.commentPanelTop = (window.innerHeight -265)/2;
+        this.commentPanelLeft = (window.innerWidth - 600)/2;
     }
 
     private isIssueSelected(issue:IssueData) : boolean {
@@ -189,6 +230,7 @@ export class IssueContextMenuComponent {
 
 
     private onClickClose(event:MouseEvent) {
+        this.hideAllMenus();
         this.closeContextMenu.emit({});
         event.preventDefault();
     }

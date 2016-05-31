@@ -110,3 +110,20 @@ a.entry-selected {
     display: inline-block;
     text-align: left;
 }
+#issue-comment-panel {
+    border: 1px solid #888888;
+    position: absolute;
+    font-size: 11px;
+    top:20px;
+    bottom:20px;
+    height:265px;
+    /* top and left will be calculated */
+    width: 600px;
+    z-index: 10;
+    background-color: white;
+    border-radius: 5px;
+    opacity: .99;
+}
+.centered-form {
+    text-align: center;
+}
