@@ -116,7 +116,7 @@ a.entry-selected {
     font-size: 11px;
     top:20px;
     bottom:20px;
-    height:265px;
+    height:270px;
     /* top and left will be calculated */
     width: 600px;
     z-index: 10;
@@ -126,4 +126,20 @@ a.entry-selected {
 }
 .centered-form {
     text-align: center;
+    height: 100%;
+}
+.comment-label {
+    height: 15px;
+}
+.comment-box {
+    width: 600px;
+    height: 205px;
+}
+.comment-button {
+    height: 25px;
+    vertical-align: middle;
+}
+.comment-save-button {
+    height: 20px;
+    font-size: 11px;
 }

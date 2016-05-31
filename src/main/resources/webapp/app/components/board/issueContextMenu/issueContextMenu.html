@@ -71,10 +71,14 @@
     </div>
     <form (ngSubmit)="saveComment()" [ngFormModel]="commentForm" #f="ngForm">
         <div class="centered-form">
-            <label for="comment">Please note that all comments will be <b>public</b>! To make private comments, visit the Jira issue.</label>
-            <textarea cols="80" rows="15" id="comment" ngControl="comment"></textarea>
-            <div>
-                <button type="submit" [disabled]="!f.form.valid">Save</button>
+            <div class="comment-label">
+                <label for="comment">Please note that all comments will be <b>public</b>! To make private comments, visit the Jira issue.</label>
+            </div>
+            <div class="comment-box">
+                <textarea id="comment" ngControl="comment" style="width: 100%; height:100%;"></textarea>
+            </div>
+            <div class="comment-button">
+                <button type="submit" class="comment-save-button" [disabled]="!f.form.valid">Save</button>
             </div>
         </div>
     </form>

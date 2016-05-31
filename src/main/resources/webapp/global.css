@@ -44,6 +44,9 @@ a:active {
 a.toolbar-link {
     color: white;
 }
+a.toolbar-message {
+    color:white;
+}
 
 
 /* Wait screen */

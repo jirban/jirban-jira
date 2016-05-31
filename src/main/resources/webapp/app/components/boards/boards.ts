@@ -2,7 +2,7 @@ import {Component} from "@angular/core";
 import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
 import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {TitleFormatService} from "../../services/titleFormatService";
+import {TitleFormatService} from "../../services/TitleFormatService";
 
 @Component({
     selector: 'boards',

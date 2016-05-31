@@ -8,7 +8,7 @@ import {APP_BASE_HREF, LocationStrategy, HashLocationStrategy} from "@angular/co
 import {ROUTER_PROVIDERS} from "@angular/router-deprecated";
 import {App} from "./app";
 import {ProgressErrorService} from "./services/progressErrorService";
-import {TitleFormatService} from "./services/titleFormatService";
+import {TitleFormatService} from "./services/TitleFormatService";
 
 
 enableProdMode();

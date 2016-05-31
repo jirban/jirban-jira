@@ -21,7 +21,7 @@ const VERSION:number = 1;
         <!-- TODO Only display this if it is an admin -->
         <span> <a [routerLink]="['/Config']" class="toolbar-link">Config</a></span>
     </div>
-
+    <div class="toolbar-right" [innerHTML]="[completedMessage]"></div>
 </div>
 <router-outlet></router-outlet>
 <div class="wait-screen" [hidden]="hideProgress"> </div>
@@ -84,6 +84,10 @@ export class App {
 
     get error():string {
         return this._progressError.getError();
+    }
+
+    get completedMessage():string {
+        return this._progressError.getCompletedMessage();
     }
 
     onClickErrorClose(event:MouseEvent):void {
