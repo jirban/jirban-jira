@@ -6,6 +6,7 @@ import {BoardsComponent} from "./components/boards/boards";
 import {ConfigComponent} from "./components/config/config";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {VersionCheckService} from "./services/versionCheckService";
+import {RestUrlUtil} from "./common/RestUrlUtil";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 1;
@@ -21,7 +22,7 @@ const VERSION:number = 1;
         <!-- TODO Only display this if it is an admin -->
         <span> <a [routerLink]="['/Config']" class="toolbar-link">Config</a></span>
     </div>
-    <div class="toolbar-right" [innerHTML]="[completedMessage]"></div>
+    <div class="toolbar-right" [innerHTML]="completedMessage"></div>
 </div>
 <router-outlet></router-outlet>
 <div class="wait-screen" [hidden]="hideProgress"> </div>
@@ -32,7 +33,8 @@ const VERSION:number = 1;
                 <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
             </div>
     </div>
-    <div class="message">{{error}}</div>
+    <div *ngIf="!notLoggedIn" class="message" [innerHTML]="error"></div>
+    <div *ngIf="notLoggedIn" class="message"><a href="{{loginUrl}}" (click)="onClickMessageLoginLink($event)">Log in</a> to Jira again.</div>
 </div>
 
     `,
@@ -47,10 +49,12 @@ const VERSION:number = 1;
 export class App {
     _router:Router;
     _progressError:ProgressErrorService;
+    loginUrl:string;
 
     constructor(router:Router, progressError:ProgressErrorService, versionCheckService:VersionCheckService) {
         this._router = router;
         this._progressError = progressError;
+        this.loginUrl = RestUrlUtil.caclulateRestUrl("login.jsp");
 
         router.subscribe((route:string) => {
             //Hack to hide the body scroll bars on the board page.
@@ -86,6 +90,10 @@ export class App {
         return this._progressError.error;
     }
 
+    get notLoggedIn():boolean {
+        return this._progressError.notLoggedIn;
+    }
+
     get completedMessage():string {
         return this._progressError.completedMessage;
     }
@@ -93,6 +101,10 @@ export class App {
     onClickErrorClose(event:MouseEvent):void {
         event.preventDefault();
         this._progressError.clearError();
+    }
+
+    onClickMessageLoginLink(event:MouseEvent):void {
+        event.stopPropagation();
     }
 }
 
