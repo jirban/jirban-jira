@@ -138,6 +138,29 @@ export class ControlPanelComponent {
         }
     }
 
+    private clearSwimlane(event:MouseEvent) {
+        event.preventDefault();
+        let swimlane:Control = <Control>this._controlForm.controls['swimlane'];
+        swimlane.updateValue(null);
+    }
+
+    private clearDetail(event:MouseEvent) {
+        event.preventDefault();
+        let group:ControlGroup = <ControlGroup>this._controlForm.controls['detail'];
+
+        let control:Control = <Control>group.controls['assignee'];
+        control.updateValue(true);
+
+        control = <Control>group.controls['description'];
+        control.updateValue(true);
+
+        control = <Control>group.controls['info'];
+        control.updateValue(true);
+
+        control = <Control>group.controls['linked'];
+        control.updateValue(true);
+    }
+
     private get assignees():Assignee[] {
         if (this.boardData.getAndClearHasNewAssignees()) {
             //TODO look into using an Observable for this

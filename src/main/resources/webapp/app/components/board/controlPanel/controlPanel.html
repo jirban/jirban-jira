@@ -11,12 +11,12 @@
                 <div class="setting-header"><a href="{{linkUrl}}">Link</a></div>
                 <div class="setting-content-small">
                     <div>
-                        <input type="text" value="{{linkUrl}}" id="link"/>
+                        <input type="text" value="{{linkUrl}}" id="link" readonly/>
                     </div>
                 </div>
             </div>
             <div class="setting">
-                <div class="setting-header">Swimlane</div>
+                <div class="setting-header clickable" (click)="clearSwimlane($event)" title="Clear swimlane">Swimlane</div>
                 <div class="setting-content-small">
                     <select ngControl="swimlane">
                         <!-- Don't set a value for the undefined one -->
@@ -30,7 +30,7 @@
                 </div>
             </div>
             <div class="setting" ngControlGroup="detail">
-                <div class="setting-header">Issue Detail</div>
+                <div class="setting-header clickable" (click)="clearDetail($event)" title="Show all details">Issue Detail</div>
                 <div class="setting-content-small">
                     <div>
                         <input type="checkbox" ngControl="assignee" id="detail-assignee"/>
