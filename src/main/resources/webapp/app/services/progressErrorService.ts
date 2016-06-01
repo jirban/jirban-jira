@@ -9,6 +9,7 @@ export class ProgressErrorService {
     private _blocking:boolean = true;
     private _progress:boolean = false;
     private _error:string;
+    private _notLoggedIn:boolean = false;
     private _completedMessage:string;
 
     /**
@@ -41,7 +42,9 @@ export class ProgressErrorService {
         console.log("Setting error: " + error);
         let err:string;
         if (error.status == 401) {
-            err = "You do not appear to be logged in.";
+            //app.jsp will hardcode a standard message, so just add an empty string for the check
+            err = " ";
+            this._notLoggedIn = true;
         } else if (error.status == 403) {
             err = "You do not appear to have the necessary permissions.";
         } else if (error.status == 404) {
@@ -85,11 +88,16 @@ export class ProgressErrorService {
         return this._completedMessage;
     }
 
+    get notLoggedIn():boolean {
+        return this._notLoggedIn;
+    }
+
     /**
      * Clears the error
      */
     clearError():void {
         this._error = null;
+        this._notLoggedIn = false;
     }
 
     /**
