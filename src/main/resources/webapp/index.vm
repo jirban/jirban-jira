@@ -1,6 +1,6 @@
 <html>
 <head>
-    <title>JirBan - A nicer view on Jira Agile</title>
+    <title>Jirban - A nicer view on Jira Agile</title>
     <script>
         window.location = "$webappRoot/index.html";
     </script>

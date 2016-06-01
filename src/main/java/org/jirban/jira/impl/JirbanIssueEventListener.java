@@ -73,7 +73,7 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
  * the board caches until we received the {@code ReindexIssuesCompletedEvent}. For everything else, we update the board
  * caches when we receive the first {@code IssueEvent}.
  * <p/>
- * However, if an issue is only re-ranked via JirBan or Jira Agile's board, the {@code ReindexIssuesCompletedEvent} and
+ * However, if an issue is only re-ranked via Jirban or Jira Agile's board, the {@code ReindexIssuesCompletedEvent} and
  * the {@code IssueEvent} can come in any order. However a 'pure' re-rank is initiated by a {@code LexoRankBalanceEvent},
  * so we use JirbanEventWrapper to track that we have all the needed information.
  *

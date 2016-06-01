@@ -7,6 +7,6 @@ export class TitleFormatService {
     }
 
     setTitle(title:string) {
-        this._title.setTitle("JirBan - " + title);
+        this._title.setTitle("Jirban - " + title);
     }
 }

@@ -23,13 +23,13 @@
   -->
 
   <!-- Loads up the index.html page -->
-  <servlet name="JirBan Index Servlet" i18n-name-key="index-servlet.name" key="index-servlet" class="org.jirban.jira.servlet.IndexServlet">
+  <servlet name="Jirban Index Servlet" i18n-name-key="index-servlet.name" key="index-servlet" class="org.jirban.jira.servlet.IndexServlet">
     <description>The welcome servlet which redirects to the angular2 client</description>
     <url-pattern>/jirban</url-pattern>
   </servlet>
 
   <!-- Add a filter to load up the valid user -->
-  <servlet-filter name="JirBan Auth Filter" i18n-name-key="auth-filter.name" key="auth-filter" class="org.jirban.jira.servlet.AuthFilter" location="before-dispatch" weight="100">
+  <servlet-filter name="Jirban Auth Filter" i18n-name-key="auth-filter.name" key="auth-filter" class="org.jirban.jira.servlet.AuthFilter" location="before-dispatch" weight="100">
     <description>Filter authenticating requests.</description>
     <!--
       Need this since this is relative to the jira instance
@@ -43,21 +43,21 @@
   <resource type="download" name="webapp/" location="/webapp/"/>
 
   <!-- Active Objects configuration for configuration storage -->
-  <ao name="JirBan Active Objects" key="ao-module">
+  <ao name="Jirban Active Objects" key="ao-module">
     <description>The module configuring the Active Objects service used by this plugin</description>
     <entity>org.jirban.jira.impl.activeobjects.BoardCfg</entity>
     <entity>org.jirban.jira.impl.activeobjects.Setting</entity>
   </ao>
 
-  <web-item name="JirBan Agile Menu item" key="jirban-config" section="greenhopper_menu/greenhopper_menu_dropdown" weight="1000">
-    <description>The Agile menu item taking you to the JirBan boards</description>
+  <web-item name="Jirban Agile Menu item" key="jirban-config" section="greenhopper_menu/greenhopper_menu_dropdown" weight="1000">
+    <description>The Agile menu item taking you to the Jirban boards</description>
     <label key="jirban.label"></label>
     <link linkId="jirban-config-link">/plugins/servlet/jirban</link>
     <condition class="org.jirban.jira.api.IsLoggedInCondition"/>
   </web-item>
 
 
-  <rest name="JirBan Rest" key="jirban-rest" path="/jirban" version="1.0">
+  <rest name="Jirban Rest" key="jirban-rest" path="/jirban" version="1.0">
     <description>The REST API handling the requests from the angular2 client.</description>
   </rest>
 
