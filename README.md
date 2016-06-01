@@ -2,6 +2,8 @@
 Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plugin with an Angular 2 client running in the browser. Its main purposes are: 
 * to address some of Jira Agile's short-comings when it comes to how it displays the boards. Effectively this means horizontally scrollable boards, with collapsible colums.
 * to make setup of filters and swimlanes less static, minimising the need for configuration. Since we are using a 'fat' browser client, all changes to the view purely happen on the client side with no need for extra round trips to the server.
+ 
+This file contains instructions for you to get up and running as a developer of Jirban. We also have a [User Guide](userguide).
 
 To develop Jirban locally you need to set up your development environment. You will need:
 * the Atlassian SDK to build the plugin, and also to debug the Java server side classes
@@ -100,7 +102,7 @@ We list all the priorities used for projects within the board. This is the order
     "Trivial"
   ],
 ```
-We list all the issue types used for projects within the board. This is the order that they will show up on in the board's control panel. If you leave out any priorities or issue types the health panel will warn you of your configuration problem and list the affected issues. For components and assignees, since there can be so many of them within Jira, and they are not necessarily all known at the time we take a different approach and populate the control panel with the ones which are actually used by issues on the board. 
+We list all the issue types used for projects within the board. This is the order that they will show up on in the board's control panel. If you leave out any priorities or issue types the health panel (accessible via the heart icon in the bottom right when viewing the board) will warn you of your configuration problem and list the affected issues. For components and assignees, since there can be so many of them within Jira, and they are not necessarily all known at the time we take a different approach and populate the control panel with the ones which are actually used by issues on the board. 
 ```
   "issue-types": [
     "Task",
@@ -125,7 +127,7 @@ The colour to use for issues in this project.
 ```
       "colour": "#4667CA",
 ```
-Next we map the project's state names to the state names we set up in the board. The project state names are on the LHS of the name pairs. In this case all the names are exactly the same.
+Next we map the project's state names to the state names we set up in the board. The project state names are on the LHS of the name pairs. In this case all the names are exactly the same. If you forget to add a state, for which one of the configured projects is in, this will be pointed out in the health panel. If everything is set up properly, the health panel's heart icon will not be displayed.
 ```
       "state-links": {
         "Done": "Done",
@@ -160,7 +162,7 @@ Finally we have a section configuring projects whose issues we are interested in
   }
 }
 ```
-
+You can view a board's configuration by clicking on the name of the board in the list on the config page. From there you can edit it, if you wish.
 
 
 
