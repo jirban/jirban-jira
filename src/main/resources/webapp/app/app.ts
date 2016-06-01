@@ -33,8 +33,8 @@ const VERSION:number = 1;
                 <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
             </div>
     </div>
-    <div *ngIf="!notLoggedIn" class="message" [innerHTML]="error"></div>
-    <div *ngIf="notLoggedIn" class="message"><a href="{{loginUrl}}" (click)="onClickMessageLoginLink($event)">Log in</a> to Jira again.</div>
+    <div *ngIf="!notLoggedIn" class="error-message" [innerHTML]="error"></div>
+    <div *ngIf="notLoggedIn" class="error-message"><a href="{{loginUrl}}" class="error-message" (click)="onClickMessageLoginLink($event)">Log in</a> to Jira again.</div>
 </div>
 
     `,

@@ -46,6 +46,7 @@ a.toolbar-link {
 }
 a.toolbar-message {
     color:white;
+    font-weight: bold;
 }
 
 
@@ -95,8 +96,14 @@ a.toolbar-message {
     float: right;
     font-weight: bold;
 }
-#error-panel .message {
+#error-panel .error-message {
     padding: 3px;
+}
+.error-message {
+    color: black;
+}
+a.error-message {
+    font-weight: bold;
 }
 a.close {
     color: #FFFFFF;

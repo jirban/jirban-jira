@@ -35,7 +35,6 @@ export class IssueContextMenuComponent {
 
     private comment:boolean;
     private commentForm:ControlGroup;
-    private commentPanelTop:number;
     private commentPanelLeft:number;
     
     private closeContextMenu:EventEmitter<any> = new EventEmitter();
@@ -220,7 +219,6 @@ export class IssueContextMenuComponent {
         this.movePanelLeft = movePanelLeft;
         this.statesColumnHeight = statesColumnHeight;
 
-        this.commentPanelTop = (window.innerHeight -265)/2;
         this.commentPanelLeft = (window.innerWidth - 600)/2;
     }
 

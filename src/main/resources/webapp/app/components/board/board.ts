@@ -124,7 +124,11 @@ export class BoardComponent implements OnDestroy, OnInit {
                     if (this._pollFailureCount < 3) {
                         this.pollIssues();
                     } else {
-                        this._progressError.setError("Connection to the board lost.");
+                        if (err.status === 401) {
+                            this._progressError.setError(err);
+                        } else {
+                            this._progressError.setError("Connection to the board lost.");
+                        }
                     }
                 },
                 () => {
