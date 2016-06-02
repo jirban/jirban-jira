@@ -150,6 +150,6 @@ a.entry-selected {
     font-family: 'Open Sans', Verdana, Arial, sans-serif;
     font-size: 11px;
     margin: auto;
-    padding: 3px 6px;
+    padding-top: 3px;
     vertical-align: middle;
 }
