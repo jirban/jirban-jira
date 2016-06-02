@@ -1,11 +1,12 @@
 {
   "configs" : [{
+    "id" : 1,
     "code" : "POC",
     "name" : "Test board",
     "edit" : true,
     "config" : {
       "name" : "Test board",
-      "code" : "TST",
+      "code" : "POC",
       "owning-project" : "SKP",
       "rank-custom-field-id" : 10009,
       "states" : [
@@ -66,37 +67,22 @@
     }
   },
     {
+      "id" : 2,
       "code" : "POC2",
       "name" : "Test board with backlog, unordered and done states set up",
       "edit" : true,
       "config" : {
-        "_comment" : "This config doesn't actually match the setup for the POC2.json file. It is only here for illustrative purposes, and to see this board in the boards list.",
-        "states" : [
-        ],
-        "priorities" : [
-        ],
-        "issue-types" : [
-        ],
-        "projects" : {
-        },
-        "linked-projects" : {}
+
+        "_comment" : "This config doesn't actually match the setup for the POC2.json file. It is only here for illustrative purposes, and to see this board in the boards list."
       }
     },
     {
+      "id" : 3,
       "code" : "POC3",
       "name" : "Board with no headers",
       "edit" : true,
       "config" : {
-        "_comment": "This config doesn't actually match the setup for the POC3.json file. It is only here for illustrative purposes, and to see this board in the boards list.",
-        "states": [
-        ],
-        "priorities": [
-        ],
-        "issue-types": [
-        ],
-        "projects": {
-        },
-        "linked-projects": {}
+        "_comment" : "This config doesn't actually match the setup for the POC3.json file. It is only here for illustrative purposes, and to see this board in the boards list."
       }
     }
   ],
