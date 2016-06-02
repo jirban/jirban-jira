@@ -3,7 +3,7 @@ Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plug
 * to address some of Jira Agile's short-comings when it comes to how it displays the boards. Effectively this means horizontally scrollable boards, with collapsible colums.
 * to make setup of filters and swimlanes less static, minimising the need for configuration. Since we are using a 'fat' browser client, all changes to the view purely happen on the client side with no need for extra round trips to the server.
  
-This file shows you how to use Jirban from a user's point of view. If you are interested in contributing, we also have a [Developers Guide](..).
+This file shows you how to use Jirban from a user's point of view. If you are interested in contributing, we also have a [Developers Guide](../README.md).
 
 ## Jirban Boards
 To get to the Jirban boards, log in to your Jira instance, and then click on the 'Jirban Boards' entry in the 'Agile' menu:
@@ -98,4 +98,4 @@ To comment on an issue, enter text in the displayed text area. Similar markup to
 ![alt text](https://raw.githubusercontent.com/kabir/jirban-jira/master/userguide/images/130-Comment.png)
 
 ## Configuring Boards
-To set up more boards, or reconfigure an existing one, click on the 'Config' item in the top blue toolbar, and follow the instructions in the [Developers Guide](..). Configuring boards can only be done by a Jira Adminstrator, or someone who is an administrator of all the main projects set up in the board.
+To set up more boards, or reconfigure an existing one, click on the 'Config' item in the top blue toolbar, and follow the instructions in the [Developers Guide](../README.md). Configuring boards can only be done by a Jira Adminstrator, or someone who is an administrator of all the main projects set up in the board.
