@@ -3,17 +3,17 @@
     position: fixed;
     right: 100px;
     bottom: 10px;
-    max-width: 80%;
+    width: 500px;
     max-height: 300px;
     border: 2px solid #CCCCCC;
     border-collapse: collapse;;
     border-radius: 6px;
-    overflow: scroll;
+    /*overflow: scroll;*/
     z-index: 15;
     padding-bottom: 5px;
 }
 .header {
-    width: 100%;
+    width: 494px;
     font-size: 13px;
     height: 15px;
     background-color: #777777;
@@ -27,9 +27,15 @@
 }
 .header-close-button {
     width: 18px;
-    text-align: left;
+    text-align: right;
     float: right;
     font-weight: bold;
+}
+.form {
+    margin: 0px;
+}
+.filter {
+
 }
 a.close {
     color: #FFFFFF;
@@ -40,6 +46,16 @@ a.close {
     float: left;
     padding: 10px 5px 0px 3px;
     height: 100%;
+    vertical-align: top;
+}
+.general-width {
+    width: 162px; /* +8 padding = 170 */
+}
+.filters-width {
+    width: 102px; /* + 8 padding = 110 */
+}
+.filter-width {
+    width: 212px;
 }
 .setting-header {
     white-space: nowrap;
@@ -48,7 +64,7 @@ a.close {
 }
 .setting-content {
     color: #222222;
-    overflow-y: auto;
+    overflow: auto;
     height: 250px;
 }
 .setting-content-small {
@@ -56,4 +72,20 @@ a.close {
 }
 .clickable {
     cursor: pointer;
+}
+.setting-entry {
+    white-space: nowrap;
+}
+.setting-input {
+    width: 100%;
+    font-size: 11px;
+}
+.filter {
+    text-decoration: none;
+    color: #222222;
+    min-height: 15px;
+}
+.selected {
+    color: #DDDDDD;
+    background: #222222;
 }

@@ -18,15 +18,21 @@ export class BoardFilters {
     private _priorities:boolean = false;
     private _issueTypes:boolean = false;
     private _components:boolean = false;
+    private _selectedProjectNames:string[] = [];
+    private _selectedPriorityNames:string[] = [];
+    private _selectedIssueTypes:string[] = [];
+    private _selectedAssignees:string[] = [];
+    private _selectedComponents:string[] = [];
 
     setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
         this._projects = false;
+        this._selectedProjectNames = [];
         if (boardProjectCodes) {
             for (let key of boardProjectCodes) {
                 if (filter[key]) {
                     this._projects = true;
-                    break;
+                    this._selectedProjectNames.push(key);
                 }
             }
         }
@@ -35,11 +41,12 @@ export class BoardFilters {
     setPriorityFilter(filter:any, priorities:Indexed<Priority>) {
         this._priorityFilter = filter;
         this._priorities = false;
+        this._selectedPriorityNames = [];
         if (priorities) {
             for (let priority of priorities.array) {
                 if (filter[priority.name]) {
                     this._priorities = true;
-                    break;
+                    this._selectedPriorityNames.push(priority.name)
                 }
             }
         }
@@ -48,11 +55,12 @@ export class BoardFilters {
     setIssueTypeFilter(filter:any, issueTypes:Indexed<IssueType>) {
         this._issueTypeFilter = filter;
         this._issueTypes = false;
+        this._selectedIssueTypes = [];
         if (issueTypes) {
             for (let issueType of issueTypes.array) {
                 if (filter[issueType.name]) {
                     this._issueTypes = true;
-                    break;
+                    this._selectedIssueTypes.push(issueType.name);
                 }
             }
         }
@@ -62,13 +70,16 @@ export class BoardFilters {
     setAssigneeFilter(filter:any, assignees:Indexed<Assignee>) {
         this._assigneeFilter = filter;
         this._assignees = false;
+        this._selectedAssignees = [];
         if (filter[NO_ASSIGNEE]) {
             this._assignees = true;
-        } else if (assignees) {
+            this._selectedAssignees.push("None");
+        }
+        if (assignees) {
             for (let assignee of assignees.array) {
                 if (filter[assignee.key]) {
                     this._assignees = true;
-                    break;
+                    this._selectedAssignees.push(assignee.name);
                 }
             }
         }
@@ -79,10 +90,12 @@ export class BoardFilters {
         this._componentFilter = {};
         this._componentFilterLength = 0;
         this._components = false;
+        this._selectedComponents = [];
         if (filter[NO_COMPONENT]) {
             this._components = true;
             this._componentFilter[NO_COMPONENT] = true;
             this._componentFilterLength = 1;
+            this._selectedComponents.push("None");
         }
 
         if (components) {
@@ -91,6 +104,7 @@ export class BoardFilters {
                     this._components = true;
                     this._componentFilter[component.name] = true;
                     this._componentFilterLength += 1;
+                    this._selectedComponents.push(component.name);
                 }
             }
         }
@@ -235,6 +249,7 @@ export class BoardFilters {
             let jsonFilter:any = {};
             let values:string[] = valueString.split(",");
             for (let value of values) {
+                value = decodeURIComponent(value);
                 jsonFilter[value] = true;
             }
             return jsonFilter;
@@ -264,11 +279,31 @@ export class BoardFilters {
                     } else {
                         query += ","
                     }
-                    query += key;
+                    query += encodeURIComponent(key);
                 }
             }
         }
         return query;
+    }
+
+    get selectedProjectNames():string[] {
+        return this._selectedProjectNames;
+    }
+
+    get selectedPriorityNames():string[] {
+        return this._selectedPriorityNames;
+    }
+
+    get selectedIssueTypes():string[] {
+        return this._selectedIssueTypes;
+    }
+
+    get selectedAssignees():string[] {
+        return this._selectedAssignees;
+    }
+
+    get selectedComponents():string[] {
+        return this._selectedComponents;
     }
 }
 

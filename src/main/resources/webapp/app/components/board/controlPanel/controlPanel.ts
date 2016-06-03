@@ -29,6 +29,15 @@ export class ControlPanelComponent {
 
     private linkUrl:string;
 
+    private filtersToDisplay:string = null;
+
+    private filtersTooltip:string;
+    private projectFiltersTooltip:string;
+    private priorityFiltersTooltip:string;
+    private issueTypeFiltersTooltip:string;
+    private assigneeFiltersTooltip:string;
+    private componentFiltersTooltip:string;
+
     constructor(private boardData:BoardData, private formBuilder:FormBuilder) {
     }
 
@@ -101,7 +110,7 @@ export class ControlPanelComponent {
                 }
                 //Updating the filters is costly so do it all in one go
                 if (dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
-                    this.updateFilters(value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"]);
+                    this.updateFilters(dirty, value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"]);
                 }
                 this.updateLinkUrl();
             });
@@ -110,6 +119,7 @@ export class ControlPanelComponent {
         this._componentFilterForm = componentFilterForm;
         this._controlForm = form;
         this.updateLinkUrl();
+        this.updateTooltips();
         return this._controlForm;
     }
 
@@ -127,6 +137,16 @@ export class ControlPanelComponent {
             recorder = groupRecorder;
         }
         recorder[name] = value;
+    }
+
+
+    private clearFilters(event:MouseEvent, name:string) {
+        event.preventDefault();
+        this.clearFilter(event, 'project');
+        this.clearFilter(event, 'issue-type');
+        this.clearFilter(event, 'priority');
+        this.clearFilter(event, 'assignee');
+        this.clearFilter(event, 'component');
     }
 
     private clearFilter(event:MouseEvent, name:string) {
@@ -205,13 +225,82 @@ export class ControlPanelComponent {
         this.boardData.updateIssueDetail(value.assignee, value.description, value.info, value.linked);
     }
 
-    private updateFilters(project:any, priority:any, issueType:any, assignee:any, component:any) {
+    private updateFilters(dirty:IMap<boolean>, project:any, priority:any, issueType:any, assignee:any, component:any) {
         this.boardData.updateFilters(project, priority, issueType, assignee, component);
+        this.updateTooltips(dirty);
+    }
+
+    private updateTooltips(dirty?:IMap<boolean>) {
+        let filters:BoardFilters = this.boardData.filters;
+        if (!dirty || dirty["project"]) {
+            this.projectFiltersTooltip = this.createTooltipForFilter(filters.selectedProjectNames);
+        }
+        if (!dirty || dirty['issue-type']) {
+            this.issueTypeFiltersTooltip = this.createTooltipForFilter(filters.selectedIssueTypes);
+        }
+        if (!dirty || dirty['priority']) {
+            this.priorityFiltersTooltip = this.createTooltipForFilter(filters.selectedPriorityNames);
+        }
+        if (!dirty || dirty['assignee']) {
+            this.assigneeFiltersTooltip = this.createTooltipForFilter(filters.selectedAssignees);
+        }
+        if (!dirty || dirty['component']) {
+            this.componentFiltersTooltip = this.createTooltipForFilter(filters.selectedComponents);
+        }
+
+        let filtersToolTip:string = "";
+        if (this.projectFiltersTooltip) {
+            filtersToolTip += "Projects:\n" + this.projectFiltersTooltip;
+        }
+        if (this.issueTypeFiltersTooltip) {
+            if (filtersToolTip.length > 0) {
+                filtersToolTip += "\n\n";
+            }
+            filtersToolTip += "Issue Types:\n" + this.issueTypeFiltersTooltip;
+        }
+        if (this.priorityFiltersTooltip) {
+            if (filtersToolTip.length > 0) {
+                filtersToolTip += "\n\n";
+            }
+            filtersToolTip += "Priorities:\n" + this.priorityFiltersTooltip;
+        }
+        if (this.assigneeFiltersTooltip) {
+            if (filtersToolTip.length > 0) {
+                filtersToolTip += "\n\n";
+            }
+            filtersToolTip += "Assignees:\n" + this.assigneeFiltersTooltip;
+        }
+        if (this.componentFiltersTooltip) {
+            if (filtersToolTip.length > 0) {
+                filtersToolTip += "\n\n";
+            }
+            filtersToolTip += "Components:\n" + this.componentFiltersTooltip;
+        }
+        this.filtersTooltip = filtersToolTip;
+    }
+
+    private createTooltipForFilter(selectedNames:string[]):string {
+        let tooltip:string = "";
+        let first:boolean = true;
+        for (let name of selectedNames) {
+            if (first) {
+                first = false;
+            } else {
+                tooltip += ", ";
+            }
+            tooltip += name;
+        }
+        return first ? null : tooltip;
     }
 
     private onClickClose(event:MouseEvent) {
         this.closeControlPanel.emit({});
         event.preventDefault();
+    }
+
+    private onSelectFiltersToDisplay(event:MouseEvent, filter:string) {
+        event.preventDefault();
+        this.filtersToDisplay = filter;
     }
 
     private grabInitialFormValues(form:ControlGroup):any {
