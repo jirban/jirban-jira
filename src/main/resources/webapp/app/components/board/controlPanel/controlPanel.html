@@ -1,24 +1,24 @@
 <div id="control-panel" *ngIf="boardData.initialized">
-    <form [ngFormModel]="controlForm" #f="ngForm">
+    <form [ngFormModel]="controlForm" #f="ngForm" class="form">
         <div class="header">
             <div class="header-text">Board Settings</div>
             <div class="header-close-button">
                 <a href="close" class="close" (click)="onClickClose($event)">X</a>
             </div>
         </div>
-        <div class="column">
+        <div class="column general-width">
             <div class="setting" ngControlGroup="detail">
                 <div class="setting-header"><a href="{{linkUrl}}">Link</a></div>
                 <div class="setting-content-small">
                     <div>
-                        <input type="text" value="{{linkUrl}}" id="link" readonly/>
+                        <input type="text" value="{{linkUrl}}" id="link" class="setting-input" readonly/>
                     </div>
                 </div>
             </div>
             <div class="setting">
                 <div class="setting-header clickable" (click)="clearSwimlane($event)" title="Clear swimlane">Swimlane</div>
                 <div class="setting-content-small">
-                    <select ngControl="swimlane">
+                    <select ngControl="swimlane" class="setting-input" >
                         <!-- Don't set a value for the undefined one -->
                         <option></option>
                         <option value="project">Project</option>
@@ -51,63 +51,88 @@
                 </div>
             </div>
         </div>
-        <div class="column" ngControlGroup="project">
+        <div class="column filters-width">
             <div class="setting">
-                <div class="setting-header clickable" (click)="clearFilter($event, 'project')" title="Clear filter">Project Filter</div>
+                <div class="setting-header clickable" title="{{filtersTooltip}}" (click)="clearFilters($event)">Filters</div>
                 <div class="setting-content">
-                    <div *ngFor="let project of boardProjectCodes">
+                    <div class="filter" [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'" title="{{projectFiltersTooltip}}">
+                        <a href="Filter Project" (click)="onSelectFiltersToDisplay($event, 'project')"
+                           [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'"><span *ngIf="projectFiltersTooltip">*</span>Project</a></div>
+
+                    <div class="filter" [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'" title="{{issueTypeFiltersTooltip}}">
+                        <a href="Filter Issue Type" (click)="onSelectFiltersToDisplay($event, 'issue-type')"
+                           [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'"><span *ngIf="issueTypeFiltersTooltip">*</span>Issue Type</a></div>
+
+                    <div class="filter" [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'" title="{{priorityFiltersTooltip}}">
+                        <a href="Filter Priority" (click)="onSelectFiltersToDisplay($event, 'priority')"
+                           [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'"><span *ngIf="priorityFiltersTooltip">*</span>Priority</a></div>
+
+                    <div class="filter" [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'" title="{{assigneeFiltersTooltip}}">
+                        <a href="Filter Assignee" (click)="onSelectFiltersToDisplay($event, 'assignee')"
+                           [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'"><span *ngIf="assigneeFiltersTooltip">*</span>Assignee</a></div>
+
+                    <div class="filter" [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'" title="{{componentFiltersTooltip}}">
+                        <a href="Filter Component" (click)="onSelectFiltersToDisplay($event, 'component')"
+                           [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'"><span *ngIf="componentFiltersTooltip">*</span>Component</a></div>
+                </div>
+            </div>
+        </div>
+        <div class="column filter-width">
+            <div class="setting" *ngIf="!filtersToDisplay">
+                <div class="setting-header">Select A Filter</div>
+                <div class="setting-content">
+                    <div>No Filter has been selected.</div>
+                    <div>Select a filter from the Filters column to view/edit filters for that category.</div>
+                </div>
+            </div>
+            <div class="setting" *ngIf="filtersToDisplay === 'project'">
+                <div class="setting-header clickable" (click)="clearFilter($event, 'project')" title="Clear filter">Project Filter</div>
+                <div class="setting-content" ngControlGroup="project">
+                    <div *ngFor="let project of boardProjectCodes" class="setting-entry">
                         <input type="checkbox" ngControl="{{project}}" id="project-{{project}}"/>
                         <label [attr.for]="'project-'+project">{{project}}</label>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="column" ngControlGroup="priority">
-            <div class="setting">
+            <div class="setting" *ngIf="filtersToDisplay === 'priority'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'priority')" title="Clear filter">Priority Filter</div>
-                <div class="setting-content" title="Scroll me!">
-                    <div *ngFor="let priority of priorities">
+                <div class="setting-content" title="Scroll me!" ngControlGroup="priority">
+                    <div *ngFor="let priority of priorities" class="setting-entry">
                         <input type="checkbox" ngControl="{{priority.name}}" id="priority-{{priority.name}}"/>
                         <label [attr.for]="'priority-' + priority.name">{{priority.name}}</label>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="column" ngControlGroup="issue-type">
-            <div class="setting">
+            <div class="setting" *ngIf="filtersToDisplay === 'issue-type'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'issue-type')" title="Clear filter">Issue Type Filter</div>
-                <div class="setting-content" title="Scroll me!">
-                    <div *ngFor="let issueType of issueTypes">
+                <div class="setting-content" title="Scroll me!" ngControlGroup="issue-type">
+                    <div *ngFor="let issueType of issueTypes" class="setting-entry">
                         <input type="checkbox" ngControl="{{issueType.name}}" id="type-{{issueType.name}}"/>
                         <label [attr.for]="'type-' + issueType.name">{{issueType.name}}</label>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="column" ngControlGroup="assignee">
-            <div class="setting">
+            <div class="setting" *ngIf="filtersToDisplay === 'assignee'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'assignee')" title="Clear filter">Assignee Filter</div>
-                <div class="setting-content" title="Scroll me!">
-                    <div>
+                <div class="setting-content" title="Scroll me!" ngControlGroup="assignee">
+                    <div class="setting-entry">
                         <input type="checkbox" ngControl="{{noAssignee}}" id="assignee-$none$none"/>
                         <label for="assignee-$none$none">None</label>
                     </div>
-                    <div *ngFor="let assignee of assignees">
+                    <div *ngFor="let assignee of assignees" class="setting-entry">
                         <input type="checkbox" ngControl="{{assignee.key}}" id="assignee-{{assignee.name}}"/>
                         <label [attr.for]="'assignee-' + assignee.name">{{assignee.name}}</label>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="column" ngControlGroup="component">
-            <div class="setting">
+            <div class="setting" *ngIf="filtersToDisplay === 'component'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'component')" title="Clear filter">Component Filter</div>
-                <div class="setting-content" title="Scroll me!">
-                    <div>
+                <div class="setting-content" title="Scroll me!" ngControlGroup="component">
+                    <div class="setting-entry">
                         <input type="checkbox" ngControl="{{noComponent}}" id="component-$none$none"/>
                         <label for="component-$none$none">None</label>
                     </div>
-                    <div *ngFor="let component of components">
+                    <div *ngFor="let component of components" class="setting-entry">
                         <input type="checkbox" ngControl="{{component.name}}" id="component-{{component.name}}"/>
                         <label [attr.for]="'component-' + component.name">{{component.name}}</label>
                     </div>
