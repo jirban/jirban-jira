@@ -32,11 +32,7 @@ export class ControlPanelComponent {
     private filtersToDisplay:string = null;
 
     private filtersTooltip:string;
-    private projectFiltersTooltip:string;
-    private priorityFiltersTooltip:string;
-    private issueTypeFiltersTooltip:string;
-    private assigneeFiltersTooltip:string;
-    private componentFiltersTooltip:string;
+    private filterTooltips:IMap<string> = {};
 
     constructor(private boardData:BoardData, private formBuilder:FormBuilder) {
     }
@@ -233,51 +229,62 @@ export class ControlPanelComponent {
     private updateTooltips(dirty?:IMap<boolean>) {
         let filters:BoardFilters = this.boardData.filters;
         if (!dirty || dirty["project"]) {
-            this.projectFiltersTooltip = this.createTooltipForFilter(filters.selectedProjectNames);
+            this.filterTooltips["project"] = this.createTooltipForFilter(filters.selectedProjectNames);
+
         }
         if (!dirty || dirty['issue-type']) {
-            this.issueTypeFiltersTooltip = this.createTooltipForFilter(filters.selectedIssueTypes);
+            this.filterTooltips["issue-type"] = this.createTooltipForFilter(filters.selectedIssueTypes);
         }
         if (!dirty || dirty['priority']) {
-            this.priorityFiltersTooltip = this.createTooltipForFilter(filters.selectedPriorityNames);
+            this.filterTooltips["priority"] = this.createTooltipForFilter(filters.selectedPriorityNames);
         }
         if (!dirty || dirty['assignee']) {
-            this.assigneeFiltersTooltip = this.createTooltipForFilter(filters.selectedAssignees);
+            this.filterTooltips["assignee"] = this.createTooltipForFilter(filters.selectedAssignees);
         }
         if (!dirty || dirty['component']) {
-            this.componentFiltersTooltip = this.createTooltipForFilter(filters.selectedComponents);
+            this.filterTooltips["component"] = this.createTooltipForFilter(filters.selectedComponents);
         }
 
         let filtersToolTip:string = "";
-        if (this.projectFiltersTooltip) {
-            filtersToolTip += "Projects:\n" + this.projectFiltersTooltip;
+        let current:string = this.filterTooltips["project"];
+        if (current) {
+            filtersToolTip += "Projects:\n" + current;
         }
-        if (this.issueTypeFiltersTooltip) {
+
+        current = this.filterTooltips["issue-type"];
+        if (current) {
             if (filtersToolTip.length > 0) {
                 filtersToolTip += "\n\n";
             }
-            filtersToolTip += "Issue Types:\n" + this.issueTypeFiltersTooltip;
+            filtersToolTip += "Issue Types:\n" + current;
         }
-        if (this.priorityFiltersTooltip) {
+
+        current = this.filterTooltips["priority"];
+        if (current) {
             if (filtersToolTip.length > 0) {
                 filtersToolTip += "\n\n";
             }
-            filtersToolTip += "Priorities:\n" + this.priorityFiltersTooltip;
+            filtersToolTip += "Priorities:\n" + current;
         }
-        if (this.assigneeFiltersTooltip) {
+
+        current = this.filterTooltips["assignee"];
+        if (current) {
             if (filtersToolTip.length > 0) {
                 filtersToolTip += "\n\n";
             }
-            filtersToolTip += "Assignees:\n" + this.assigneeFiltersTooltip;
+            filtersToolTip += "Assignees:\n" + current;
         }
-        if (this.componentFiltersTooltip) {
+
+        current = this.filterTooltips["component"];
+        if (current) {
             if (filtersToolTip.length > 0) {
                 filtersToolTip += "\n\n";
             }
-            filtersToolTip += "Components:\n" + this.componentFiltersTooltip;
+            filtersToolTip += "Components:\n" + current;
         }
         this.filtersTooltip = filtersToolTip;
     }
+
 
     private createTooltipForFilter(selectedNames:string[]):string {
         let tooltip:string = "";
@@ -336,6 +343,19 @@ export class ControlPanelComponent {
 
         console.log(url);
         this.linkUrl = url;
+    }
+
+    private getFilterLinkClass(filterName:string) {
+        let clazz:string = "filter";
+
+        if (filterName === this.filtersToDisplay) {
+            clazz += " selected";
+        }
+        if (this.filterTooltips[filterName]) {
+            clazz += " hasFilters";
+        }
+
+        return clazz;
     }
 }
 

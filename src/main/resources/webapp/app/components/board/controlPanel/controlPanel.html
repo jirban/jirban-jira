@@ -55,25 +55,25 @@
             <div class="setting">
                 <div class="setting-header clickable" title="{{filtersTooltip}}" (click)="clearFilters($event)">Filters</div>
                 <div class="setting-content">
-                    <div class="filter" [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'" title="{{projectFiltersTooltip}}">
+                    <div class="filter" [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'" title="{{filterTooltips['project']}}">
                         <a href="Filter Project" (click)="onSelectFiltersToDisplay($event, 'project')"
-                           [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'"><span *ngIf="projectFiltersTooltip">*</span>Project</a></div>
+                           [ngClass]="getFilterLinkClass('project')">Project</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'" title="{{issueTypeFiltersTooltip}}">
+                    <div class="filter" [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'" title="{{filterTooltips['issue-type']}}">
                         <a href="Filter Issue Type" (click)="onSelectFiltersToDisplay($event, 'issue-type')"
-                           [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'"><span *ngIf="issueTypeFiltersTooltip">*</span>Issue Type</a></div>
+                           [ngClass]="getFilterLinkClass('issue-type')"><span *ngIf="issueTypeFiltersTooltip">*</span>Issue Type</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'" title="{{priorityFiltersTooltip}}">
+                    <div class="filter" [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'" title="{{filterTooltips['priority']}}">
                         <a href="Filter Priority" (click)="onSelectFiltersToDisplay($event, 'priority')"
-                           [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'"><span *ngIf="priorityFiltersTooltip">*</span>Priority</a></div>
+                           [ngClass]="getFilterLinkClass('priority')"><span *ngIf="priorityFiltersTooltip">*</span>Priority</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'" title="{{assigneeFiltersTooltip}}">
+                    <div class="filter" [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'" title="{{filterTooltips['assignee']}}">
                         <a href="Filter Assignee" (click)="onSelectFiltersToDisplay($event, 'assignee')"
-                           [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'"><span *ngIf="assigneeFiltersTooltip">*</span>Assignee</a></div>
+                           [ngClass]="getFilterLinkClass('assignee')"><span *ngIf="assigneeFiltersTooltip">*</span>Assignee</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'" title="{{componentFiltersTooltip}}">
+                    <div class="filter" [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'" title="{{filterTooltips['component']}}">
                         <a href="Filter Component" (click)="onSelectFiltersToDisplay($event, 'component')"
-                           [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'"><span *ngIf="componentFiltersTooltip">*</span>Component</a></div>
+                           [ngClass]="getFilterLinkClass('component')"><span *ngIf="componentFiltersTooltip">*</span>Component</a></div>
                 </div>
             </div>
         </div>

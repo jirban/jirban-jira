@@ -86,6 +86,9 @@ a.close {
     min-height: 15px;
 }
 .selected {
-    color: #DDDDDD;
-    background: #222222;
+    color: #EEEEEE;
+    background: #777777;
+}
+.hasFilters {
+    font-weight: bold;
 }
