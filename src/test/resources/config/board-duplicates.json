@@ -1,0 +1,43 @@
+{
+  "name": "Test Downstream Project",
+  "code": "TST",
+  "owning-project": "TDP",
+  "rank-custom-field-id": 10000,
+  "states": [
+    {"name": "S-A"},
+    {"name": "S-B"},
+    {"name": "S-B"},
+    {"name": "S-D"}
+  ],
+  "priorities": [
+    "highest",
+    "high",
+    "low",
+    "lowest"
+  ],
+  "issue-types": [
+    "task",
+    "bug",
+    "feature"
+  ],
+  "projects": {
+    "TDP": {
+      "query-filter": null,
+      "colour": "#4667CA",
+      "state-links": {
+        "TDP-A" : "S-A",
+        "TDP-B" : "S-B",
+        "TDP-D" : "S-D"
+      }
+    }
+  },
+  "linked-projects": {
+    "TUP": {
+      "states": [
+        "TUP-A",
+        "TUP-B",
+        "TUP-C"
+      ]
+    }
+  }
+}

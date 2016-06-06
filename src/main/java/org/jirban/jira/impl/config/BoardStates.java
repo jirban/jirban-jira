@@ -84,6 +84,9 @@ public class BoardStates {
                     throw new JirbanValidationException("A state must have a name");
                 }
                 final String stateName = stateNode.get(NAME).asString();
+                if (states.contains(stateName)) {
+                    throw new JirbanValidationException("State names for a project must be unique");
+                }
                 states.add(stateName);
                 stateIndices.put(stateName, i);
 
