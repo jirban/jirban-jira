@@ -49,12 +49,22 @@ public class BoardConfigurationManagerTest {
     @Test
     public void testLoadConfiguration() throws IOException {
         BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
-            .addConfigActiveObjectsFromFile("config/board-tdp.json")
-            .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
+                .addConfigActiveObjectsFromFile("config/board-tdp.json")
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
         BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
         Assert.assertNotNull(boardConfig);
+    }
+
+    @Test(expected=JirbanValidationException.class)
+    public void testDuplicateStates() throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
+                .addConfigActiveObjectsFromFile("config/board-duplicates.json")
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
+
+        cfgManager.getBoardConfigForBoardDisplay(null, "TST");
     }
 
     @Test
