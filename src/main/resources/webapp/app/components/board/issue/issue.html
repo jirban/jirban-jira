@@ -2,7 +2,7 @@
     [hidden]="issue.filtered">
     <div class="header" [style.background-color]="issue.colour">
         <div class="summary">
-            <span><a href="{{jiraUrl}}/browse/{{issue.key}}"
+            <span><a href="{{jiraUrl}}/browse/{{issue.key}}"  target="_blank"
                      (contextmenu)="defaultContextMenu($event)" class="header">{{issue.key}}</a></span>
         </div>
         <div class="assignee">
