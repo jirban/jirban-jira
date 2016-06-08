@@ -13,6 +13,7 @@ import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
+import {Observable} from "rxjs/Rx";
 
 
 export class BoardData {
@@ -272,6 +273,11 @@ export class BoardData {
         return this._showBacklog;
     }
 
+    get swimlaneVisibilityObservable():Observable<void> {
+        return this._issueTable.swimlaneVisibilityObservable;
+    }
+
+
     toggleBacklog():void {
         this._showBacklog = !this._showBacklog;
     }
@@ -359,9 +365,7 @@ export class BoardData {
 
     setBacklogFromQueryParams(queryParams:IMap<string>):void {
         if (queryParams["bl"]) {
-            console.log("---> " + queryParams["bl"] + " === true: " + (queryParams["bl"] === "true"));
             this._showBacklog = queryParams["bl"] === "true";
-            console.log("----> " + this._showBacklog);
         }
     }
 
@@ -381,6 +385,8 @@ export class BoardData {
         if (queryParams["swimlane"]) {
             //Use the setter so that we recalculate everything
             this.swimlane = queryParams["swimlane"];
+
+            this._issueTable.setSwimlaneVisibilitiesFromQueryParams(queryParams);
         }
 
         this._headers.setVisibilitiesFromQueryParams(queryParams);
@@ -408,6 +414,20 @@ export class BoardData {
             return new IssueDisplayDetails(assignee, summary, info, linkedIssues);
         }
         return new IssueDisplayDetails();
+    }
+
+    createQueryStringParticeles(url:string):string{
+        url = url + "?board=" + this.code;
+
+        if (this.showBacklog) {
+            url += "&bl=true";
+        }
+
+        url += this.issueDisplayDetails.createQueryStringParticle();
+        url += this.filters.createQueryStringParticles();
+        url += this.headers.createQueryStringParticle();
+        url += this._issueTable.createQueryStringParticle();
+        return url;
     }
 }
 

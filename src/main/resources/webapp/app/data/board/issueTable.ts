@@ -6,12 +6,15 @@ import {BoardFilters} from "./boardFilters";
 import {SwimlaneIndexer, SwimlaneIndexerFactory} from "./swimlaneIndexer";
 import {Indexed} from "../../common/indexed";
 import {ChangeSet} from "./change";
+import {Subject, Observable} from "rxjs/Rx";
 
 export class IssueTable {
     private _allIssues:Indexed<IssueData>;
     private _issueTable:IssueData[][];
     private _swimlaneTable:SwimlaneData[];
     private _totalIssuesByState:number[];
+
+    private _swimlaneVisibitilySubject:Subject<void> = new Subject<void>();
 
     /**
      * Called when first loading a board
@@ -67,12 +70,18 @@ export class IssueTable {
     set swimlane(swimlane:string) {
         this._swimlane = swimlane;
         this.createTable();
+        this._swimlaneVisibitilySubject.next(null);
+    }
+
+    get swimlaneVisibilityObservable():Observable<void> {
+        return this._swimlaneVisibitilySubject;
     }
 
     toggleSwimlaneVisibility(swimlaneIndex:number) {
         if (this._swimlaneTable) {
             this._swimlaneTable[swimlaneIndex].toggleVisibility();
         }
+        this._swimlaneVisibitilySubject.next(null);
     }
 
     getIssue(issueKey:string) : IssueData {
@@ -262,7 +271,78 @@ export class IssueTable {
     private createSwimlaneIndexer():SwimlaneIndexer {
         return new SwimlaneIndexerFactory().createSwimlaneIndexer(this._swimlane, this._filters, this._boardData);
     }
+
+    createQueryStringParticle():string{
+        let qs:string = "";
+        if (this._swimlane) {
+            qs = "&swimlane=" + this._swimlane;
+
+            let hiddenEntries:SwimlaneData[] = [];
+            let visibleEntries:SwimlaneData[] = [];
+            for (let sd of this._swimlaneTable) {
+                if (sd.visible) {
+                    visibleEntries.push(sd);
+                } else {
+                    hiddenEntries.push(sd);
+                }
+            }
+
+            if (hiddenEntries.length == 0) {
+                return qs;
+            }
+
+            let swimlanes:SwimlaneData[];
+            if (hiddenEntries.length < visibleEntries.length) {
+                qs += "&hidden-sl=";
+                swimlanes = hiddenEntries;
+            } else {
+                qs += "&visible-sl=";
+                swimlanes = visibleEntries;
+            }
+
+            let first:boolean = true;
+            for (let sd of swimlanes) {
+                if (first){
+                    first = false;
+                } else {
+                    qs += ",";
+                }
+                qs += encodeURIComponent(sd.name);
+            }
+        }
+        return qs;
+    }
+
+    setSwimlaneVisibilitiesFromQueryParams(queryParams:IMap<string>):void{
+        let value:string;
+        let visible:boolean = false;
+        if (queryParams["hidden-sl"]) {
+            value = queryParams["hidden-sl"];
+        } else if (queryParams["visible-sl"]) {
+            value = queryParams["visible-sl"];
+            visible = true;
+        }
+
+        if (!value) {
+            return;
+        }
+
+        let swimlaneNames:IMap<boolean> = {};
+        for (let name of value.split(",")) {
+            swimlaneNames[decodeURIComponent(name)] = true;
+        }
+
+        for (let sd of this._swimlaneTable) {
+            if (swimlaneNames[sd.name]) {
+                sd.visible = visible;
+            } else {
+                sd.visible = !visible;
+            }
+        }
+    }
+
 }
+
 
 
 export class SwimlaneData {
@@ -288,6 +368,10 @@ export class SwimlaneData {
 
     get visible() {
         return this._visible;
+    }
+
+    set visible(visible:boolean) {
+        this._visible = visible;
     }
 
     get name() {
