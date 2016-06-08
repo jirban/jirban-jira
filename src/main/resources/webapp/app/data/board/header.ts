@@ -1,6 +1,8 @@
 import {Indexed} from "../../common/indexed";
 import {IMap} from "../../common/map";
 import {BoardData} from "./boardData";
+import {Subject} from "rxjs/Subject";
+import {Observable} from "rxjs/Observable";
 /**
  * Support for categorised state headers
  */
@@ -21,13 +23,15 @@ export class BoardHeaders {
     private _bottomHeaders:BoardHeaderEntry[] = [];
 
     private _stateVisibilities:boolean[];
+    private _stateVisibilitiesSubject:Subject<void> = new Subject<void>();
 
     constructor(boardData:BoardData,
                 boardStateNames:Indexed<string>, boardStates:Indexed<State>,
                 backlogStates:State[], mainStates:State[],
                 backlogTopHeader:BoardHeaderEntry, backlogBottomHeaders:BoardHeaderEntry[],
                 topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[],
-                stateVisibilities:boolean[]) {
+                stateVisibilities:boolean[],
+                stateVisibilitiesSubject:Subject<void>) {
         this._boardData = boardData;
         this._boardStateNames = boardStateNames;
         this._boardStates = boardStates;
@@ -39,6 +43,7 @@ export class BoardHeaders {
         this._bottomHeaders = bottomHeaders;
 
         this._stateVisibilities = stateVisibilities;
+        this._stateVisibilitiesSubject = stateVisibilitiesSubject;
     }
 
     static deserialize(boardData:BoardData, input:any):BoardHeaders {
@@ -76,14 +81,17 @@ export class BoardHeaders {
         }
 
         let stateVisibilities:boolean[];
+        let stateVisibilitiesSubject:Subject<void>;
         if (boardData && boardData.headers) {
             //For a simple refresh following polling, use the same states
             stateVisibilities = boardData.headers._stateVisibilities;
+            stateVisibilitiesSubject = boardData.headers._stateVisibilitiesSubject;
         } else {
             stateVisibilities = new Array<boolean>(boardStates.array.length);
             for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
-                stateVisibilities[i] = i >= backlogSize;
+                stateVisibilities[i] = !BoardHeaders.isHiddenBacklogState(boardData, backlogSize, i);
             }
+            stateVisibilitiesSubject = new Subject<void>();
         }
 
         let backlogTopHeader:BoardHeaderEntry;
@@ -129,7 +137,7 @@ export class BoardHeaders {
 
         return new BoardHeaders(boardData, boardStateNames, boardStates,
             backlogStates, mainStates,
-            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities);
+            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities, stateVisibilitiesSubject);
     }
 
 
@@ -169,8 +177,13 @@ export class BoardHeaders {
         return this._stateVisibilities;
     }
 
+    get stateVisibilitiesChangedObservable():Observable<void> {
+        return this._stateVisibilitiesSubject;
+    }
+
     toggleHeaderVisibility(header:BoardHeaderEntry) {
         header.toggleVisibility();
+        this._stateVisibilitiesSubject.next(null);
     }
 
     private static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {
@@ -180,6 +193,79 @@ export class BoardHeaders {
             categories.add(header, category);
         }
         return category;
+    }
+
+    createQueryStringParticle():string {
+        let visible:string = "";
+        let hidden:string = "";
+        
+        for (let i:number = 0 ; i < this._stateVisibilities.length ; i++) {
+            if (this.isHiddenBacklogState(i)) {
+                continue;
+            }
+            if (this._stateVisibilities[i]) {
+                if (visible.length > 0) {
+                    visible += ",";
+                }
+                visible += i;
+            } else {
+                if (hidden.length > 0) {
+                    hidden += ",";
+                }
+                hidden += i;
+            }
+        }
+
+        if (hidden.length == 0) {
+            return "";
+        }
+        if (hidden.length < visible.length) {
+            return "&hidden=" + hidden;
+        } else {
+            return "&visible=" + visible;
+        }
+    }
+
+    setVisibilitiesFromQueryParams(queryParams:IMap<string>):void{
+        let value:string;
+        let visible:boolean = false;
+        if (queryParams["hidden"]) {
+            value = queryParams["hidden"];
+        } else if (queryParams["visible"]) {
+            value = queryParams["visible"];
+            visible = true;
+        }
+
+        if (!value) {
+            return;
+        }
+
+        if (visible) {
+            for (let i:number = 0 ; i < this._stateVisibilities.length ; i++) {
+                //Set everything to false to make the next loop easier
+                if (this.isHiddenBacklogState(i)) {
+                    continue;
+                }
+                this._stateVisibilities[i] = false;
+            }
+        }
+
+        let values:string[] = value.split(",");
+        for (let i:number = 0 ; i < values.length ; i++) {
+            let index:number = Number(values[i]);
+            if (this.isHiddenBacklogState(index)) {
+                continue;
+            }
+            this._stateVisibilities[index] = visible;
+        }
+    }
+
+    private isHiddenBacklogState(index:number):boolean {
+        return BoardHeaders.isHiddenBacklogState(this._boardData, this._backlogStates.length, index);
+    }
+
+    private static isHiddenBacklogState(boardData:BoardData, backlogStatesLength:number, index:number):boolean {
+        return !boardData.showBacklog && index < backlogStatesLength;
     }
 }
 
@@ -324,6 +410,11 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
+    get isCategory():boolean {
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
+    }
+
     get backlog():boolean {
         //Abstract getters don't exist :(
         throw new Error("nyi");
@@ -361,6 +452,10 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
     toggleVisibility() {
         this._category.toggleVisibility(this._stateVisibilities);
     }
+
+    get isCategory():boolean {
+        return true;
+    }
 }
 
 class StateHeaderEntry extends BoardHeaderEntry {
@@ -390,5 +485,9 @@ class StateHeaderEntry extends BoardHeaderEntry {
 
     toggleVisibility() {
         this._state.toggleVisibility(this._stateVisibilities);
+    }
+
+    get isCategory():boolean {
+        return false;
     }
 }

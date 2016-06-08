@@ -116,6 +116,14 @@ export class ControlPanelComponent {
         this._controlForm = form;
         this.updateLinkUrl();
         this.updateTooltips();
+
+        this.boardData.headers.stateVisibilitiesChangedObservable.subscribe((value:void) => {
+            this.updateLinkUrl();
+        });
+        this.boardData.swimlaneVisibilityObservable.subscribe((value:void) => {
+            this.updateLinkUrl();
+        });
+
         return this._controlForm;
     }
 
@@ -332,18 +340,13 @@ export class ControlPanelComponent {
         if (index >= 0) {
             url = url.substr(0, index);
         }
-        url = url + "?board=" + this.boardData.code;
-
-        if (this.boardData.swimlane) {
-            url += "&swimlane=" + this.boardData.swimlane;
-        }
-
-        url += this.boardData.issueDisplayDetails.createQueryStringParticle();
-        url += this.boardData.filters.createQueryStringParticles();
+        url = this.boardData.createQueryStringParticeles(url);
 
         console.log(url);
         this.linkUrl = url;
     }
+
+
 
     private getFilterLinkClass(filterName:string) {
         let clazz:string = "filter";
