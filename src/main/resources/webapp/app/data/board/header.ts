@@ -181,6 +181,37 @@ export class BoardHeaders {
         }
         return category;
     }
+
+    createQueryStringParticle():string {
+        let visible:string = "";
+        let hidden:string = "";
+        
+        for (let i:number = 0 ; i < this._stateVisibilities.length ; i++) {
+            if (!this._boardData.showBacklog && i < this.backlogStates.length) {
+                continue;
+            }
+            if (this._stateVisibilities[i]) {
+                if (visible.length > 0) {
+                    visible += ",";
+                }
+                visible += i;
+            } else {
+                if (hidden.length > 0) {
+                    hidden += ",";
+                }
+                hidden += i;
+            }
+        }
+
+        if (hidden.length == 0) {
+            return "";
+        }
+        if (hidden.length < visible.length) {
+            return "&hidden=" + hidden;
+        } else {
+            return "&visible=" + visible;
+        }
+    }
 }
 
 class StateCategory {
@@ -324,6 +355,11 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
+    get isCategory():boolean {
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
+    }
+
     get backlog():boolean {
         //Abstract getters don't exist :(
         throw new Error("nyi");
@@ -361,6 +397,10 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
     toggleVisibility() {
         this._category.toggleVisibility(this._stateVisibilities);
     }
+
+    get isCategory():boolean {
+        return true;
+    }
 }
 
 class StateHeaderEntry extends BoardHeaderEntry {
@@ -390,5 +430,9 @@ class StateHeaderEntry extends BoardHeaderEntry {
 
     toggleVisibility() {
         this._state.toggleVisibility(this._stateVisibilities);
+    }
+
+    get isCategory():boolean {
+        return false;
     }
 }

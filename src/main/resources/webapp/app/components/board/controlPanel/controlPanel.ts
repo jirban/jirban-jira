@@ -337,9 +337,13 @@ export class ControlPanelComponent {
         if (this.boardData.swimlane) {
             url += "&swimlane=" + this.boardData.swimlane;
         }
+        if (this.boardData.showBacklog) {
+            url += "&bl=true";
+        }
 
         url += this.boardData.issueDisplayDetails.createQueryStringParticle();
         url += this.boardData.filters.createQueryStringParticles();
+        url += this.boardData.headers.createQueryStringParticle();
 
         console.log(url);
         this.linkUrl = url;

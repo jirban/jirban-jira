@@ -222,7 +222,7 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     toggleHeaderVisibility(header:BoardHeaderEntry) {
-        if (header.backlog) {
+        if (header.isCategory && header.backlog) {
             this._boardData.toggleBacklog();
             this.toggleBacklog();
         }
