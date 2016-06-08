@@ -357,6 +357,14 @@ export class BoardData {
         return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
     }
 
+    setBacklogFromQueryParams(queryParams:IMap<string>):void {
+        if (queryParams["bl"]) {
+            console.log("---> " + queryParams["bl"] + " === true: " + (queryParams["bl"] === "true"));
+            this._showBacklog = queryParams["bl"] === "true";
+            console.log("----> " + this._showBacklog);
+        }
+    }
+
     setFiltersFromQueryParams(queryParams:IMap<string>) {
 
         this._boardFilters.createFromQueryParams(queryParams, 
@@ -370,11 +378,12 @@ export class BoardData {
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));
 
-        //TODO swimlane
         if (queryParams["swimlane"]) {
             //Use the setter so that we recalculate everything
             this.swimlane = queryParams["swimlane"];
         }
+
+        this._headers.setVisibilitiesFromQueryParams(queryParams);
     }
 
     private parseIssueDisplayDetails(queryParams:IMap<string>):IssueDisplayDetails{

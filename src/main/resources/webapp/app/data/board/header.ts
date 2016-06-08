@@ -85,7 +85,7 @@ export class BoardHeaders {
         } else {
             stateVisibilities = new Array<boolean>(boardStates.array.length);
             for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
-                stateVisibilities[i] = i >= backlogSize;
+                stateVisibilities[i] = !BoardHeaders.isHiddenBacklogState(boardData, backlogSize, i);
             }
         }
 
@@ -195,7 +195,7 @@ export class BoardHeaders {
         let hidden:string = "";
         
         for (let i:number = 0 ; i < this._stateVisibilities.length ; i++) {
-            if (!this._boardData.showBacklog && i < this.backlogStates.length) {
+            if (this.isHiddenBacklogState(i)) {
                 continue;
             }
             if (this._stateVisibilities[i]) {
@@ -219,6 +219,48 @@ export class BoardHeaders {
         } else {
             return "&visible=" + visible;
         }
+    }
+
+    setVisibilitiesFromQueryParams(queryParams:IMap<string>):void{
+        let value:string;
+        let visible:boolean = false;
+        if (queryParams["hidden"]) {
+            value = queryParams["hidden"];
+        } else if (queryParams["visible"]) {
+            value = queryParams["visible"];
+            visible = true;
+        }
+
+        if (!value) {
+            return;
+        }
+
+        if (visible) {
+            for (let i:number = 0 ; i < this._stateVisibilities.length ; i++) {
+                //Set everything to false to make the next loop easier
+                if (this.isHiddenBacklogState(i)) {
+                    continue;
+                }
+                this._stateVisibilities[i] = false;
+            }
+        }
+
+        let values:string[] = value.split(",");
+        for (let i:number = 0 ; i < values.length ; i++) {
+            let index:number = Number(values[i]);
+            if (this.isHiddenBacklogState(index)) {
+                continue;
+            }
+            this._stateVisibilities[index] = visible;
+        }
+    }
+
+    private isHiddenBacklogState(index:number):boolean {
+        return BoardHeaders.isHiddenBacklogState(this._boardData, this._backlogStates.length, index);
+    }
+
+    private static isHiddenBacklogState(boardData:BoardData, backlogStatesLength:number, index:number):boolean {
+        return !boardData.showBacklog && index < backlogStatesLength;
     }
 }
 

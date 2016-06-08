@@ -45,6 +45,8 @@ export class BoardComponent implements OnDestroy, OnInit {
         this.boardCode = routeParams.get('board');
         title.setTitle("Board (" + this.boardCode + ")");
 
+        this._boardData.setBacklogFromQueryParams(queryString);
+
         this.populateIssues(() => {
             //Loading filters does not work until the issue data is loaded
             _boardData.setFiltersFromQueryParams(queryString);
