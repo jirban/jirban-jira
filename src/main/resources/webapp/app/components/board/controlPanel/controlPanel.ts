@@ -117,8 +117,7 @@ export class ControlPanelComponent {
         this.updateLinkUrl();
         this.updateTooltips();
 
-        this.boardData.headers.stateVisibilitiesChangedObserver.subscribe((value:void) => {
-            console.log("--> Update link url");
+        this.boardData.headers.stateVisibilitiesChangedObservable.subscribe((value:void) => {
             this.updateLinkUrl();
         });
 

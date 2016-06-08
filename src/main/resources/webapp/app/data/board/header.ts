@@ -23,14 +23,15 @@ export class BoardHeaders {
     private _bottomHeaders:BoardHeaderEntry[] = [];
 
     private _stateVisibilities:boolean[];
-    private _stateVisibilitiesChanged:Subject<void> = new Subject<void>();
+    private _stateVisibilitiesSubject:Subject<void> = new Subject<void>();
 
     constructor(boardData:BoardData,
                 boardStateNames:Indexed<string>, boardStates:Indexed<State>,
                 backlogStates:State[], mainStates:State[],
                 backlogTopHeader:BoardHeaderEntry, backlogBottomHeaders:BoardHeaderEntry[],
                 topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[],
-                stateVisibilities:boolean[]) {
+                stateVisibilities:boolean[],
+                stateVisibilitiesSubject:Subject<void>) {
         this._boardData = boardData;
         this._boardStateNames = boardStateNames;
         this._boardStates = boardStates;
@@ -42,6 +43,7 @@ export class BoardHeaders {
         this._bottomHeaders = bottomHeaders;
 
         this._stateVisibilities = stateVisibilities;
+        this._stateVisibilitiesSubject = stateVisibilitiesSubject;
     }
 
     static deserialize(boardData:BoardData, input:any):BoardHeaders {
@@ -79,14 +81,17 @@ export class BoardHeaders {
         }
 
         let stateVisibilities:boolean[];
+        let stateVisibilitiesSubject:Subject<void>;
         if (boardData && boardData.headers) {
             //For a simple refresh following polling, use the same states
             stateVisibilities = boardData.headers._stateVisibilities;
+            stateVisibilitiesSubject = boardData.headers._stateVisibilitiesSubject;
         } else {
             stateVisibilities = new Array<boolean>(boardStates.array.length);
             for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
                 stateVisibilities[i] = !BoardHeaders.isHiddenBacklogState(boardData, backlogSize, i);
             }
+            stateVisibilitiesSubject = new Subject<void>();
         }
 
         let backlogTopHeader:BoardHeaderEntry;
@@ -132,7 +137,7 @@ export class BoardHeaders {
 
         return new BoardHeaders(boardData, boardStateNames, boardStates,
             backlogStates, mainStates,
-            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities);
+            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities, stateVisibilitiesSubject);
     }
 
 
@@ -172,13 +177,13 @@ export class BoardHeaders {
         return this._stateVisibilities;
     }
 
-    get stateVisibilitiesChangedObserver():Observable<void> {
-        return this._stateVisibilitiesChanged;
+    get stateVisibilitiesChangedObservable():Observable<void> {
+        return this._stateVisibilitiesSubject;
     }
 
     toggleHeaderVisibility(header:BoardHeaderEntry) {
         header.toggleVisibility();
-        this._stateVisibilitiesChanged.next(null);
+        this._stateVisibilitiesSubject.next(null);
     }
 
     private static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {
