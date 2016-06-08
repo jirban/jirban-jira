@@ -1,6 +1,8 @@
 import {Indexed} from "../../common/indexed";
 import {IMap} from "../../common/map";
 import {BoardData} from "./boardData";
+import {Subject} from "rxjs/Subject";
+import {Observable} from "rxjs/Observable";
 /**
  * Support for categorised state headers
  */
@@ -21,6 +23,7 @@ export class BoardHeaders {
     private _bottomHeaders:BoardHeaderEntry[] = [];
 
     private _stateVisibilities:boolean[];
+    private _stateVisibilitiesChanged:Subject<void> = new Subject<void>();
 
     constructor(boardData:BoardData,
                 boardStateNames:Indexed<string>, boardStates:Indexed<State>,
@@ -169,8 +172,13 @@ export class BoardHeaders {
         return this._stateVisibilities;
     }
 
+    get stateVisibilitiesChangedObserver():Observable<void> {
+        return this._stateVisibilitiesChanged;
+    }
+
     toggleHeaderVisibility(header:BoardHeaderEntry) {
         header.toggleVisibility();
+        this._stateVisibilitiesChanged.next(null);
     }
 
     private static getOrCreateStateCategory(categories:Indexed<StateCategory>, header:string, backlog:boolean):StateCategory {

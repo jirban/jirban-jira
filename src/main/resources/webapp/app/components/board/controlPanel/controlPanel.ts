@@ -116,6 +116,11 @@ export class ControlPanelComponent {
         this._controlForm = form;
         this.updateLinkUrl();
         this.updateTooltips();
+
+        this.boardData.headers.stateVisibilitiesChangedObserver.subscribe((value:void) => {
+            this.updateLinkUrl();
+        });
+
         return this._controlForm;
     }
 
