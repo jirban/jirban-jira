@@ -22,18 +22,23 @@
 package org.jirban.jira.impl.config;
 
 import static org.jirban.jira.impl.Constants.COLOUR;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.STATE_LINKS;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.impl.Constants;
 
 /** Abstract base class for project configurations of projects whose issues should appear as cards on the board.
@@ -49,12 +54,15 @@ public class BoardProjectConfig extends ProjectConfig {
 
     private final Set<String> ownDoneStateNames;
 
+    private final List<String> customFieldNames;
+
 
     private BoardProjectConfig(final BoardStates boardStates,
                                 final String code, final String queryFilter,
                                 final String colour, final Map<String, Integer> states,
                                 final Map<String, String> ownToBoardStates,
-                                final Map<String, String> boardToOwnStates) {
+                                final Map<String, String> boardToOwnStates,
+                                final List<String> customFieldNames) {
         super(code, states);
         this.boardStates = boardStates;
         this.queryFilter = queryFilter;
@@ -70,9 +78,10 @@ public class BoardProjectConfig extends ProjectConfig {
             }
         }
         this.ownDoneStateNames = Collections.unmodifiableSet(ownDoneStateNames);
+        this.customFieldNames = customFieldNames;
     }
 
-    static BoardProjectConfig load(final BoardStates boardStates, final String projectCode, ModelNode project) {
+    static BoardProjectConfig load(final BoardStates boardStates, final String projectCode, ModelNode project, Map<String, CustomFieldConfig> customFieldConfigs) {
         String colour = getRequiredChild(project, "Project", projectCode, COLOUR).asString();
         ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, STATE_LINKS);
 
@@ -93,11 +102,33 @@ public class BoardProjectConfig extends ProjectConfig {
                 states.put(ownState, i++);
             }
         }
+
+
+        final List<String> customFieldNames;
+        if (!project.hasDefined(CUSTOM)) {
+            customFieldNames = Collections.emptyList();
+        } else {
+            customFieldNames = new ArrayList<>();
+            final ModelNode customFieldNode = project.get(CUSTOM);
+            if (customFieldNode.getType() != ModelType.LIST) {
+                throw new JirbanValidationException("The \"config\" element of project \"" + projectCode + "\" must be an array of strings");
+            }
+            for (ModelNode field : customFieldNode.asList()) {
+                final String fieldName = field.asString();
+                if (!customFieldConfigs.containsKey(fieldName)) {
+                    throw new JirbanValidationException("The \"config\" element of project \"" + projectCode + "\" contains \"" + fieldName + "\", which does not exist in the board's \"config\" section.");
+                }
+                customFieldNames.add(fieldName);
+            }
+        }
+
         return new BoardProjectConfig(boardStates, projectCode, loadQueryFilter(project), colour,
                 Collections.unmodifiableMap(states),
                 Collections.unmodifiableMap(ownToBoardStates),
-                Collections.unmodifiableMap(boardToOwnStates));
+                Collections.unmodifiableMap(boardToOwnStates),
+                Collections.unmodifiableList(customFieldNames));
     }
+
 
     static String loadQueryFilter(ModelNode project) {
         if (!project.hasDefined(Constants.QUERY_FILTER)) {
@@ -148,6 +179,14 @@ public class BoardProjectConfig extends ProjectConfig {
         final ModelNode projectNode = new ModelNode();
         projectNode.get(Constants.QUERY_FILTER).set(queryFilter == null ? new ModelNode() : new ModelNode(queryFilter));
         projectNode.get(Constants.COLOUR).set(colour);
+
+        if (customFieldNames.size() > 0) {
+            final ModelNode customFieldsNode = projectNode.get(CUSTOM);
+            for (String customFieldName : customFieldNames) {
+                customFieldsNode.add(customFieldName);
+            }
+        }
+
         final ModelNode stateLinksNode = projectNode.get(STATE_LINKS);
         stateLinksNode.setEmptyObject();
         for (Map.Entry<String, String> entry : ownToBoardStates.entrySet()) {

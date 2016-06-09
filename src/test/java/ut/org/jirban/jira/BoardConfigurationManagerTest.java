@@ -53,8 +53,13 @@ public class BoardConfigurationManagerTest {
                 .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
         BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
         Assert.assertNotNull(boardConfig);
+        ModelNode serialized = boardConfig.serializeModelNodeForConfig();
+        Assert.assertEquals(original, serialized);
     }
 
     @Test(expected=JirbanValidationException.class)
@@ -186,6 +191,22 @@ public class BoardConfigurationManagerTest {
         loadBadConfiguration(original,
                 new DoneModifier(false, false, false, true),
                 new UnorderedModifier(false, false, false, true));
+    }
+
+    @Test
+    public void testLoadConfigurationWithCustomFields() throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
+                .addConfigActiveObjectsFromFile("config/board-custom.json")
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
+
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-custom.json");
+        original.protect();
+
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
+        Assert.assertNotNull(boardConfig);
+        ModelNode serialized = boardConfig.serializeModelNodeForConfig();
+        Assert.assertEquals(original, serialized);
     }
 
     private void loadBadConfiguration(ModelNode original, StateModifier... modifiers) throws IOException {

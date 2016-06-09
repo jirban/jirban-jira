@@ -1,0 +1,66 @@
+{
+  "name": "Test Downstream Project",
+  "code": "TST",
+  "owning-project": "TDP",
+  "states": [
+    {"name": "S-A"},
+    {"name": "S-B"},
+    {"name": "S-C"},
+    {"name": "S-D"}
+  ],
+  "priorities": [
+    "highest",
+    "high",
+    "low",
+    "lowest"
+  ],
+  "issue-types": [
+    "task",
+    "bug",
+    "feature"
+  ],
+  "custom": [
+    {
+      "name": "Tester",
+      "type": "user",
+      "field-name": "Tester"
+    },
+    {
+      "name": "Target Release",
+      "type": "predefined-list",
+      "field-name": "Target Release",
+      "config": ["7.0.0.GA", "7.1.0.GA"]
+    }
+  ],
+  "projects": {
+    "TDP": {
+      "query-filter": null,
+      "colour": "#4667CA",
+      "custom": ["Tester", "Target Release"],
+      "state-links": {
+        "TDP-A" : "S-A",
+        "TDP-B" : "S-B",
+        "TDP-C" : "S-C",
+        "TDP-D" : "S-D"
+      }
+    },
+    "TBG": {
+      "query-filter": null,
+      "colour": "#CA6746",
+      "custom": ["Target Release"],
+      "state-links": {
+        "TBG-X": "S-B",
+        "TBG-Y": "S-C"
+      }
+    }
+  },
+  "linked-projects": {
+    "TUP": {
+      "states": [
+        "TUP-A",
+        "TUP-B",
+        "TUP-C"
+      ]
+    }
+  }
+}

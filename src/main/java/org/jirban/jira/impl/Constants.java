@@ -40,10 +40,12 @@ public class Constants {
     public static final String COMPONENTS = "components";
     public static final String CONFIGS = "configs";
     public static final String CONFIG = "config";
+    public static final String CUSTOM = "custom";
     public static final String DELETE = "delete";
     public static final String DONE = "done";
     public static final String EDIT = "edit";
     public static final String EMAIL = "email";
+    public static final String FIELD_NAME = "field-name";
     public static final String HEADER = "header";
     public static final String HEADERS = "headers";
     public static final String HELP = "help";

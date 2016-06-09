@@ -21,6 +21,7 @@
 package org.jirban.jira.impl.config;
 
 import static org.jirban.jira.impl.Constants.CODE;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.LINKED;
 import static org.jirban.jira.impl.Constants.LINKED_PROJECTS;
@@ -42,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
+import org.jboss.dmr.ModelType;
 import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.impl.Constants;
 
@@ -76,12 +78,14 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
     private final List<String> issueTypeNames;
+    final Map<String, CustomFieldConfig> customFieldConfigs;
 
     private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
                         BoardStates boardStates,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
-                        Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes) {
+                        Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes,
+                        Map<String, CustomFieldConfig> customFieldConfigs) {
 
         this.id = id;
         this.code = code;
@@ -106,6 +110,8 @@ public class BoardConfig {
         getIndexMap(issueTypes, issueTypeIndex, issueTypeNames);
         this.issueTypeIndex = Collections.unmodifiableMap(issueTypeIndex);
         this.issueTypeNames = Collections.unmodifiableList(issueTypeNames);
+
+        this.customFieldConfigs = customFieldConfigs;
     }
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id,
@@ -127,6 +133,7 @@ public class BoardConfig {
         String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
 
         final BoardStates boardStates = BoardStates.loadBoardStates(boardNode.get(STATES));
+        final Map<String, CustomFieldConfig> customFields = Collections.unmodifiableMap(loadCustomFields(boardNode));
 
         ModelNode projects = getRequiredChild(boardNode, "Group", boardName, PROJECTS);
         ModelNode mainProject = projects.remove(owningProjectName);
@@ -134,12 +141,12 @@ public class BoardConfig {
             throw new IllegalStateException("Project group '" + boardName + "' specifies '" + owningProjectName + "' as its main project but it does not exist");
         }
         Map<String, BoardProjectConfig> mainProjects = new LinkedHashMap<>();
-        BoardProjectConfig mainProjectConfig = BoardProjectConfig.load(boardStates, owningProjectName, mainProject);
+        BoardProjectConfig mainProjectConfig = BoardProjectConfig.load(boardStates, owningProjectName, mainProject, customFields);
         mainProjects.put(owningProjectName, mainProjectConfig);
 
         for (String projectName : projects.keys()) {
             ModelNode project = projects.get(projectName);
-            mainProjects.put(projectName, BoardProjectConfig.load(boardStates, projectName, project));
+            mainProjects.put(projectName, BoardProjectConfig.load(boardStates, projectName, project, customFields));
         }
 
         ModelNode linked = boardNode.get(LINKED_PROJECTS);
@@ -157,8 +164,27 @@ public class BoardConfig {
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
                 Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get(PRIORITIES).asList())),
-                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get(ISSUE_TYPES).asList())));
+                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get(ISSUE_TYPES).asList())),
+                customFields);
         return boardConfig;
+    }
+
+    private static Map<String, CustomFieldConfig> loadCustomFields(final ModelNode boardNode) {
+        if (boardNode.hasDefined("custom")) {
+            ModelNode custom = boardNode.get(CUSTOM);
+            if (custom.getType() != ModelType.LIST) {
+                throw new JirbanValidationException("The \"custom\" element must be an array");
+            }
+
+            Map<String, CustomFieldConfig> configs = new LinkedHashMap<>();
+            final List<ModelNode> customConfigs = custom.asList();
+            for (ModelNode customConfig : customConfigs) {
+                final CustomFieldConfig customFieldConfig = CustomFieldConfig.load(customConfig);
+                configs.put(customFieldConfig.getName(), customFieldConfig);
+            }
+            return configs;
+        }
+        return Collections.emptyMap();
     }
 
     private static Map<String, NameAndUrl> loadIssueTypes(IssueTypeManager issueTypeManager, List<ModelNode> typeNodes) {
@@ -222,6 +248,10 @@ public class BoardConfig {
         return linkedProjects.get(linkedProjectCode);
     }
 
+    public CustomFieldConfig getCustomFieldConfig(String name) {
+        return customFieldConfigs.get(name);
+    }
+
     /**
      * Used to serialize the board for the view board view
      *
@@ -275,6 +305,13 @@ public class BoardConfig {
         ModelNode issueTypesNode = boardNode.get(ISSUE_TYPES);
         for (NameAndUrl issueType : issueTypes.values()) {
             issueTypesNode.add(issueType.getName());
+        }
+
+        if (customFieldConfigs.size() > 0) {
+            ModelNode customNode = boardNode.get(CUSTOM);
+            for (CustomFieldConfig cfg : customFieldConfigs.values()) {
+                customNode.add(cfg.serializeForConfig());
+            }
         }
 
         final ModelNode projectsNode = boardNode.get(PROJECTS);

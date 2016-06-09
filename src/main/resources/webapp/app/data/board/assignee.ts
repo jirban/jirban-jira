@@ -1,4 +1,4 @@
-import {Indexed} from '../../common/indexed';
+import {Indexed} from "../../common/indexed";
 
 export const NO_ASSIGNEE:string = "$no$assignee";
 
