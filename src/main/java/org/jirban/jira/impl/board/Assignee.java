@@ -71,16 +71,4 @@ public class Assignee {
     String getDisplayName() {
         return displayName;
     }
-
-    public boolean isDataSame(Assignee that) {
-        if (that == null) {
-            return false;
-        }
-        //I don't want to do a standard equals() since I am not comparing all the data
-        if (!key.equals(that.key)) return false;
-        if (!email.equals(that.email)) return false;
-        if (!avatarUrl.equals(that.avatarUrl)) return false;
-        return displayName.equals(that.displayName);
-    }
-
 }
