@@ -2,7 +2,6 @@
   "name": "Test Downstream Project",
   "code": "TST",
   "owning-project": "TDP",
-  "rank-custom-field-id": 10000,
   "states": [
     {"name": "S-A", "backlog":true},
     {"name": "S-B", "backlog":true},
