@@ -58,7 +58,8 @@ To be able to debug the Jirban plugin, you need to set up your SDK's Jira instan
 ## Configuring a Jirban board
 1. Log in to your local Jira instance
 2. From the 'Agile' menu, select 'Jirban Boards'
-3. Copy the text from `src/setup/board.json` into the text area on the page, and press 'Save'.
+3. Click 'Config' in the top banner
+4. Copy the text from `src/setup/board.json` into the text area on the page, and press 'Save'.
 
 The following discusses the settings used for the board.
 
