@@ -10,18 +10,18 @@
             <span><a href="" class="header" (click)="showIssueContextMenuEvent($event, issue.key)">...</a></span>
         </div>
     </div>
-    <div [ngClass]="hideAssignee ? 'detail-short' : 'detail-full'" [hidden]="hideSummary && hideAssignee">
-        <img class="avatar" [hidden]="hideAssignee"
+    <div [ngClass]="showAssignee ? 'detail-full' : 'detail-short'" *ngIf="showSummary || showAssignee">
+        <img class="avatar" *ngIf="showAssignee"
              title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"/>
-        <div [ngClass]="hideAssignee ? 'summary-short' : 'summary-full'">{{issue.summary}}</div>
+        <div [ngClass]="showAssignee ? 'summary-full' : 'summary-short'">{{issue.summary}}</div>
     </div>
-    <div class="info" [hidden]="hideInfo">
+    <div class="info" *ngIf="showInfo">
         <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
         <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
     </div>
     <div class="linked-issues" *ngFor="let linked of issue.linkedIssues"
          title="{{linked.key}}&#013;{{linked.ownStatus}}&#013;{{linked.summary}}"
-         [hidden]="hideLinkedIssues">
+         [hidden]="!showLinkedIssues">
         <div class="linked-issue">
             <div class="linked-issue-summary">
                 <a href="{{jiraUrl}}/browse/{{linked.key}}"

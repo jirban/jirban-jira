@@ -360,6 +360,11 @@ export class ControlPanelComponent {
 
         return clazz;
     }
+
+
+    private get rightOffset() : boolean {
+        return this.boardData.blacklist ? 30 : 0;
+    }
 }
 
 /**
