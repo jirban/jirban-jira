@@ -3,7 +3,7 @@
     position: fixed;
     right: 50px;
     bottom: 10px;
-    width: 500px;
+    width: 530px;
     max-height: 300px;
     border: 2px solid #CCCCCC;
     border-collapse: collapse;;
@@ -13,7 +13,7 @@
     padding-bottom: 5px;
 }
 .header {
-    width: 494px;
+    width: 524px;
     font-size: 13px;
     height: 15px;
     background-color: #777777;
@@ -35,7 +35,8 @@
     margin: 0px;
 }
 .filter {
-
+    padding-top: 2px;
+    padding-bottom: 1px;
 }
 a.close {
     color: #FFFFFF;
@@ -44,7 +45,7 @@ a.close {
     font-size: 11px;
     color: #777777;
     float: left;
-    padding: 10px 5px 0px 3px;
+    padding: 10px 15px 0px 3px;
     height: 100%;
     vertical-align: top;
 }
