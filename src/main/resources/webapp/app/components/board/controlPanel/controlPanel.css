@@ -93,3 +93,6 @@ a.close {
 .hasFilters {
     font-weight: bold;
 }
+.top-space {
+    padding-top: 5px;
+}
