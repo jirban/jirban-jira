@@ -1053,21 +1053,5 @@
       "priority" : 1,
       "type" : 0
     }
-  },
-  "blacklist" : {
-    "states": [
-      "No Such State"
-    ],
-    "priorities": [
-      "Critical"
-    ],
-    "issue-types": [
-      "Super Duper Urgent"
-    ],
-    "issues": [
-      "EAPBGS-20",
-      "EAPBGS-999"
-    ]
   }
-
 }
