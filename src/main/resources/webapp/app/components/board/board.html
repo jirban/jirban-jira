@@ -20,8 +20,8 @@
                             [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': 'grey'}"
                             [ngClass]="backlogTopHeader.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                             (click)="toggleHeaderVisibility(backlogTopHeader)">
-                            <div [hidden]="backlogTopHeader.visible">&nbsp;</div>
-                            <div [hidden]="!backlogTopHeader.visible">{{backlogTopHeader.name}}</div>
+                            <div *ngIf="!backlogTopHeader.visible">&nbsp;</div>
+                            <div *ngIf="backlogTopHeader.visible">{{backlogTopHeader.name}}</div>
                         </th>
                         <!-- The non-backlog headers -->
                         <th *ngFor="let header of topHeaders ; let headerIndex=index"
@@ -30,8 +30,8 @@
                             [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
                             [ngClass]="header.stateAndCategory ? header.visible ? 'visible' : 'collapsed' : ''"
                             (click)="toggleHeaderVisibility(header)">
-                            <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
-                            <div [hidden]="header.visible">{{header.totalIssues}}</div>
+                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
                         </th>
                     </tr>
 
@@ -40,15 +40,15 @@
                         <th *ngFor="let header of backlogBottomHeadersIfVisible"
                             [ngClass]="header.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                             (click)="toggleHeaderVisibility(header)">
-                            <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
-                            <div [hidden]="header.visible">{{header.totalIssues}}</div>
+                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
                         </th>
                         <!-- The non-backlog headers -->
                         <th *ngFor="let header of bottomHeaders"
                             [ngClass]="header.visible ? 'visible' : 'collapsed'"
                             (click)="toggleHeaderVisibility(header)">
-                            <div [hidden]="!header.visible">{{header.name}} ({{header.totalIssues}})</div>
-                            <div [hidden]="header.visible">{{header.totalIssues}}</div>
+                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
                         </th>
                     </tr>
                 </thead>
@@ -71,26 +71,26 @@
                         <td *ngFor="let state of backlogStatesIfVisible"
                             [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                             title="State: {{state.name}}">
-                            <div [hidden]="!visibleColumns[state.index]">
+                            <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
                                            [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
                                 </ul>
                             </div>
-                            <div class="collapsed state-summary" [hidden]="visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                            <div class="collapsed state-summary" *ngIf="!visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
                         </td>
 
                         <!-- Normal states -->
                         <td *ngFor="let state of mainStates"
                             [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
                             title="State: {{state.name}}">
-                            <div [hidden]="!visibleColumns[state.index]">
+                            <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
                                            [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
                                 </ul>
                             </div>
-                            <div class="collapsed state-summary" [hidden]="visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                            <div class="collapsed state-summary" *ngIf="!visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
                         </td>
                     </tr>
                 </tbody>

@@ -19,20 +19,20 @@ export class IssueComponent {
         return this.issue.boardData.jiraUrl;
     }
 
-    private get hideAssignee() : boolean {
-        return !this.issue.boardData.issueDisplayDetails.assignee;
+    private get showAssignee() : boolean {
+        return this.issue.boardData.issueDisplayDetails.assignee;
     }
 
-    private get hideSummary() : boolean {
-        return !this.issue.boardData.issueDisplayDetails.summary;
+    private get showSummary() : boolean {
+        return this.issue.boardData.issueDisplayDetails.summary;
     }
 
-    private get hideInfo() : boolean {
-        return !this.issue.boardData.issueDisplayDetails.info;
+    private get showInfo() : boolean {
+        return this.issue.boardData.issueDisplayDetails.info;
     }
 
-    private get hideLinkedIssues() : boolean {
-        return !this.issue.boardData.issueDisplayDetails.linkedIssues;
+    private get showLinkedIssues() : boolean {
+        return this.issue.boardData.issueDisplayDetails.linkedIssues;
     }
 
     private getStatusFraction(issue:IssueData) : string {

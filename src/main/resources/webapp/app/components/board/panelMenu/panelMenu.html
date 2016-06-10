@@ -1,8 +1,8 @@
 <div id="panel-menu">
     <div class="panel">
-        <img src="images/heart-3x.png" class="blink" (click)="toggleHealthPanel()" [hidden]="!boardData.blacklist" title="Problems in server configuration"/>
+        <img src="images/heart-3x.png" class="blink" (click)="toggleHealthPanel()" *ngIf="boardData.blacklist" title="Problems in server configuration"/>
         <img src="images/cog-3x.png" (click)="toggleControlPanel()" title="Board settings"/>
     </div>
 </div>
-<health-panel [hidden]="!healthPanel" (closeHealthPanel)="onCloseHealthPanel($event)"></health-panel>
-<control-panel [hidden]="!controlPanel" (closeControlPanel)="onCloseControlPanel($event)"></control-panel>
+<health-panel *ngIf="healthPanel" (closeHealthPanel)="onCloseHealthPanel($event)"></health-panel>
+<control-panel *ngIf="controlPanel" (closeControlPanel)="onCloseControlPanel($event)"></control-panel>
