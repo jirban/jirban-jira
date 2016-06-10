@@ -362,7 +362,7 @@ export class ControlPanelComponent {
     }
 
 
-    private get rightOffset() : boolean {
+    private get rightOffset() : number {
         return this.boardData.blacklist ? 30 : 0;
     }
 }
