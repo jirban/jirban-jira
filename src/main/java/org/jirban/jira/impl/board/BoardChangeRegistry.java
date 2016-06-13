@@ -73,8 +73,8 @@ public class BoardChangeRegistry {
     //Look for items to clean up every 15 seconds
     private static final int CLEANUP_TICK_MS = 15000;
 
-    //Delete items older than one minute
-    private static final int CLEANUP_AGE_SECONDS = 60000;
+    //Delete items older than 90 seconds
+    private static final int CLEANUP_AGE_SECONDS = 90000;
 
     private final BoardManagerImpl boardManager;
     private volatile Board board;

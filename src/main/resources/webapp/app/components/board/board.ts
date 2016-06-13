@@ -36,6 +36,8 @@ export class BoardComponent implements OnDestroy, OnInit {
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
     private boardLeftOffset:number = 0;
 
+    private _defaultPollInterval:number = 30000;
+
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService,
@@ -95,9 +97,8 @@ export class BoardComponent implements OnDestroy, OnInit {
         this.setWindowSize();
     }
 
-    private pollIssues(timeout?:number) {
-        let to:number = timeout ? timeout : 5000;
-        this._currentTimeout = setTimeout(()=>{this.doPoll()}, to);
+    private pollIssues() {
+        this._currentTimeout = setTimeout(()=>{this.doPoll()}, this._defaultPollInterval);
     }
 
     private doPoll() {
