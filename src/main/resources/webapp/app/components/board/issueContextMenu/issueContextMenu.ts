@@ -66,10 +66,6 @@ export class IssueContextMenuComponent {
         this.move = false;
         this.comment = false;
         this.commentForm = null;
-        
-        this.issue = null;
-        this.toState = null;
-        this.issuesForState = null;
     }
 
     private get data() {
