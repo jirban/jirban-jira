@@ -190,9 +190,11 @@ public class BoardChangeRegistry {
         change.issueType = issueType;
         change.priority = priority;
 
-        change.components = new HashSet<>();
-        for (Component component : components) {
-            change.components.add(component.getName());
+        if (components != null) {
+            change.components = new HashSet<>();
+            for (Component component : components) {
+                change.components.add(component.getName());
+            }
         }
         return change;
     }
