@@ -14,8 +14,8 @@ import org.jirban.jira.JirbanValidationException;
  */
 public class PredefinedListCustomFieldConfig extends CustomFieldConfig {
     private final List<String> list;
-    private PredefinedListCustomFieldConfig(String name, Type type, String fieldName, List<String> list) {
-        super(name, type, fieldName);
+    private PredefinedListCustomFieldConfig(String name, Type type, long fieldId, List<String> list) {
+        super(name, type, fieldId);
         this.list = list;
     }
 
@@ -29,7 +29,7 @@ public class PredefinedListCustomFieldConfig extends CustomFieldConfig {
         return config;
     }
 
-    static PredefinedListCustomFieldConfig load(String name, Type type, String fieldName, ModelNode customFieldCfgNode) {
+    static PredefinedListCustomFieldConfig load(String name, Type type, long fieldId, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(CONFIG)) {
             throw new JirbanValidationException("\"custom\" field configuration \"" + name + "\" does not have the required \"config\" array element");
         }
@@ -42,6 +42,6 @@ public class PredefinedListCustomFieldConfig extends CustomFieldConfig {
         for (ModelNode entry : cfgNode.asList()) {
             list.add(entry.asString());
         }
-        return new PredefinedListCustomFieldConfig(name, type, fieldName, list);
+        return new PredefinedListCustomFieldConfig(name, type, fieldId, list);
     }
 }

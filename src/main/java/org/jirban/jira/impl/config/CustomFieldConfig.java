@@ -1,6 +1,6 @@
 package org.jirban.jira.impl.config;
 
-import static org.jirban.jira.impl.Constants.FIELD_NAME;
+import static org.jirban.jira.impl.Constants.FIELD_ID;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.TYPE;
 
@@ -17,12 +17,12 @@ import org.jirban.jira.JirbanValidationException;
 public abstract class CustomFieldConfig {
     private final String name;
     private final Type type;
-    private final String fieldName;
+    private final long fieldId;
 
-    CustomFieldConfig(String name, Type type, String fieldName) {
+    CustomFieldConfig(String name, Type type, long fieldId) {
         this.name = name;
         this.type = type;
-        this.fieldName = fieldName;
+        this.fieldId = fieldId;
     }
 
     public String getName() {
@@ -48,16 +48,21 @@ public abstract class CustomFieldConfig {
             throw new JirbanValidationException("Unknown 'type': " + typeName);
         }
 
-        if (!customFieldCfgNode.hasDefined(FIELD_NAME)) {
+        if (!customFieldCfgNode.hasDefined(FIELD_ID)) {
             throw new JirbanValidationException("\"custom\" field config \"" + name + "\" does not have a \"field-name\"");
         }
-        final String fieldName = customFieldCfgNode.get(FIELD_NAME).asString();
+        final long fieldId;
+        try {
+            fieldId = customFieldCfgNode.get(FIELD_ID).asLong();
+        } catch (Exception e) {
+            throw new JirbanValidationException("\"field-id\" must be a long, in custom field config \"" + name + "\"");
+        }
 
         switch (type) {
             case USER:
-                return new UserCustomFieldConfig(name, type, fieldName);
+                return new UserCustomFieldConfig(name, type, fieldId);
             case PREDEFINED_LIST:
-                return PredefinedListCustomFieldConfig.load(name, type, fieldName, customFieldCfgNode);
+                return PredefinedListCustomFieldConfig.load(name, type, fieldId, customFieldCfgNode);
             default:
                 throw new JirbanValidationException("Unknown 'type': " + typeName);
         }
@@ -67,7 +72,7 @@ public abstract class CustomFieldConfig {
         ModelNode modelNode = new ModelNode();
         modelNode.get(NAME).set(name);
         modelNode.get(TYPE).set(type.name);
-        modelNode.get(FIELD_NAME).set(fieldName);
+        modelNode.get(FIELD_ID).set(fieldId);
         return modelNode;
     }
 

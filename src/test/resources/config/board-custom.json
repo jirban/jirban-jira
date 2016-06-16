@@ -23,12 +23,12 @@
     {
       "name": "Tester",
       "type": "user",
-      "field-name": "Tester"
+      "field-id": 121212121212
     },
     {
       "name": "Target Release",
       "type": "predefined-list",
-      "field-name": "Target Release",
+      "field-id": 252121989812,
       "config": ["7.0.0.GA", "7.1.0.GA"]
     }
   ],

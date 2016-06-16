@@ -45,7 +45,7 @@ public class Constants {
     public static final String DONE = "done";
     public static final String EDIT = "edit";
     public static final String EMAIL = "email";
-    public static final String FIELD_NAME = "field-name";
+    public static final String FIELD_ID = "field-id";
     public static final String HEADER = "header";
     public static final String HEADERS = "headers";
     public static final String HELP = "help";
