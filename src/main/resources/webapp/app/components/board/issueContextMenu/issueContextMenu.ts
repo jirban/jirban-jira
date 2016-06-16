@@ -6,6 +6,7 @@ import {IssuesService} from "../../../services/issuesService";
 import {IssueComponent} from "../issue/issue";
 import {ProgressErrorService} from "../../../services/progressErrorService";
 import {State} from "../../../data/board/header";
+import {Hideable} from "../../../common/hide";
 
 @Component({
     inputs: ['data'],
@@ -15,7 +16,7 @@ import {State} from "../../../data/board/header";
     styleUrls: ['app/components/board/issueContextMenu/issueContextMenu.css'],
     directives: [IssueComponent]
 })
-export class IssueContextMenuComponent {
+export class IssueContextMenuComponent implements Hideable {
     private _data:IssueContextMenuData;
     private showContext:boolean = false;
     private issue:IssueData;
@@ -42,6 +43,7 @@ export class IssueContextMenuComponent {
     constructor(private _boardData:BoardData, private _issuesService:IssuesService,
                 private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
         this.setWindowSize();
+        _boardData.registerHideable(this);
     }
 
     private set data(data:IssueContextMenuData) {
@@ -61,9 +63,15 @@ export class IssueContextMenuComponent {
         }
     }
 
+
+    hide():void {
+        this.hideAllMenus();
+    }
+
     private hideAllMenus() {
         this.showContext = false;
         this.move = false;
+
         this.comment = false;
         this.commentForm = null;
     }
