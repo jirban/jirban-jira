@@ -59,7 +59,8 @@ To be able to debug the Jirban plugin, you need to set up your SDK's Jira instan
 1. Log in to your local Jira instance
 2. From the 'Agile' menu, select 'Jirban Boards'
 3. Click 'Config' in the top banner
-4. Copy the text from `src/setup/board.json` into the text area on the page, and press 'Save'.
+4. Open http://localhost:2990/jira/rest/api/2/field in a browser and look for the field called 'Rank'. Enter its id into the field on the bottom of the page and click the associated 'Save' button.
+5. Copy the text from `src/setup/board.json` into the text area on the page, and press 'Save'.
 
 The following discusses the settings used for the board.
 
