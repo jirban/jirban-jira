@@ -40,6 +40,8 @@ import org.jirban.jira.impl.config.BoardConfig;
 import org.junit.Assert;
 import org.junit.Test;
 
+import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
+
 /**
  * @author Kabir Khan
  */
@@ -197,6 +199,7 @@ public class BoardConfigurationManagerTest {
     public void testLoadConfigurationWithCustomFields() throws IOException {
         BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
                 .addConfigActiveObjectsFromFile("config/board-custom.json")
+                .setCustomFieldManager(CustomFieldManagerBuilder.loadFromResource("config/board-custom.json"))
                 .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
         BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 

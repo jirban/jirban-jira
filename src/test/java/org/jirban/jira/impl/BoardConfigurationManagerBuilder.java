@@ -24,7 +24,6 @@ package org.jirban.jira.impl;
 import static org.jirban.jira.impl.Constants.CODE;
 import static org.jirban.jira.impl.Constants.ID;
 import static org.jirban.jira.impl.Constants.NAME;
-import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -47,15 +46,16 @@ import org.junit.Assert;
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
-import electric.soap.rpc.In;
 import net.java.ao.EntityManager;
 import net.java.ao.Query;
 import net.java.ao.RawEntity;
+import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
 import ut.org.jirban.jira.mock.GlobalPermissionManagerBuilder;
 import ut.org.jirban.jira.mock.IssueTypeManagerBuilder;
 import ut.org.jirban.jira.mock.PermissionManagerBuilder;
@@ -74,6 +74,7 @@ public class BoardConfigurationManagerBuilder {
     private PriorityManager priorityManager = PriorityManagerBuilder.getDefaultPriorityManager();
     private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
     private GlobalPermissionManager globalPermissionManager = GlobalPermissionManagerBuilder.getAllowsAll();
+    private CustomFieldManager customFieldManager = CustomFieldManagerBuilder.getDefaultCustomFieldManager();
 
     private Map<String, ModelNode> activeObjectEntries = new HashMap<>();
 
@@ -117,6 +118,11 @@ public class BoardConfigurationManagerBuilder {
         return this;
     }
 
+    public BoardConfigurationManagerBuilder setCustomFieldManager(CustomFieldManager customFieldManager) {
+        this.customFieldManager = customFieldManager;
+        return this;
+    }
+
     public BoardConfigurationManager build() {
         when(activeObjects.executeInTransaction(any(TransactionCallback.class))).thenAnswer(invocation -> ((TransactionCallback)invocation.getArguments()[0]).doInTransaction());
         when(activeObjects.find(any(Class.class), any(Query.class))).thenAnswer(invocation -> {
@@ -148,7 +154,7 @@ public class BoardConfigurationManagerBuilder {
 
 
         return new BoardConfigurationManagerImpl(activeObjects, issueTypeManager, priorityManager,
-                permissionManager, projectManager, globalPermissionManager);
+                permissionManager, projectManager, globalPermissionManager, customFieldManager);
     }
 
     public static ModelNode loadConfig(String resource) throws IOException {

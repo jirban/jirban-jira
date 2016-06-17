@@ -11,18 +11,22 @@ import java.util.Map;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanValidationException;
 
+import com.atlassian.jira.issue.CustomFieldManager;
+import com.atlassian.jira.issue.fields.CustomField;
+
 /**
  * @author Kabir Khan
  */
 public abstract class CustomFieldConfig {
     private final String name;
     private final Type type;
-    private final long fieldId;
+    private final CustomField customField;
 
-    CustomFieldConfig(String name, Type type, long fieldId) {
+
+    protected CustomFieldConfig(String name, Type type, CustomField customField) {
         this.name = name;
         this.type = type;
-        this.fieldId = fieldId;
+        this.customField = customField;
     }
 
     public String getName() {
@@ -33,7 +37,7 @@ public abstract class CustomFieldConfig {
         return type;
     }
 
-    public static CustomFieldConfig load(ModelNode customFieldCfgNode) {
+    public static CustomFieldConfig load(CustomFieldManager customFieldMgr, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(NAME)) {
             throw new JirbanValidationException("All \"custom\" field definitions must have a 'name'");
         }
@@ -58,11 +62,16 @@ public abstract class CustomFieldConfig {
             throw new JirbanValidationException("\"field-id\" must be a long, in custom field config \"" + name + "\"");
         }
 
+        CustomField customField = customFieldMgr.getCustomFieldObject(fieldId);
+        if (customField == null) {
+            throw new JirbanValidationException("No custom field found with id \"" + fieldId + "\" (\"" + name + "\" ");
+        }
+
         switch (type) {
             case USER:
-                return new UserCustomFieldConfig(name, type, fieldId);
+                return new UserCustomFieldConfig(name, type, customField);
             case PREDEFINED_LIST:
-                return PredefinedListCustomFieldConfig.load(name, type, fieldId, customFieldCfgNode);
+                return PredefinedListCustomFieldConfig.load(name, type, customField, customFieldCfgNode);
             default:
                 throw new JirbanValidationException("Unknown 'type': " + typeName);
         }
@@ -72,7 +81,7 @@ public abstract class CustomFieldConfig {
         ModelNode modelNode = new ModelNode();
         modelNode.get(NAME).set(name);
         modelNode.get(TYPE).set(type.name);
-        modelNode.get(FIELD_ID).set(fieldId);
+        modelNode.get(FIELD_ID).set(customField.getIdAsLong());
         return modelNode;
     }
 

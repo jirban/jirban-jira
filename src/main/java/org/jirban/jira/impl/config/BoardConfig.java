@@ -49,6 +49,7 @@ import org.jirban.jira.impl.Constants;
 
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
 
@@ -114,26 +115,29 @@ public class BoardConfig {
         this.customFieldConfigs = customFieldConfigs;
     }
 
-    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager, int id,
+    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
+                                   CustomFieldManager customFieldManager, int id,
                                    String owningUserKey, String configJson, int rankCustomFieldId) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
-        return load(issueTypeManager, priorityManager, id, owningUserKey, boardNode, rankCustomFieldId);
+        return load(issueTypeManager, priorityManager, customFieldManager, id, owningUserKey, boardNode, rankCustomFieldId);
     }
 
     public static ModelNode validateAndSerialize(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
-                                                 int id, String owningUserKey, ModelNode boardNode, int rankCustomFieldId) {
-        BoardConfig boardConfig = load(issueTypeManager, priorityManager, id, owningUserKey, boardNode, rankCustomFieldId);
+                                                 CustomFieldManager customFieldManager, int id, String owningUserKey,
+                                                 ModelNode boardNode, int rankCustomFieldId) {
+        BoardConfig boardConfig = load(issueTypeManager, priorityManager, customFieldManager, id, owningUserKey, boardNode, rankCustomFieldId);
         return boardConfig.serializeModelNodeForConfig();
     }
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
+                                   CustomFieldManager customFieldManager,
                                     int id, String owningUserKey, ModelNode boardNode, int rankCustomFieldId) {
         String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
         String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
 
         final BoardStates boardStates = BoardStates.loadBoardStates(boardNode.get(STATES));
-        final Map<String, CustomFieldConfig> customFields = Collections.unmodifiableMap(loadCustomFields(boardNode));
+        final Map<String, CustomFieldConfig> customFields = Collections.unmodifiableMap(loadCustomFields(customFieldManager, boardNode));
 
         ModelNode projects = getRequiredChild(boardNode, "Group", boardName, PROJECTS);
         ModelNode mainProject = projects.remove(owningProjectName);
@@ -169,7 +173,7 @@ public class BoardConfig {
         return boardConfig;
     }
 
-    private static Map<String, CustomFieldConfig> loadCustomFields(final ModelNode boardNode) {
+    private static Map<String, CustomFieldConfig> loadCustomFields(final CustomFieldManager customFieldMgr, final ModelNode boardNode) {
         if (boardNode.hasDefined("custom")) {
             ModelNode custom = boardNode.get(CUSTOM);
             if (custom.getType() != ModelType.LIST) {
@@ -179,7 +183,7 @@ public class BoardConfig {
             Map<String, CustomFieldConfig> configs = new LinkedHashMap<>();
             final List<ModelNode> customConfigs = custom.asList();
             for (ModelNode customConfig : customConfigs) {
-                final CustomFieldConfig customFieldConfig = CustomFieldConfig.load(customConfig);
+                final CustomFieldConfig customFieldConfig = CustomFieldConfig.load(customFieldMgr, customConfig);
                 configs.put(customFieldConfig.getName(), customFieldConfig);
             }
             return configs;

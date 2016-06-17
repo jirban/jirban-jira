@@ -9,13 +9,15 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jirban.jira.JirbanValidationException;
 
+import com.atlassian.jira.issue.fields.CustomField;
+
 /**
  * @author Kabir Khan
  */
 public class PredefinedListCustomFieldConfig extends CustomFieldConfig {
     private final List<String> list;
-    private PredefinedListCustomFieldConfig(String name, Type type, long fieldId, List<String> list) {
-        super(name, type, fieldId);
+    private PredefinedListCustomFieldConfig(String name, Type type, CustomField customField, List<String> list) {
+        super(name, type, customField);
         this.list = list;
     }
 
@@ -29,7 +31,7 @@ public class PredefinedListCustomFieldConfig extends CustomFieldConfig {
         return config;
     }
 
-    static PredefinedListCustomFieldConfig load(String name, Type type, long fieldId, ModelNode customFieldCfgNode) {
+    static PredefinedListCustomFieldConfig load(String name, Type type, CustomField customField, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(CONFIG)) {
             throw new JirbanValidationException("\"custom\" field configuration \"" + name + "\" does not have the required \"config\" array element");
         }
@@ -42,6 +44,6 @@ public class PredefinedListCustomFieldConfig extends CustomFieldConfig {
         for (ModelNode entry : cfgNode.asList()) {
             list.add(entry.asString());
         }
-        return new PredefinedListCustomFieldConfig(name, type, fieldId, list);
+        return new PredefinedListCustomFieldConfig(name, type, customField, list);
     }
 }

@@ -52,6 +52,7 @@ import org.jirban.jira.impl.config.BoardProjectConfig;
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.permission.GlobalPermissionKey;
 import com.atlassian.jira.permission.ProjectPermissions;
 import com.atlassian.jira.project.Project;
@@ -92,6 +93,9 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     @ComponentImport
     private final GlobalPermissionManager globalPermissionManager;
 
+    @ComponentImport
+    private final CustomFieldManager customFieldManager;
+
     /** The 'Rank' custom field as output by  */
     private volatile int rankCustomFieldId = -1;
 
@@ -101,13 +105,15 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                                          final PriorityManager priorityManager,
                                          final PermissionManager permissionManager,
                                          final ProjectManager projectManager,
-                                         final GlobalPermissionManager globalPermissionManager) {
+                                         final GlobalPermissionManager globalPermissionManager,
+                                         final CustomFieldManager customFieldManager) {
         this.activeObjects = activeObjects;
         this.issueTypeManager = issueTypeManager;
         this.priorityManager = priorityManager;
         this.permissionManager = permissionManager;
         this.projectManager = projectManager;
         this.globalPermissionManager = globalPermissionManager;
+        this.customFieldManager = customFieldManager;
     }
 
     @Override
@@ -176,7 +182,10 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
             if (cfgs != null && cfgs.length == 1) {
                 BoardCfg cfg = cfgs[0];
-                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, cfg.getID(), cfg.getOwningUser(), cfg.getConfigJson(), getRankCustomFieldId());
+                boardConfig = BoardConfig.load(
+                        issueTypeManager, priorityManager, customFieldManager, cfg.getID(),
+                        cfg.getOwningUser(), cfg.getConfigJson(), getRankCustomFieldId());
+
                 BoardConfig old = boardConfigs.putIfAbsent(code, boardConfig);
                 if (old != null) {
                     boardConfig = old;
@@ -199,7 +208,10 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         final BoardConfig boardConfig;
         final ModelNode validConfig;
         try {
-            boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, user.getKey(), config, getRankCustomFieldId());
+            boardConfig = BoardConfig.load(
+                    issueTypeManager, priorityManager, customFieldManager, id,
+                    user.getKey(), config, getRankCustomFieldId());
+
             validConfig = boardConfig.serializeModelNodeForConfig();
         } catch (Exception e) {
             throw new JirbanValidationException("Invalid data: " + e.getMessage());
