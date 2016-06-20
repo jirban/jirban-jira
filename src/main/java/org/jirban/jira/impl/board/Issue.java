@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -345,6 +346,9 @@ public abstract class Issue {
             setIssueType(issue.getIssueTypeObject().getName());
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
+
+            Map<String, CustomField> customFields =
+                    CustomField.loadCustomFields(project.getBoard().getConfig(), project.getConfig(), issue);
 
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
             addLinkedIssues(issueLinkManager.getOutwardLinks(issue.getId()), true);

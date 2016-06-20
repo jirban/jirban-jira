@@ -268,6 +268,10 @@ public class Board {
         public List<String> getStateNames() {
             return boardConfig.getStateNames();
         }
+
+        public BoardConfig getConfig() {
+            return boardConfig;
+        }
     }
 
     private static Map<String, Assignee> sortAssignees(Map<String, Assignee> assignees) {

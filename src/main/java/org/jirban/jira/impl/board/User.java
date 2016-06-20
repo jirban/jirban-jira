@@ -26,6 +26,8 @@ import static org.jirban.jira.impl.Constants.NAME;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.Constants;
 
+import com.atlassian.jira.user.ApplicationUser;
+
 /**
  * @author Kabir Khan
  */
@@ -42,7 +44,7 @@ public class User {
         this.displayName = displayName;
     }
 
-    static User create(com.atlassian.crowd.embedded.api.User user, String avatarUrl) {
+    static User create(ApplicationUser user) {
         return new User(
                 user.getName(),
                 user.getEmailAddress(),

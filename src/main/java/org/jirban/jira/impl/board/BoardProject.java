@@ -221,6 +221,10 @@ public class BoardProject {
         public Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
             return board.getComponents(componentObjects);
         }
+
+        public Board.Accessor getBoard() {
+            return board;
+        }
     }
 
     /**

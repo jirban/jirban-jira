@@ -219,4 +219,8 @@ public class BoardProjectConfig extends ProjectConfig {
     public Set<String> getOwnDoneStateNames() {
         return ownDoneStateNames;
     }
+
+    public List<String> getCustomFieldNames() {
+        return customFieldNames;
+    }
 }

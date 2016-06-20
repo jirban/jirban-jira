@@ -37,6 +37,10 @@ public abstract class CustomFieldConfig {
         return type;
     }
 
+    public CustomField getCustomField() {
+        return customField;
+    }
+
     public static CustomFieldConfig load(CustomFieldManager customFieldMgr, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(NAME)) {
             throw new JirbanValidationException("All \"custom\" field definitions must have a 'name'");
