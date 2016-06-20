@@ -21,30 +21,22 @@
 package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.AVATAR;
-import static org.jirban.jira.impl.Constants.EMAIL;
-import static org.jirban.jira.impl.Constants.NAME;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.impl.Constants;
 
 import com.atlassian.crowd.embedded.api.User;
 
 /**
  * @author Kabir Khan
  */
-public class Assignee {
+public class Assignee extends org.jirban.jira.impl.board.User {
     static final Assignee UNASSIGNED = new Assignee(null, null, null, null);
 
-    private final String key;
-    private final String email;
     private final String avatarUrl;
-    private final String displayName;
 
     private Assignee(String key, String email, String avatarUrl, String displayName) {
-        this.key = key;
-        this.email = email;
+        super(key, email, displayName);
         this.avatarUrl = avatarUrl;
-        this.displayName = displayName;
     }
 
     static Assignee create(User user, String avatarUrl) {
@@ -55,20 +47,9 @@ public class Assignee {
                 user.getDisplayName());
     }
 
-    public void serialize(ModelNode parent) {
-        ModelNode modelNode = new ModelNode();
-        modelNode.get(Constants.KEY).set(key);
-        modelNode.get(EMAIL).set(email);
+    protected ModelNode createSerializedNode() {
+        ModelNode modelNode = super.createSerializedNode();
         modelNode.get(AVATAR).set(avatarUrl);
-        modelNode.get(NAME).set(displayName);
-        parent.add(modelNode);
-    }
-
-    public String getKey() {
-        return key;
-    }
-
-    String getDisplayName() {
-        return displayName;
+        return modelNode;
     }
 }
