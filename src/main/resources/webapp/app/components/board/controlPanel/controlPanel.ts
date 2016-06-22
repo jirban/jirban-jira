@@ -290,6 +290,9 @@ export class ControlPanelComponent {
             }
             filtersToolTip += "Components:\n" + current;
         }
+        if (filtersToolTip.length > 0) {
+            filtersToolTip += "\n\nClick 'Filters' to clear all filters";
+        }
         this.filtersTooltip = filtersToolTip;
     }
 
