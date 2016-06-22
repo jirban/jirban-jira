@@ -70,6 +70,10 @@ public abstract class AbstractBoardTest {
     }
 
     protected void initializeMocks(String cfgResource) throws Exception {
+        initializeMocks(cfgResource, null);
+    }
+
+    protected void initializeMocks(String cfgResource, AdditionalBuilderInit init) throws Exception {
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
                 .addConfigActiveObjectsFromFile(cfgResource)
                 .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000")
@@ -88,12 +92,15 @@ public abstract class AbstractBoardTest {
         IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
         worker.init();
 
-        boardManager = new BoardManagerBuilder()
+        BoardManagerBuilder boardManagerBuilder = new BoardManagerBuilder()
                 .setBoardConfigurationManager(cfgManager)
                 .setUserManager(userManager)
                 .setSearchService(searchService)
-                .setIssueLinkManager(issueLinkManager)
-                .build();
+                .setIssueLinkManager(issueLinkManager);
+        if (init != null) {
+            init.initialise(boardManagerBuilder);
+        }
+        boardManager = boardManagerBuilder.build();
     }
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
@@ -182,5 +189,9 @@ public abstract class AbstractBoardTest {
         public void searching() {
             searched = true;
         }
+    }
+
+    interface AdditionalBuilderInit {
+        void initialise(BoardManagerBuilder boardManagerBuilder);
     }
 }

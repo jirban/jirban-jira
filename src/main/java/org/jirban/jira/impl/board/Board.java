@@ -55,6 +55,8 @@ import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.ApplicationUsers;
 import com.atlassian.jira.user.util.UserManager;
@@ -120,7 +122,7 @@ public class Board {
         return boardUpdater.handleEvent(event);
     }
 
-    public ModelNode serialize(boolean backlog) {
+    public ModelNode serialize(boolean backlog, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager) {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
         outputNode.get(VIEW).set(currentView);
@@ -157,7 +159,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            projectEntry.getValue().serialize(project, backlog);
+            projectEntry.getValue().serialize(project, user, projectManager, permissionManager, backlog);
         }
 
         blacklist.serialize(outputNode);
