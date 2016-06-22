@@ -34,7 +34,6 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
-import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -489,16 +488,6 @@ public class BoardProject {
         public SingleLoadedIssueWrapper(com.atlassian.jira.issue.Issue jiraIssue, Issue issue) {
             this.jiraIssue = jiraIssue;
             this.issue = issue;
-        }
-
-        JirbanIssueEvent createCreateEvent(JirbanIssueEvent original) {
-            return JirbanIssueEvent.createCreateEvent(original.getIssueKey(), original.getProjectCode(),
-                    jiraIssue.getIssueTypeObject().getName(),
-                    jiraIssue.getPriorityObject().getName(),
-                    jiraIssue.getSummary(),
-                    jiraIssue.getAssignee(),
-                    jiraIssue.getComponentObjects(),
-                    jiraIssue.getStatusObject().getName());
         }
 
         Issue getIssue() {

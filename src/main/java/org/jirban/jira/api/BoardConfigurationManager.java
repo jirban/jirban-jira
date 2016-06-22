@@ -77,6 +77,15 @@ public interface BoardConfigurationManager {
     BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, String code);
 
     /**
+     * Loads the board configuration without checking permissions
+     *
+     * @param code the configuration code
+     * @return the configuration
+     * @throws org.jirban.jira.JirbanValidationException if the structure of the config is bad
+     */
+    BoardConfig getBoardConfig(String code);
+
+    /**
      * Gets all the boards set up for a given project
      *
      * @param projectCode the project code
@@ -90,8 +99,7 @@ public interface BoardConfigurationManager {
      * @param user the logged in user
      * @param idNode an object containing the id
      */
-    void saveCustomFieldId(ApplicationUser user, ModelNode idNode);
-
+    void saveRankCustomFieldId(ApplicationUser user, ModelNode idNode);
 
     String getBoardJsonConfig(ApplicationUser user, int boardId);
 

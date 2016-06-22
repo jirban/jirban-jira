@@ -21,7 +21,10 @@
  */
 package org.jirban.jira.api;
 
+import java.util.Set;
+
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
@@ -74,4 +77,22 @@ public interface BoardManager {
      * @return the json containing the changes
      */
     String getChangesJson(ApplicationUser user, boolean backlog, String code, int viewId) throws SearchException;
+
+    /**
+     * If one or more boards for the project is set up to use the custom field, we return the id of the custom field.
+     * If none of the projects are configured to use the custom field, we return null.
+     *
+     * @param projectCode the project code
+     * @param jiraCustomFieldName the custom field name. Note that this is the name of the field in Jira, not in the Jirban config
+     * @return the custom field configs on boards involving the project, or an empty set if no boards are set up to use a custom field for {@code jiraCustomFieldName}
+     */
+    Set<CustomFieldConfig> getCustomFieldsForUpdateEvent(String projectCode, String jiraCustomFieldName);
+
+    /**
+     * Gets all the possible custom field configurations for a created issue
+     *
+     * @param projectCode the project code
+     * @return the custom field configs on boards involving the issue.
+     */
+    Set<CustomFieldConfig> getCustomFieldsForCreateEvent(String projectCode);
 }

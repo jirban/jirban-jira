@@ -171,6 +171,17 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     @Override
     public BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, final String code) {
+        BoardConfig boardConfig = getBoardConfig(code);
+        
+        if (boardConfig != null && !canViewBoard(user, boardConfig)) {
+            throw new JirbanPermissionException("Insufficient permissions to view board " +
+                    boardConfig.getName() + " (" + code + ")");
+        }
+        return boardConfig;
+    }
+
+    @Override
+    public BoardConfig getBoardConfig(final String code) {
         BoardConfig boardConfig =  boardConfigs.get(code);
         if (boardConfig == null) {
             BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
@@ -191,10 +202,6 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                     boardConfig = old;
                 }
             }
-        }
-        if (boardConfig != null && !canViewBoard(user, boardConfig)) {
-            throw new JirbanPermissionException("Insufficient permissions to view board " +
-                    boardConfig.getName() + " (" + code + ")");
         }
         return boardConfig;
     }
@@ -294,7 +301,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public void saveCustomFieldId(ApplicationUser user, ModelNode idNode) {
+    public void saveRankCustomFieldId(ApplicationUser user, ModelNode idNode) {
         if (!canEditCustomField(user)) {
             throw new JirbanPermissionException("Only Jira Administrators can edit the custom field id");
         }

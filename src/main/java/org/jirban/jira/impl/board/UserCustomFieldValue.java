@@ -49,4 +49,7 @@ class UserCustomFieldValue extends CustomFieldValue {
         return user.getDisplayName();
     }
 
+    public static String getChangeValue(Object fieldValue) {
+        return getKey(fieldValue);
+    }
 }

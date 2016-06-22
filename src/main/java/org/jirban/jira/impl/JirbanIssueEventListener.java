@@ -23,14 +23,17 @@ package org.jirban.jira.impl;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.inject.Named;
 
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.ofbiz.core.entity.GenericEntityException;
 import org.ofbiz.core.entity.GenericValue;
 import org.slf4j.Logger;
@@ -98,6 +101,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     private static final String CHANGE_LOG_OLD_VALUE = "oldvalue";
     private static final String CHANGE_LOG_ISSUE_KEY = "Key";
     private static final String CHANGE_LOG_COMPONENT = "Component";
+    private static final String CHANGE_LOG_FIELDTYPE = "fieldtype";
+    private static final String CHANGE_LOG_CUSTOM = "custom";
 
     @ComponentImport
     private final EventPublisher eventPublisher;
@@ -240,9 +245,25 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             return;
         }
 
+        final Set<CustomFieldConfig> customFields = boardManager.getCustomFieldsForCreateEvent(issue.getProjectObject().getKey());
+        final Map<Long, String> values;
+        if (customFields.size() == 0) {
+            values = Collections.emptyMap();
+        } else {
+            values = new HashMap<>();
+            for (CustomFieldConfig cfg : customFields) {
+                if (!values.containsKey(cfg.getId())) {
+                    final Object value = issue.getCustomFieldValue(cfg.getJiraCustomField());
+                    String stringValue = value == null ? null : cfg.getUtil().getChangeValue(value);
+                    values.put(cfg.getId(), stringValue);
+                }
+            }
+        }
+
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
-                issue.getAssignee(), issue.getComponentObjects(), issue.getStatusObject().getName());
+                issue.getAssignee(), issue.getComponentObjects(), issue.getStatusObject().getName(), values);
+
         passEventToBoardManagerOrDelay(event);
 
         //TODO there could be linked issues
@@ -275,6 +296,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         String oldState = null;
         String state = null;
         boolean rankOrStateChanged = false;
+        Map<Long, String> customFieldValues = null;
+
         List<GenericValue> changeItems = getWorkLog(issueEvent);
         for (GenericValue change : changeItems) {
             final String field = change.getString(CHANGE_LOG_FIELD);
@@ -297,6 +320,16 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 rankOrStateChanged = true;
             } else if (field.equals(CHANGE_LOG_COMPONENT)) {
                 components = issue.getComponentObjects();
+            } else if (change.get(CHANGE_LOG_FIELDTYPE).equals(CHANGE_LOG_CUSTOM)) {
+                Set<CustomFieldConfig> configs = boardManager.getCustomFieldsForUpdateEvent(issue.getProjectObject().getKey(), field);
+                if (configs.size() > 0) {
+                    if (customFieldValues == null) {
+                        customFieldValues = new HashMap<>();
+                    }
+                    for (CustomFieldConfig cfg : configs) {
+                        customFieldValues.put(cfg.getId(), (String)change.get(CHANGE_LOG_NEW_STRING));
+                    }
+                }
             }
         }
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
@@ -304,7 +337,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 summary, assignee, components,
                 //Always pass in the existing/old state of the issue
                 oldState != null ? oldState : issue.getStatusObject().getName(),
-                state, rankOrStateChanged);
+                state, rankOrStateChanged, customFieldValues);
         passEventToBoardManagerOrDelay(event);
     }
 
@@ -348,7 +381,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
-                issue.getAssignee(), issue.getComponentObjects(), newState);
+                issue.getAssignee(), issue.getComponentObjects(), newState, Collections.emptyMap());
         passEventToBoardManagerOrDelay(event);
     }
 

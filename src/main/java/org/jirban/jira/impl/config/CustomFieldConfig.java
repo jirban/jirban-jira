@@ -98,6 +98,27 @@ public abstract class CustomFieldConfig {
         return customField.getIdAsLong();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof CustomFieldConfig)) return false;
+
+        CustomFieldConfig that = (CustomFieldConfig) o;
+
+        if (!name.equals(that.name)) return false;
+        if (type != that.type) return false;
+        return customField.getIdAsLong().equals(that.customField.getIdAsLong());
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + type.hashCode();
+        result = 31 * result + customField.getIdAsLong().intValue();
+        return result;
+    }
+
     public enum Type {
         USER("user"),
         PREDEFINED_LIST("predefined-list");

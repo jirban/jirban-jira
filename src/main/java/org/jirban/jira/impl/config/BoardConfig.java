@@ -38,9 +38,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
@@ -79,14 +81,20 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
     private final List<String> issueTypeNames;
-    final Map<String, CustomFieldConfig> customFieldConfigs;
+
+    /** Custom field configs by the display name used in the Jirban config */
+    final Map<String, CustomFieldConfig> customFieldConfigsByJirbanName;
+    /** Custom field configs by the id used by Jira internally */
+    final Map<Long, CustomFieldConfig> customFieldConfigsByJiraId;
+    /** Custom field configs by the name used by Jira internally */
+    final Map<String, CustomFieldConfig> customFieldConfigsByJiraName;
 
     private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
                         BoardStates boardStates,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes,
-                        Map<String, CustomFieldConfig> customFieldConfigs) {
+                        Map<String, CustomFieldConfig> customFieldConfigsByJirbanName) {
 
         this.id = id;
         this.code = code;
@@ -112,7 +120,16 @@ public class BoardConfig {
         this.issueTypeIndex = Collections.unmodifiableMap(issueTypeIndex);
         this.issueTypeNames = Collections.unmodifiableList(issueTypeNames);
 
-        this.customFieldConfigs = customFieldConfigs;
+        this.customFieldConfigsByJirbanName = customFieldConfigsByJirbanName;
+
+        Map<Long, CustomFieldConfig> customFieldConfigsByJiraId = new HashMap<>();
+        Map<String, CustomFieldConfig> customFieldConfigsByJiraName = new HashMap<>();
+        for (CustomFieldConfig cfg : customFieldConfigsByJirbanName.values()) {
+            customFieldConfigsByJiraId.put(cfg.getId(), cfg);
+            customFieldConfigsByJiraName.put(cfg.getName(), cfg);
+        }
+        this.customFieldConfigsByJiraId = Collections.unmodifiableMap(customFieldConfigsByJiraId);
+        this.customFieldConfigsByJiraName = Collections.unmodifiableMap(customFieldConfigsByJiraName);
     }
 
     public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
@@ -252,10 +269,17 @@ public class BoardConfig {
         return linkedProjects.get(linkedProjectCode);
     }
 
-    public CustomFieldConfig getCustomFieldConfig(String name) {
-        return customFieldConfigs.get(name);
+    public CustomFieldConfig getCustomFieldObjectForJiraName(String jiraCustomFieldName) {
+        return customFieldConfigsByJiraName.get(jiraCustomFieldName);
     }
 
+    public CustomFieldConfig getCustomFieldConfigForJirbanId(String jirbanName) {
+        return customFieldConfigsByJirbanName.get(jirbanName);
+    }
+
+    public CustomFieldConfig getCustomFieldConfigForJirbanId(Long jiraId) {
+        return customFieldConfigsByJiraId.get(jiraId);
+    }
     /**
      * Used to serialize the board for the view board view
      *
@@ -311,9 +335,9 @@ public class BoardConfig {
             issueTypesNode.add(issueType.getName());
         }
 
-        if (customFieldConfigs.size() > 0) {
+        if (customFieldConfigsByJirbanName.size() > 0) {
             ModelNode customNode = boardNode.get(CUSTOM);
-            for (CustomFieldConfig cfg : customFieldConfigs.values()) {
+            for (CustomFieldConfig cfg : customFieldConfigsByJirbanName.values()) {
                 customNode.add(cfg.serializeForConfig());
             }
         }
@@ -377,5 +401,12 @@ public class BoardConfig {
 
     public Map<String, String> getStateHelpTexts() {
         return boardStates.getStateHelpTexts();
+    }
+
+    public Set<CustomFieldConfig> getCustomFieldConfigs() {
+        if (customFieldConfigsByJiraName.size() == 0) {
+            Collections.emptySet();
+        }
+        return new HashSet<>(customFieldConfigsByJiraName.values());
     }
 }

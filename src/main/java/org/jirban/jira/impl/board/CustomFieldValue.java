@@ -29,7 +29,7 @@ public abstract class CustomFieldValue {
 
         final Map<String, CustomFieldValue> fields = new HashMap<>(customFieldNames.size());
         for (String customFieldName : customFieldNames) {
-            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfig(customFieldName);
+            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfigForJirbanId(customFieldName);
             Object customFieldValue = issue.getCustomFieldValue(customFieldConfig.getJiraCustomField());
             if (customFieldValue == null) {
                 continue;

@@ -24,6 +24,7 @@ package ut.org.jirban.jira;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
+import java.util.Collections;
 
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
@@ -119,7 +120,7 @@ public abstract class AbstractBoardTest {
         User user = userBridge.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, MockProjectComponent.createProjectComponents(components), state);
+                summary, user, MockProjectComponent.createProjectComponents(components), state, Collections.emptyMap());
 
         issueRegistry.addIssue(projectCode, issueType, priority, summary, username, components, state);
         return create;
@@ -152,7 +153,8 @@ public abstract class AbstractBoardTest {
         Collection<ProjectComponent> projectComponents = clearComponents ? JirbanIssueEvent.NO_COMPONENT : MockProjectComponent.createProjectComponents(components);
         Issue issue = issueRegistry.getIssue(projectCode, issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
-                priorityName, summary, user, projectComponents, issue.getStatusObject().getName(), state, state != null || rank);
+                priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
+                state, state != null || rank, Collections.emptyMap());
 
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
         return update;

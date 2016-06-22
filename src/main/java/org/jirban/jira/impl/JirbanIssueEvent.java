@@ -24,6 +24,7 @@ package org.jirban.jira.impl;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
@@ -92,14 +93,17 @@ public class JirbanIssueEvent {
     }
 
     public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                                     String summary,  User assignee, Collection<ProjectComponent> components, String state) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, null, state, true);
+                                                     String summary, User assignee, Collection<ProjectComponent> components,
+                                                     String state, Map<Long, String> customFieldValues) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, null, state, true, customFieldValues);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                                     String summary, User assignee, Collection<ProjectComponent> components, String currentState, String state, boolean rankOrStateChanged) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, rankOrStateChanged);
+                                                     String summary, User assignee, Collection<ProjectComponent> components,
+                                                     String currentState, String state, boolean rankOrStateChanged,
+                                                     Map<Long, String> customFieldValues) {
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, rankOrStateChanged, customFieldValues);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
@@ -134,9 +138,10 @@ public class JirbanIssueEvent {
         private final String oldState;
         private final String state;
         private final boolean rankOrStateChanged;
+        private final Map<Long, String> customFieldValues;
 
         private Detail(String issueType, String priority, String summary, User assignee, Collection<ProjectComponent> components,
-                       String oldState, String state, boolean rankOrStateChanged) {
+                       String oldState, String state, boolean rankOrStateChanged, Map<Long, String> customFieldValues) {
             this.summary = summary;
             this.assignee = assignee;
             this.components = components;
@@ -145,6 +150,7 @@ public class JirbanIssueEvent {
             this.oldState = oldState;
             this.state = state;
             this.rankOrStateChanged = rankOrStateChanged;
+            this.customFieldValues = customFieldValues != null ? customFieldValues : Collections.emptyMap();
         }
 
         public String getIssueType() {
@@ -179,6 +185,9 @@ public class JirbanIssueEvent {
             return rankOrStateChanged;
         }
 
+        public Map<Long, String> getCustomFieldValues() {
+            return customFieldValues;
+        }
     }
 
     public enum Type {

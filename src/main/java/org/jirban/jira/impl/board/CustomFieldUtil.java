@@ -18,6 +18,8 @@ public abstract class CustomFieldUtil {
 
     abstract String getKey(Object fieldValue);
 
+    public abstract String getChangeValue(Object fieldValue);
+
     Map<String, CustomFieldValue> sortFields(Map<String, CustomFieldValue> fields) {
         List<CustomFieldValue> fieldValues = new ArrayList<>(fields.values());
         Collections.sort(fieldValues, Comparator.comparing(CustomFieldValue::getValueForComparator, String.CASE_INSENSITIVE_ORDER));
@@ -41,6 +43,10 @@ public abstract class CustomFieldUtil {
             return UserCustomFieldValue.getKey(fieldValue);
         }
 
+        @Override
+        public String getChangeValue(Object fieldValue) {
+            return UserCustomFieldValue.getChangeValue(fieldValue);
+        }
     };
 
     public static final CustomFieldUtil PREDEFINED_LIST = new CustomFieldUtil() {
@@ -51,6 +57,11 @@ public abstract class CustomFieldUtil {
 
         @Override
         String getKey(Object fieldValue) {
+            return null;
+        }
+
+        @Override
+        public String getChangeValue(Object fieldValue) {
             return null;
         }
     };

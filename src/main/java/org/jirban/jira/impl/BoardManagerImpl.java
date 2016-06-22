@@ -21,10 +21,13 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -35,11 +38,13 @@ import javax.inject.Named;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.board.Board;
 import org.jirban.jira.impl.board.BoardChangeRegistry;
 import org.jirban.jira.impl.config.BoardConfig;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -179,6 +184,81 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
             }
         }
         return false;
+    }
+
+    @Override
+    public Set<CustomFieldConfig> getCustomFieldsForUpdateEvent(String projectCode, String jiraCustomFieldName) {
+        List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(projectCode);
+        if (boardCodes.size() == 0) {
+            return null;
+        }
+        Set<String> activeBoards = new HashSet<>();
+        synchronized (this) {
+            for (String boardCode : boardCodes) {
+                //There might be a config, but no board. So check if there is a board first.
+                //There is a slight chance that a new board might pop up so we will miss this update, but it isn't a big
+                //deal. It will come in during the next periodic full refresh.
+                if (boards.get(boardCode) != null) {
+                    activeBoards.add(boardCode);
+                }
+            }
+        }
+
+        Set<CustomFieldConfig> result = null;
+        for (String boardCode : boardCodes) {
+            BoardConfig boardConfig = null;
+            try {
+                boardConfig = boardConfigurationManager.getBoardConfig(boardCode);
+                if (boardConfig != null) {
+                    CustomFieldConfig config = boardConfig.getCustomFieldObjectForJiraName(jiraCustomFieldName);
+                    if (config != null) {
+                        if (result == null) {
+                            result = new HashSet<>();
+                        }
+                        result.add(config);
+                    }
+                }
+            } catch (JirbanValidationException e) {
+                JirbanLogger.LOGGER.error("Error loading board {} {}", boardCode, e.getMessage());
+            }
+        }
+        return result != null ? result : Collections.emptySet();
+    }
+
+    @Override
+    public Set<CustomFieldConfig> getCustomFieldsForCreateEvent(String projectCode) {
+        List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(projectCode);
+        if (boardCodes.size() == 0) {
+            return Collections.emptySet();
+        }
+        Set<String> activeBoards = new HashSet<>();
+        synchronized (this) {
+            for (String boardCode : boardCodes) {
+                //There might be a config, but no board. So check if there is a board first.
+                //There is a slight chance that a new board might pop up so we will miss this update, but it isn't a big
+                //deal. It will come in during the next periodic full refresh.
+                if (boards.get(boardCode) != null) {
+                    activeBoards.add(boardCode);
+                }
+            }
+        }
+        Set<CustomFieldConfig> result = null;
+        for (String boardCode : boardCodes) {
+            BoardConfig boardConfig = null;
+            try {
+                boardConfig = boardConfigurationManager.getBoardConfig(boardCode);
+                Set<CustomFieldConfig> configs = boardConfig.getCustomFieldConfigs();
+                if (configs.size() > 0) {
+                    if (result == null) {
+                        result = new HashSet<>();
+                    }
+                    result.addAll(configs);
+                }
+            } catch (JirbanValidationException e) {
+                JirbanLogger.LOGGER.error("Error loading board {} {}", boardCode, e.getMessage());
+            }
+        }
+        return result != null ? result : Collections.emptySet();
     }
 
     @Override
