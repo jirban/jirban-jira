@@ -329,6 +329,7 @@
     "main" : {
       "EAPDS" : {
         "colour" : "#4667CA",
+        "rank" : false,
         "state-links" : {
           "Backlog Pool" : "Backlog Pool",
           "Backlog P2" : "Backlog P2",
@@ -405,6 +406,7 @@
       },
       "EAPBGS" : {
         "colour" : "#CA6746",
+        "rank" : false,
         "state-links" : {
           "Backlog Pool" : null,
           "Backlog P2" : null,
