@@ -77,7 +77,9 @@
                                            [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
                                 </ul>
                             </div>
-                            <div class="collapsed state-summary" *ngIf="!visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                            <div class="collapsed" *ngIf="!visibleColumns[state.index]">
+                                <div class="state-summary" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                            </div>
                         </td>
 
                         <!-- Normal states -->
@@ -90,7 +92,9 @@
                                            [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
                                 </ul>
                             </div>
-                            <div class="collapsed state-summary" *ngIf="!visibleColumns[state.index]" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                            <div class="collapsed" *ngIf="!visibleColumns[state.index]">
+                                <div class="state-summary" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
