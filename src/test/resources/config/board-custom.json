@@ -54,13 +54,5 @@
       }
     }
   },
-  "linked-projects": {
-    "TUP": {
-      "states": [
-        "TUP-A",
-        "TUP-B",
-        "TUP-C"
-      ]
-    }
-  }
+  "linked-projects": {}
 }

@@ -27,6 +27,7 @@ import static org.jirban.jira.impl.Constants.AVATAR;
 import static org.jirban.jira.impl.Constants.BACKLOG;
 import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.EMAIL;
 import static org.jirban.jira.impl.Constants.ICON;
@@ -99,6 +100,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         Assert.assertFalse(boardNode.hasDefined(UNORDERED));
         //The last 2 states are 'done' states (they must always be at the end)
         Assert.assertEquals(2, boardNode.get(DONE).asInt());
+
     }
 
     @Test
@@ -1357,6 +1359,37 @@ public class BoardManagerTest extends AbstractBoardTest {
         }
     }
 
+    @Test
+    public void testLoadBoardWithCustomFields() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        initializeMocks("config/board-custom.json");
+        final Long testerId = 121212121212L;
+        final Long targetReleaseid = 252121989812L;
+
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("brian"));
+        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C");                  //3
+        issueRegistry.addIssue("TDP", "task", "high", "Four", "kabir", null, "TDP-D");                //4
+        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.addIssue("TBG", "task", "high", "Two", "kabir", null, "TBG-Y");                    //2
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        checkTesters(boardNode, "brian", "jason");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 6);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoTesterChecker.INSTANCE);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0, NoTesterChecker.INSTANCE);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoTesterChecker.INSTANCE);
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoTesterChecker.INSTANCE);
+
+        //TODO update event and check board
+
+    }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);
@@ -1370,6 +1403,11 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkUsers(boardNode, users);
         return boardNode;
     }
+
+    private void checkTesters(ModelNode boardNode, String...testers) {
+        checkUsers(boardNode.get(CUSTOM, "Tester"), false, testers);
+    }
+
 
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
         List<ModelNode> issues = boardNode.get(PROJECTS, MAIN, project, ISSUES).asList();
@@ -1385,19 +1423,28 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkUsers(ModelNode board, String...users) {
-        List<ModelNode> assignees = board.get(ASSIGNEES).asList();
+        checkUsers(board.get(ASSIGNEES), true, users);
+    }
+
+    private void checkUsers(ModelNode userList, boolean avatar, String...users) {
+        List<ModelNode> assignees = userList.asList();
         Assert.assertEquals(assignees.size(), users.length);
         for (int i = 0 ; i < users.length ; i++) {
             ModelNode assignee = assignees.get(i);
             Assert.assertNotNull(assignee);
             Assert.assertEquals(users[i] + "@example.com", assignee.get(EMAIL).asString());
-            Assert.assertEquals("/avatars/" + users[i] + ".png", assignee.get(AVATAR).asString());
+            if (avatar) {
+                Assert.assertEquals("/avatars/" + users[i] + ".png", assignee.get(AVATAR).asString());
+            } else {
+                Assert.assertFalse(assignee.get(AVATAR).isDefined());
+            }
 
             String displayName = assignee.get("name").toString().toLowerCase();
             Assert.assertTrue(displayName.length() > users[i].length());
             Assert.assertTrue(displayName.contains(users[i]));
         }
     }
+
 
     private void checkNameAndIcon(ModelNode board, String type, String...names) {
         List<ModelNode> entries = board.get(type).asList();
@@ -1416,7 +1463,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkIssue(ModelNode issues, String key, IssueType type, Priority priority, String summary,
-                            int[] components, int state, int assignee) {
+                            int[] components, int state, int assignee, CustomFieldChecker...customFieldCheckers) {
         ModelNode issue = issues.get(key);
         Assert.assertNotNull(issue);
         Assert.assertEquals(key, issue.get(KEY).asString());
@@ -1437,6 +1484,9 @@ public class BoardManagerTest extends AbstractBoardTest {
             for (int i = 0 ; i < components.length ; i++) {
                 Assert.assertEquals(components[i], componentsNodes.get(i).asInt());
             }
+        }
+        for (CustomFieldChecker customFieldChecker : customFieldCheckers) {
+            customFieldChecker.check(issue);
         }
     }
 
@@ -1475,5 +1525,32 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     private void checkNoBlacklist(ModelNode boardNode) {
         Assert.assertFalse(boardNode.has(BLACKLIST));
+    }
+
+    private interface CustomFieldChecker {
+        void check(ModelNode issue);
+    }
+
+    private static class TesterChecker implements CustomFieldChecker {
+        private final int testerId;
+
+        public TesterChecker(int testerId) {
+            this.testerId = testerId;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            Assert.assertTrue(issue.hasDefined(CUSTOM, "Tester"));
+            Assert.assertEquals(testerId, issue.get(CUSTOM, "Tester").asInt());
+        }
+    }
+
+    private static class NoTesterChecker implements CustomFieldChecker {
+        static final NoTesterChecker INSTANCE = new NoTesterChecker();
+
+        @Override
+        public void check(ModelNode issue) {
+            Assert.assertFalse(issue.hasDefined(CUSTOM, "Tester"));
+        }
     }
 }

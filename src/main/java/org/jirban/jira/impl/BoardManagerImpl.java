@@ -214,6 +214,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     }
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 //Last parameter is the exception (it does not match a {} entry)
                 JirbanLogger.LOGGER.error("BoardManagerImpl.handleEvent - Error handling event {} - {}", event.getIssueKey(), e.getMessage());
 

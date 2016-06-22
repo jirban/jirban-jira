@@ -36,6 +36,7 @@ import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardProjectConfig;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
@@ -83,6 +84,11 @@ public class BoardProject {
     int getComponentIndex(Component component) {
         return board.getComponentIndex(component);
     }
+
+    public int getCustomFieldValueIndex(CustomFieldValue customFieldValue) {
+        return board.getCustomFieldIndex(customFieldValue);
+    }
+
 
     void serialize(ModelNode parent, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager, boolean backlog) {
         parent.get(RANK).set(hasRankPermission(user, projectManager, permissionManager));
@@ -224,6 +230,10 @@ public class BoardProject {
 
         public Board.Accessor getBoard() {
             return board;
+        }
+
+        public CustomFieldValue getCustomField(CustomFieldConfig customField, Object fieldValue) {
+            return board.getCustomField(customField, fieldValue);
         }
     }
 

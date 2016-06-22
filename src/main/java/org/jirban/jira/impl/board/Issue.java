@@ -21,6 +21,7 @@
 package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.LINKED_ISSUES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
@@ -227,16 +228,19 @@ public abstract class Issue {
         /** The index of the priority in the owning board config */
         private final Integer priorityIndex;
         private final List<LinkedIssue> linkedIssues;
+        private final Map<String, CustomFieldValue> customFields;
 
         public BoardIssue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary,
                           Integer issueTypeIndex, Integer priorityIndex, Assignee assignee,
-                          Set<Component> components, List<LinkedIssue> linkedIssues) {
+                          Set<Component> components, List<LinkedIssue> linkedIssues,
+                          Map<String, CustomFieldValue> customFields) {
             super(project, key, state, stateIndex, summary);
             this.issueTypeIndex = issueTypeIndex;
             this.priorityIndex = priorityIndex;
             this.assignee = assignee;
             this.components = components;
             this.linkedIssues = linkedIssues;
+            this.customFields = customFields;
         }
 
         boolean hasLinkedIssues() {
@@ -261,6 +265,12 @@ public abstract class Issue {
                 for (Component component : components) {
                     //This map will always be populated
                     issueNode.get(Constants.COMPONENTS).add(boardProject.getComponentIndex(component));
+                }
+            }
+            if (customFields.size() > 0) {
+                ModelNode custom = issueNode.get(CUSTOM);
+                for (CustomFieldValue customFieldValue : customFields.values()) {
+                    custom.get(customFieldValue.getCustomFieldName()).set(boardProject.getCustomFieldValueIndex(customFieldValue));
                 }
             }
             if (hasLinkedIssues()) {
@@ -307,7 +317,7 @@ public abstract class Issue {
         String state;
         Integer stateIndex;
         Set<LinkedIssue> linkedIssues;
-
+        Map<String, CustomFieldValue> customFields;
 
         private Builder(BoardProject.Accessor project) {
             this.project = project;
@@ -347,8 +357,8 @@ public abstract class Issue {
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
 
-            Map<String, CustomField> customFields =
-                    CustomField.loadCustomFields(project.getBoard().getConfig(), project.getConfig(), issue);
+            customFields =
+                    CustomFieldValue.loadCustomFields(project, issue);
 
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
             addLinkedIssues(issueLinkManager.getOutwardLinks(issue.getId()), true);
@@ -433,8 +443,12 @@ public abstract class Issue {
 
         Issue build() {
             if (issueTypeIndex != null && priorityIndex != null && stateIndex != null) {
-                List<LinkedIssue> linkedList = linkedIssues == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
-                return new BoardIssue(project.getConfig(), issueKey, state, stateIndex, summary, issueTypeIndex, priorityIndex, assignee, components, linkedList);
+                List<LinkedIssue> linkedList = linkedIssues == null ?
+                        Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
+                return new BoardIssue(
+                        project.getConfig(), issueKey, state, stateIndex, summary,
+                        issueTypeIndex, priorityIndex, assignee, components, linkedList,
+                        customFields == null ? Collections.emptyMap() : Collections.unmodifiableMap(customFields));
             }
             return null;
         }

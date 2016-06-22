@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanValidationException;
+import org.jirban.jira.impl.board.CustomFieldUtil;
 
 import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.fields.CustomField;
@@ -37,9 +38,13 @@ public abstract class CustomFieldConfig {
         return type;
     }
 
-    public CustomField getCustomField() {
+    public CustomField getJiraCustomField() {
         return customField;
     }
+
+    public abstract CustomFieldUtil getUtil();
+
+    public abstract void sortCustomFields(Map<String, CustomField> customFields);
 
     public static CustomFieldConfig load(CustomFieldManager customFieldMgr, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(NAME)) {
@@ -87,6 +92,10 @@ public abstract class CustomFieldConfig {
         modelNode.get(TYPE).set(type.name);
         modelNode.get(FIELD_ID).set(customField.getIdAsLong());
         return modelNode;
+    }
+
+    public Long getId() {
+        return customField.getIdAsLong();
     }
 
     public enum Type {

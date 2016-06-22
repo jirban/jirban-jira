@@ -23,6 +23,8 @@ package ut.org.jirban.jira.mock;
 
 import java.sql.Timestamp;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -57,6 +59,8 @@ public class MockIssue implements Issue {
     private final User assignee;
     private final Set<ProjectComponent> components;
     private final Status state;
+
+    private final Map<Long, Object> customFields = new HashMap<>();
 
     public MockIssue(String key, IssueType issueType, Priority priority, String summary, User assignee,
                      Set<ProjectComponent> components, Status state) {
@@ -263,7 +267,7 @@ public class MockIssue implements Issue {
 
     @Override
     public Object getCustomFieldValue(CustomField customField) {
-        return null;
+        return customFields.get(customField.getIdAsLong());
     }
 
     @Override
@@ -379,5 +383,9 @@ public class MockIssue implements Issue {
     @Override
     public void store() {
 
+    }
+
+    void setCustomField(Long customFieldId, Object value) {
+        customFields.put(customFieldId, value);
     }
 }

@@ -45,6 +45,7 @@ import com.atlassian.jira.mock.component.MockComponentWorker;
 import com.atlassian.jira.user.util.UserManager;
 
 import ut.org.jirban.jira.mock.CrowdUserBridge;
+import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
 import ut.org.jirban.jira.mock.MockProjectComponent;
@@ -77,6 +78,7 @@ public abstract class AbstractBoardTest {
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
                 .addConfigActiveObjectsFromFile(cfgResource)
                 .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000")
+                .setCustomFieldManager(CustomFieldManagerBuilder.loadFromResource(cfgResource))
                 .build();
 
         MockComponentWorker worker = new MockComponentWorker();
@@ -97,6 +99,7 @@ public abstract class AbstractBoardTest {
                 .setUserManager(userManager)
                 .setSearchService(searchService)
                 .setIssueLinkManager(issueLinkManager);
+
         if (init != null) {
             init.initialise(boardManagerBuilder);
         }

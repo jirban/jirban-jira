@@ -85,7 +85,7 @@ public class BoardProjectConfig extends ProjectConfig {
         String colour = getRequiredChild(project, "Project", projectCode, COLOUR).asString();
         ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, STATE_LINKS);
 
-        Map<String, String> ownToBoardStates = new HashMap<>();
+        Map<String, String> ownToBoardStates = new LinkedHashMap<>();
         Map<String, String> boardToOwnStates = new HashMap<>();
         for (Property prop : statesLinks.asPropertyList()) {
             final String ownState = prop.getName();

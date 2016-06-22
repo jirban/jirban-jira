@@ -23,6 +23,7 @@ package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.MAIN;
 import static org.jirban.jira.impl.Constants.PROJECTS;
@@ -46,6 +47,7 @@ import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
@@ -79,6 +81,7 @@ public class Board {
     private final Map<String, Integer> componentIndices;
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
+    private final Map<String, SortedCustomFieldValues> sortedCustomFieldValues;
 
     private final Blacklist blacklist;
 
@@ -87,6 +90,7 @@ public class Board {
                     Map<String, Component> sortedComponents,
                     Map<String, Issue> allIssues,
                     Map<String, BoardProject> projects,
+                    Map<String, SortedCustomFieldValues> sortedCustomFieldValues,
                     Blacklist blacklist) {
         this.currentView = old == null ? 0 : old.currentView + 1;
         this.boardConfig = boardConfig;
@@ -99,6 +103,7 @@ public class Board {
 
         this.allIssues = allIssues;
         this.projects = projects;
+        this.sortedCustomFieldValues = sortedCustomFieldValues;
         this.blacklist = blacklist;
     }
 
@@ -138,6 +143,12 @@ public class Board {
             componentsNode.setEmptyList();
             for (Component component : sortedComponents.values()) {
                 component.serialize(componentsNode);
+            }
+        }
+        if (sortedCustomFieldValues.size() > 0) {
+            ModelNode customNode = outputNode.get(CUSTOM);
+            for (SortedCustomFieldValues values : sortedCustomFieldValues.values()) {
+                values.serialize(customNode);
             }
         }
 
@@ -189,6 +200,10 @@ public class Board {
 
     public int getComponentIndex(Component component) {
         return componentIndices.get(component.getName());
+    }
+
+    public int getCustomFieldIndex(CustomFieldValue customFieldValue) {
+        return sortedCustomFieldValues.get(customFieldValue.getCustomFieldName()).getCustomFieldIndex(customFieldValue);
     }
 
     private void updateBoardInProjects() {
@@ -263,6 +278,8 @@ public class Board {
         abstract Issue getIssue(String issueKey);
         abstract Blacklist.Accessor getBlacklist();
 
+        abstract CustomFieldValue getCustomField(CustomFieldConfig customField, Object fieldValue);
+
         abstract Set<Component> getComponents(Collection<ProjectComponent> componentObjects);
 
         public List<String> getStateNames() {
@@ -306,6 +323,7 @@ public class Board {
         private final Map<String, Issue> allIssues = new HashMap<>();
         private final Map<String, BoardProject.Builder> projects = new HashMap<>();
         private final Blacklist.Builder blacklist = new Blacklist.Builder();
+        private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
 
         public Builder(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
                        BoardConfig boardConfig, ApplicationUser boardOwner) {
@@ -324,11 +342,13 @@ public class Board {
             return this;
         }
 
+        @Override
         public Accessor addIssue(Issue issue) {
             allIssues.put(issue.getKey(), issue);
             return this;
         }
 
+        @Override
         Assignee getAssignee(User assigneeUser) {
             if (assigneeUser == null) {
                 //Unassigned issue
@@ -362,6 +382,13 @@ public class Board {
         }
 
         @Override
+        CustomFieldValue getCustomField(CustomFieldConfig customFieldConfig, Object fieldValue) {
+            final SortedCustomFieldValues.Builder customFieldBuilder =
+                    customFieldBuilders.computeIfAbsent(customFieldConfig.getId(), id -> new SortedCustomFieldValues.Builder(customFieldConfig));
+            return customFieldBuilder.getCustomField(fieldValue);
+        }
+
+        @Override
         Issue getIssue(String issueKey) {
             //Should not get called for this code path
             throw new IllegalStateException();
@@ -384,12 +411,19 @@ public class Board {
                 }
             });
 
+            Map<String, SortedCustomFieldValues> sortedCustomFieldValues = new HashMap<>();
+            for (SortedCustomFieldValues.Builder scfBuilder : this.customFieldBuilders.values()) {
+                SortedCustomFieldValues fieldValues = scfBuilder.build();
+                sortedCustomFieldValues.put(fieldValues.getFieldName(), fieldValues);
+            }
+
             Board board = new Board(
                     null, boardConfig,
                     Collections.unmodifiableMap(sortAssignees(assignees)),
                     Collections.unmodifiableMap(sortComponents(components)),
                     Collections.unmodifiableMap(allIssues),
                     Collections.unmodifiableMap(projects),
+                    Collections.unmodifiableMap(sortedCustomFieldValues),
                     blacklist.build());
 
             for (BoardProject project : projects.values()) {
@@ -417,6 +451,7 @@ public class Board {
 
         private Assignee newAssignee;
         private Set<Component> newComponents;
+        private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
 
         Updater(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
                 Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
@@ -482,6 +517,7 @@ public class Board {
                     board.sortedComponents,
                     Collections.unmodifiableMap(allIssuesCopy),
                     projectsCopy,
+                    Collections.emptyMap(),//TODO
                     blacklist.build());
             boardCopy.updateBoardInProjects();
 
@@ -605,6 +641,7 @@ public class Board {
                         componentsCopy == null ? board.sortedComponents : Collections.unmodifiableMap(sortComponents(componentsCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
+                        Collections.emptyMap(), //TODO
                         blacklist.build());
 
                 //Register the event
@@ -671,6 +708,11 @@ public class Board {
         @Override
         Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
             return getOrCreateIssueComponents(componentObjects);
+        }
+
+        @Override
+        CustomFieldValue getCustomField(CustomFieldConfig customField, Object fieldValue) {
+            return null;
         }
 
         @Override
