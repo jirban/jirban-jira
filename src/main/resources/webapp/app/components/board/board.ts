@@ -10,6 +10,7 @@ import {ProgressErrorService} from "../../services/progressErrorService";
 import {TitleFormatService} from "../../services/TitleFormatService";
 import {BoardHeaderEntry, State} from "../../data/board/header";
 import {IMap} from "../../common/map";
+import {CharArrayRegistry} from "../../common/charArrayRegistry";
 import Timer = NodeJS.Timer;
 
 
@@ -37,6 +38,9 @@ export class BoardComponent implements OnDestroy, OnInit {
     private boardLeftOffset:number = 0;
 
     private _defaultPollInterval:number = 30000;
+
+    /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
+    private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
@@ -145,15 +149,8 @@ export class BoardComponent implements OnDestroy, OnInit {
         return this._boardData.headers.stateVisibilities;
     }
 
-    private toCharArray(state:string):string[] {
-        let arr:string[] = [];
-        for (let i:number = 0; i < state.length; i++) {
-            let s = state.charAt(i);
-            if (s == " ") {
-            }
-            arr.push(s);
-        }
-        return arr;
+    private getCharArray(state:string):string[] {
+        return this._collapsedColumnLabels.getCharArray(state);
     }
 
     private onResize(event : any) {
