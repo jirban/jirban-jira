@@ -65,7 +65,7 @@
                             (click)="toggleHeaderVisibility(backlogTopHeader)"
                             class="collapsed backlog-state-summary backlog-cell">
                             <div class="collapsed backlog-state-summary"
-                                 *ngFor="let character of toCharArray('Backlog')">{{character}}</div>
+                                 *ngFor="let character of getCharArray('Backlog')">{{character}}</div>
                         </td>
                         <!-- Backlog visible, show all the possible backlog states -->
                         <td *ngFor="let state of backlogStatesIfVisible"
@@ -78,7 +78,7 @@
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-                                <div class="state-summary" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                                <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
                             </div>
                         </td>
 
@@ -93,7 +93,7 @@
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-                                <div class="state-summary" *ngFor="let character of toCharArray(state.name)">{{character}}</div>
+                                <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
                             </div>
                         </td>
                     </tr>

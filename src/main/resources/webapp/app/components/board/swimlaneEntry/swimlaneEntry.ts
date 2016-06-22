@@ -3,6 +3,7 @@ import {BoardData} from "../../../data/board/boardData";
 import {IssueComponent} from "../issue/issue";
 import {SwimlaneData} from "../../../data/board/issueTable";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
+import {CharArrayRegistry} from "../../../common/charArrayRegistry";
 
 /**
  * This is here to be able to add a header and the contents for a swimlane
@@ -24,6 +25,9 @@ export class SwimlaneEntryComponent {
     private issueContextMenu:EventEmitter<any> = new EventEmitter();
     private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
+    /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
+    private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
+
     constructor() {
     }
 
@@ -39,7 +43,7 @@ export class SwimlaneEntryComponent {
         return this.boardData.boardStates;
     }
 
-    private toCharArray(state:string):string[] {
+    private getCharArray(state:string):string[] {
         let arr:string[] = [];
         for (let i:number = 0; i < state.length; i++) {
             let s = state.charAt(i);
