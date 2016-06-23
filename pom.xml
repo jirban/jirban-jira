@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jirban</groupId>
     <artifactId>jirban-jira</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2-SNAPSHOT</version>
     <organization>
         <name>Red Hat Inc.</name>
         <url>https://github.com/kabir/jirban-jira</url>
