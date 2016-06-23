@@ -2,7 +2,7 @@
     [hidden]="issue.filtered">
     <div class="header" [style.background-color]="issue.colour">
         <div class="summary">
-            <span><a href="{{jiraUrl}}/browse/{{issue.key}}"  target="_blank"
+            <span><a href="{{jiraUrl}}/browse/{{issue.key}}" target="_blank"
                      (contextmenu)="defaultContextMenu($event)" class="header">{{issue.key}}</a></span>
         </div>
         <div class="assignee">
@@ -24,7 +24,7 @@
          [hidden]="!showLinkedIssues">
         <div class="linked-issue">
             <div class="linked-issue-summary">
-                <a href="{{jiraUrl}}/browse/{{linked.key}}"
+                <a href="{{jiraUrl}}/browse/{{linked.key}}" target="_blank"
                    (contextmenu)="defaultContextMenu($event)" class="linked-issue-summary">{{linked.key}}</a>
             </div>
             <div class="linked-issue-status">
