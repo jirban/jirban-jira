@@ -37,6 +37,7 @@ import static org.jirban.jira.impl.Constants.MAIN;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
 import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.RANK;
 import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
@@ -49,11 +50,14 @@ import java.util.List;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.BoardManagerBuilder;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.junit.Assert;
 import org.junit.Test;
 
 import com.atlassian.jira.issue.search.SearchException;
+
+import ut.org.jirban.jira.mock.PermissionManagerBuilder;
 
 /**
  * Tests the layout of the board on the server, and how it is serialized to the client on first load/full refresh.
@@ -1030,7 +1034,6 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {"TBG-1"},
                 {"TBG-2"},
                 {}});
-
     }
 
     @Test
@@ -1326,6 +1329,34 @@ public class BoardManagerTest extends AbstractBoardTest {
                 {},
                 {}});
     }
+
+    @Test
+    public void testCanRankIssues() throws Exception {
+        initializeMocks("config/board-tdp.json");
+        checkRankIssuesPermissions(true);
+    }
+
+    @Test
+    public void testCannotRankIssues() throws Exception {
+        initializeMocks("config/board-tdp.json", new AdditionalBuilderInit() {
+            @Override
+            public void initialise(BoardManagerBuilder boardManagerBuilder) {
+                boardManagerBuilder.setPermissionManager(PermissionManagerBuilder.getDeniessAll());
+            }
+        });
+        checkRankIssuesPermissions(false);
+    }
+
+    private void checkRankIssuesPermissions(boolean allow) throws Exception {
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
+        ModelNode projectParent = boardNode.get(PROJECTS, MAIN);
+        for (String projectName : projectParent.keys()) {
+            ModelNode rank = projectParent.get(projectName).get(RANK);
+            Assert.assertTrue(rank.isDefined());
+            Assert.assertEquals(allow, rank.asBoolean());
+        }
+    }
+
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);

@@ -23,11 +23,13 @@ export class IssueContextMenuComponent implements Hideable {
     private endIssue:boolean;
     private toState:string;
     private issuesForState:IssueData[];
+    private canRank:boolean;
 
     //Calculated dimensions
     private movePanelTop:number;
     private movePanelHeight:number;
     private movePanelLeft:number;
+    private movePanelWidth:number;
     private statesColumnHeight:number;
 
     private insertBeforeIssueKey:string;
@@ -42,7 +44,6 @@ export class IssueContextMenuComponent implements Hideable {
 
     constructor(private _boardData:BoardData, private _issuesService:IssuesService,
                 private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
-        this.setWindowSize();
         _boardData.registerHideable(this);
     }
 
@@ -60,7 +61,9 @@ export class IssueContextMenuComponent implements Hideable {
             this.issue = this._boardData.getIssue(data.issueKey);
             this.toState = this.issue.boardStatus;
             this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, this.toState);
+            this.canRank = this._boardData.canRank(this.issue.projectCode);
         }
+        this.setWindowSize();
     }
 
 
@@ -209,7 +212,8 @@ export class IssueContextMenuComponent implements Hideable {
     }
 
     private setWindowSize() {
-        let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number = 0;
+        let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number;
+        let movePanelWidth:number = this.canRank ? 720 : 405;
 
         //40px top and bottom padding if window is high enough, 5px otherwise
         let yPad = window.innerHeight > 350 ? 40 : 5;
@@ -219,12 +223,13 @@ export class IssueContextMenuComponent implements Hideable {
         statesColumnHeight = movePanelHeight - 55;
 
         //css hardcodes the width as 720px;
-        if (window.innerWidth > 720) {
-            movePanelLeft = window.innerWidth/2 - 720/2;
+        if (window.innerWidth > movePanelWidth) {
+            movePanelLeft = window.innerWidth/2 - movePanelWidth/2;
         }
         this.movePanelTop = movePanelTop;
         this.movePanelHeight = movePanelHeight;
         this.movePanelLeft = movePanelLeft;
+        this.movePanelWidth = movePanelWidth;
         this.statesColumnHeight = statesColumnHeight;
 
         this.commentPanelLeft = (window.innerWidth - 600)/2;

@@ -11,9 +11,9 @@
 </div>
 
 <div *ngIf="move" id="issue-move-panel" (window:resize)="onResize($event)"
-        [style.top]="movePanelTop" [style.left]="movePanelLeft" [style.height]="movePanelHeight">
+        [style.top]="movePanelTop" [style.left]="movePanelLeft" [style.height]="movePanelHeight" [style.width]="movePanelWidth">
     <div class="header">
-        <div class="header-text">Move {{issue.key}}</div>
+        <div [ngClass]="canRank ? 'move-rank-header-text' : 'move-no-rank-header-text'">Move {{issue.key}}</div>
         <div class="header-close-button">
             <a href="close" class="close" (click)="onClickClose($event)">X</a>
         </div>
@@ -27,7 +27,7 @@
             <div class="column-header">Select state:</div>
             <div class="states" [style.height]="statesColumnHeight">
                 <div *ngFor="let state of moveStates" [ngClass]="state === toState ? 'entry-selected' : 'entry'">
-                    <div class="rank">
+                    <div class="rank" *ngIf="canRank">
                         <a href="rank" (click)="onSelectRankState($event, state)"
                            *ngIf="isValidRankState(state)"
                            title="Move to {{state}} and rank the issue">
@@ -43,7 +43,7 @@
                 </div>
             </div>
         </div>
-        <div class="column" [hidden]="!issuesForState">
+        <div class="column" [hidden]="!issuesForState" *ngIf="canRank">
             <div class="column-header">Insert before:</div>
             <div class="issues" [style.height]="statesColumnHeight">
                 <div *ngIf="toState"  class="entry end-entry">
@@ -64,7 +64,7 @@
 <div *ngIf="comment" id="issue-comment-panel" (window:resize)="onResize($event)"
      [style.left]="commentPanelLeft">
     <div class="header">
-        <div class="header-text">Comment on {{issue.key}}</div>
+        <div class="comment-header-text">Comment on {{issue.key}}</div>
         <div class="header-close-button">
             <a href="close" class="close" (click)="onClickClose($event)">X</a>
         </div>

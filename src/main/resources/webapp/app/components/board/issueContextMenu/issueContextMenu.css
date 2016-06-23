@@ -17,8 +17,7 @@ a.context {
 #issue-move-panel {
     border: 1px solid #888888;
     position: absolute;
-    /* top, bottom, height will be calculated */
-    width: 720px;
+    /* top, bottom, height, width will be calculated */
     z-index: 10;
     background-color: white;
     border-radius: 5px;
@@ -32,8 +31,13 @@ a.context {
     color: white;
     padding: 3px 0px;
 }
-.header-text {
-    width: 95%;
+.move-rank-header-text {
+    width: 695px;
+    text-align: center;
+    float: left;
+}
+.move-no-rank-header-text {
+    width: 380px;
     text-align: center;
     float: left;
 }
@@ -138,6 +142,11 @@ a.entry-selected {
 .comment-box-container {
     width: 600px;
     height: 200px;
+}
+.comment-header-text {
+    width: 570px;
+    text-align: center;
+    float: left;
 }
 .comment-box {
     width: 100%;

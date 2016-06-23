@@ -27,9 +27,13 @@ import org.jirban.jira.api.BoardManager;
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.issue.link.IssueLinkManager;
+import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.util.UserManager;
 
 import ut.org.jirban.jira.mock.AvatarServiceBuilder;
+import ut.org.jirban.jira.mock.PermissionManagerBuilder;
+import ut.org.jirban.jira.mock.ProjectManagerBuilder;
 
 /**
  * @author Kabir Khan
@@ -41,6 +45,8 @@ public class BoardManagerBuilder {
     private IssueLinkManager issueLinkManager;
     private UserManager userManager;
     private BoardConfigurationManager boardConfigurationManager;
+    private ProjectManager projectManager = ProjectManagerBuilder.getAnyProjectManager();
+    private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
 
     public BoardManagerBuilder() {
     }
@@ -70,7 +76,17 @@ public class BoardManagerBuilder {
         return this;
     }
 
+    public BoardManagerBuilder setProjectManager(ProjectManager projectManager) {
+        this.projectManager = projectManager;
+        return this;
+    }
+
+    public BoardManagerBuilder setPermissionManager(PermissionManager permissionManager) {
+        this.permissionManager = permissionManager;
+        return this;
+    }
+
     public BoardManager build() {
-        return new BoardManagerImpl(searchService, avatarService, issueLinkManager, boardConfigurationManager);
+        return new BoardManagerImpl(searchService, avatarService, issueLinkManager, projectManager, permissionManager, boardConfigurationManager);
     }
 }

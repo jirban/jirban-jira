@@ -22,6 +22,7 @@
 package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.RANK;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,6 +45,10 @@ import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
+import com.atlassian.jira.permission.ProjectPermissions;
+import com.atlassian.jira.project.Project;
+import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.query.Query;
@@ -79,7 +84,8 @@ public class BoardProject {
         return board.getComponentIndex(component);
     }
 
-    void serialize(ModelNode parent, boolean backlog) {
+    void serialize(ModelNode parent, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager, boolean backlog) {
+        parent.get(RANK).set(hasRankPermission(user, projectManager, permissionManager));
         ModelNode projectIssues = parent.get(ISSUES);
 
         for (int i = 0 ; i < issueKeysByState.size() ; i++) {
@@ -137,6 +143,15 @@ public class BoardProject {
 
     public String getCode() {
         return projectConfig.getCode();
+    }
+
+
+    private boolean hasRankPermission(ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager) {
+        Project project = projectManager.getProjectByCurrentKey(projectConfig.getCode());
+        if (!permissionManager.hasPermission(ProjectPermissions.SCHEDULE_ISSUES, project, user)) {
+            return false;
+        }
+        return true;
     }
 
     static class Accessor {

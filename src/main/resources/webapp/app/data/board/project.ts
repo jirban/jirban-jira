@@ -78,6 +78,14 @@ export class Projects {
         let owner:BoardProject = this._boardProjects.forKey(this._owner);
         return owner.getOwnStateIndex(boardState);
     }
+
+    canRank(projectCode:string):boolean {
+        let project:BoardProject = this._boardProjects.forKey(projectCode);
+        if (!project) {
+            return false;
+        }
+        return project.canRank;
+    }
 }
 
 /**
@@ -114,6 +122,7 @@ export abstract class Project {
 export class BoardProject extends Project {
     private _boardStates:Indexed<string>;
     private _colour:string;
+    private _canRank:boolean;
     //The table of issue keys uses the board states. This means that for non-owner projects there may be some empty
     //columns where the states are not mapped. It is simpler this way :)
     private _issueKeys:string[][];
@@ -121,11 +130,12 @@ export class BoardProject extends Project {
     _boardStatesToProjectState:IMap<string> = {};
     _projectStatesToBoardState:IMap<string> = {};
 
-    constructor(boardStates:Indexed<string>, code:string, colour:string, states:Indexed<string>, issueKeys:string[][],
+    constructor(boardStates:Indexed<string>, code:string, canRank:boolean, colour:string, states:Indexed<string>, issueKeys:string[][],
                 boardStatesToProjectState:IMap<string>, projectStatesToBoardState:IMap<string>) {
         super(code, states);
         this._boardStates = boardStates;
         this._colour = colour;
+        this._canRank = canRank;
         this._issueKeys = issueKeys;
         this._boardStatesToProjectState = boardStatesToProjectState;
         this._projectStatesToBoardState = projectStatesToBoardState;
@@ -133,6 +143,10 @@ export class BoardProject extends Project {
 
     get colour():string {
         return this._colour;
+    }
+
+    get canRank():boolean {
+        return this._canRank;
     }
 
     get issueKeys():string[][] {
@@ -241,6 +255,7 @@ export class ProjectDeserializer {
             mainProjectsInput,
             (key, projectInput) => {
                 let colour:string = projectInput.colour;
+                let canRank:boolean = projectInput.rank;
                 let issues:string[][] = projectInput.issues;
 
                 let boardStatesToProjectState:IMap<string> = {};
@@ -261,7 +276,7 @@ export class ProjectDeserializer {
                         states.add(ownState, ownState);
                     }
                 }
-                return new BoardProject(this._boardStates, key, colour, states, issues, boardStatesToProjectState, projectStatesToBoardState);
+                return new BoardProject(this._boardStates, key, canRank, colour, states, issues, boardStatesToProjectState, projectStatesToBoardState);
             }
         );
         return boardProjects;

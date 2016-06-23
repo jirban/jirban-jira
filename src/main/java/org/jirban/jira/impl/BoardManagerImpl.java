@@ -48,6 +48,8 @@ import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -76,6 +78,12 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     @ComponentImport
     private final IssueLinkManager issueLinkManager;
 
+    @ComponentImport
+    private final ProjectManager projectManager;
+
+    @ComponentImport
+    private final PermissionManager permissionManager;
+
     private final UserManager userManager;
 
     private final BoardConfigurationManager boardConfigurationManager;
@@ -89,10 +97,13 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Inject
     public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
+                            ProjectManager projectManager, PermissionManager permissionManager,
                             BoardConfigurationManager boardConfigurationManager) {
         this.searchService = searchService;
         this.avatarService = avatarService;
         this.issueLinkManager = issueLinkManager;
+        this.projectManager = projectManager;
+        this.permissionManager = permissionManager;
         this.userManager = ComponentAccessor.getUserManager();
         this.boardConfigurationManager = boardConfigurationManager;
     }
@@ -127,7 +138,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
             }
         }
-        return board.serialize(backlog).toJSONString(true);
+        return board.serialize(backlog, user, projectManager, permissionManager).toJSONString(true);
     }
 
     @Override

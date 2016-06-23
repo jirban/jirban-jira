@@ -429,6 +429,11 @@ export class BoardData {
         url += this._issueTable.createQueryStringParticle();
         return url;
     }
+
+    canRank(projectCode:string):boolean {
+        return this._projects.canRank(projectCode);
+    }
+
 }
 
 
