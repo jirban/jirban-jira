@@ -170,7 +170,16 @@ export class IssueContextMenuComponent implements Hideable {
                     this.hideAllMenus();
                 },
                 () => {
-                    this._progressError.finishProgress();
+                    let status:string = "<a " +
+                    "class='toolbar-message' href='" + this._boardData.jiraUrl + "/browse/" + this.issue.key + "'>" +
+                        this.issue.key + "</a>";
+                    let moved = this.toState != this.issue.boardStatus;
+                    if (rank && !moved) {
+                        status += " ranked";
+                    } else {
+                        status += " moved to '" + this.toState + "'";
+                    }
+                    this._progressError.finishProgress(status);
                     this.hideAllMenus();
                 }
             );
