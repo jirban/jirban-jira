@@ -270,16 +270,14 @@ export class BoardData {
     }
 
     get showBacklog():boolean {
-        return this._showBacklog;
+        if (!this._headers) {
+            return false;
+        }
+        return this._headers.showBacklog;
     }
 
     get swimlaneVisibilityObservable():Observable<void> {
         return this._issueTable.swimlaneVisibilityObservable;
-    }
-
-
-    toggleBacklog():void {
-        this._showBacklog = !this._showBacklog;
     }
 
     set swimlane(swimlane:string) {

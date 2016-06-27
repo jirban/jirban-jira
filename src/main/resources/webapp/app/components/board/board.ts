@@ -222,26 +222,24 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     toggleHeaderVisibility(header:BoardHeaderEntry) {
-        if (header.isCategory && header.backlog) {
-            this._boardData.toggleBacklog();
-            this.toggleBacklog();
-        }
-        this._boardData.headers.toggleHeaderVisibility(header);
-    }
+        let previousBacklog:boolean = this.boardData.showBacklog;
 
-    toggleBacklog() {
-        this._progressError.startProgress(true);
-        this._issuesService.getIssuesData(this.boardCode, this._boardData.showBacklog).subscribe(
-            data => {
-                this.boardData.processChanges(data);
-            },
-            err => {
-                this._progressError.setError(err);
-            },
-            () => {
-                this._progressError.finishProgress();
-            }
-        );
+        this._boardData.headers.toggleHeaderVisibility(header);
+
+        if (this.boardData.showBacklog != previousBacklog) {
+            this._progressError.startProgress(true);
+            this._issuesService.getIssuesData(this.boardCode, this._boardData.showBacklog).subscribe(
+                data => {
+                    this.boardData.processChanges(data);
+                },
+                err => {
+                    this._progressError.setError(err);
+                },
+                () => {
+                    this._progressError.finishProgress();
+                }
+            );
+        }
     }
 
     getTopLevelHeaderClass(header:BoardHeaderEntry):string {
