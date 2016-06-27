@@ -25,13 +25,16 @@ export class BoardHeaders {
     private _stateVisibilities:boolean[];
     private _stateVisibilitiesSubject:Subject<void> = new Subject<void>();
 
+    private _showBacklog:boolean = false;
+
     constructor(boardData:BoardData,
                 boardStateNames:Indexed<string>, boardStates:Indexed<State>,
                 backlogStates:State[], mainStates:State[],
                 backlogTopHeader:BoardHeaderEntry, backlogBottomHeaders:BoardHeaderEntry[],
                 topHeaders:BoardHeaderEntry[], bottomHeaders:BoardHeaderEntry[],
                 stateVisibilities:boolean[],
-                stateVisibilitiesSubject:Subject<void>) {
+                stateVisibilitiesSubject:Subject<void>,
+                showBacklog:boolean) {
         this._boardData = boardData;
         this._boardStateNames = boardStateNames;
         this._boardStates = boardStates;
@@ -44,6 +47,8 @@ export class BoardHeaders {
 
         this._stateVisibilities = stateVisibilities;
         this._stateVisibilitiesSubject = stateVisibilitiesSubject;
+
+        this._showBacklog = showBacklog;
     }
 
     static deserialize(boardData:BoardData, input:any):BoardHeaders {
@@ -82,10 +87,12 @@ export class BoardHeaders {
 
         let stateVisibilities:boolean[];
         let stateVisibilitiesSubject:Subject<void>;
+        let showBacklog:boolean = false;
         if (boardData && boardData.headers) {
             //For a simple refresh following polling, use the same states
             stateVisibilities = boardData.headers._stateVisibilities;
             stateVisibilitiesSubject = boardData.headers._stateVisibilitiesSubject;
+            showBacklog = boardData.headers.showBacklog;
         } else {
             stateVisibilities = new Array<boolean>(boardStates.array.length);
             for (let i:number = 0 ; i < stateVisibilities.length ; i++) {
@@ -137,9 +144,13 @@ export class BoardHeaders {
 
         return new BoardHeaders(boardData, boardStateNames, boardStates,
             backlogStates, mainStates,
-            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders, stateVisibilities, stateVisibilitiesSubject);
+            backlogTopHeader, backlogBottomHeaders, topHeaders, bottomHeaders,
+            stateVisibilities, stateVisibilitiesSubject, showBacklog);
     }
 
+    get showBacklog():boolean {
+        return this._showBacklog;
+    }
 
     get backlogTopHeader():BoardHeaderEntry {
         return this._backlogTopHeader;
@@ -181,8 +192,19 @@ export class BoardHeaders {
         return this._stateVisibilitiesSubject;
     }
 
-    toggleHeaderVisibility(header:BoardHeaderEntry) {
+    toggleHeaderVisibility(header:BoardHeaderEntry):void {
         header.toggleVisibility();
+        if (header.backlog) {
+            if (header.isCategory) {
+                this._showBacklog = !this._showBacklog;
+            } else {
+                for (let i:number = 0 ; i < this._backlogStates.length ; i++) {
+                    if (this._stateVisibilities[i] != this._showBacklog) {
+                        this._showBacklog = !this._showBacklog;
+                    }
+                }
+            }
+        }
         this._stateVisibilitiesSubject.next(null);
     }
 
