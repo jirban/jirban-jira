@@ -1372,20 +1372,16 @@ public class BoardManagerTest extends AbstractBoardTest {
         issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
         issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("brian"));
         issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C");                  //3
-        issueRegistry.addIssue("TDP", "task", "high", "Four", "kabir", null, "TDP-D");                //4
         issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
-        issueRegistry.addIssue("TBG", "task", "high", "Two", "kabir", null, "TBG-Y");                    //2
 
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
         checkTesters(boardNode, "brian", "jason");
 
-        ModelNode allIssues = getIssuesCheckingSize(boardNode, 6);
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0));
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoTesterChecker.INSTANCE);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0, NoTesterChecker.INSTANCE);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoTesterChecker.INSTANCE);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoTesterChecker.INSTANCE);
 
         //TODO update event and check board
 

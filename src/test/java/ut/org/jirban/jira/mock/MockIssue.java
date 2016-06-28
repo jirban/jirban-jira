@@ -386,6 +386,10 @@ public class MockIssue implements Issue {
     }
 
     void setCustomField(Long customFieldId, Object value) {
-        customFields.put(customFieldId, value);
+        if (value == null) {
+            customFields.remove(customFieldId);
+        } else {
+            customFields.put(customFieldId, value);
+        }
     }
 }

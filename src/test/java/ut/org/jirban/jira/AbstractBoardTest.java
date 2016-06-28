@@ -25,6 +25,7 @@ import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
@@ -110,12 +111,20 @@ public abstract class AbstractBoardTest {
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
                                                                  IssueType issueType, Priority priority, String summary,
                                                                  String username, String[] components, String state) {
-        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, components, state);
+        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, components, state, null);
     }
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
                                                                  String issueType, String priority, String summary,
                                                                  String username, String[] components, String state) {
+        return createCreateEventAndAddToRegistry(issueKey, issueType, priority, summary, username, components, state, null);
+    }
+
+    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
+                                                                 String issueType, String priority, String summary,
+                                                                 String username, String[] components, String state,
+                                                                 Map<Long, String> customFieldValues) {
+
         CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
         User user = userBridge.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
@@ -123,6 +132,12 @@ public abstract class AbstractBoardTest {
                 summary, user, MockProjectComponent.createProjectComponents(components), state, Collections.emptyMap());
 
         issueRegistry.addIssue(projectCode, issueType, priority, summary, username, components, state);
+        if (customFieldValues != null) {
+            for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
+                issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());
+            }
+        }
+
         return create;
     }
 
@@ -133,13 +148,22 @@ public abstract class AbstractBoardTest {
         String issueTypeName = issueType == null ? null : issueType.name;
         String priorityName = priority == null ? null : priority.name;
         return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
-                components, clearComponents, state, rank);
+                components, clearComponents, state, rank, null);
     }
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
                                                                  String priorityName, String summary, String username,
                                                                  boolean unassigned, String[] components,
                                                                  boolean clearComponents, String state, boolean rank) {
+        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
+                components, clearComponents, state, rank, null);
+    }
+
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
+                                                                 String priorityName, String summary, String username,
+                                                                 boolean unassigned, String[] components,
+                                                                 boolean clearComponents, String state, boolean rank,
+                                                                 Map<Long, String> customFieldValues) {
         Assert.assertFalse(username != null && unassigned);
 
         User user;
@@ -154,9 +178,14 @@ public abstract class AbstractBoardTest {
         Issue issue = issueRegistry.getIssue(projectCode, issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
                 priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
-                state, state != null || rank, Collections.emptyMap());
+                state, state != null || rank, customFieldValues);
 
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
+        if (customFieldValues != null) {
+            for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
+                issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());
+            }
+        }
         return update;
     }
     protected enum IssueType {
