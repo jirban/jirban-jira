@@ -54,20 +54,28 @@ import com.atlassian.query.Query;
  */
 public class SearchServiceBuilder {
     private final SearchService searchService = mock(SearchService.class);
+    private final MockComponentWorker mockComponentWorker;
 
-    private IssueRegistry issueRegistry = new IssueRegistry(new UserManagerBuilder().addDefaultUsers().build());
+    private IssueRegistry issueRegistry;
     private String searchIssueKey;
     private String searchProject;
     private String searchStatus;
     private Collection<String> doneStatesFilter;
     private SearchCallback searchCallback;
 
+    public SearchServiceBuilder(MockComponentWorker mockComponentWorker) {
+        this.mockComponentWorker = mockComponentWorker;
+    }
+
     public SearchServiceBuilder setIssueRegistry(IssueRegistry issueRegistry) {
         this.issueRegistry = issueRegistry;
         return this;
     }
 
-    public SearchService build(MockComponentWorker mockComponentWorker) throws SearchException {
+    public SearchService build() throws SearchException {
+        if (issueRegistry == null) {
+            issueRegistry = new IssueRegistry(new UserManagerBuilder().addDefaultUsers().build(mockComponentWorker));
+        }
         registerMockQueryManagers(mockComponentWorker);
         when(searchService.search(any(User.class), any(Query.class), any(PagerFilter.class)))
                 .then(invocation -> getSearchResults());

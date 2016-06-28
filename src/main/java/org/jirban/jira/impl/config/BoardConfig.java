@@ -48,6 +48,7 @@ import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.JiraInjectables;
 
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
@@ -132,29 +133,26 @@ public class BoardConfig {
         this.customFieldConfigsByJiraName = Collections.unmodifiableMap(customFieldConfigsByJiraName);
     }
 
-    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
-                                   CustomFieldManager customFieldManager, int id,
+    public static BoardConfig load(JiraInjectables jiraInjectables, int id,
                                    String owningUserKey, String configJson, int rankCustomFieldId) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
-        return load(issueTypeManager, priorityManager, customFieldManager, id, owningUserKey, boardNode, rankCustomFieldId);
+        return load(jiraInjectables, id, owningUserKey, boardNode, rankCustomFieldId);
     }
 
-    public static ModelNode validateAndSerialize(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
-                                                 CustomFieldManager customFieldManager, int id, String owningUserKey,
+    public static ModelNode validateAndSerialize(JiraInjectables jiraInjectables, int id, String owningUserKey,
                                                  ModelNode boardNode, int rankCustomFieldId) {
-        BoardConfig boardConfig = load(issueTypeManager, priorityManager, customFieldManager, id, owningUserKey, boardNode, rankCustomFieldId);
+        BoardConfig boardConfig = load(jiraInjectables, id, owningUserKey, boardNode, rankCustomFieldId);
         return boardConfig.serializeModelNodeForConfig();
     }
 
-    public static BoardConfig load(IssueTypeManager issueTypeManager, PriorityManager priorityManager,
-                                   CustomFieldManager customFieldManager,
+    public static BoardConfig load(JiraInjectables jiraInjectables,
                                     int id, String owningUserKey, ModelNode boardNode, int rankCustomFieldId) {
         String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
         String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
 
         final BoardStates boardStates = BoardStates.loadBoardStates(boardNode.get(STATES));
-        final Map<String, CustomFieldConfig> customFields = Collections.unmodifiableMap(loadCustomFields(customFieldManager, boardNode));
+        final Map<String, CustomFieldConfig> customFields = Collections.unmodifiableMap(loadCustomFields(jiraInjectables.getCustomFieldManager(), boardNode));
 
         ModelNode projects = getRequiredChild(boardNode, "Group", boardName, PROJECTS);
         ModelNode mainProject = projects.remove(owningProjectName);
@@ -184,8 +182,8 @@ public class BoardConfig {
                 boardStates,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
-                Collections.unmodifiableMap(loadPriorities(priorityManager, boardNode.get(PRIORITIES).asList())),
-                Collections.unmodifiableMap(loadIssueTypes(issueTypeManager, boardNode.get(ISSUE_TYPES).asList())),
+                Collections.unmodifiableMap(loadPriorities(jiraInjectables.getPriorityManager(), boardNode.get(PRIORITIES).asList())),
+                Collections.unmodifiableMap(loadIssueTypes(jiraInjectables.getIssueTypeManager(), boardNode.get(ISSUE_TYPES).asList())),
                 customFields);
         return boardConfig;
     }

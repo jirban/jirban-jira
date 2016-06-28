@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
@@ -52,16 +53,11 @@ import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
-import com.atlassian.jira.avatar.AvatarService;
-import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.project.ProjectManager;
-import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.ApplicationUsers;
-import com.atlassian.jira.user.util.UserManager;
 
 /**
  * The data for a board.
@@ -116,18 +112,17 @@ public class Board {
         return indices;
     }
 
-    public static Builder builder(SearchService searchService, AvatarService avatarService,
-                                  IssueLinkManager issueLinkManager, UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
-        return new Builder(searchService, avatarService, issueLinkManager, boardConfig, boardOwner);
+    public static Builder builder(JiraInjectables jiraInjectables, BoardConfig boardConfig, ApplicationUser boardOwner) {
+        return new Builder(jiraInjectables, boardConfig, boardOwner);
     }
 
-    public Board handleEvent(SearchService searchService, AvatarService avatarService,
-                             IssueLinkManager issueLinkManager, ApplicationUser boardOwner, JirbanIssueEvent event, BoardChangeRegistry changeRegistry) throws SearchException {
-        Updater boardUpdater = new Updater(searchService, avatarService, issueLinkManager, this, boardOwner, changeRegistry);
+    public Board handleEvent(JiraInjectables jiraInjectables, ApplicationUser boardOwner, JirbanIssueEvent event,
+                             BoardChangeRegistry changeRegistry) throws SearchException {
+        Updater boardUpdater = new Updater(jiraInjectables, this, boardOwner, changeRegistry);
         return boardUpdater.handleEvent(event);
     }
 
-    public ModelNode serialize(boolean backlog, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager) {
+    public ModelNode serialize(JiraInjectables jiraInjectables, boolean backlog, ApplicationUser user) {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
         outputNode.get(VIEW).set(currentView);
@@ -170,7 +165,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            projectEntry.getValue().serialize(project, user, projectManager, permissionManager, backlog);
+            projectEntry.getValue().serialize(jiraInjectables, project, user, backlog);
         }
 
         blacklist.serialize(outputNode);
@@ -212,9 +207,9 @@ public class Board {
         }
     }
 
-    private static Assignee createAssignee(AvatarService avatarService, ApplicationUser boardOwner, User assigneeUser) {
+    private static Assignee createAssignee(JiraInjectables jiraInjectables, ApplicationUser boardOwner, User assigneeUser) {
         ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
-        URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
+        URI avatarUrl = jiraInjectables.getAvatarService().getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
         Assignee assignee = Assignee.create(assigneeUser, avatarUrl.toString());
         return assignee;
     }
@@ -229,13 +224,13 @@ public class Board {
     }
 
     static abstract class Accessor {
+        protected final JiraInjectables jiraInjectables;
         protected final BoardConfig boardConfig;
-        protected final IssueLinkManager issueLinkManager;
         protected final ApplicationUser boardOwner;
 
 
-        Accessor(IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
-            this.issueLinkManager = issueLinkManager;
+        Accessor(JiraInjectables jiraInjectables, BoardConfig boardConfig, ApplicationUser boardOwner) {
+            this.jiraInjectables = jiraInjectables;
             this.boardConfig = boardConfig;
             this.boardOwner = boardOwner;
         }
@@ -261,7 +256,7 @@ public class Board {
         }
 
         IssueLinkManager getIssueLinkManager() {
-            return issueLinkManager;
+            return jiraInjectables.getIssueLinkManager();
         }
 
 
@@ -315,9 +310,6 @@ public class Board {
      * Used to create a new board
      */
     public static class Builder extends Accessor {
-        private final SearchService searchService;
-        private final AvatarService avatarService;
-
         private final Map<String, Assignee> assignees = new HashMap<>();
         private final Map<String, Component> components = new HashMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
@@ -325,17 +317,15 @@ public class Board {
         private final Blacklist.Builder blacklist = new Blacklist.Builder();
         private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
 
-        public Builder(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
+        public Builder(JiraInjectables jiraInjectables,
                        BoardConfig boardConfig, ApplicationUser boardOwner) {
-            super(issueLinkManager, boardConfig, boardOwner);
-            this.searchService = searchService;
-            this.avatarService = avatarService;
+            super(jiraInjectables, boardConfig, boardOwner);
         }
 
         public Builder load() throws SearchException {
             for (BoardProjectConfig boardProjectConfig : boardConfig.getBoardProjects()) {
                 BoardProjectConfig project = boardConfig.getBoardProject(boardProjectConfig.getCode());
-                BoardProject.Builder projectBuilder = BoardProject.builder(searchService, this, project, boardOwner);
+                BoardProject.Builder projectBuilder = BoardProject.builder(jiraInjectables, this, project, boardOwner);
                 projectBuilder.load();
                 projects.put(projectBuilder.getCode(), projectBuilder);
             }
@@ -358,7 +348,7 @@ public class Board {
             if (assignee != null) {
                 return assignee;
             }
-            assignee = createAssignee(avatarService, boardOwner, assigneeUser);
+            assignee = createAssignee(jiraInjectables, boardOwner, assigneeUser);
             assignees.put(assigneeUser.getName(), assignee);
             return assignee;
         }
@@ -438,9 +428,7 @@ public class Board {
      */
     static class Updater extends Accessor {
         private final Board board;
-        private final AvatarService avatarService;
         private final BoardChangeRegistry changeRegistry;
-        private final SearchService searchService;
         private final Blacklist.Updater blacklist;
 
         //Will only be populated if a new assignee is brought in
@@ -453,12 +441,9 @@ public class Board {
         private Set<Component> newComponents;
         private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
 
-        Updater(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
-                Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
-            super(issueLinkManager, board.getConfig(), boardOwner);
+        Updater(JiraInjectables jiraInjectables, Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
+            super(jiraInjectables, board.getConfig(), boardOwner);
             this.board = board;
-            this.searchService = searchService;
-            this.avatarService = avatarService;
             this.changeRegistry = changeRegistry;
             this.blacklist = new Blacklist.Updater(board.blacklist);
 
@@ -588,7 +573,7 @@ public class Board {
             final Assignee issueAssignee = getOrCreateIssueAssignee(evtDetail);
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
 
-            final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner);
+            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, this, boardOwner);
             final Issue existingIssue;
             final Issue newIssue;
             if (create) {
@@ -743,7 +728,7 @@ public class Board {
             } else {
                 Assignee assignee = board.sortedAssignees.get(evtAssignee.getName());
                 if (assignee == null) {
-                    assignee = Board.createAssignee(avatarService, boardOwner, evtAssignee);
+                    assignee = Board.createAssignee(jiraInjectables, boardOwner, evtAssignee);
                     newAssignee = assignee;
                     assigneesCopy = copyAndPut(board.sortedAssignees, evtAssignee.getName(), assignee, HashMap::new);
                 }

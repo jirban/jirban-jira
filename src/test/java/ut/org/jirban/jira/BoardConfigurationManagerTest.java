@@ -38,14 +38,26 @@ import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
+import com.atlassian.jira.mock.component.MockComponentWorker;
+
 import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
+import ut.org.jirban.jira.mock.UserManagerBuilder;
 
 /**
  * @author Kabir Khan
  */
 public class BoardConfigurationManagerTest {
+    @Before
+    public void initializeMocks() throws Exception {
+        MockComponentWorker worker = new MockComponentWorker();
+        new UserManagerBuilder()
+                .addDefaultUsers()
+                .build(worker);
+        worker.init();
+    }
 
     //TODO Add more tests for things like saving, and not having the correct permissions
     @Test

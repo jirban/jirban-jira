@@ -48,16 +48,8 @@ import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
-import com.atlassian.jira.avatar.AvatarService;
-import com.atlassian.jira.bc.issue.search.SearchService;
-import com.atlassian.jira.component.ComponentAccessor;
-import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.project.ProjectManager;
-import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.user.util.UserManager;
-import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
  * The interface to the loaded boards
@@ -69,27 +61,12 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     private static final int REFRESH_TIMEOUT_SECONDS = 5 * 60;
 
+    private final JiraInjectables jiraInjectables;
+
     //Guarded by this
     private Map<String, Board> boards = new HashMap<>();
     //Guarded by this
     private Map<String, BoardChangeRegistry> boardChangeRegistries = new HashMap<>();
-
-    @ComponentImport
-    private final SearchService searchService;
-
-    @ComponentImport
-    private final AvatarService avatarService;
-
-    @ComponentImport
-    private final IssueLinkManager issueLinkManager;
-
-    @ComponentImport
-    private final ProjectManager projectManager;
-
-    @ComponentImport
-    private final PermissionManager permissionManager;
-
-    private final UserManager userManager;
 
     private final BoardConfigurationManager boardConfigurationManager;
 
@@ -101,15 +78,9 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     private final Map<String, RefreshEntry> refreshEntries = new HashMap<>();
 
     @Inject
-    public BoardManagerImpl(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
-                            ProjectManager projectManager, PermissionManager permissionManager,
+    public BoardManagerImpl(JiraInjectables jiraInjectables,
                             BoardConfigurationManager boardConfigurationManager) {
-        this.searchService = searchService;
-        this.avatarService = avatarService;
-        this.issueLinkManager = issueLinkManager;
-        this.projectManager = projectManager;
-        this.permissionManager = permissionManager;
-        this.userManager = ComponentAccessor.getUserManager();
+        this.jiraInjectables = jiraInjectables;
         this.boardConfigurationManager = boardConfigurationManager;
     }
 
@@ -132,8 +103,8 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     This user is only used to load board data; all changes will be done using the logged in user.
                     */
 
-                    final ApplicationUser boardOwner = userManager.getUserByKey(boardConfig.getOwningUserKey());
-                    board = Board.builder(searchService, avatarService, issueLinkManager, userManager, boardConfig, boardOwner).load().build();
+                    final ApplicationUser boardOwner = jiraInjectables.getJiraUserManager().getUserByKey(boardConfig.getOwningUserKey());
+                    board = Board.builder(jiraInjectables, boardConfig, boardOwner).load().build();
                     JirbanLogger.LOGGER.debug("Full refresh of board {}; backlog: {}", code, backlog);
                     boards.put(code, board);
                     boardChangeRegistries.put(code, new BoardChangeRegistry(this, board));
@@ -143,7 +114,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
             }
         }
-        return board.serialize(backlog, user, projectManager, permissionManager).toJSONString(true);
+        return board.serialize(jiraInjectables, backlog, user).toJSONString(true);
     }
 
     @Override
@@ -276,10 +247,10 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
                 changeRegistry = boardChangeRegistries.get(boardCode);
             }
-            final ApplicationUser boardOwner = userManager.getUserByKey(board.getConfig().getOwningUserKey());
+            final ApplicationUser boardOwner = jiraInjectables.getJiraUserManager().getUserByKey(board.getConfig().getOwningUserKey());
             try {
                 JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Handling event on board {}", board.getConfig().getCode());
-                Board newBoard = board.handleEvent(searchService, avatarService, issueLinkManager, boardOwner, event, changeRegistry);
+                Board newBoard = board.handleEvent(jiraInjectables, boardOwner, event, changeRegistry);
                 if (newBoard == null) {
                     //The changes in the issue were not relevant
                     return;

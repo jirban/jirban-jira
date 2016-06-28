@@ -44,12 +44,18 @@ import org.jirban.jira.impl.activeobjects.Setting;
 import org.junit.Assert;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
+import com.atlassian.jira.avatar.AvatarService;
+import com.atlassian.jira.bc.issue.IssueService;
+import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.bc.user.UserService;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.CustomFieldManager;
+import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
+import com.atlassian.sal.api.ApplicationProperties;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
 import net.java.ao.EntityManager;
@@ -152,9 +158,30 @@ public class BoardConfigurationManagerBuilder {
             return null;
         });
 
+        //These should not be needed by this code path
+        final ApplicationProperties applicationProperties = null;
+        final AvatarService avatarService = null;
+        final IssueLinkManager issueLinkManager = null;
+        final IssueService issueService = null;
+        final SearchService searchService = null;
+        final UserService userService = null;
 
-        return new BoardConfigurationManagerImpl(activeObjects, issueTypeManager, priorityManager,
-                permissionManager, projectManager, globalPermissionManager, customFieldManager);
+        JiraInjectables jiraInjectables = new JiraInjectables(
+                activeObjects,
+                applicationProperties,
+                avatarService,
+                customFieldManager,
+                globalPermissionManager,
+                issueService,
+                issueLinkManager,
+                issueTypeManager,
+                permissionManager,
+                projectManager,
+                priorityManager,
+                searchService,
+                userService);
+
+        return new BoardConfigurationManagerImpl(jiraInjectables);
     }
 
     public static ModelNode loadConfig(String resource) throws IOException {

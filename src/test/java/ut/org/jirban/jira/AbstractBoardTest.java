@@ -89,10 +89,10 @@ public abstract class AbstractBoardTest {
                 .build(worker);
 
         issueRegistry = new IssueRegistry(userManager);
-        SearchService searchService = new SearchServiceBuilder()
+        SearchService searchService = new SearchServiceBuilder(worker)
                 .setIssueRegistry(issueRegistry)
                 .setSearchCallback(searchCallback)
-                .build(worker);
+                .build();
         IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
         worker.init();
 

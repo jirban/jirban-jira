@@ -34,6 +34,7 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -89,8 +90,8 @@ public class BoardProject {
     }
 
 
-    void serialize(ModelNode parent, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager, boolean backlog) {
-        parent.get(RANK).set(hasRankPermission(user, projectManager, permissionManager));
+    void serialize(JiraInjectables jiraInjectables, ModelNode parent, ApplicationUser user, boolean backlog) {
+        parent.get(RANK).set(hasRankPermission(user, jiraInjectables.getProjectManager(), jiraInjectables.getPermissionManager()));
         ModelNode projectIssues = parent.get(ISSUES);
 
         for (int i = 0 ; i < issueKeysByState.size() ; i++) {
@@ -118,9 +119,9 @@ public class BoardProject {
         return board.getConfig().getOwnerProjectCode().equals(projectConfig.getCode());
     }
 
-    static Builder builder(SearchService searchService, Board.Builder builder, BoardProjectConfig projectConfig,
+    static Builder builder(JiraInjectables jiraInjectables, Board.Builder builder, BoardProjectConfig projectConfig,
                            ApplicationUser boardOwner) {
-        return new Builder(searchService, builder, projectConfig, boardOwner);
+        return new Builder(jiraInjectables, builder, projectConfig, boardOwner);
     }
 
     static LinkedProjectContext linkedProjectContext(Board.Accessor board, LinkedProjectConfig linkedProjectConfig) {
@@ -133,9 +134,9 @@ public class BoardProject {
         return updater.build();
     }
 
-    public Updater updater(SearchService searchService, Board.Updater boardUpdater,
+    public Updater updater(JiraInjectables jiraInjectables, Board.Updater boardUpdater,
                            ApplicationUser boardOwner) {
-        return new Updater(searchService, boardUpdater, this, boardOwner);
+        return new Updater(jiraInjectables, boardUpdater, this, boardOwner);
     }
 
     public boolean isBacklogState(String state) {
@@ -160,13 +161,13 @@ public class BoardProject {
     }
 
     static class Accessor {
-        protected final SearchService searchService;
+        protected final JiraInjectables jiraInjectables;
         protected final Board.Accessor board;
         protected final BoardProjectConfig projectConfig;
         protected final ApplicationUser boardOwner;
 
-        public Accessor(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
-            this.searchService = searchService;
+        public Accessor(JiraInjectables jiraInjectables, Board.Accessor board, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
+            this.jiraInjectables = jiraInjectables;
             this.board = board;
             this.projectConfig = projectConfig;
             this.boardOwner = boardOwner;
@@ -243,9 +244,9 @@ public class BoardProject {
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
-        private Builder(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig,
+        private Builder(JiraInjectables jiraInjectables, Board.Accessor board, BoardProjectConfig projectConfig,
                         ApplicationUser boardOwner) {
-            super(searchService, board, projectConfig, boardOwner);
+            super(jiraInjectables, board, projectConfig, boardOwner);
         }
 
         Builder addIssue(String state, Issue issue) {
@@ -264,6 +265,7 @@ public class BoardProject {
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
             Query query = queryBuilder.buildQuery();
 
+            final SearchService searchService = jiraInjectables.getSearchService();
             if (projectConfig.getQueryFilter() != null) {
                 final SearchService.ParseResult parseResult = searchService.parseQuery(
                         boardOwner.getDirectoryUser(),
@@ -313,9 +315,9 @@ public class BoardProject {
         private boolean updatedState;
 
 
-        Updater(SearchService searchService, Board.Accessor board, BoardProject project,
+        Updater(JiraInjectables jiraInjectables, Board.Accessor board, BoardProject project,
                        ApplicationUser boardOwner) {
-            super(searchService, board, project.projectConfig, boardOwner);
+            super(jiraInjectables, board, project.projectConfig, boardOwner);
             JirbanLogger.LOGGER.debug("BoardProject.Updater - init {}", project.projectConfig.getCode());
             this.project = project;
         }
@@ -352,6 +354,9 @@ public class BoardProject {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - {}", issueKey);
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().issue(issueKey);
+
+            final SearchService searchService = jiraInjectables.getSearchService();
+
             SearchResults searchResults =
                     searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
@@ -436,6 +441,8 @@ public class BoardProject {
             }
             //TODO if it is possible to narrow this down to only get the product keys that would be better than loading everything
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
+
+            final SearchService searchService = jiraInjectables.getSearchService();
 
             SearchResults searchResults =
                     searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());

@@ -24,12 +24,20 @@ package org.jirban.jira.impl;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 
+import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.avatar.AvatarService;
+import com.atlassian.jira.bc.issue.IssueService;
 import com.atlassian.jira.bc.issue.search.SearchService;
+import com.atlassian.jira.bc.user.UserService;
+import com.atlassian.jira.config.IssueTypeManager;
+import com.atlassian.jira.config.PriorityManager;
+import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.util.UserManager;
+import com.atlassian.sal.api.ApplicationProperties;
 
 import ut.org.jirban.jira.mock.AvatarServiceBuilder;
 import ut.org.jirban.jira.mock.PermissionManagerBuilder;
@@ -87,6 +95,31 @@ public class BoardManagerBuilder {
     }
 
     public BoardManager build() {
-        return new BoardManagerImpl(searchService, avatarService, issueLinkManager, projectManager, permissionManager, boardConfigurationManager);
+        //These are not needed for this code path at the moment
+        final ActiveObjects activeObjects = null;
+        final ApplicationProperties applicationProperties = null;
+        final CustomFieldManager customFieldManager = null;
+        final GlobalPermissionManager globalPermissionManager = null;
+        final IssueService issueService = null;
+        final IssueTypeManager issueTypeManager = null;
+        final PriorityManager priorityManager = null;
+        final UserService userService = null;
+
+        JiraInjectables jiraInjectables = new JiraInjectables(
+                activeObjects,
+                applicationProperties,
+                avatarService,
+                customFieldManager,
+                globalPermissionManager,
+                issueService,
+                issueLinkManager,
+                issueTypeManager,
+                permissionManager,
+                projectManager,
+                priorityManager,
+                searchService,
+                userService);
+
+        return new BoardManagerImpl(jiraInjectables, boardConfigurationManager);
     }
 }
