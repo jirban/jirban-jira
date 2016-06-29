@@ -131,10 +131,12 @@ public abstract class Issue {
      * @param priority the priority
      * @param assignee the assignee
      * @param components the component
+     * @param customFieldValues
      * @return the issue
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
-                                      String summary, String issueType, String priority, Assignee assignee, Set<Component> components) {
+                                      String summary, String issueType, String priority, Assignee assignee,
+                                      Set<Component> components, Map<Long, String> customFieldValues) {
         Builder builder = new Builder(project, issueKey);
         builder.setState(state);
         builder.setSummary(summary);
@@ -142,6 +144,7 @@ public abstract class Issue {
         builder.setPriority(priority);
         builder.setAssignee(assignee);
         builder.setComponents(components);
+        builder.setCustomFieldValues(customFieldValues);
 
         //TODO linked issues
         return builder.build();
@@ -317,7 +320,7 @@ public abstract class Issue {
         String state;
         Integer stateIndex;
         Set<LinkedIssue> linkedIssues;
-        Map<String, CustomFieldValue> customFields;
+        Map<String, CustomFieldValue> customFieldValues;
 
         private Builder(BoardProject.Accessor project) {
             this.project = project;
@@ -357,7 +360,7 @@ public abstract class Issue {
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
 
-            customFields =
+            customFieldValues =
                     CustomFieldValue.loadCustomFields(project, issue);
 
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
@@ -448,9 +451,16 @@ public abstract class Issue {
                 return new BoardIssue(
                         project.getConfig(), issueKey, state, stateIndex, summary,
                         issueTypeIndex, priorityIndex, assignee, components, linkedList,
-                        customFields == null ? Collections.emptyMap() : Collections.unmodifiableMap(customFields));
+                        customFieldValues == null ? Collections.emptyMap() : Collections.unmodifiableMap(customFieldValues));
             }
             return null;
+        }
+
+        public Builder setCustomFieldValues(Map<Long, String> customFieldValues) {
+            if (customFieldValues != null) {
+                this.customFieldValues = CustomFieldValue.loadCustomFields(project, customFieldValues);
+            }
+            return this;
         }
     }
  }

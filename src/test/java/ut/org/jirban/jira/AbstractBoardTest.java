@@ -24,7 +24,6 @@ package ut.org.jirban.jira;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 
 import org.jirban.jira.api.BoardConfigurationManager;
@@ -115,6 +114,14 @@ public abstract class AbstractBoardTest {
     }
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
+                                                                 IssueType issueType, Priority priority, String summary,
+                                                                 String username, String[] components, String state,
+                                                                 Map<Long, String> customFieldValues) {
+        return createCreateEventAndAddToRegistry(
+                issueKey, issueType.name, priority.name, summary, username, components, state, customFieldValues);
+    }
+
+    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
                                                                  String issueType, String priority, String summary,
                                                                  String username, String[] components, String state) {
         return createCreateEventAndAddToRegistry(issueKey, issueType, priority, summary, username, components, state, null);
@@ -129,7 +136,7 @@ public abstract class AbstractBoardTest {
         User user = userBridge.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, MockProjectComponent.createProjectComponents(components), state, Collections.emptyMap());
+                summary, user, MockProjectComponent.createProjectComponents(components), state, customFieldValues);
 
         issueRegistry.addIssue(projectCode, issueType, priority, summary, username, components, state);
         if (customFieldValues != null) {

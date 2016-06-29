@@ -42,6 +42,7 @@ import org.jirban.jira.impl.config.LinkedProjectConfig;
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
+import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
@@ -209,11 +210,15 @@ public class BoardProject {
         }
 
         IssueLinkManager getIssueLinkManager() {
-            return board.getIssueLinkManager();
+            return jiraInjectables.getIssueLinkManager();
         }
 
         Assignee getAssignee(User assigneeUser) {
             return board.getAssignee(assigneeUser);
+        }
+
+        CustomFieldManager getCustomFieldManager() {
+            return jiraInjectables.getCustomFieldManager();
         }
 
         public String getCode() {
@@ -232,8 +237,16 @@ public class BoardProject {
             return board;
         }
 
-        public CustomFieldValue getCustomField(CustomFieldConfig customField, Object fieldValue) {
-            return board.getCustomField(customField, fieldValue);
+        public CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, Object fieldValue) {
+            return board.getCustomFieldValue(customField, fieldValue);
+        }
+
+        public CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, String key) {
+            return board.getCustomFieldValue(customField, key);
+        }
+
+        public JiraInjectables getJiraInjectables() {
+            return jiraInjectables;
         }
     }
 
@@ -323,9 +336,11 @@ public class BoardProject {
         }
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
-                          Assignee assignee, Set<Component> issueComponents, String state) {
+                          Assignee assignee, Set<Component> issueComponents, String state,
+                          Map<Long, String> customFieldValues) {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
-            newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee, issueComponents);
+            newIssue = Issue.createForCreateEvent(
+                    this, issueKey, state, summary, issueType, priority, assignee, issueComponents, customFieldValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
             updatedState = newIssue != null;
             return newIssue;

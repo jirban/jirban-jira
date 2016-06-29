@@ -273,7 +273,9 @@ public class Board {
         abstract Issue getIssue(String issueKey);
         abstract Blacklist.Accessor getBlacklist();
 
-        abstract CustomFieldValue getCustomField(CustomFieldConfig customField, Object fieldValue);
+        abstract CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, Object fieldValue);
+
+        abstract CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, String key);
 
         abstract Set<Component> getComponents(Collection<ProjectComponent> componentObjects);
 
@@ -372,10 +374,16 @@ public class Board {
         }
 
         @Override
-        CustomFieldValue getCustomField(CustomFieldConfig customFieldConfig, Object fieldValue) {
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, Object fieldValue) {
             final SortedCustomFieldValues.Builder customFieldBuilder =
                     customFieldBuilders.computeIfAbsent(customFieldConfig.getId(), id -> new SortedCustomFieldValues.Builder(customFieldConfig));
-            return customFieldBuilder.getCustomField(fieldValue);
+            return customFieldBuilder.getCustomFieldValue(fieldValue);
+        }
+
+        @Override
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, String key) {
+            //Should not get called for this code path
+            throw new IllegalStateException();
         }
 
         @Override
@@ -439,7 +447,7 @@ public class Board {
 
         private Assignee newAssignee;
         private Set<Component> newComponents;
-        private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
+        private final Map<Long, SortedCustomFieldValues.Updater> customFieldUpdaters = new HashMap();
 
         Updater(JiraInjectables jiraInjectables, Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
             super(jiraInjectables, board.getConfig(), boardOwner);
@@ -502,7 +510,7 @@ public class Board {
                     board.sortedComponents,
                     Collections.unmodifiableMap(allIssuesCopy),
                     projectsCopy,
-                    Collections.emptyMap(),//TODO
+                    SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
                     blacklist.build());
             boardCopy.updateBoardInProjects();
 
@@ -580,7 +588,8 @@ public class Board {
                 JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- create issue {}", event.getIssueKey());
                 existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
-                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents, evtDetail.getState());
+                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents,
+                        evtDetail.getState(), evtDetail.getCustomFieldValues());
             } else {
                 existingIssue = board.allIssues.get(event.getIssueKey());
                 if (existingIssue == null) {
@@ -626,7 +635,7 @@ public class Board {
                         componentsCopy == null ? board.sortedComponents : Collections.unmodifiableMap(sortComponents(componentsCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
-                        Collections.emptyMap(), //TODO
+                        SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
                         blacklist.build());
 
                 //Register the event
@@ -696,8 +705,28 @@ public class Board {
         }
 
         @Override
-        CustomFieldValue getCustomField(CustomFieldConfig customField, Object fieldValue) {
-            return null;
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, Object fieldValue) {
+            //Should not get called for this code path
+            throw new IllegalStateException();
+        }
+
+        @Override
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, String key) {
+            SortedCustomFieldValues boardValues = board.sortedCustomFieldValues.get(customFieldConfig.getName());
+            if (boardValues != null) {
+                CustomFieldValue customFieldValue = boardValues.getCustomFieldValue(key);
+                if (customFieldValue != null) {
+                    return customFieldValue;
+                }
+            }
+
+            final SortedCustomFieldValues.Updater customFieldUpdater =
+                    customFieldUpdaters.computeIfAbsent(customFieldConfig.getId(),
+                            id -> new SortedCustomFieldValues.Updater(
+                                    customFieldConfig,
+                                    board.sortedCustomFieldValues.get(customFieldConfig.getName())));
+
+            return customFieldUpdater.getCustomFieldValue(jiraInjectables, key);
         }
 
         @Override

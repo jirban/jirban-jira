@@ -46,8 +46,10 @@ import static org.jirban.jira.impl.Constants.TYPE;
 import static org.jirban.jira.impl.Constants.UNORDERED;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
@@ -1364,7 +1366,6 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         initializeMocks("config/board-custom.json");
         final Long testerId = 121212121212L;
-        final Long targetReleaseid = 252121989812L;
 
 
         issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
@@ -1382,10 +1383,77 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0));
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoTesterChecker.INSTANCE);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoTesterChecker.INSTANCE);
-
-        //TODO update event and check board
-
     }
+
+    @Test
+    public void testAddIssuesNewCustomFieldData() throws Exception {
+        initializeMocks("config/board-custom.json");
+        final Long testerId = 121212121212L;
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("jason"));
+        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
+        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        checkTesters(boardNode, "jason");
+
+        //Initial board was checked in testLoadBoardWithCustomFields() so don't bother checking it all here
+
+        //Create an issue in the main project
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "brian");
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
+                "Four", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        checkComponents(boardNode);
+        checkNoBlacklist(boardNode);
+        checkTesters(boardNode, "brian", "jason");
+
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 5);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoTesterChecker.INSTANCE);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoTesterChecker.INSTANCE);
+
+        //Create an issue in the other project, which does NOT have the Tester field configured for the board
+        customFieldValues.put(testerId, "stuart");
+        create = createCreateEventAndAddToRegistry("TBG-2", IssueType.FEATURE, Priority.HIGH,
+                "Two", "kabir", null, "TBG-Y", customFieldValues);
+        boardManager.handleEvent(create);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        checkComponents(boardNode);
+        checkNoBlacklist(boardNode);
+        checkTesters(boardNode, "brian", "jason");
+
+        allIssues = getIssuesCheckingSize(boardNode, 6);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoTesterChecker.INSTANCE);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoTesterChecker.INSTANCE);
+        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, NoTesterChecker.INSTANCE);
+    }
+//
+//    @Test
+//    public void testAddIssuesNoNewCustomFieldData() throws Exception {
+//        Assert.fail("Implement me");
+//    }
+//
+//    @Test
+//    public void  testUpdateIssuesNewCustomFieldData() throws Exception {
+//        Assert.fail("Implement me");
+//    }
+//
+//    @Test
+//    public void  testUpdateIssuesNoNewCustomFieldData() throws Exception {
+//        Assert.fail("Implement me");
+//    }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);

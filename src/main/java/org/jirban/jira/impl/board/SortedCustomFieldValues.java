@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 
 /**
@@ -27,6 +28,10 @@ public class SortedCustomFieldValues {
         return config.getName();
     }
 
+    CustomFieldValue getCustomFieldValue(String key) {
+        return sortedFields.get(key);
+    }
+
     int getCustomFieldIndex(CustomFieldValue customFieldValue) {
         return fieldIndices.get(customFieldValue.getKey());
     }
@@ -42,26 +47,16 @@ public class SortedCustomFieldValues {
     }
 
     static abstract class Accessor {
-        private final CustomFieldConfig config;
-        private final Map<String, CustomFieldValue> fields;
+        protected final CustomFieldConfig config;
+        protected final Map<String, CustomFieldValue> fields;
 
-        public Accessor(CustomFieldConfig config, Map<String, CustomFieldValue> fields) {
+        protected Accessor(CustomFieldConfig config) {
+            this(config, null);
+        }
+
+        protected Accessor(CustomFieldConfig config, Map<String, CustomFieldValue> fields) {
             this.config = config;
-            this.fields = fields;
-        }
-
-        public CustomFieldConfig getConfig() {
-            return config;
-        }
-
-        public Map<String, CustomFieldValue> getFields() {
-            return fields;
-        }
-
-        CustomFieldValue getCustomField(Object customFieldValue) {
-            final CustomFieldUtil util = config.getUtil();
-            return fields.computeIfAbsent(
-                    util.getKey(customFieldValue), s -> util.loadCustomField(config, customFieldValue));
+            this.fields = fields == null ? new HashMap<>() : new HashMap<>(fields);
         }
     }
 
@@ -71,9 +66,43 @@ public class SortedCustomFieldValues {
             super(config, new HashMap<>());
         }
 
+        CustomFieldValue getCustomFieldValue(Object customFieldValue) {
+            final CustomFieldUtil util = config.getUtil();
+            return fields.computeIfAbsent(
+                    util.getKey(customFieldValue), s -> util.loadCustomField(config, customFieldValue));
+        }
+
         SortedCustomFieldValues build() {
-            final Map<String, CustomFieldValue> sortedFields = getConfig().getUtil().sortFields(getFields());
-            return new SortedCustomFieldValues(getConfig(), Collections.unmodifiableMap(sortedFields));
+            final Map<String, CustomFieldValue> sortedFields = config.getUtil().sortFields(fields);
+            return new SortedCustomFieldValues(config, Collections.unmodifiableMap(sortedFields));
+        }
+    }
+
+    static class Updater extends Accessor {
+        Updater(CustomFieldConfig config, SortedCustomFieldValues sortedCustomFieldValues) {
+            super(config, sortedCustomFieldValues.sortedFields);
+        }
+
+        CustomFieldValue getCustomFieldValue(JiraInjectables jiraInjectables, String key) {
+            final CustomFieldUtil util = config.getUtil();
+            return fields.computeIfAbsent(
+                    key, s -> util.loadCustomFieldFromKey(jiraInjectables, config, key));
+        }
+
+        static Map<String, SortedCustomFieldValues> merge(Map<Long, SortedCustomFieldValues.Updater> updates, Map<String, SortedCustomFieldValues> original) {
+            if (updates == null) {
+                return original;
+            }
+            Map<String, SortedCustomFieldValues> result = new HashMap<>(original);
+            for (SortedCustomFieldValues.Updater updater : updates.values()) {
+                final Map<String, CustomFieldValue> sortedFields =
+                        updater.config.getUtil().sortFields(updater.fields);
+
+                result.put(
+                        updater.config.getName(),
+                        new SortedCustomFieldValues(updater.config, Collections.unmodifiableMap(updater.fields)));
+            }
+            return result;
         }
     }
 

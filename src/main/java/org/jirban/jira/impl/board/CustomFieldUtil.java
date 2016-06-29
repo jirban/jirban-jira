@@ -7,6 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 
 /**
@@ -19,6 +20,8 @@ public abstract class CustomFieldUtil {
     abstract String getKey(Object fieldValue);
 
     public abstract String getChangeValue(Object fieldValue);
+
+    abstract CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key);
 
     Map<String, CustomFieldValue> sortFields(Map<String, CustomFieldValue> fields) {
         List<CustomFieldValue> fieldValues = new ArrayList<>(fields.values());
@@ -47,6 +50,11 @@ public abstract class CustomFieldUtil {
         public String getChangeValue(Object fieldValue) {
             return UserCustomFieldValue.getChangeValue(fieldValue);
         }
+
+        @Override
+        CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
+            return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+        }
     };
 
     public static final CustomFieldUtil PREDEFINED_LIST = new CustomFieldUtil() {
@@ -62,6 +70,11 @@ public abstract class CustomFieldUtil {
 
         @Override
         public String getChangeValue(Object fieldValue) {
+            return null;
+        }
+
+        @Override
+        CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
             return null;
         }
     };

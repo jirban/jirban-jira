@@ -34,8 +34,28 @@ public abstract class CustomFieldValue {
             if (customFieldValue == null) {
                 continue;
             }
-            final CustomFieldValue customField = project.getCustomField(customFieldConfig, customFieldValue);
+            final CustomFieldValue customField = project.getCustomFieldValue(customFieldConfig, customFieldValue);
             fields.put(customField.getKey(), customField);
+        }
+        return fields.size() > 0 ? fields : Collections.emptyMap();
+    }
+
+    static Map<String, CustomFieldValue> loadCustomFields(final BoardProject.Accessor project, final Map<Long, String> customFieldValues) {
+        final List<String> customFieldNames = project.getConfig().getCustomFieldNames();
+        if (customFieldNames.size() == 0) {
+            return Collections.emptyMap();
+        }
+
+        final Map<String, CustomFieldValue> fields = new HashMap<>(customFieldNames.size());
+        for (String customFieldName : customFieldNames) {
+            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfigForJirbanId(customFieldName);
+            String value = customFieldValues.get(customFieldConfig.getId());
+
+            if (value != null) {
+                CustomFieldValue customFieldValue =
+                        project.getCustomFieldValue(customFieldConfig, value);
+                fields.put(customFieldName, customFieldValue);
+            }
         }
         return fields.size() > 0 ? fields : Collections.emptyMap();
     }
