@@ -24,19 +24,13 @@
       "name": "Tester",
       "type": "user",
       "field-id": 121212121212
-    },
-    {
-      "name": "Target Release",
-      "type": "predefined-list",
-      "field-id": 252121989812,
-      "config": ["7.0.0.GA", "7.1.0.GA"]
     }
   ],
   "projects": {
     "TDP": {
       "query-filter": null,
       "colour": "#4667CA",
-      "custom": ["Tester", "Target Release"],
+      "custom": ["Tester"],
       "state-links": {
         "TDP-A" : "S-A",
         "TDP-B" : "S-B",
@@ -47,7 +41,6 @@
     "TBG": {
       "query-filter": null,
       "colour": "#CA6746",
-      "custom": ["Target Release"],
       "state-links": {
         "TBG-X": "S-B",
         "TBG-Y": "S-C"

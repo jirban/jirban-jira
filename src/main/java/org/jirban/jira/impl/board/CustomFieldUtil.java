@@ -33,8 +33,6 @@ public abstract class CustomFieldUtil {
         return result;
     }
 
-
-
     public static final CustomFieldUtil USER = new CustomFieldUtil() {
         @Override
         CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
@@ -56,27 +54,4 @@ public abstract class CustomFieldUtil {
             return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
         }
     };
-
-    public static final CustomFieldUtil PREDEFINED_LIST = new CustomFieldUtil() {
-        @Override
-        CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
-            return null;
-        }
-
-        @Override
-        String getKey(Object fieldValue) {
-            return null;
-        }
-
-        @Override
-        public String getChangeValue(Object fieldValue) {
-            return null;
-        }
-
-        @Override
-        CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
-            return null;
-        }
-    };
-
 }

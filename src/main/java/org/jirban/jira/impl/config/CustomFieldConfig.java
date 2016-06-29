@@ -79,8 +79,6 @@ public abstract class CustomFieldConfig {
         switch (type) {
             case USER:
                 return new UserCustomFieldConfig(name, type, customField);
-            case PREDEFINED_LIST:
-                return PredefinedListCustomFieldConfig.load(name, type, customField, customFieldCfgNode);
             default:
                 throw new JirbanValidationException("Unknown 'type': " + typeName);
         }
@@ -120,8 +118,7 @@ public abstract class CustomFieldConfig {
     }
 
     public enum Type {
-        USER("user"),
-        PREDEFINED_LIST("predefined-list");
+        USER("user");
 
         private static final Map<String, Type> TYPES_BY_NAME;
         static {
