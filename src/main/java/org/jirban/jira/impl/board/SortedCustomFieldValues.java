@@ -80,7 +80,7 @@ public class SortedCustomFieldValues {
 
     static class Updater extends Accessor {
         Updater(CustomFieldConfig config, SortedCustomFieldValues sortedCustomFieldValues) {
-            super(config, sortedCustomFieldValues.sortedFields);
+            super(config, sortedCustomFieldValues == null ? null : sortedCustomFieldValues.sortedFields);
         }
 
         CustomFieldValue getCustomFieldValue(JiraInjectables jiraInjectables, String key) {
@@ -100,7 +100,7 @@ public class SortedCustomFieldValues {
 
                 result.put(
                         updater.config.getName(),
-                        new SortedCustomFieldValues(updater.config, Collections.unmodifiableMap(updater.fields)));
+                        new SortedCustomFieldValues(updater.config, Collections.unmodifiableMap(sortedFields)));
             }
             return result;
         }

@@ -24,13 +24,18 @@
       "name": "Tester",
       "type": "user",
       "field-id": 121212121212
+    },
+    {
+      "name": "Documenter",
+      "type": "user",
+      "field-id": 121212121213
     }
   ],
   "projects": {
     "TDP": {
       "query-filter": null,
       "colour": "#4667CA",
-      "custom": ["Tester"],
+      "custom": ["Tester", "Documenter"],
       "state-links": {
         "TDP-A" : "S-A",
         "TDP-B" : "S-B",
@@ -41,6 +46,7 @@
     "TBG": {
       "query-filter": null,
       "colour": "#CA6746",
+      "custom": ["Tester"],
       "state-links": {
         "TBG-X": "S-B",
         "TBG-Y": "S-C"

@@ -361,7 +361,7 @@ public abstract class Issue {
             setState(issue.getStatusObject().getName());
 
             customFieldValues =
-                    CustomFieldValue.loadCustomFields(project, issue);
+                    CustomFieldValue.loadCustomFieldValues(project, issue);
 
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
             addLinkedIssues(issueLinkManager.getOutwardLinks(issue.getId()), true);
@@ -458,7 +458,7 @@ public abstract class Issue {
 
         public Builder setCustomFieldValues(Map<Long, String> customFieldValues) {
             if (customFieldValues != null) {
-                this.customFieldValues = CustomFieldValue.loadCustomFields(project, customFieldValues);
+                this.customFieldValues = CustomFieldValue.loadCustomFieldValues(project, customFieldValues);
             }
             return this;
         }

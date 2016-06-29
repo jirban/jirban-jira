@@ -21,7 +21,7 @@ public abstract class CustomFieldValue {
         this.customFieldName = customFieldName;
     }
 
-    static Map<String, CustomFieldValue> loadCustomFields(final BoardProject.Accessor project, final Issue issue) {
+    static Map<String, CustomFieldValue> loadCustomFieldValues(final BoardProject.Accessor project, final Issue issue) {
         final List<String> customFieldNames = project.getConfig().getCustomFieldNames();
         if (customFieldNames.size() == 0) {
             return Collections.emptyMap();
@@ -35,12 +35,12 @@ public abstract class CustomFieldValue {
                 continue;
             }
             final CustomFieldValue customField = project.getCustomFieldValue(customFieldConfig, customFieldValue);
-            fields.put(customField.getKey(), customField);
+            fields.put(customFieldName, customField);
         }
         return fields.size() > 0 ? fields : Collections.emptyMap();
     }
 
-    static Map<String, CustomFieldValue> loadCustomFields(final BoardProject.Accessor project, final Map<Long, String> customFieldValues) {
+    static Map<String, CustomFieldValue> loadCustomFieldValues(final BoardProject.Accessor project, final Map<Long, String> customFieldValues) {
         final List<String> customFieldNames = project.getConfig().getCustomFieldNames();
         if (customFieldNames.size() == 0) {
             return Collections.emptyMap();
