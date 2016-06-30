@@ -582,6 +582,9 @@ public class Board {
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
 
             final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, this, boardOwner);
+            final Map<String, CustomFieldValue> customFieldValues
+                    = CustomFieldValue.loadCustomFieldValues(projectUpdater, evtDetail.getCustomFieldValues());
+
             final Issue existingIssue;
             final Issue newIssue;
             if (create) {
@@ -589,7 +592,7 @@ public class Board {
                 existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents,
-                        evtDetail.getState(), evtDetail.getCustomFieldValues());
+                        evtDetail.getState(), customFieldValues);
             } else {
                 existingIssue = board.allIssues.get(event.getIssueKey());
                 if (existingIssue == null) {
@@ -610,7 +613,7 @@ public class Board {
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
-                            evtDetail.isRankOrStateChanged(), evtDetail.getState(), evtDetail.getCustomFieldValues());
+                            evtDetail.isRankOrStateChanged(), evtDetail.getState(), customFieldValues);
                 }
             }
 
@@ -668,6 +671,10 @@ public class Board {
                         changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
                                 blacklist.getAddedPriority(), blacklist.getAddedIssue());
                     }
+                    if (customFieldValues.size() > 0) {
+                        changeBuilder.addCustomFieldValues(board.sortedCustomFieldValues, customFieldValues);
+                    }
+
                     //Propagate the new state somehow
                     if (evtDetail.isRankOrStateChanged()) {
                         Issue issue = boardCopy.getIssue(event.getIssueKey());

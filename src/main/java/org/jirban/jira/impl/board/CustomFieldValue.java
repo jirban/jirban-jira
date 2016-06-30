@@ -17,6 +17,9 @@ public abstract class CustomFieldValue {
 
     private final String customFieldName;
 
+    //Jira's event mechanism seems to use an empty string to unset custom fields
+    public static final String UNSET_VALUE = "";
+
     protected CustomFieldValue(String customFieldName) {
         this.customFieldName = customFieldName;
     }

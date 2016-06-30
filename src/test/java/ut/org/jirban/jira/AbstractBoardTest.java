@@ -21,12 +21,14 @@
  */
 package ut.org.jirban.jira;
 
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
@@ -58,9 +60,6 @@ import ut.org.jirban.jira.mock.UserManagerBuilder;
  * @author Kabir Khan
  */
 public abstract class AbstractBoardTest {
-
-    //(Jira's event mechanism seems to use "" when something is unset)
-    static final String CLEARED_CUSTOM_FIELD = "";
 
     @Rule
     public MockitoContainer mockitoContainer = MockitoMocksInContainer.rule(this);
@@ -250,5 +249,25 @@ public abstract class AbstractBoardTest {
 
     interface AdditionalBuilderInit {
         void initialise(BoardManagerBuilder boardManagerBuilder);
+    }
+
+    interface IssueCustomFieldChecker {
+        void check(ModelNode issue);
+    }
+
+    static class NoIssueCustomFieldChecker implements IssueCustomFieldChecker {
+        static final NoIssueCustomFieldChecker TESTER = new NoIssueCustomFieldChecker("Tester");
+        static final NoIssueCustomFieldChecker DOCUMENTER = new NoIssueCustomFieldChecker("Documenter");
+
+        private final String fieldName;
+
+        private NoIssueCustomFieldChecker(String fieldName) {
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
+        }
     }
 }

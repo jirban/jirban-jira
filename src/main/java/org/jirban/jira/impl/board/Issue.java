@@ -137,7 +137,7 @@ public abstract class Issue {
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
                                       String summary, String issueType, String priority, Assignee assignee,
-                                      Set<Component> components, Map<Long, String> customFieldValues) {
+                                      Set<Component> components, Map<String, CustomFieldValue> customFieldValues) {
         Builder builder = new Builder(project, issueKey);
         builder.setState(state);
         builder.setSummary(summary);
@@ -170,7 +170,7 @@ public abstract class Issue {
      */
     static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
                                     String summary, Assignee issueAssignee, Set<Component> issueComponents,
-                                    String state, Map<Long, String> customFieldValues) {
+                                    String state, Map<String, CustomFieldValue> customFieldValues) {
         if (existing instanceof BoardIssue == false) {
             return null;
         }
@@ -180,7 +180,7 @@ public abstract class Issue {
 
     private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
                                             String summary, Assignee issueAssignee, Set<Component> issueComponents,
-                                            String state, Map<Long, String> customFieldValues) {
+                                            String state, Map<String, CustomFieldValue> customFieldValues) {
         Builder builder = new Builder(project, existing);
         boolean changed = false;
         if (issueType != null) {
@@ -489,9 +489,9 @@ public abstract class Issue {
             }
         }
 
-        public Builder setCustomFieldValues(Map<Long, String> customFieldValues) {
+        public Builder setCustomFieldValues(Map<String, CustomFieldValue> customFieldValues) {
             if (customFieldValues != null) {
-                this.customFieldValues = CustomFieldValue.loadCustomFieldValues(project, customFieldValues);
+                this.customFieldValues = customFieldValues;
             }
             return this;
         }

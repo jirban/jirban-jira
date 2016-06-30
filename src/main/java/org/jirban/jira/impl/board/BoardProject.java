@@ -337,7 +337,7 @@ public class BoardProject {
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
                           Assignee assignee, Set<Component> issueComponents, String state,
-                          Map<Long, String> customFieldValues) {
+                          Map<String, CustomFieldValue> customFieldValues) {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
             newIssue = Issue.createForCreateEvent(
                     this, issueKey, state, summary, issueType, priority, assignee, issueComponents, customFieldValues);
@@ -348,7 +348,7 @@ public class BoardProject {
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
                           Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged,
-                          String state, Map<Long, String> customFieldValues) {
+                          String state, Map<String, CustomFieldValue> customFieldValues) {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), rankOrStateChanged);
             this.existing = existing;
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,

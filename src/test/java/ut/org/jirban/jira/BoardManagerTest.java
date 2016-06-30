@@ -44,6 +44,7 @@ import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
 import static org.jirban.jira.impl.Constants.UNORDERED;
+import static org.jirban.jira.impl.board.CustomFieldValue.UNSET_VALUE;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1430,8 +1431,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoCustomFieldChecker.TESTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoCustomFieldChecker.TESTER);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
     }
@@ -1460,8 +1461,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(1));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), new TesterChecker(0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {}});
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
 
@@ -1522,13 +1523,13 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 9);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(1));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), new TesterChecker(0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, NoCustomFieldChecker.TESTER, new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, NoIssueCustomFieldChecker.TESTER, new DocumenterChecker(1));
         checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 3, 0, new TesterChecker(0), new DocumenterChecker(0));
-        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Six", null, 3, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.HIGH, "Three", null, 1, 0, new TesterChecker(2), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Six", null, 3, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.HIGH, "Three", null, 1, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4", "TDP-5", "TDP-6"}});
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {"TBG-2", "TBG-3"}, {}});
     }
@@ -1565,11 +1566,11 @@ public class BoardManagerTest extends AbstractBoardTest {
 
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 5);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4"}});
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
 
@@ -1587,12 +1588,12 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkDocumenters(boardNode, "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 6);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 0, 0, new TesterChecker(2), new DocumenterChecker(0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1", "TDP-5"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4"}});
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
 
@@ -1609,13 +1610,13 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkDocumenters(boardNode, "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 0, 0, new TesterChecker(3), new DocumenterChecker(0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1", "TDP-5"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4"}});
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {"TBG-2"}, {}});
     }
@@ -1658,7 +1659,7 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         //Unset custom fields, this will not remove it from the lookup list of field values
         customFieldValues = new HashMap<>();
-        customFieldValues.put(documenterId, CLEARED_CUSTOM_FIELD);
+        customFieldValues.put(documenterId, UNSET_VALUE);
         update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
         boardManager.handleEvent(update);
@@ -1669,15 +1670,15 @@ public class BoardManagerTest extends AbstractBoardTest {
 
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
 
 
         //Clear all custom fields in an issue, they will stay in the lookup list of field values
         customFieldValues = new HashMap<>();
-        customFieldValues.put(documenterId, CLEARED_CUSTOM_FIELD);
-        customFieldValues.put(testerId, CLEARED_CUSTOM_FIELD);
+        customFieldValues.put(documenterId, UNSET_VALUE);
+        customFieldValues.put(testerId, UNSET_VALUE);
         update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
                 null, null, false, null, false, null, false, customFieldValues);
         boardManager.handleEvent(update);
@@ -1687,8 +1688,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkTesters(boardNode, "jason", "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
 
         customFieldValues = new HashMap<>();
@@ -1702,8 +1703,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkTesters(boardNode, "jason", "kabir");
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
         checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
     }
 
@@ -1851,7 +1852,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkIssue(ModelNode issues, String key, IssueType type, Priority priority, String summary,
-                            int[] components, int state, int assignee, CustomFieldChecker...customFieldCheckers) {
+                            int[] components, int state, int assignee, IssueCustomFieldChecker... issueCustomFieldCheckers) {
         ModelNode issue = issues.get(key);
         Assert.assertNotNull(issue);
         Assert.assertEquals(key, issue.get(KEY).asString());
@@ -1873,8 +1874,8 @@ public class BoardManagerTest extends AbstractBoardTest {
                 Assert.assertEquals(components[i], componentsNodes.get(i).asInt());
             }
         }
-        for (CustomFieldChecker customFieldChecker : customFieldCheckers) {
-            customFieldChecker.check(issue);
+        for (IssueCustomFieldChecker issueCustomFieldChecker : issueCustomFieldCheckers) {
+            issueCustomFieldChecker.check(issue);
         }
     }
 
@@ -1915,15 +1916,11 @@ public class BoardManagerTest extends AbstractBoardTest {
         Assert.assertFalse(boardNode.has(BLACKLIST));
     }
 
-    private interface CustomFieldChecker {
-        void check(ModelNode issue);
-    }
-
-    private static class DefaultCustomFieldChecker implements CustomFieldChecker {
+    static class DefaultIssueCustomFieldChecker implements IssueCustomFieldChecker {
         private final String fieldName;
         private final int id;
 
-        public DefaultCustomFieldChecker(String fieldName, int id) {
+        public DefaultIssueCustomFieldChecker(String fieldName, int id) {
             this.fieldName = fieldName;
             this.id = id;
         }
@@ -1934,31 +1931,16 @@ public class BoardManagerTest extends AbstractBoardTest {
             Assert.assertEquals(id, issue.get(CUSTOM, fieldName).asInt());
         }
     }
-    private static class TesterChecker extends DefaultCustomFieldChecker {
+
+    static class TesterChecker extends DefaultIssueCustomFieldChecker {
         public TesterChecker(int testerId) {
             super("Tester", testerId);
         }
     }
 
-    private static class DocumenterChecker extends DefaultCustomFieldChecker {
+    static class DocumenterChecker extends DefaultIssueCustomFieldChecker {
         public DocumenterChecker(int documenterId) {
             super("Documenter", documenterId);
-        }
-    }
-
-    private static class NoCustomFieldChecker implements CustomFieldChecker {
-        static final NoCustomFieldChecker TESTER = new NoCustomFieldChecker("Tester");
-        static final NoCustomFieldChecker DOCUMENTER = new NoCustomFieldChecker("Documenter");
-
-        private final String fieldName;
-
-        private NoCustomFieldChecker(String fieldName) {
-            this.fieldName = fieldName;
-        }
-
-        @Override
-        public void check(ModelNode issue) {
-            Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
         }
     }
 }
