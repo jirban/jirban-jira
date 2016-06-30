@@ -347,10 +347,12 @@ public class BoardProject {
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
-                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged, String state) {
+                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged,
+                          String state, Map<Long, String> customFieldValues) {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), rankOrStateChanged);
             this.existing = existing;
-            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, issueComponents, state);
+            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
+                    summary, issueAssignee, issueComponents, state, customFieldValues);
             if (newIssue == null && rankOrStateChanged) {
                 newIssue = existing;
             }

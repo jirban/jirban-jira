@@ -52,8 +52,13 @@ public abstract class CustomFieldValue {
             String value = customFieldValues.get(customFieldConfig.getId());
 
             if (value != null) {
-                CustomFieldValue customFieldValue =
-                        project.getCustomFieldValue(customFieldConfig, value);
+                final CustomFieldValue customFieldValue;
+                if (value.equals("")) {
+                    customFieldValue = null;
+                } else {
+                    customFieldValue =
+                            project.getCustomFieldValue(customFieldConfig, value);
+                }
                 fields.put(customFieldName, customFieldValue);
             }
         }

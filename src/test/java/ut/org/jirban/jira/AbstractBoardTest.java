@@ -24,6 +24,7 @@ package ut.org.jirban.jira;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 import org.jirban.jira.api.BoardConfigurationManager;
@@ -57,6 +58,9 @@ import ut.org.jirban.jira.mock.UserManagerBuilder;
  * @author Kabir Khan
  */
 public abstract class AbstractBoardTest {
+
+    //(Jira's event mechanism seems to use "" when something is unset)
+    static final String CLEARED_CUSTOM_FIELD = "";
 
     @Rule
     public MockitoContainer mockitoContainer = MockitoMocksInContainer.rule(this);
@@ -155,7 +159,7 @@ public abstract class AbstractBoardTest {
         String issueTypeName = issueType == null ? null : issueType.name;
         String priorityName = priority == null ? null : priority.name;
         return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
-                components, clearComponents, state, rank, null);
+                components, clearComponents, state, rank, Collections.emptyMap());
     }
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
@@ -164,6 +168,17 @@ public abstract class AbstractBoardTest {
                                                                  boolean clearComponents, String state, boolean rank) {
         return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
                 components, clearComponents, state, rank, null);
+    }
+
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
+                                                                 Priority priority, String summary, String username,
+                                                                 boolean unassigned, String[] components,
+                                                                 boolean clearComponents, String state, boolean rank,
+                                                                 Map<Long, String> customFieldValues) {
+        String issueTypeName = issueType == null ? null : issueType.name;
+        String priorityName = priority == null ? null : priority.name;
+        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
+                components, clearComponents, state, rank, customFieldValues);
     }
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
@@ -195,6 +210,7 @@ public abstract class AbstractBoardTest {
         }
         return update;
     }
+
     protected enum IssueType {
         TASK(0),
         BUG(1),

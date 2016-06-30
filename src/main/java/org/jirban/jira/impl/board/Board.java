@@ -610,7 +610,7 @@ public class Board {
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
-                            evtDetail.isRankOrStateChanged(), evtDetail.getState());
+                            evtDetail.isRankOrStateChanged(), evtDetail.getState(), evtDetail.getCustomFieldValues());
                 }
             }
 

@@ -1620,16 +1620,146 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {"TBG-2"}, {}});
     }
 
-//
-//    @Test
-//    public void  testUpdateIssuesNewCustomFieldData() throws Exception {
-//        Assert.fail("Implement me");
-//    }
-//
-//    @Test
-//    public void  testUpdateIssuesNoNewCustomFieldData() throws Exception {
-//        Assert.fail("Implement me");
-//    }
+
+    @Test
+    public void  testUpdateIssuesNoNewCustomFieldData() throws Exception {
+        initializeMocks("config/board-custom.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
+        issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("jason"));
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("kabir"));
+        issueRegistry.setCustomField("TDP-2", documenterId, userManager.getUserByKey("kabir"));
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        checkComponents(boardNode);
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "jason", "kabir");
+
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "kabir");
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "jason", "kabir");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
+        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+
+        //Unset custom fields, this will not remove it from the lookup list of field values
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(documenterId, CLEARED_CUSTOM_FIELD);
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "jason", "kabir");
+
+
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
+        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+
+
+        //Clear all custom fields in an issue, they will stay in the lookup list of field values
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(documenterId, CLEARED_CUSTOM_FIELD);
+        customFieldValues.put(testerId, CLEARED_CUSTOM_FIELD);
+        update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "jason", "kabir");
+
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoCustomFieldChecker.TESTER, NoCustomFieldChecker.DOCUMENTER);
+        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "jason");
+        update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(4, "kabir");
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "jason", "kabir");
+
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), NoCustomFieldChecker.DOCUMENTER);
+        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+    }
+
+    @Test
+    public void  testUpdateIssuesNewCustomFieldData() throws Exception {
+        initializeMocks("config/board-custom.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
+        issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("jason"));
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("kabir"));
+        issueRegistry.setCustomField("TDP-2", documenterId, userManager.getUserByKey("kabir"));
+
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        checkComponents(boardNode);
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "jason", "kabir");
+
+        //Update and bring in a new tester, the unused 'jason' stays in the list
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "brian");
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "jason", "kabir");
+        checkTesters(boardNode, "brian", "jason", "kabir");
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), new DocumenterChecker(1));
+        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+
+
+        //Update and bring in a new documenter, the unused 'jason' stays in the list
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(documenterId, "brian");
+        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        checkNoBlacklist(boardNode);
+        checkDocumenters(boardNode, "brian", "jason", "kabir");
+        checkTesters(boardNode, "brian", "jason", "kabir");
+
+        allIssues = getIssuesCheckingSize(boardNode, 2);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), new DocumenterChecker(2));
+        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+    }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);
