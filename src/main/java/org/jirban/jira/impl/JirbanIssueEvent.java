@@ -23,7 +23,6 @@ package org.jirban.jira.impl;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 
 import com.atlassian.crowd.embedded.api.User;
@@ -227,7 +226,4 @@ public class JirbanIssueEvent {
             return Constants.UNASSIGNED;
         }
     };
-
-    public static final Collection<ProjectComponent> NO_COMPONENT = Collections.unmodifiableSet(new HashSet<>());
-
 }

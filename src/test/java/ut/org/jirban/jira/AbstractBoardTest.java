@@ -186,6 +186,9 @@ public abstract class AbstractBoardTest {
                                                                  boolean clearComponents, String state, boolean rank,
                                                                  Map<Long, String> customFieldValues) {
         Assert.assertFalse(username != null && unassigned);
+        if (clearComponents) {
+            Assert.assertNull(components);
+        }
 
         User user;
         if (unassigned) {
@@ -195,7 +198,7 @@ public abstract class AbstractBoardTest {
             user = userBridge.getUserByKey(username);
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
-        Collection<ProjectComponent> projectComponents = clearComponents ? JirbanIssueEvent.NO_COMPONENT : MockProjectComponent.createProjectComponents(components);
+        Collection<ProjectComponent> projectComponents = clearComponents ? Collections.emptySet() : MockProjectComponent.createProjectComponents(components);
         Issue issue = issueRegistry.getIssue(projectCode, issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
                 priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),

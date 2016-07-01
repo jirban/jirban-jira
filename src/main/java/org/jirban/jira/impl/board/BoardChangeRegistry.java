@@ -530,7 +530,7 @@ public class BoardChangeRegistry {
                 }
             }
             if (detail.getComponents() != null) {
-                if (detail.getComponents() == JirbanIssueEvent.NO_COMPONENT) {
+                if (detail.getComponents().isEmpty()) {
                     components = null;
                     clearedComponents = true;
                 } else {

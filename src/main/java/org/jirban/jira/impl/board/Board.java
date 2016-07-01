@@ -779,7 +779,7 @@ public class Board {
         private Set<Component> getOrCreateIssueComponents(Collection<ProjectComponent> evtComponents) {
             if (evtComponents == null) {
                 return null;
-            } else if (evtComponents == JirbanIssueEvent.NO_COMPONENT) {
+            } else if (evtComponents.isEmpty()) {
                 return Collections.emptySet();
             } else {
                 Set<Component> components = new HashSet<>();
