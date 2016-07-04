@@ -5,6 +5,7 @@ import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {TitleFormatService} from "../../services/TitleFormatService";
+import {VersionService} from "../../services/versionService";
 
 @Component({
     selector: 'boards',
@@ -30,7 +31,8 @@ export class ConfigComponent {
     private _customFieldIdForm:ControlGroup;
 
     constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService,
-                private _formBuilder:FormBuilder, title:TitleFormatService) {
+                private _formBuilder:FormBuilder, private _versionService:VersionService,
+                title:TitleFormatService) {
         this.loadBoards();
         title.setTitle("Configuration of boards");
 
@@ -239,6 +241,10 @@ export class ConfigComponent {
             (entry) => entry,
             (board) => board.id);
         return boards;
+    }
+
+    get jirbanVersion():string {
+        return this._versionService.jirbanVersion;
     }
 }
 

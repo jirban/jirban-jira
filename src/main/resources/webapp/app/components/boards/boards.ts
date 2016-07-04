@@ -3,6 +3,7 @@ import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
 import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {TitleFormatService} from "../../services/TitleFormatService";
+import {VersionService} from "../../services/versionService";
 
 @Component({
     selector: 'boards',
@@ -14,7 +15,7 @@ import {TitleFormatService} from "../../services/TitleFormatService";
 export class BoardsComponent {
     private boards:any[];
 
-    constructor(private _boardsService:BoardsService, progressError:ProgressErrorService, title:TitleFormatService) {
+    constructor(private _boardsService:BoardsService, private _versionService:VersionService, progressError:ProgressErrorService, title:TitleFormatService) {
         title.setTitle("List of boards");
         progressError.startProgress(true);
         _boardsService.loadBoardsList(true).subscribe(
@@ -28,5 +29,9 @@ export class BoardsComponent {
             () => {
                 progressError.finishProgress();
             });
+    }
+
+    get jirbanVersion():string {
+        return this._versionService.jirbanVersion;
     }
 }
