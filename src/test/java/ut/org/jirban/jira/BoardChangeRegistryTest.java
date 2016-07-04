@@ -1422,6 +1422,83 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     @Test
+    public void testNewCustomFieldsForNewIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "kabir");
+        customFieldValues.put(documenterId, "stuart");
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8",
+                IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", customFieldValues);
+        boardManager.handleEvent(create);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", new TesterChecker("kabir")));
+        checkUpdates(backlogChanges);
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        checkCustomFields(backlogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
+        //created using that assignee, and the server has no record of which clients have which assignee.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+        checkCustomFields(nonBacklogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+    }
+
+    @Test
+    public void testNewCustomFieldsForUpdatedIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "kabir");
+        customFieldValues.put(documenterId, "stuart");
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1",
+                (String)null, null, null, null, false, null, false, "TDP-B", false, customFieldValues);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B", new TesterChecker("kabir"), new DocumenterChecker("stuart")));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        checkCustomFields(backlogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
+        //created using that assignee, and the server has no record of which clients have which assignee.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+        checkCustomFields(nonBacklogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+    }
+
+    @Test
     public void testIssueMovedThroughSeveralStatesWithBacklogStatesConfigured() throws Exception {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
