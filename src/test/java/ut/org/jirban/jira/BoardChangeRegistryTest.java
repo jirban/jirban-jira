@@ -883,17 +883,26 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     @Test
     public void testCreateAndDeleteIssueWithNewData() throws Exception {
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A");
+        setupInitialBoard("config/board-custom.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "brian");
+        customFieldValues.put(documenterId, "stuart");
+
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8",
+                IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", customFieldValues);
         boardManager.handleEvent(event);
 
-        checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A"));
+        checkAdds(0, 1, new IssueData("TDP-8",
+                IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", new TesterChecker("brian"), new DocumenterChecker("stuart")));
         checkUpdates(0, 1);
         checkDeletes(0, 1);
         checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(0, 1);
         checkAssignees(0, 1, "jason");
         checkComponents(0, 1, new String[]{"C-X", "C-Y"});
-        checkNoCustomFields(0, 1);
+        checkCustomFields(0, 1, new String[]{"brian"}, new String[]{"stuart"});
 
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
@@ -908,7 +917,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(0, 2);
         checkAssignees(0, 2, "jason");
         checkComponents(0, 2, new String[]{"C-X", "C-Y"});
-        checkNoCustomFields(0, 2);
+        checkCustomFields(0, 2, new String[]{"brian"}, new String[]{"stuart"});
     }
 
     @Test
