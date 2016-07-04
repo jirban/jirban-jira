@@ -216,7 +216,7 @@ public class BoardChangeRegistry {
     private static class NewReferenceCollector {
         private final Map<String, Assignee> newAssignees = new HashMap<>();
         private final Map<String, Component> newComponents = new HashMap<>();
-        private final Map<String, CustomFieldValue> newCustomFieldValues = new HashMap<>();
+        private final Map<String, List<CustomFieldValue>> newCustomFieldValues = new HashMap<>();
 
         void addNewAssignee(Assignee assignee) {
             newAssignees.put(assignee.getKey(), assignee);
@@ -227,7 +227,10 @@ public class BoardChangeRegistry {
         }
 
         void addNewCustomFieldValues(Map<String, CustomFieldValue> newCustomFields) {
-            this.newCustomFieldValues.putAll(newCustomFields);
+            newCustomFields.forEach((key, value) -> {
+                List<CustomFieldValue> list = this.newCustomFieldValues.computeIfAbsent(key, k -> new ArrayList<CustomFieldValue>());
+                list.add(value);
+            });
         }
 
         Map<String, Assignee> getNewAssignees() {
@@ -238,7 +241,7 @@ public class BoardChangeRegistry {
             return newComponents;
         }
 
-        Map<String, CustomFieldValue> getNewCustomFieldValues() {
+        Map<String, List<CustomFieldValue>> getNewCustomFieldValues() {
             return newCustomFieldValues;
         }
 
@@ -365,10 +368,10 @@ public class BoardChangeRegistry {
             }
         }
 
-        private void serializeCustomFieldValues(ModelNode parent, Map<String, CustomFieldValue> newCustomFieldValues) {
+        private void serializeCustomFieldValues(ModelNode parent, Map<String, List<CustomFieldValue>> newCustomFieldValues) {
             if (newCustomFieldValues.size() > 0) {
                 ModelNode custom = parent.get(CUSTOM);
-                newCustomFieldValues.forEach((key, customFieldValue) -> customFieldValue.serializeRegistry(custom.get(key)));
+                newCustomFieldValues.forEach((key, list) -> list.forEach(value -> value.serializeRegistry(custom.get(key))));
             }
         }
 
@@ -447,7 +450,6 @@ public class BoardChangeRegistry {
         private Boolean backlogStartState;
         private Boolean backlogEndState;
 
-        private Set<String> newCustomFieldValues = new HashSet<>();
         private Map<String, CustomFieldValue> customFieldValues;
 
         //We are interested in the latest state for the issue if it was moved or re-ranked
@@ -556,11 +558,13 @@ public class BoardChangeRegistry {
                     this.customFieldValues = new HashMap<>();
                 }
 
-                //We always add the new custom field values, even if a later change might remove the need, since the board
-                //only tracks when custom field is first referenced before creating the BoardChange entries.
-                //Later changes to the board might use these custom fields, in which case this information will be needed
-                //on the client
-                newReferenceCollector.addNewCustomFieldValues(newCustomFieldValues);
+                if (newCustomFieldValues != null) {
+                    //We always add the new custom field values, even if a later change might remove the need, since the board
+                    //only tracks when custom field is first referenced before creating the BoardChange entries.
+                    //Later changes to the board might use these custom fields, in which case this information will be needed
+                    //on the client
+                    newReferenceCollector.addNewCustomFieldValues(newCustomFieldValues);
+                }
 
                 for (Map.Entry<String, CustomFieldValue> entry : customFieldValues.entrySet()) {
                     this.customFieldValues.put(entry.getKey(), entry.getValue());
@@ -628,7 +632,10 @@ public class BoardChangeRegistry {
                         components.forEach(component -> output.get(COMPONENTS).add(component));
                     }
                     if (customFieldValues != null) {
-                        customFieldValues.forEach((key,value)-> output.get(CUSTOM, key).set(value.getKey()));
+                        customFieldValues.forEach((key, value)-> {
+                            ModelNode fieldKey = value == null ? new ModelNode() : new ModelNode(value.getKey());
+                            output.get(CUSTOM, key).set(fieldKey);
+                        });
                     }
                     if (state != null) {
                         output.get(STATE).set(state);
