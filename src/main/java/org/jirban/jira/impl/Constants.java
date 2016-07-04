@@ -25,6 +25,7 @@ package org.jirban.jira.impl;
  * @author Kabir Khan
  */
 public class Constants {
+    public static final String API_VERSION = "api-version";
     public static final String ASSIGNEE = "assignee";
     public static final String ASSIGNEES = "assignees";
     public static final String AVATAR = "avatar";
@@ -49,6 +50,7 @@ public class Constants {
     public static final String ID = "id";
     public static final String ISSUE_TYPES = "issue-types";
     public static final String ISSUES = "issues";
+    public static final String JIRBAN_VERSION = "jirban-version";
     public static final String KEY = "key";
     public static final String LINKED = "linked";
     public static final String LINKED_ISSUES = "linked-issues";

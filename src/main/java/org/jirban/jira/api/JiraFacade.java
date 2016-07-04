@@ -66,4 +66,11 @@ public interface JiraFacade
      * @param idNode an object containing the id
      */
     void saveCustomFieldId(ApplicationUser user, ModelNode idNode);
+
+    /**
+     * Loads the Jirban version from the manifest file
+     *
+     * @return the version string
+     */
+    String getJirbanVersion();
 }

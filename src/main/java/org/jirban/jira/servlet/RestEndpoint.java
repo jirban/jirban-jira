@@ -23,6 +23,7 @@ package org.jirban.jira.servlet;
 
 import static org.jirban.jira.impl.Constants.BOARDS;
 import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.JIRBAN_VERSION;
 import static org.jirban.jira.impl.Constants.UPDATES;
 import static org.jirban.jira.impl.Constants.VERSION;
 
@@ -43,6 +44,7 @@ import javax.ws.rs.core.Response;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.JiraFacade;
+import org.jirban.jira.impl.Constants;
 
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.search.SearchException;
@@ -74,7 +76,10 @@ public class RestEndpoint {
     @Path(VERSION)
     public Response getVersion() {
         ModelNode versionNode = new ModelNode();
+        //Remove this later
         versionNode.get(VERSION).set(API_VERSION);
+        versionNode.get(Constants.API_VERSION).set(API_VERSION);
+        versionNode.get(JIRBAN_VERSION).set(jiraFacade.getJirbanVersion());
         return createResponse(versionNode);
     }
 

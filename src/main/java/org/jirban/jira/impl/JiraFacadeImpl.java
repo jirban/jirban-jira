@@ -1,5 +1,8 @@
 package org.jirban.jira.impl;
 
+import java.io.InputStream;
+import java.util.jar.Manifest;
+
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -36,6 +39,24 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     private final BoardConfigurationManager boardConfigurationManager;
 
     private final BoardManager boardManager;
+
+    private static final String jirbanVersion;
+
+    static {
+        InputStream stream = JiraFacadeImpl.class.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF");
+        Manifest manifest = null;
+        String version;
+        try {
+            if (stream != null) {
+                manifest = new Manifest(stream);
+            }
+            version = manifest.getMainAttributes().getValue("Bundle-Version");
+        } catch (Exception e) {
+            // ignored
+            version = "Error";
+        }
+        jirbanVersion = version;
+    }
 
     @Inject
     public JiraFacadeImpl(final ApplicationProperties applicationProperties,
@@ -90,6 +111,11 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     @Override
     public void saveCustomFieldId(ApplicationUser user, ModelNode idNode) {
         boardConfigurationManager.saveCustomFieldId(user, idNode);
+    }
+
+    @Override
+    public String getJirbanVersion() {
+        return jirbanVersion;
     }
 
     @Override

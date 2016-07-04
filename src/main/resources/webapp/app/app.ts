@@ -5,15 +5,15 @@ import {BoardComponent} from "./components/board/board";
 import {BoardsComponent} from "./components/boards/boards";
 import {ConfigComponent} from "./components/config/config";
 import {ProgressErrorService} from "./services/progressErrorService";
-import {VersionCheckService} from "./services/versionCheckService";
 import {RestUrlUtil} from "./common/RestUrlUtil";
+import {VersionService} from "./services/versionService";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 1;
 
 @Component({
     selector: 'my-app',
-    providers: [VersionCheckService],
+    providers: [VersionService],
     template: `
 
 <div class="toolbar">
@@ -51,7 +51,7 @@ export class App {
     _progressError:ProgressErrorService;
     loginUrl:string;
 
-    constructor(router:Router, progressError:ProgressErrorService, versionCheckService:VersionCheckService) {
+    constructor(router:Router, progressError:ProgressErrorService, versionService:VersionService) {
         this._router = router;
         this._progressError = progressError;
         this.loginUrl = RestUrlUtil.caclulateRestUrl("login.jsp");
@@ -67,19 +67,7 @@ export class App {
             document.getElementsByTagName("body")[0].className = showBodyScrollbars ? "" : "no-scrollbars";
         });
 
-        this._progressError.startProgress(true);
-        versionCheckService.getVersion()
-            .subscribe(
-                data => {
-                    let version:number = data.version;
-                    if (version != VERSION) {
-                        this._progressError.setErrorString("You appear to be using an outdated/cached version of the client. " +
-                            "Please empty your browser caches and reload this page.")
-                    }
-                },
-                error => {this._progressError.setError(error)},
-                () => {this._progressError.finishProgress()}
-            )
+        versionService.initialise(VERSION, progressError);
     }
 
     get hideProgress():boolean {

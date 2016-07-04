@@ -108,3 +108,8 @@ a.error-message {
 a.close {
     color: #FFFFFF;
 }
+p.version {
+    font-style: italic;
+    font-size: 10px;
+    
+}
