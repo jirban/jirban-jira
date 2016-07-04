@@ -44,6 +44,7 @@ import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
 import static org.jirban.jira.impl.Constants.UNASSIGNED;
+import static org.jirban.jira.impl.Constants.VALUE;
 import static org.jirban.jira.impl.Constants.VIEW;
 
 import java.util.Arrays;
@@ -1975,11 +1976,11 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         ModelNode custom = changesNode.get(CHANGES, CUSTOM);
         Assert.assertTrue(custom.isDefined());
 
-        checkUserCustomField(custom.get("Tester"), testers);
-        checkUserCustomField(custom.get("Documenter"), documenters);
+        checkCustomField(custom.get("Tester"), testers);
+        checkCustomField(custom.get("Documenter"), documenters);
     }
 
-    private void checkUserCustomField(ModelNode userNode, String[] expectedUsers) {
+    private void checkCustomField(ModelNode userNode, String[] expectedUsers) {
         if (expectedUsers == null) {
             Assert.assertFalse(userNode.isDefined());
             return;
@@ -1992,8 +1993,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         for (ModelNode user : users) {
             String key = user.get(KEY).asString();
             Assert.assertTrue(expected.remove(key));
-            Assert.assertEquals(key + "@example.com", user.get(EMAIL).asString());
-            Assert.assertTrue(user.get(NAME).asString().toLowerCase().startsWith(key));
+            Assert.assertTrue(user.get(VALUE).asString().toLowerCase().startsWith(key));
         }
     }
 

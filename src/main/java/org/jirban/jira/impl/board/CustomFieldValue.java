@@ -1,5 +1,8 @@
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.VALUE;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,15 +16,19 @@ import com.atlassian.jira.issue.Issue;
 /**
  * @author Kabir Khan
  */
-public abstract class CustomFieldValue {
+public class CustomFieldValue {
 
     private final String customFieldName;
+    private final String key;
+    private final String value;
 
     //Jira's event mechanism seems to use an empty string to unset custom fields
     public static final String UNSET_VALUE = "";
 
-    protected CustomFieldValue(String customFieldName) {
+    protected CustomFieldValue(String customFieldName, String key, String value) {
         this.customFieldName = customFieldName;
+        this.key = key;
+        this.value = value;
     }
 
     static Map<String, CustomFieldValue> loadCustomFieldValues(final BoardProject.Accessor project, final Issue issue) {
@@ -68,13 +75,26 @@ public abstract class CustomFieldValue {
         return fields.size() > 0 ? fields : Collections.emptyMap();
     }
 
-    abstract String getKey();
+    public String getKey() {
+        return key;
+    }
 
-    abstract void serializeRegistry(ModelNode list);
+    public String getValue() {
+        return value;
+    }
+
+    void serializeRegistry(ModelNode list) {
+        ModelNode entry = new ModelNode();
+        entry.get(KEY).set(key);
+        entry.get(VALUE).set(value);
+        list.add(entry);
+    }
 
     public String getCustomFieldName() {
         return customFieldName;
     }
 
-    public abstract String getValueForComparator();
+    public String getValueForComparator() {
+        return value;
+    }
 }

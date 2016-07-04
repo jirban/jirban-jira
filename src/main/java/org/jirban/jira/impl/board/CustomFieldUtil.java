@@ -41,7 +41,7 @@ public abstract class CustomFieldUtil {
 
         @Override
         String getKey(Object fieldValue) {
-            return UserCustomFieldValue.getKey(fieldValue);
+            return UserCustomFieldValue.getKeyForValue(fieldValue);
         }
 
         @Override

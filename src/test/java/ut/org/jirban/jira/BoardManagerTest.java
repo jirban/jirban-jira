@@ -44,6 +44,7 @@ import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
 import static org.jirban.jira.impl.Constants.UNORDERED;
+import static org.jirban.jira.impl.Constants.VALUE;
 import static org.jirban.jira.impl.board.CustomFieldValue.UNSET_VALUE;
 
 import java.util.Arrays;
@@ -1785,7 +1786,7 @@ public class BoardManagerTest extends AbstractBoardTest {
             return;
         }
 
-        checkUsers(boardNode.get(CUSTOM, "Tester"), false, testers);
+        checkCustomFields(boardNode.get(CUSTOM, "Tester"), testers);
     }
 
     private void checkDocumenters(ModelNode boardNode, String...testers) {
@@ -1794,9 +1795,21 @@ public class BoardManagerTest extends AbstractBoardTest {
             return;
         }
 
-        checkUsers(boardNode.get(CUSTOM, "Documenter"), false, testers);
+        checkCustomFields(boardNode.get(CUSTOM, "Documenter"), testers);
     }
 
+    private void checkCustomFields(ModelNode fieldList, String...keys) {
+        List<ModelNode> fields = fieldList.asList();
+        Assert.assertEquals(fields.size(), keys.length);
+        for (int i = 0 ; i < keys.length ; i++) {
+            ModelNode field = fields.get(i);
+            Assert.assertNotNull(field);
+            Assert.assertEquals(keys[i], field.get(KEY).asString());
+            String displayName = field.get(VALUE).toString().toLowerCase();
+            Assert.assertTrue(displayName.length() > keys[i].length());
+            Assert.assertTrue(displayName.contains(keys[i]));
+        }
+    }
 
     private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
         List<ModelNode> issues = boardNode.get(PROJECTS, MAIN, project, ISSUES).asList();
