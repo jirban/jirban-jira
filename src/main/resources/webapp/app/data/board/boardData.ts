@@ -14,6 +14,7 @@ import {ChangeSet} from "./change";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
 import {Observable} from "rxjs/Rx";
+import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
 
 
 export class BoardData {
@@ -42,6 +43,9 @@ export class BoardData {
     private _priorities:Indexed<Priority>;
     /** All the issue types */
     private _issueTypes:Indexed<IssueType>;
+
+    /** All the custom fields */
+    private _customFields:Indexed<CustomFieldValues>;
 
     //Issue details
     private _issueDisplayDetails:IssueDisplayDetails = new IssueDisplayDetails();
@@ -161,6 +165,7 @@ export class BoardData {
         this._components = new ComponentDeserializer().deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
         this._issueTypes = new IssueTypeDeserializer().deserialize(input);
+        this._customFields = new CustomFieldDeserializer().deserialize(input);
 
         if (first) {
             this._issueTable = new IssueTable(this, this._projects, this._boardFilters, this._swimlane, input);
@@ -283,6 +288,18 @@ export class BoardData {
     set swimlane(swimlane:string) {
         this._swimlane = swimlane;
         this._issueTable.swimlane = swimlane;
+    }
+
+    get customFields():Indexed<CustomFieldValues> {
+        return this._customFields;
+    }
+
+    getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
+        let values:CustomFieldValues = this._customFields.forKey(name);
+        if (values) {
+            return values.values.forIndex(index);
+        }
+        return null;
     }
 
     getIssue(issueKey:string) : IssueData {

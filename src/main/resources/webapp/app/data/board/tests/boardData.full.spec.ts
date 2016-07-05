@@ -7,6 +7,7 @@ import {IssueType} from "./../issueType";
 import {IssueData} from "./../issueData";
 import {JiraComponent} from "../component";
 import {SwimlaneData} from "../issueTable";
+import {CustomFieldValues, CustomFieldValue} from "../customField";
 
 /**
  * This tests application of the expected json onto the BoardData component on the client which is so central to the display of the board.
@@ -130,6 +131,36 @@ describe('BoardData tests', ()=> {
 
             checkIssueDatas(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
 
+            expect(boardData.blacklist).toBeNull();
+        });
+
+        it('Full board with custom fields; No blacklist', () => {
+            let boardData:BoardData = new BoardData();
+
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getCustomFieldIssues();;
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+
+            boardData.deserialize("tst", bd.build());
+
+            expect(boardData.view).toEqual(0);
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            checkStandardPriorities(boardData);
+            checkStandardIssueTypes(boardData);
+            checkStandardCustomFields(boardData);
+
+            expect(boardData.swimlane).not.toBeDefined();
+            expect(boardData.swimlaneTable).toBeNull();
+
+            checkStandardProjects(boardData);
+
+            expect(boardData.boardStateNames.length).toBe(4);
+            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+
+            checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkIssueCustomFields(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             expect(boardData.blacklist).toBeNull();
         });
     });
@@ -1529,6 +1560,45 @@ describe('BoardData tests', ()=> {
         return skippedIssue;
     }
 
+    function checkIssueCustomFields(boardData:BoardData, layout:string[][]):void {
+        for (let i:number = 0; i < layout.length; i++) {
+            for (let j:number = 0; j < layout[i].length; j++) {
+                let issue:IssueData = boardData.getIssue(layout[i][j]);
+                let id:number = getIdFromKey(issue.key);
+                let mod4 = (id - 1) % 4;
+                switch (mod4) {
+                    case 0:
+                        checkCustomField(issue, issue.key, "Tester", "james", "James Perkins");
+                        checkCustomField(issue, issue.key, "Documenter", "kabir", "Kabir Khan");
+                        break;
+                    case 1:
+                        checkCustomField(issue, issue.key, "Tester", "kabir", "Kabir Khan");
+                        checkCustomField(issue, issue.key, "Documenter", "stuart", "Stuart Douglas");
+                        break;
+                    case 2:
+                    case 3:
+                        checkNoCustomField(issue, issue.key, "Tester");
+                        checkNoCustomField(issue, issue.key, "Documenter");
+                        break;
+                }
+                checkIssueConvenienceMethods(issue);
+            }
+        }
+    }
+
+    function checkCustomField(issue:IssueData, key:string, customFieldName:string, customFieldKey:string, customFieldValue:string) {
+        let customField:CustomFieldValue = issue.getCustomFieldValue(customFieldName);
+        expect(customField).toEqual(jasmine.anything());
+        expect(customField.key).toEqual(customFieldKey);
+        expect(customField.displayValue).toEqual(customFieldValue);
+    }
+
+    function checkNoCustomField(issue:IssueData, key:string, customFieldName:string) {
+        let customField:CustomFieldValue = issue.getCustomFieldValue(customFieldName);
+        expect(customField).not.toEqual(jasmine.anything());
+    }
+
+
     function checkBoardIssue(issue:IssueData, key:string, type:string, priority:string, assignee:string, components:string[], summary?:string) {
         expect(issue.key).toEqual(key);
         checkBoardIssueType(issue.type, type);
@@ -1644,6 +1714,28 @@ describe('BoardData tests', ()=> {
         checkBoardIssueType(issueTypes.array[1], "bug");
         checkBoardIssueType(issueTypes.array[2], "feature");
         checkBoardIssueType(issueTypes.array[3], "issue");
+    }
+    
+    function checkStandardCustomFields(boardData:BoardData) {
+        let custom:Indexed<CustomFieldValues> = boardData.customFields;
+        expect(custom.array.length).toEqual(2);
+
+        let testers:CustomFieldValues = custom.forKey("Tester");
+        expect(testers).toEqual(jasmine.anything());
+        expect(testers.values.array.length).toEqual(2);
+        checkBoardCustomField(testers.values.forIndex(0), "james", "James Perkins");
+        checkBoardCustomField(testers.values.forIndex(1), "kabir", "Kabir Khan");
+
+        let documenters:CustomFieldValues = custom.forKey("Documenter");
+        expect(documenters).toEqual(jasmine.anything());
+        expect(documenters.values.array.length).toEqual(2);
+        checkBoardCustomField(documenters.values.forIndex(0), "kabir", "Kabir Khan");
+        checkBoardCustomField(documenters.values.forIndex(1), "stuart", "Stuart Douglas");
+    }
+
+    function checkBoardCustomField(cfv:CustomFieldValue, key:string, value:string) {
+        expect(cfv.key).toEqual(key);
+        expect(cfv.displayValue).toEqual(value);
     }
 
     function checkBoardAssignee(assignee:Assignee, key:string) {
