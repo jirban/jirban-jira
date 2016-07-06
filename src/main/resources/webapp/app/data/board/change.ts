@@ -121,6 +121,10 @@ export class ChangeSet {
         return this._addedComponents;
     }
 
+    get addedCustomFields():Indexed<CustomFieldValues> {
+        return this._addedCustomFields;
+    }
+
     addToBlacklist(blacklist:BlacklistData) {
         blacklist.addChanges(this._blacklistChange);
     }

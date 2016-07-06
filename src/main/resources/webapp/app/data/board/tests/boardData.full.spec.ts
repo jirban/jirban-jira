@@ -862,7 +862,43 @@ describe('BoardData tests', ()=> {
         });
 
         it('Update custom field (new on board)', () => {
-            fail("NYI");
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.PRE_CHANGE_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getPreChangeCustomFieldIssues();;
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            checkStandardCustomFields(boardData);
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        update: [{
+                            key: "TDP-1",
+                            custom: {
+                                Tester: "stuart", Documenter: "brian"}
+                        }]
+                    },
+                    custom: {
+                        Tester: [{key: "stuart", value: "Stuart Douglas"}],
+                        Documenter: [{key: "brian", value: "Brian Stansberry"}]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+            //Board should still have all the custom fields
+            checkUpdatedCustomFields(boardData);
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
+            checkCustomField(updatedIssue, updatedIssue.key, "Tester", "stuart", "Stuart Douglas");
+            checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "brian", "Brian Stansberry");
         });
 
     });
@@ -1873,7 +1909,7 @@ describe('BoardData tests', ()=> {
         checkBoardIssueType(issueTypes.array[2], "feature");
         checkBoardIssueType(issueTypes.array[3], "issue");
     }
-    
+
     function checkStandardCustomFields(boardData:BoardData) {
         let custom:Indexed<CustomFieldValues> = boardData.customFields;
         expect(custom.array.length).toEqual(2);
@@ -1889,6 +1925,25 @@ describe('BoardData tests', ()=> {
         expect(documenters.values.array.length).toEqual(2);
         checkBoardCustomField(documenters.values.forIndex(0), "kabir", "Kabir Khan");
         checkBoardCustomField(documenters.values.forIndex(1), "stuart", "Stuart Douglas");
+    }
+
+    function checkUpdatedCustomFields(boardData:BoardData) {
+        let custom:Indexed<CustomFieldValues> = boardData.customFields;
+        expect(custom.array.length).toEqual(2);
+
+        let testers:CustomFieldValues = custom.forKey("Tester");
+        expect(testers).toEqual(jasmine.anything());
+        expect(testers.values.array.length).toEqual(3);
+        checkBoardCustomField(testers.values.forIndex(0), "james", "James Perkins");
+        checkBoardCustomField(testers.values.forIndex(1), "kabir", "Kabir Khan");
+        checkBoardCustomField(testers.values.forIndex(2), "stuart", "Stuart Douglas");
+
+        let documenters:CustomFieldValues = custom.forKey("Documenter");
+        expect(documenters).toEqual(jasmine.anything());
+        expect(documenters.values.array.length).toEqual(3);
+        checkBoardCustomField(documenters.values.forIndex(0), "brian", "Brian Stansberry");
+        checkBoardCustomField(documenters.values.forIndex(1), "kabir", "Kabir Khan");
+        checkBoardCustomField(documenters.values.forIndex(2), "stuart", "Stuart Douglas");
     }
 
     function checkBoardCustomField(cfv:CustomFieldValue, key:string, value:string) {

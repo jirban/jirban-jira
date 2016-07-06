@@ -60,6 +60,9 @@ export class BoardData {
     /** Flag to only recalculate the components in the control panel when they have been changed */
     private _hasNewComponents:boolean = false;
 
+    /** Flag to only recalculate the assignees in the control panel when they have been changed */
+    private _customFieldsWithNewEntries:string[] = [];
+
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -107,6 +110,21 @@ export class BoardData {
                     this._hasNewComponents = true;
                 }
 
+                if (changeSet.addedCustomFields) {
+                    //Iterate for each custom field
+                    for (let cfvs of changeSet.addedCustomFields.array) {
+                        //Make sure that the added custom fields are in alphabetical order for the control panel list
+                        let values:Indexed<CustomFieldValue> = this._customFields.forKey(cfvs.name).values;
+                        let addedValues:CustomFieldValues = changeSet.addedCustomFields.forKey(cfvs.name);
+                        for (let customFieldValue of addedValues.values.array) {
+                            values.add(customFieldValue.key, customFieldValue);
+                        }
+                        let customFieldValues:CustomFieldValue[] = values.array;
+                        customFieldValues.sort((c1:CustomFieldValue, c2:CustomFieldValue) => {return c1.displayValue.localeCompare(c2.displayValue)});
+                        values.reorder(customFieldValues, (cfv:CustomFieldValue) => cfv.key);
+                        this._customFieldsWithNewEntries.push(cfvs.name);
+                    }
+                }
 
                 if (changeSet.blacklistChanges) {
                     if (!this.blacklist) {
