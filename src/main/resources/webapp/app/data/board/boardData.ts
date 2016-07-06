@@ -302,6 +302,14 @@ export class BoardData {
         return null;
     }
 
+    getCustomFieldValueForKey(name:string, key:string):CustomFieldValue {
+        let values:CustomFieldValues = this._customFields.forKey(name);
+        if (values) {
+            return values.values.forKey(key);
+        }
+        return null;
+    }
+
     getIssue(issueKey:string) : IssueData {
         return this._issueTable.getIssue(issueKey);
     }

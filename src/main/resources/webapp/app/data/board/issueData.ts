@@ -111,8 +111,14 @@ export class IssueData {
 
         let linked:IssueData[];//This does not get set from the events
 
-        let customFields:IMap<CustomFieldValue> = {}; //TODO
-        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked, customFields);
+        let customFieldValues:IMap<CustomFieldValue> = {};
+        if (add.customFieldValues) {
+            for (let name in add.customFieldValues) {
+                let fieldKey:string = add.customFieldValues[name];
+                customFieldValues[name] = boardData.getCustomFieldValueForKey(name, fieldKey);
+            }
+        }
+        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked, customFieldValues);
 
     }
 
@@ -287,13 +293,13 @@ export class IssueData {
             }
         }
 
-        if (update.customFields) {
-            for (let key in update.customFields) {
-                let customValue:CustomFieldValue = update.customFields[key];
-                if (!customValue) {
+        if (update.customFieldValues) {
+            for (let key in update.customFieldValues) {
+                let fieldKey:string = update.customFieldValues[key];
+                if (!fieldKey) {
                     delete this._customFields[key];
                 } else {
-                    this._customFields[key] = customValue;
+                    this._customFields[key] = this._boardData.getCustomFieldValueForKey(name, fieldKey);
                 }
             }
         }

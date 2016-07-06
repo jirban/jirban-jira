@@ -1108,6 +1108,53 @@ describe('BoardData tests', ()=> {
             expect(createdIssue.key).toBe("TBG-2");
             checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", null, "Two");
         });
+
+        it('Main project to populated state - existing custom fields', () => {
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.PRE_CHANGE_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getPreChangeCustomFieldIssues();;
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            checkStandardCustomFields(boardData);
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "new" : [{
+                            key: "TDP-3",
+                            state : "TDP-B",
+                            summary : "Three",
+                            priority : "high",
+                            type : "bug",
+                            assignee : "kabir",
+                            components: ["First"],
+                            custom: {
+                                Tester: "kabir",
+                                Documenter: "stuart"}
+                        }]
+                    },
+                    states: {
+                        TDP : {
+                            "TDP-B" : ["TDP-2", "TDP-3"]
+                        }
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+            //Board should still have all the custom fields
+            checkStandardCustomFields(boardData);
+            let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-3");
+            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", ["First"], "Three");
+            checkCustomField(createdIssue, createdIssue.key, "Tester", "kabir", "Kabir Khan");
+            checkCustomField(createdIssue, createdIssue.key, "Documenter", "stuart", "Stuart Douglas");
+        });
     });
 
     //TODO a test involving several updates, deletes and state changes

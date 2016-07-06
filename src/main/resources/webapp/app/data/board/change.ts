@@ -2,7 +2,7 @@ import {Assignee, AssigneeDeserializer} from "./assignee";
 import {Indexed} from "../../common/indexed";
 import {BlacklistData} from "./blacklist";
 import {JiraComponent, ComponentDeserializer} from "./component";
-import {CustomFieldDeserializer, CustomFieldValues, CustomFieldValue} from "./customField";
+import {CustomFieldDeserializer, CustomFieldValues} from "./customField";
 import {IMap} from "../../common/map";
 export class ChangeSet {
     private _view:number;
@@ -138,14 +138,14 @@ export class IssueChange {
     private _state:string;
     private _assignee:string;
     private _components:string[];
-    private _customFields:IMap<CustomFieldValue>;
+    private _customFieldValues:IMap<string>;
 
     //Only set on update
     private _unassigned:boolean = false;
     private _clearedComponents:boolean = false;
 
     constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string,
-                components:string[], customFields:IMap<CustomFieldValue>) {
+                components:string[], customFieldValues:IMap<string>) {
         this._key = key;
         this._type = type;
         this._priority = priority;
@@ -153,7 +153,7 @@ export class IssueChange {
         this._state = state;
         this._assignee = assignee;
         this._components = components;
-        this._customFields = customFields;
+        this._customFieldValues = customFieldValues;
     }
 
     get key():string {
@@ -192,8 +192,8 @@ export class IssueChange {
         return this._clearedComponents;
     }
 
-    get customFields():IMap<CustomFieldValue> {
-        return this._customFields;
+    get customFieldValues():IMap<string> {
+        return this._customFieldValues;
     }
 
     static deserializeAdd(input:any) : IssueChange {
