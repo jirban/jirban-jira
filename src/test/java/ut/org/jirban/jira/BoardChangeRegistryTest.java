@@ -692,7 +692,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         ModelNode changes = getChangesJson(0, 1);
         checkAssignees(changes);
         checkComponents(changes);
-        //checkNoCustomFields(changes);
+        checkNoCustomFields(changes);
         checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, null, null, new TesterChecker("brian"), new DocumenterChecker("stuart")));
         checkNoBlacklistChanges(changes);
         checkNoStateChanges(changes);

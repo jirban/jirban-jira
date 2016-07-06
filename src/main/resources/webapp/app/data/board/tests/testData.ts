@@ -618,7 +618,7 @@ export class TestBoardData {
         }
     };
 
-    static getCustomFieldIssues():any {
+    static getFullBoardCustomFieldIssues():any {
         let data:any = TestBoardData.clone(TestBoardData.FULL_BOARD_ISSUES);
 
         TestBoardData.addCustomFields(data, "TDP-1", "Tester", 0);
@@ -635,6 +635,21 @@ export class TestBoardData {
         TestBoardData.addCustomFields(data, "TBG-2", "Tester", 1);
         TestBoardData.addCustomFields(data, "TBG-2", "Documenter", 1);
 
+        return data;
+    }
+
+    static getPreChangeCustomFieldIssues():any {
+        let data:any = TestBoardData.clone(TestBoardData.PRE_CHANGE_BOARD_ISSUES);
+
+        TestBoardData.addCustomFields(data, "TDP-1", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TDP-1", "Documenter", 0);
+        TestBoardData.addCustomFields(data, "TDP-2", "Tester", 1);
+        TestBoardData.addCustomFields(data, "TDP-2", "Documenter", 1);
+
+        TestBoardData.addCustomFields(data, "TBG-1", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TBG-1", "Documenter", 0);
+
+        
         return data;
     }
 

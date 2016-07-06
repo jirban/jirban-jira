@@ -286,6 +286,17 @@ export class IssueData {
                 this._components.add(component.name, component);
             }
         }
+
+        if (update.customFields) {
+            for (let key in update.customFields) {
+                let customValue:CustomFieldValue = update.customFields[key];
+                if (!customValue) {
+                    delete this._customFields[key];
+                } else {
+                    this._customFields[key] = customValue;
+                }
+            }
+        }
     }
 
     getCustomFieldValue(name:string):CustomFieldValue {
