@@ -299,7 +299,7 @@ export class IssueData {
                 if (!fieldKey) {
                     delete this._customFields[key];
                 } else {
-                    this._customFields[key] = this._boardData.getCustomFieldValueForKey(name, fieldKey);
+                    this._customFields[key] = this._boardData.getCustomFieldValueForKey(key, fieldKey);
                 }
             }
         }

@@ -827,7 +827,38 @@ describe('BoardData tests', ()=> {
         });
 
         it('Update custom field (not new on board)', () => {
-            fail("NYI");
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.PRE_CHANGE_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getPreChangeCustomFieldIssues();;
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            checkStandardCustomFields(boardData);
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        update: [{
+                            key: "TDP-1",
+                            custom: {
+                                Tester: "kabir", Documenter: "stuart"}
+                        }]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+            //Board should still have all the custom fields
+            checkStandardCustomFields(boardData);
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
+            checkBoardLayout(boardData, layout);
+            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
+            checkCustomField(updatedIssue, updatedIssue.key, "Tester", "kabir", "Kabir Khan");
+            checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "stuart", "Stuart Douglas");
         });
 
         it('Update custom field (new on board)', () => {
