@@ -8,6 +8,7 @@ import {Priority} from "../../../data/board/priority";
 import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
 import {BoardFilters} from "../../../data/board/boardFilters";
+import {CustomFieldValues} from "../../../data/board/customField";
 
 @Component({
     selector: 'control-panel',
@@ -367,6 +368,10 @@ export class ControlPanelComponent {
 
     private get rightOffset() : number {
         return this.boardData.blacklist ? 30 : 0;
+    }
+
+    private get customFields():CustomFieldValues[] {
+        return this.boardData.customFields.array;
     }
 }
 

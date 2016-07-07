@@ -26,6 +26,7 @@
                         <option value="issue-type">Issue Type</option>
                         <option value="assignee">Assignee</option>
                         <option value="component">Component</option>
+                        <option *ngFor="let customField of customFields" value="{{customField.name}}">{{customField.name}}</option>
                     </select>
                 </div>
             </div>
