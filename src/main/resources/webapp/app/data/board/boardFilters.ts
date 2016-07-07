@@ -227,6 +227,10 @@ export class BoardFilters {
 
     }
 
+    filterCustomField(customFieldName:string):boolean {
+        return true;
+    }
+
     createFromQueryParams(queryParams:IMap<string>,
                                  callback:(
                                      projectFilter:string,

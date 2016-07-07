@@ -1677,7 +1677,87 @@ describe('BoardData tests', ()=> {
                 }
             );
         });
+
+        it ("Custom field 'Tester'", () => {
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            boardData.swimlane = "Tester";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "James Perkins",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        [],
+                        []]
+                },
+                {
+                    "name": "Kabir Khan",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7", "TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
+
+        it ("Custom field 'Documenter'", () => {
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            boardData.swimlane = "Documenter";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "Kabir Khan",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        [],
+                        []]
+                },
+                {
+                    "name": "Stuart Douglas",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7", "TBG-4"],
+                        ["TDP-4"]]
+                }
+            );
+        });
     });
+
+
 
     function checkBoardSwimlaneLayout(boardData:BoardData, ...layouts:any[]) {
         let swimlanes:SwimlaneData[] = boardData.swimlaneTable;

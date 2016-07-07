@@ -3,6 +3,8 @@ import {BoardFilters} from "./boardFilters";
 import {IssueData} from "./issueData";
 import {IMap} from "../../common/map";
 import {SwimlaneData} from "./issueTable";
+import {CustomFieldValues, CustomFieldValue} from "./customField";
+import {Indexed} from "../../common/indexed";
 
 export interface SwimlaneIndexer {
     swimlaneTable : SwimlaneData[];
@@ -46,6 +48,11 @@ export class SwimlaneIndexerFactory {
             return new AssigneeSwimlaneIndexer(filters, boardData, initTable);
         } else if (swimlane === "component") {
             return new ComponentSwimlaneIndexer(filters, boardData, initTable);
+        } else {
+            let cfvs:CustomFieldValues = boardData.customFields.forKey(swimlane);
+            if (cfvs) {
+                return new CustomFieldSwimlaneIndexer(filters, boardData, initTable, swimlane, cfvs.values);
+            }
         }
 
         return null;
@@ -128,10 +135,8 @@ class IssueTypeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            let i:number = 0;
             for (let issueType of boardData.issueTypes.array) {
                 this._swimlaneNames.push(issueType.name)
-                i++;
             }
 
             this._swimlaneTable = createTable(boardData, this._swimlaneNames);
@@ -157,7 +162,6 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            let i:number = 0;
             for (let assignee of this._boardData.assignees.array) {
                 this._swimlaneNames.push(assignee.name);
             }
@@ -200,7 +204,6 @@ class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            let i:number = 0;
             for (let component of this._boardData.components.array) {
                 this._swimlaneNames.push(component.name);
             }
@@ -240,6 +243,61 @@ class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
             return true;
         } else if (targetIssue.assignee && issue.assignee) {
             return targetIssue.assignee.key === issue.assignee.key;
+        }
+        return false;
+    }
+}
+
+class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
+    private _customFieldName:string;
+    private _customFieldValues:Indexed<CustomFieldValue>;
+    private _swimlaneNames:string[] = [];
+
+    constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean, customFieldName:string, customFieldValues:Indexed<CustomFieldValue>) {
+        super(filters, boardData);
+        this._customFieldName = customFieldName;
+        this._customFieldValues = customFieldValues;
+        if (initTable) {
+            let i:number = 0;
+            for (let customFieldValue of customFieldValues.array) {
+                this._swimlaneNames.push(customFieldValue.displayValue);
+            }
+            //Add an additional entry for the no match case
+            this._swimlaneNames.push("None");
+
+            this._swimlaneTable = createTable(boardData, this._swimlaneNames);
+        }
+    }
+
+    get swimlaneTable():SwimlaneData[] {
+        return this._swimlaneTable;
+    }
+
+    swimlaneIndex(issue:IssueData):number[] {
+        let customFieldValue:CustomFieldValue = issue.getCustomFieldValue(this._customFieldName);
+        if (!customFieldValue) {
+            //Put it into the 'None' bucket
+            return [this._swimlaneNames.length - 1];
+        }
+        return [this._customFieldValues.indices[customFieldValue.key]];
+    }
+
+    filter(swimlaneData:SwimlaneData):boolean {
+        let key:string = null;
+        if (swimlaneData.index < this._swimlaneNames.length - 1) {
+            key = this._customFieldValues.forIndex(swimlaneData.index).key;
+        }
+        return this._filters.filterCustomField(key);
+    }
+
+    matchIssues(targetIssue:IssueData, issue:IssueData):boolean {
+        let tgtValue:CustomFieldValue = targetIssue.getCustomFieldValue(this._customFieldName);
+        let value:CustomFieldValue = issue.getCustomFieldValue(this._customFieldName);
+
+        if (!tgtValue && !value) {
+            return true;
+        } else if (tgtValue && value) {
+            return tgtValue.key === value.key;
         }
         return false;
     }
