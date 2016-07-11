@@ -38,6 +38,7 @@ import java.util.Set;
 import org.jboss.dmr.ModelNode;
 import org.jboss.dmr.ModelType;
 import org.jboss.dmr.Property;
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.impl.Constants;
 
@@ -221,6 +222,7 @@ public class BoardProjectConfig extends ProjectConfig {
     }
 
     public List<String> getCustomFieldNames() {
+        JirbanLogger.LOGGER.trace("Custom fields for project {} are {}", getCode(), customFieldNames);
         return customFieldNames;
     }
 }
