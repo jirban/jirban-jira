@@ -1,7 +1,5 @@
 import {Indexed} from "../../common/indexed";
 
-export const NO_ASSIGNEE:string = "$no$assignee";
-
 export class Assignee {
     private _key:string;
     private _email:string;

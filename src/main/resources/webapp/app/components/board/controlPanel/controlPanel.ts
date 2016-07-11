@@ -1,7 +1,7 @@
 import {Component, EventEmitter} from "@angular/core";
 import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from "@angular/common";
-import {NO_ASSIGNEE, Assignee} from "../../../data/board/assignee";
-import {NO_COMPONENT, JiraComponent} from "../../../data/board/component";
+import {Assignee} from "../../../data/board/assignee";
+import {JiraComponent} from "../../../data/board/component";
 import {BoardData} from "../../../data/board/boardData";
 import {NONE, BoardFilters} from "../../../data/board/boardFilters";
 import {IssueType} from "../../../data/board/issueType";
@@ -25,8 +25,6 @@ export class ControlPanelComponent {
 
     private closeControlPanel:EventEmitter<any> = new EventEmitter();
 
-    private noAssignee:string = NO_ASSIGNEE;
-    private noComponent:string = NO_COMPONENT;
     private none:string = NONE;
 
     private linkUrl:string;
@@ -73,14 +71,14 @@ export class ControlPanelComponent {
 
         let assigneeFilterForm:ControlGroup = this.formBuilder.group({});
         //The unassigned assignee and the ones configured in the project
-        assigneeFilterForm.addControl(NO_ASSIGNEE, new Control(filters.initialAssigneeValueForForm(NO_ASSIGNEE)));
+        assigneeFilterForm.addControl(NONE, new Control(filters.initialAssigneeValueForForm(NONE)));
         for (let assignee of this.assignees) {
             assigneeFilterForm.addControl(assignee.key, new Control(filters.initialAssigneeValueForForm(assignee.key)));
         }
 
         let componentFilterForm:ControlGroup = this.formBuilder.group({});
         //The unassigned assignee and the ones configured in the project
-        componentFilterForm.addControl(NO_COMPONENT, new Control(filters.initialComponentValueForForm(NO_COMPONENT)));
+        componentFilterForm.addControl(NONE, new Control(filters.initialComponentValueForForm(NONE)));
         for (let component of this.components) {
             componentFilterForm.addControl(component.name, new Control(filters.initialComponentValueForForm(component.name)));
         }

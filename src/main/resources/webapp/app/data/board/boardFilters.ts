@@ -1,9 +1,9 @@
-import {Assignee, NO_ASSIGNEE} from "./assignee";
+import {Assignee} from "./assignee";
 import {Priority} from "./priority";
 import {IssueData} from "./issueData";
 import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
-import {JiraComponent, NO_COMPONENT} from "./component";
+import {JiraComponent} from "./component";
 import {IMap} from "../../common/map";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
 import filter = require("core-js/fn/array/filter");
@@ -78,7 +78,7 @@ export class BoardFilters {
         this._assigneeFilter = filter;
         this._assignees = false;
         this._selectedAssignees = [];
-        if (filter[NO_ASSIGNEE]) {
+        if (filter[NONE]) {
             this._assignees = true;
             this._selectedAssignees.push("None");
         }
@@ -98,9 +98,9 @@ export class BoardFilters {
         this._componentFilterLength = 0;
         this._components = false;
         this._selectedComponents = [];
-        if (filter[NO_COMPONENT]) {
+        if (filter[NONE]) {
             this._components = true;
-            this._componentFilter[NO_COMPONENT] = true;
+            this._componentFilter[NONE] = true;
             this._componentFilterLength = 1;
             this._selectedComponents.push("None");
         }
@@ -201,7 +201,7 @@ export class BoardFilters {
 
     filterAssignee(assigneeKey:string):boolean {
         if (this._assignees) {
-            return !this._assigneeFilter[assigneeKey ? assigneeKey : NO_ASSIGNEE]
+            return !this._assigneeFilter[assigneeKey ? assigneeKey : NONE]
         }
         return false;
     }
@@ -255,15 +255,15 @@ export class BoardFilters {
     private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
         if (this._components) {
             if (!issueComponents) {
-                return !this._componentFilter[NO_COMPONENT];
+                return !this._componentFilter[NONE];
             } else {
-                if (this._componentFilterLength == 1 && this._componentFilter[NO_COMPONENT]) {
+                if (this._componentFilterLength == 1 && this._componentFilter[NONE]) {
                     //All we want to match is no components, and we have some components so return that we
                     //should be filtered out
                     return true;
                 }
                 for (let component in this._componentFilter) {
-                    if (component === NO_COMPONENT) {
+                    if (component === NONE) {
                         //We have components and we are looking for some components, for this case ignore the
                         //no components filter
                         continue;
@@ -280,7 +280,7 @@ export class BoardFilters {
 
     filterComponent(componentName:string):boolean {
         if (this._components) {
-            return !this._componentFilter[componentName ? componentName : NO_COMPONENT]
+            return !this._componentFilter[componentName ? componentName : NONE]
         }
         return false;
 

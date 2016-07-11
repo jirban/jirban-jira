@@ -122,7 +122,7 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'assignee')" title="Clear filter">Assignee Filter</div>
                 <div class="setting-content" title="Scroll me!" ngControlGroup="assignee">
                     <div class="setting-entry">
-                        <input type="checkbox" ngControl="{{noAssignee}}" id="assignee-$none$none"/>
+                        <input type="checkbox" ngControl="{{none}}" id="assignee-$none$none"/>
                         <label for="assignee-$none$none">None</label>
                     </div>
                     <div *ngFor="let assignee of assignees" class="setting-entry">
@@ -135,7 +135,7 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'component')" title="Clear filter">Component Filter</div>
                 <div class="setting-content" title="Scroll me!" ngControlGroup="component">
                     <div class="setting-entry">
-                        <input type="checkbox" ngControl="{{noComponent}}" id="component-$none$none"/>
+                        <input type="checkbox" ngControl="{{none}}" id="component-$none$none"/>
                         <label for="component-$none$none">None</label>
                     </div>
                     <div *ngFor="let component of components" class="setting-entry">

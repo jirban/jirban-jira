@@ -1,7 +1,5 @@
 import {Indexed} from "../../common/indexed";
 
-export const NO_COMPONENT:string = "$no$component";
-
 export class JiraComponent {
     private _name:string;
 

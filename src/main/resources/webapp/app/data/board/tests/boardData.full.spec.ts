@@ -1330,12 +1330,12 @@ describe('BoardData tests', ()=> {
                 ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
                 ["TDP-2", "TDP-6", "TBG-2"]);
 
-            boardData.updateFilters({}, {}, {}, {"$no$assignee":true, "brian":true, "kabir":true}, {}, {});
+            boardData.updateFilters({}, {}, {}, {"$n$o$n$e$":true, "brian":true, "kabir":true}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {"$no$assignee":true}, {}, {});
+            boardData.updateFilters({}, {}, {}, {"$n$o$n$e$":true}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
@@ -1360,12 +1360,12 @@ describe('BoardData tests', ()=> {
                 ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
                 ["TDP-2", "TDP-6", "TBG-2"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true}, {});
+            boardData.updateFilters({}, {}, {}, {}, {"$n$o$n$e$":true}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true, "First":true, "Second":true}, {});
+            boardData.updateFilters({}, {}, {}, {}, {"$n$o$n$e$":true, "First":true, "Second":true}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
@@ -1418,12 +1418,12 @@ describe('BoardData tests', ()=> {
                 ["TDP-1", "TDP-4", "TDP-5", "TBG-1", "TBG-4"],
                 ["TDP-2", "TDP-3", "TDP-6", "TDP-7", "TBG-2", "TBG-3"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true}, {});
+            boardData.updateFilters({}, {}, {}, {}, {"$n$o$n$e$":true}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
                 ["TDP-4", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true, "First":true, "Second":true}, {});
+            boardData.updateFilters({}, {}, {}, {}, {"$n$o$n$e$":true, "First":true, "Second":true}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
