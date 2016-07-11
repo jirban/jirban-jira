@@ -1,5 +1,5 @@
 import {BoardData} from "./boardData";
-import {BoardFilters} from "./boardFilters";
+import {BoardFilters, NONE} from "./boardFilters";
 import {IssueData} from "./issueData";
 import {IMap} from "../../common/map";
 import {SwimlaneData} from "./issueTable";
@@ -286,6 +286,8 @@ class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer 
         let key:string = null;
         if (swimlaneData.index < this._swimlaneNames.length - 1) {
             key = this._customFieldValues.forIndex(swimlaneData.index).key;
+        } else {
+            key = NONE;
         }
         return this._filters.filterCustomField(this._customFieldName, key);
     }
