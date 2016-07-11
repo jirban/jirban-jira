@@ -413,14 +413,13 @@ export class BoardData {
 
     setFiltersFromQueryParams(queryParams:IMap<string>) {
 
-        this._boardFilters.createFromQueryParams(queryParams, 
-            (projectFilter:string,
-            priorityFilter:string,
-            issueTypeFilter:string,
-            assigneeFilter:string,
-            componentFilter:string) => {
-                //TODO
-                let customFieldFilters:IMap<string> = {};
+        this._boardFilters.createFromQueryParams(this, queryParams,
+            (projectFilter:any,
+            priorityFilter:any,
+            issueTypeFilter:any,
+            assigneeFilter:any,
+            componentFilter:any,
+            customFieldFilters:IMap<any>) => {
                 this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
         });
 

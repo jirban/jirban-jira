@@ -6,6 +6,7 @@ import {IssueType} from "./issueType";
 import {JiraComponent} from "./component";
 import {IMap} from "../../common/map";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
+import {BoardData} from "./boardData";
 import filter = require("core-js/fn/array/filter");
 
 export const NONE:string = "$n$o$n$e$";
@@ -245,7 +246,7 @@ export class BoardFilters {
         if (!this._customFields[customFieldName]) {
             return false;
         }
-        let customField:any = this._customFieldValueFilters[customFieldKey];
+        let customField:any = this._customFieldValueFilters[customFieldName];
         if (!customField) {
             return false;
         }
@@ -328,20 +329,28 @@ export class BoardFilters {
         return false;
     }
 
-    createFromQueryParams(queryParams:IMap<string>,
+    createFromQueryParams(boardData:BoardData, queryParams:IMap<string>,
                                  callback:(
-                                     projectFilter:string,
-                                     priorityFilter:string,
-                                     issueTypeFilter:string,
-                                     assigneeFilter:string,
-                                     componentFilter:string)=>void):void {
+                                     projectFilter:any,
+                                     priorityFilter:any,
+                                     issueTypeFilter:any,
+                                     assigneeFilter:any,
+                                     componentFilter:any,
+                                     customFieldFilters:IMap<any>
+                                 )=>void):void {
         let projectFilter:any = this.parseBooleanFilter(queryParams, "project");
         let priorityFilter:any = this.parseBooleanFilter(queryParams, "priority");
         let issueTypeFilter:any = this.parseBooleanFilter(queryParams, "issue-type");
         let assigneeFilter:any = this.parseBooleanFilter(queryParams, "assignee");
         let componentFilter:any = this.parseBooleanFilter(queryParams, "component");
 
-        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter);
+        let customFieldFilters:IMap<any> = {};
+        for (let customFieldValues of boardData.customFields.array) {
+            let customFilter:any = this.parseBooleanFilter(queryParams, "cf." + customFieldValues.name);
+            customFieldFilters[customFieldValues.name] = customFilter;
+        }
+
+        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
     }
 
     parseBooleanFilter(queryParams:IMap<string>, name:string):any{
@@ -368,7 +377,7 @@ export class BoardFilters {
         for (let key in this._customFieldValueFilters) {
             let customField:boolean = this._customFields[key];
             let customFieldFilter:any = this._customFieldValueFilters[key];
-            query += this.createQueryStringParticle(key, customField, customFieldFilter);
+            query += this.createQueryStringParticle("cf." + key, customField, customFieldFilter);
         }
         return query;
     }
