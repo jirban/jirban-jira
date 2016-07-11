@@ -411,6 +411,10 @@ export class BoardFilters {
     get selectedComponents():string[] {
         return this._selectedComponents;
     }
+
+    get selectedCustomFields():IMap<string[]> {
+        return this._selectedCustomFields;
+    }
 }
 
 /**

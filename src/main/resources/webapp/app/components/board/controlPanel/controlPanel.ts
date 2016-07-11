@@ -91,8 +91,8 @@ export class ControlPanelComponent {
         form.addControl("component", componentFilterForm);
 
         //Add the custom fields form(s) to the main form
-        if (this.boardData.customFields.array.length > 0) {
-            for (let customFieldValues of this.boardData.customFields.array) {
+        if (this.customFields.length > 0) {
+            for (let customFieldValues of this.customFields) {
                 let customFieldForm:ControlGroup = this.formBuilder.group({});
                 customFieldForm.addControl(NONE, new Control(filters.initialCustomFieldValueForForm(customFieldValues.name, NONE)))
                 for (let customFieldValue of customFieldValues.values.array) {
@@ -118,7 +118,7 @@ export class ControlPanelComponent {
                 }
                 //Updating the filters is costly so do it all in one go
                 let dirtyCustom:boolean = false;
-                for (let customFieldValues of this.boardData.customFields.array) {
+                for (let customFieldValues of this.customFields) {
                     if (dirty[customFieldValues.name]) {
                         dirtyCustom = true;
                         break;
@@ -126,7 +126,7 @@ export class ControlPanelComponent {
                 }
                 if (dirtyCustom || dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
                     let customFieldFormValues:IMap<any> = {};
-                    for (let customFieldValues of this.boardData.customFields.array) {
+                    for (let customFieldValues of this.customFields) {
                         customFieldFormValues[customFieldValues.name] = value[customFieldValues.name];
                     }
                     this.updateFilters(dirty,
@@ -174,7 +174,9 @@ export class ControlPanelComponent {
         this.clearFilter(event, 'priority');
         this.clearFilter(event, 'assignee');
         this.clearFilter(event, 'component');
-
+        for (let customFieldValues of this.customFields) {
+            this.clearFilter(event, customFieldValues.name);
+        }
     }
 
     private clearFilter(event:MouseEvent, name:string) {
@@ -277,6 +279,13 @@ export class ControlPanelComponent {
             this.filterTooltips["component"] = this.createTooltipForFilter(filters.selectedComponents);
         }
 
+        for (let customFieldValues of this.customFields) {
+            if (!dirty || dirty[customFieldValues.name]) {
+                let selected:IMap<string[]> = filters.selectedCustomFields;
+                this.filterTooltips[customFieldValues.name] = this.createTooltipForFilter(selected[customFieldValues.name]);
+            }
+        }
+
         let filtersToolTip:string = "";
         let current:string = this.filterTooltips["project"];
         if (current) {
@@ -314,9 +323,21 @@ export class ControlPanelComponent {
             }
             filtersToolTip += "Components:\n" + current;
         }
+
+        for (let customFieldValues of this.customFields) {
+            current = this.filterTooltips[customFieldValues.name];
+            if (current) {
+                if (filtersToolTip.length > 0) {
+                    filtersToolTip += "\n\n";
+                }
+                filtersToolTip += customFieldValues.name + ":\n" + current;
+            }
+        }
+
         if (filtersToolTip.length > 0) {
             filtersToolTip += "\n\nClick 'Filters' to clear all filters";
         }
+        
         this.filtersTooltip = filtersToolTip;
     }
 

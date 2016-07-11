@@ -76,8 +76,8 @@
                         <a href="Filter Component" (click)="onSelectFiltersToDisplay($event, 'component')"
                            [ngClass]="getFilterLinkClass('component')">Component</a></div>
                     <div *ngFor="let customField of customFields"
-                            [ngClass]="filtersToDisplay === 'customField.name' ? 'filter selected' : 'filter'" title="{{filterTooltips['customField.name']}}">
-                        <a href="Filter Component" (click)="onSelectFiltersToDisplay($event, customField.name)"
+                            [ngClass]="filtersToDisplay === customField.name ? 'filter selected' : 'filter'" title="{{filterTooltips[customField.name]}}">
+                        <a href="Filter {{customField.name}}" (click)="onSelectFiltersToDisplay($event, customField.name)"
                            [ngClass]="getFilterLinkClass(customField.name)">{{customField.name}}</a></div>
 
                 </div>
