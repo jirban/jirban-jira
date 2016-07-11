@@ -185,9 +185,12 @@ export class IssueData {
     set filtered(filtered) {
         this._filtered = filtered;
     }
+    
+    get customFields():IMap<CustomFieldValue> {
+        return this._customFields;
+    }
 
-
-    //'Advanced'/'Nested' getters
+//'Advanced'/'Nested' getters
 
     get boardStatus():string {
         //The state we map to in the board (only for board projects)

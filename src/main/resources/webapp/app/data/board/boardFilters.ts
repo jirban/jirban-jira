@@ -5,6 +5,10 @@ import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
 import {JiraComponent, NO_COMPONENT} from "./component";
 import {IMap} from "../../common/map";
+import {CustomFieldValues, CustomFieldValue} from "./customField";
+import filter = require("core-js/fn/array/filter");
+
+export const NONE:string = "$n$o$n$e$";
 
 export class BoardFilters {
     private _projectFilter:any;
@@ -13,16 +17,19 @@ export class BoardFilters {
     private _assigneeFilter:any;
     private _componentFilter:any;
     private _componentFilterLength:number;
+    private _customFieldValueFilters:IMap<any>;
     private _projects:boolean = false;
     private _assignees:boolean = false;
     private _priorities:boolean = false;
     private _issueTypes:boolean = false;
     private _components:boolean = false;
+    private _customFields:IMap<boolean> = {};
     private _selectedProjectNames:string[] = [];
     private _selectedPriorityNames:string[] = [];
     private _selectedIssueTypes:string[] = [];
     private _selectedAssignees:string[] = [];
     private _selectedComponents:string[] = [];
+    private _selectedCustomFields:IMap<string[]>;
 
     setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
@@ -108,8 +115,46 @@ export class BoardFilters {
                 }
             }
         }
-
     }
+
+    setCustomFieldValueFilters(customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>) {
+        this._customFieldValueFilters = {};
+        this._customFields = {};
+        this._selectedCustomFields = {};
+        for (let cfvs of customFields.array) {
+            let filter = customFieldValueFilters[cfvs.name];
+            let hasFilters = false;
+            let selected:string[] = [];
+            console.log(JSON.stringify(filter));
+            if (!filter) {
+                filter = {};
+            } else {
+                if (filter[NONE]) {
+                    hasFilters = true;
+                    selected.push("None")
+                }
+                for (let cfv of cfvs.values.array) {
+                    if (filter[cfv.key]) {
+                        hasFilters = true;
+                        selected.push(cfv.displayValue);
+                    }
+                }
+            }
+            this._customFieldValueFilters[cfvs.name] = filter;
+            this._customFields[cfvs.name] = hasFilters;
+            this._selectedCustomFields[cfvs.name] = selected;
+
+        }
+    }
+
+    private hasCustomValueFilter(customFieldValueFilters:IMap<any>, name:string, key:string) {
+        let filtersForField:any = customFieldValueFilters[name];
+        if (!filtersForField) {
+            return false;
+        }
+        return filtersForField[key];
+    }
+
 
     filterIssue(issue:IssueData):boolean {
         if (this.filterProject(issue.projectCode)) {
@@ -125,6 +170,9 @@ export class BoardFilters {
             return true;
         }
         if (this.filterComponentAllComponents(issue.components)) {
+            return true;
+        }
+        if (this.filterCustomFields(issue.customFields)) {
             return true;
         }
         return false;
@@ -193,6 +241,17 @@ export class BoardFilters {
         return this._componentFilter[componentKey];
     }
 
+    initialCustomFieldValueForForm(customFieldName:string, customFieldKey:string):boolean {
+        if (!this._customFields[customFieldName]) {
+            return false;
+        }
+        let customField:any = this._customFieldValueFilters[customFieldKey];
+        if (!customField) {
+            return false;
+        }
+        return customField[customFieldKey];
+    }
+
     private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
         if (this._components) {
             if (!issueComponents) {
@@ -227,7 +286,45 @@ export class BoardFilters {
 
     }
 
-    filterCustomField(customFieldName:string):boolean {
+    filterCustomFields(customFields:IMap<CustomFieldValue>):boolean {
+        for (let customFieldName in this._customFields) {
+            if (this._customFields[customFieldName]) {
+                let hadFilters:boolean = false;
+                let match:boolean = false;
+                let filter:any = this._customFieldValueFilters[customFieldName];
+                for (let fieldName in filter) {
+                    if (!filter[fieldName]) {
+                        continue;
+                    }
+                    hadFilters = true;
+                    if (fieldName === NONE) {
+                        if (!customFields[customFieldName]){
+                            match = true;
+                            break;
+                        }
+                    } else {
+                        let customFieldValue = customFields[customFieldName]
+                        if (customFieldValue && filter[customFieldValue.key]) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                if (hadFilters && !match) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    filterCustomField(customFieldName:string, customFieldKey:string):boolean {
+        if (this._customFields[customFieldName]) {
+            let customField:any = this._customFieldValueFilters[customFieldName];
+            if (customField) {
+                return !customField[customFieldKey];
+            }
+        }
         return false;
     }
 
@@ -268,6 +365,11 @@ export class BoardFilters {
         query += this.createQueryStringParticle("issue-type", this._issueTypes, this._issueTypeFilter);
         query += this.createQueryStringParticle("assignee", this._assignees, this._assigneeFilter);
         query += this.createQueryStringParticle("component", this._components, this._componentFilter);
+        for (let key in this._customFieldValueFilters) {
+            let customField:boolean = this._customFields[key];
+            let customFieldFilter:any = this._customFieldValueFilters[key];
+            query += this.createQueryStringParticle(key, customField, customFieldFilter);
+        }
         return query;
     }
 

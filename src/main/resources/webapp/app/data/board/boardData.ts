@@ -357,12 +357,13 @@ export class BoardData {
         this._issueTable.filters = this._boardFilters;
     }
 
-    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any) {
+    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any, customFieldValueFilters:IMap<any>) {
         this._boardFilters.setProjectFilter(projectFilter, this._projects.boardProjectCodes);
         this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
         this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
         this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
         this._boardFilters.setComponentFilter(componentFilter, this._components);
+        this._boardFilters.setCustomFieldValueFilters(customFieldValueFilters, this._customFields);
         this._issueTable.filters = this._boardFilters;
     }
 
@@ -418,7 +419,9 @@ export class BoardData {
             issueTypeFilter:string,
             assigneeFilter:string,
             componentFilter:string) => {
-                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter);
+                //TODO
+                let customFieldFilters:IMap<string> = {};
+                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
         });
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));

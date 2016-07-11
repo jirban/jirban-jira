@@ -3,11 +3,11 @@ import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} fr
 import {NO_ASSIGNEE, Assignee} from "../../../data/board/assignee";
 import {NO_COMPONENT, JiraComponent} from "../../../data/board/component";
 import {BoardData} from "../../../data/board/boardData";
+import {NONE, BoardFilters} from "../../../data/board/boardFilters";
 import {IssueType} from "../../../data/board/issueType";
 import {Priority} from "../../../data/board/priority";
 import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
-import {BoardFilters} from "../../../data/board/boardFilters";
 import {CustomFieldValues} from "../../../data/board/customField";
 
 @Component({
@@ -27,6 +27,7 @@ export class ControlPanelComponent {
 
     private noAssignee:string = NO_ASSIGNEE;
     private noComponent:string = NO_COMPONENT;
+    private none:string = NONE;
 
     private linkUrl:string;
 
@@ -91,6 +92,18 @@ export class ControlPanelComponent {
         form.addControl("assignee", assigneeFilterForm);
         form.addControl("component", componentFilterForm);
 
+        //Add the custom fields form(s) to the main form
+        if (this.boardData.customFields.array.length > 0) {
+            for (let customFieldValues of this.boardData.customFields.array) {
+                let customFieldForm:ControlGroup = this.formBuilder.group({});
+                customFieldForm.addControl(NONE, new Control(filters.initialCustomFieldValueForForm(customFieldValues.name, NONE)))
+                for (let customFieldValue of customFieldValues.values.array) {
+                    customFieldForm.addControl(customFieldValue.key, new Control(filters.initialCustomFieldValueForForm(customFieldValues.name, customFieldValue.key)));
+                }
+                form.addControl(customFieldValues.name, customFieldForm);
+            }
+        }
+
         let dirtyChecker:DirtyChecker = DirtyChecker.create(form);
 
         form.valueChanges
@@ -106,8 +119,20 @@ export class ControlPanelComponent {
                     this.updateIssueDetail(value["detail"]);
                 }
                 //Updating the filters is costly so do it all in one go
-                if (dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
-                    this.updateFilters(dirty, value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"]);
+                let dirtyCustom:boolean = false;
+                for (let customFieldValues of this.boardData.customFields.array) {
+                    if (dirty[customFieldValues.name]) {
+                        dirtyCustom = true;
+                        break;
+                    }
+                }
+                if (dirtyCustom || dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
+                    let customFieldFormValues:IMap<any> = {};
+                    for (let customFieldValues of this.boardData.customFields.array) {
+                        customFieldFormValues[customFieldValues.name] = value[customFieldValues.name];
+                    }
+                    this.updateFilters(dirty,
+                        value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"], customFieldFormValues);
                 }
                 this.updateLinkUrl();
             });
@@ -127,7 +152,6 @@ export class ControlPanelComponent {
 
         return this._controlForm;
     }
-
 
     private addControlAndRecordInitialValue(form:ControlGroup, initialStateRecorder:any, groupName:string, name:string, value:any) {
         form.addControl(name, new Control(value));
@@ -152,6 +176,7 @@ export class ControlPanelComponent {
         this.clearFilter(event, 'priority');
         this.clearFilter(event, 'assignee');
         this.clearFilter(event, 'component');
+
     }
 
     private clearFilter(event:MouseEvent, name:string) {
@@ -230,8 +255,8 @@ export class ControlPanelComponent {
         this.boardData.updateIssueDetail(value.assignee, value.description, value.info, value.linked);
     }
 
-    private updateFilters(dirty:IMap<boolean>, project:any, priority:any, issueType:any, assignee:any, component:any) {
-        this.boardData.updateFilters(project, priority, issueType, assignee, component);
+    private updateFilters(dirty:IMap<boolean>, project:any, priority:any, issueType:any, assignee:any, component:any, customFieldValues:IMap<any>) {
+        this.boardData.updateFilters(project, priority, issueType, assignee, component, customFieldValues);
         this.updateTooltips(dirty);
     }
 

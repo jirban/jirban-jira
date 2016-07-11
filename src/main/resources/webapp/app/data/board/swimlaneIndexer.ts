@@ -287,7 +287,7 @@ class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer 
         if (swimlaneData.index < this._swimlaneNames.length - 1) {
             key = this._customFieldValues.forIndex(swimlaneData.index).key;
         }
-        return this._filters.filterCustomField(key);
+        return this._filters.filterCustomField(this._customFieldName, key);
     }
 
     matchIssues(targetIssue:IssueData, issue:IssueData):boolean {

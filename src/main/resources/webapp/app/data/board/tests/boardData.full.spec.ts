@@ -1237,24 +1237,24 @@ describe('BoardData tests', ()=> {
         });
 
         it("Project", () => {
-            boardData.updateFilters({"TDP": true}, {}, {}, {}, {});
+            boardData.updateFilters({"TDP": true}, {}, {}, {}, {}, {});
 
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
                 ["TBG-1", "TBG-2", "TBG-3", "TBG-4"],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"]);
 
-            boardData.updateFilters({"TDP": true, "TBG": true}, {}, {}, {}, {});
+            boardData.updateFilters({"TDP": true, "TBG": true}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({"TBG": true}, {}, {}, {}, {});
+            boardData.updateFilters({"TBG": true}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"],
                 ["TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {});
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
@@ -1262,28 +1262,28 @@ describe('BoardData tests', ()=> {
         });
 
         it("Priority", () => {
-            boardData.updateFilters({}, {"highest":true}, {}, {}, {});
+            boardData.updateFilters({}, {"highest":true}, {}, {}, {}, {});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
                 ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
                 ["TDP-1", "TDP-5", "TBG-1"]);
 
-            boardData.updateFilters({}, {"high":true}, {}, {}, {});
+            boardData.updateFilters({}, {"high":true}, {}, {}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
                 ["TDP-2", "TDP-6", "TBG-2"]);
 
-            boardData.updateFilters({}, {"highest":true, "high":true, "low":true, "lowest":true}, {}, {}, {});
+            boardData.updateFilters({}, {"highest":true, "high":true, "low":true, "lowest":true}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {"low":true, "lowest":true}, {}, {}, {});
+            boardData.updateFilters({}, {"low":true, "lowest":true}, {}, {}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {});
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
@@ -1291,56 +1291,56 @@ describe('BoardData tests', ()=> {
 
 
         it("Issue Type", () => {
-            boardData.updateFilters({}, {}, {"task":true}, {}, {});
+            boardData.updateFilters({}, {}, {"task":true}, {}, {}, {});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
                 ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
                 ["TDP-1", "TDP-5", "TBG-1"]);
 
-            boardData.updateFilters({}, {}, {"bug":true}, {}, {});
+            boardData.updateFilters({}, {}, {"bug":true}, {}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
                 ["TDP-2", "TDP-6", "TBG-2"]);
 
-            boardData.updateFilters({}, {}, {"task":true, "bug":true, "feature":true, "issue":true}, {}, {});
+            boardData.updateFilters({}, {}, {"task":true, "bug":true, "feature":true, "issue":true}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {"feature":true, "issue":true}, {}, {});
+            boardData.updateFilters({}, {}, {"feature":true, "issue":true}, {}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {});
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
         });
 
         it ("Assignee", () => {
-            boardData.updateFilters({}, {}, {}, {"brian":true}, {});
+            boardData.updateFilters({}, {}, {}, {"brian":true}, {}, {});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
                 ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
                 ["TDP-1", "TDP-5", "TBG-1"]);
 
-            boardData.updateFilters({}, {}, {}, {"kabir":true}, {});
+            boardData.updateFilters({}, {}, {}, {"kabir":true}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
                 ["TDP-2", "TDP-6", "TBG-2"]);
 
-            boardData.updateFilters({}, {}, {}, {"$no$assignee":true, "brian":true, "kabir":true}, {});
+            boardData.updateFilters({}, {}, {}, {"$no$assignee":true, "brian":true, "kabir":true}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {"$no$assignee":true}, {});
+            boardData.updateFilters({}, {}, {}, {"$no$assignee":true}, {}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {});
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
@@ -1349,36 +1349,36 @@ describe('BoardData tests', ()=> {
 
         it ("Component (single per issue)", () => {
             //Components are a bit different from the other filters, since an issue may have more than one component
-            boardData.updateFilters({}, {}, {}, {}, {"First":true});
+            boardData.updateFilters({}, {}, {}, {}, {"First":true}, {});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
                 ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
                 ["TDP-1", "TDP-5", "TBG-1"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"Second":true});
+            boardData.updateFilters({}, {}, {}, {}, {"Second":true}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
                 ["TDP-2", "TDP-6", "TBG-2"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true});
+            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true, "First":true, "Second":true});
+            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true, "First":true, "Second":true}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
 
             //Make sure that if selecting more than one component we get all the issues which have EITHER
-            boardData.updateFilters({}, {}, {}, {}, {"First":true, "Second":true});
+            boardData.updateFilters({}, {}, {}, {}, {"First":true, "Second":true}, {});
             checkFiltered(boardData,
                 ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
                 ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
 
 
-            boardData.updateFilters({}, {}, {}, {}, {});
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
@@ -1407,39 +1407,173 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            boardData.updateFilters({}, {}, {}, {}, {"First":true});
+            boardData.updateFilters({}, {}, {}, {}, {"First":true}, {});
             checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
             checkFiltered(boardData,
                 ["TDP-2", "TDP-4", "TDP-6", "TBG-2", "TBG-4"],
                 ["TDP-1", "TDP-3", "TDP-5", "TDP-7", "TBG-1", "TBG-3"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"Second":true});
+            boardData.updateFilters({}, {}, {}, {}, {"Second":true}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-4", "TDP-5", "TBG-1", "TBG-4"],
                 ["TDP-2", "TDP-3", "TDP-6", "TDP-7", "TBG-2", "TBG-3"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true});
+            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true}, {});
             checkFiltered(boardData,
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
                 ["TDP-4", "TBG-4"]);
 
-            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true, "First":true, "Second":true});
+            boardData.updateFilters({}, {}, {}, {}, {"$no$component":true, "First":true, "Second":true}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
 
             //Make sure that if selecting more than one component we get all the issues which have EITHER
-            boardData.updateFilters({}, {}, {}, {}, {"First":true, "Second":true});
+            boardData.updateFilters({}, {}, {}, {}, {"First":true, "Second":true}, {});
             checkFiltered(boardData,
                 ["TDP-4", "TBG-4"],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"]);
 
 
-            boardData.updateFilters({}, {}, {}, {}, {});
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
             checkFiltered(boardData,
                 [],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+        });
+
+        it("Custom Field - Tester", () => {
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"james":true}});
+            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkFiltered(boardData,
+                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                ["TDP-1", "TDP-5", "TBG-1"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"kabir":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                ["TDP-2", "TDP-6", "TBG-2"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"kabir":true, "james":false}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                ["TDP-2", "TDP-6", "TBG-2"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
+            checkFiltered(boardData,
+                [],
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            //None
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"$n$o$n$e$":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"$n$o$n$e$":true, "kabir":true, "james":true}});
+            checkFiltered(boardData,
+                [],
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"kabir":true, "james":true}});
+            checkFiltered(boardData,
+                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
+        });
+
+
+        it("Custom Field - Documenter", () => {
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Documenter":{"kabir":true}});
+            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkFiltered(boardData,
+                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                ["TDP-1", "TDP-5", "TBG-1"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Documenter":{"stuart":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                ["TDP-2", "TDP-6", "TBG-2"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {});
+            checkFiltered(boardData,
+                [],
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            //None
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Documenter":{"$n$o$n$e$":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Documenter":{"$n$o$n$e$":true, "kabir":true, "stuart":true}});
+            checkFiltered(boardData,
+                [],
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Documenter":{"kabir":true, "stuart":true}});
+            checkFiltered(boardData,
+                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+        });
+
+        it("Custom Field - Documenter+Tester", () => {
+            let bd:TestBoardData = new TestBoardData();
+            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+            boardData.deserialize("tst", bd.build());
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"james":true}, "Documenter":{"kabir":true}});
+            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkFiltered(boardData,
+                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                ["TDP-1", "TDP-5", "TBG-1"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"kabir":true}, "Documenter":{"stuart":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                ["TDP-2", "TDP-6", "TBG-2"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"james":true}, "Documenter":{"stuart":true}});
+            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                []);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"kabir":true}, "Documenter":{"kabir":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                []);
+
+            //None
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"$n$o$n$e$":true}, "Documenter":{"$n$o$n$e$":true}});
+            checkFiltered(boardData,
+                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"$n$o$n$e$":true, "kabir":true, "james":true}, "Documenter":{"$n$o$n$e$":true, "kabir":true, "stuart":true}});
+            checkFiltered(boardData,
+                [],
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            boardData.updateFilters({}, {}, {}, {}, {}, {"Tester":{"kabir":true, "james":true}, "Documenter":{"kabir":true, "stuart":true}});
+            checkFiltered(boardData,
+                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
         });
     });
 
