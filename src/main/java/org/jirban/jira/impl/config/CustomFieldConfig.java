@@ -44,8 +44,6 @@ public abstract class CustomFieldConfig {
 
     public abstract CustomFieldUtil getUtil();
 
-    public abstract void sortCustomFields(Map<String, CustomField> customFields);
-
     public static CustomFieldConfig load(CustomFieldManager customFieldMgr, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(NAME)) {
             throw new JirbanValidationException("All \"custom\" field definitions must have a 'name'");
@@ -79,6 +77,8 @@ public abstract class CustomFieldConfig {
         switch (type) {
             case USER:
                 return new UserCustomFieldConfig(name, type, customField);
+            case VERSION:
+                return new VersionCustomFieldConfig(name, type, customField);
             default:
                 throw new JirbanValidationException("Unknown 'type': " + typeName);
         }
@@ -118,7 +118,8 @@ public abstract class CustomFieldConfig {
     }
 
     public enum Type {
-        USER("user");
+        USER("user"),
+        VERSION("version");
 
         private static final Map<String, Type> TYPES_BY_NAME;
         static {

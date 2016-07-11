@@ -54,4 +54,26 @@ public abstract class CustomFieldUtil {
             return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
         }
     };
+
+    public static final CustomFieldUtil VERSION = new CustomFieldUtil() {
+        @Override
+        CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
+            return VersionCustomFieldValue.load(customFieldConfig, customFieldValue);
+        }
+
+        @Override
+        String getKey(Object fieldValue) {
+            return VersionCustomFieldValue.getKeyForValue(fieldValue);
+        }
+
+        @Override
+        public String getChangeValue(Object fieldValue) {
+            return VersionCustomFieldValue.getChangeValue(fieldValue);
+        }
+
+        @Override
+        CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
+            return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+        }
+    };
 }
