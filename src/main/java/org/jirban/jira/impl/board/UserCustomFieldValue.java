@@ -11,11 +11,8 @@ import com.atlassian.jira.user.ApplicationUser;
  */
 class UserCustomFieldValue extends CustomFieldValue {
 
-    private final User user;
-
     private UserCustomFieldValue(String customFieldName, User user) {
         super(customFieldName, user.getKey(), user.getDisplayName());
-        this.user = user;
     }
 
     static UserCustomFieldValue load(CustomFieldConfig config, Object customFieldValue) {
