@@ -19,9 +19,11 @@ public abstract class CustomFieldUtil {
 
     abstract String getKey(Object fieldValue);
 
-    public abstract String getChangeValue(Object fieldValue);
+    public abstract String getCreateEventValue(Object fieldValue);
 
     abstract CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key);
+
+    public abstract String getUpdateEventValue(String changeKey, String changeValue);
 
     Map<String, CustomFieldValue> sortFields(Map<String, CustomFieldValue> fields) {
         List<CustomFieldValue> fieldValues = new ArrayList<>(fields.values());
@@ -45,13 +47,18 @@ public abstract class CustomFieldUtil {
         }
 
         @Override
-        public String getChangeValue(Object fieldValue) {
+        public String getCreateEventValue(Object fieldValue) {
             return UserCustomFieldValue.getChangeValue(fieldValue);
         }
 
         @Override
         CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
             return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+        }
+
+        @Override
+        public String getUpdateEventValue(String changeKey, String changeValue) {
+            return changeKey;
         }
     };
 
@@ -67,13 +74,18 @@ public abstract class CustomFieldUtil {
         }
 
         @Override
-        public String getChangeValue(Object fieldValue) {
+        public String getCreateEventValue(Object fieldValue) {
             return VersionCustomFieldValue.getChangeValue(fieldValue);
         }
 
         @Override
         CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
             return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+        }
+
+        @Override
+        public String getUpdateEventValue(String changeKey, String changeValue) {
+            return changeValue;
         }
     };
 }

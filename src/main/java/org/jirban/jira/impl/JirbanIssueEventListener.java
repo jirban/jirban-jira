@@ -255,7 +255,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             for (CustomFieldConfig cfg : customFields) {
                 if (!values.containsKey(cfg.getId())) {
                     final Object value = issue.getCustomFieldValue(cfg.getJiraCustomField());
-                    String stringValue = value == null ? null : cfg.getUtil().getChangeValue(value);
+                    String stringValue = value == null ? null : cfg.getUtil().getCreateEventValue(value);
                     values.put(cfg.getId(), stringValue);
                 }
             }
@@ -328,7 +328,9 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                         customFieldValues = new HashMap<>();
                     }
                     for (CustomFieldConfig cfg : configs) {
-                        customFieldValues.put(cfg.getId(), (String)change.get(CHANGE_LOG_NEW_VALUE));
+                        String key = cfg.getUtil().getUpdateEventValue(
+                                (String) change.get(CHANGE_LOG_NEW_VALUE), (String) change.get(CHANGE_LOG_NEW_STRING));
+                        customFieldValues.put(cfg.getId(), key);
                     }
                 }
             }
