@@ -11,7 +11,7 @@ import {Observer} from "rxjs/Observer";
 
 @Injectable()
 export class IssuesService {
-    private bigTimeout:number = 30000;
+    private bigTimeout:number = 60000;
     static smallTimeout:number = 15000;
     private http : Http;
 
