@@ -96,6 +96,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     private static final String CHANGE_LOG_STATUS = "status";
     private static final String CHANGE_LOG_OLD_STRING = "oldstring";
     private static final String CHANGE_LOG_NEW_STRING = "newstring";
+    private static final String CHANGE_LOG_NEW_VALUE = "newvalue";
     private static final String CHANGE_LOG_RANK = "Rank";
     private static final String CHANGE_LOG_PROJECT = "project";
     private static final String CHANGE_LOG_OLD_VALUE = "oldvalue";
@@ -327,7 +328,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                         customFieldValues = new HashMap<>();
                     }
                     for (CustomFieldConfig cfg : configs) {
-                        customFieldValues.put(cfg.getId(), (String)change.get(CHANGE_LOG_NEW_STRING));
+                        customFieldValues.put(cfg.getId(), (String)change.get(CHANGE_LOG_NEW_VALUE));
                     }
                 }
             }
