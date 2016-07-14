@@ -121,6 +121,14 @@ public class RestEndpoint {
                         viewId));
     }
 
+    @GET
+    @Path(BOARDS + "/{boardId}")
+    public Response getBoardConfig(@PathParam("boardId") int boardId) {
+        ApplicationUser user = getUser();
+        String json = jiraFacade.getBoardJsonForConfig(user, boardId);
+        return createResponse(json);
+    }
+
     @DELETE
     @Path(BOARDS + "/{boardId}")
     public Response deleteBoard(@PathParam("boardId") int boardId) {

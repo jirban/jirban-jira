@@ -125,7 +125,6 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (canEditBoard(user, configJson)) {
                     configNode.get(EDIT).set(true);
                 }
-//                configNode.get(CONFIG).set(configJson);
                 configsList.add(configNode);
             } else {
                 //A guess at what is needed to view the boards
@@ -144,6 +143,18 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         }
 
         return config.toJSONString(true);
+    }
+
+    @Override
+    public String getBoardJson(ApplicationUser user, int boardId) {
+        BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
+            @Override
+            public BoardCfg[] doInTransaction() {
+                return activeObjects.find(BoardCfg.class, Query.select().where("id = ?", boardId));
+            }
+        });
+        ModelNode configJson = ModelNode.fromJSONString(cfgs[0].getConfigJson());
+        return configJson.toJSONString(true);
     }
 
     private void addCustomFieldInfo(ApplicationUser user, ModelNode customFieldConfig) {

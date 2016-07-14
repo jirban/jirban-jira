@@ -79,6 +79,11 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
+    public String getBoardJsonForConfig(ApplicationUser user, int boardId) {
+        return boardConfigurationManager.getBoardJson(user, boardId);
+    }
+
+    @Override
     public void saveBoardConfiguration(ApplicationUser user, int id, String jiraUrl, ModelNode config) {
         BoardConfig boardConfig = boardConfigurationManager.saveBoard(user, id, config);
         if (id >= 0) {

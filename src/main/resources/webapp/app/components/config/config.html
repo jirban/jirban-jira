@@ -10,7 +10,7 @@
         <li *ngFor="let board of boards">
             <a href="view" (click)="toggleBoard($event, board.id)">{{board.name}}</a>
             <div [hidden]="!isSelected(board.id)">
-                <div [hidden]="edit">
+                <div *ngIf="!edit">
                     <!-- board.edit is whether the user has the edit permission -->
                     <a  *ngIf="!deleting && board.edit" href="edit" (click)="toggleEdit($event, board)">Edit</a>
                     <a *ngIf="!deleting && board.edit" href="delete" (click)="toggleDelete($event, board.id)">Delete</a>
@@ -22,7 +22,7 @@
                             <button type="submit" [disabled]="!f.form.valid">Delete</button>
                         </form>
                     </div>
-                    <pre>{{getConfigJson(board)}}</pre>
+                    <pre>{{configJson}}</pre>
                 </div>
                 <div *ngIf="edit">
                     <form (ngSubmit)="editBoard()" [ngFormModel]="editForm" #f="ngForm">

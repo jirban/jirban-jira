@@ -73,4 +73,12 @@ public interface JiraFacade
      * @return the version string
      */
     String getJirbanVersion();
+
+    /**
+     * Loads a board's json configuration for editing
+     * @param user the logged in user
+     * @param boardId the id of the board
+     * @return the board's json
+     */
+    String getBoardJsonForConfig(ApplicationUser user, int boardId);
 }
