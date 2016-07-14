@@ -22,13 +22,12 @@
 package org.jirban.jira.impl;
 
 import static org.jirban.jira.impl.Constants.CODE;
-import static org.jirban.jira.impl.Constants.CONFIG;
 import static org.jirban.jira.impl.Constants.CONFIGS;
-import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.jirban.jira.impl.Constants.EDIT;
 import static org.jirban.jira.impl.Constants.ID;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.ArrayList;
@@ -126,7 +125,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (canEditBoard(user, configJson)) {
                     configNode.get(EDIT).set(true);
                 }
-                configNode.get(CONFIG).set(configJson);
+//                configNode.get(CONFIG).set(configJson);
                 configsList.add(configNode);
             } else {
                 //A guess at what is needed to view the boards

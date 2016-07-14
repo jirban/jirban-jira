@@ -22,7 +22,6 @@
 package org.jirban.jira.impl.activeobjects;
 
 import net.java.ao.Entity;
-import net.java.ao.Preload;
 import net.java.ao.schema.NotNull;
 import net.java.ao.schema.StringLength;
 import net.java.ao.schema.Unique;
@@ -30,7 +29,6 @@ import net.java.ao.schema.Unique;
 /**
  * @author Kabir Khan
  */
-@Preload
 public interface BoardCfg extends Entity {
     /**
      * The name of the board that will appear in the overview lists of boards
