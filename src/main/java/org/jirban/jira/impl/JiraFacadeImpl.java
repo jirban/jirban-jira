@@ -80,7 +80,7 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
 
     @Override
     public String getBoardJsonForConfig(ApplicationUser user, int boardId) {
-        return boardConfigurationManager.getBoardJson(user, boardId);
+        return boardConfigurationManager.getBoardJsonConfig(user, boardId);
     }
 
     @Override
@@ -116,6 +116,11 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     @Override
     public void saveCustomFieldId(ApplicationUser user, ModelNode idNode) {
         boardConfigurationManager.saveCustomFieldId(user, idNode);
+    }
+
+    @Override
+    public String getStateHelpTexts(ApplicationUser user, String boardCode) {
+        return boardConfigurationManager.getStateHelpTextsJson(user, boardCode);
     }
 
     @Override

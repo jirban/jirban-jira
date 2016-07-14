@@ -270,4 +270,8 @@ public class BoardStates {
     public Set<String> getDoneStates() {
         return doneStates;
     }
+
+    public Map<String, String> getStateHelpTexts() {
+        return stateHelpTexts;
+    }
 }

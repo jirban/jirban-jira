@@ -146,7 +146,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public String getBoardJson(ApplicationUser user, int boardId) {
+    public String getBoardJsonConfig(ApplicationUser user, int boardId) {
         BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
             @Override
             public BoardCfg[] doInTransaction() {
@@ -317,6 +317,18 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 return null;
             }
         });
+    }
+
+    @Override
+    public String getStateHelpTextsJson(ApplicationUser user, String boardCode) {
+        BoardConfig cfg = getBoardConfigForBoardDisplay(user, boardCode);
+        Map<String, String> helpTexts = cfg.getStateHelpTexts();
+        ModelNode output = new ModelNode();
+        output.setEmptyObject();
+        for (Map.Entry<String, String> entry : helpTexts.entrySet()) {
+            output.get(entry.getKey()).set(entry.getValue());
+        }
+        return output.toJSONString(true);
     }
 
     private Set<BoardCfg> loadBoardConfigs() {

@@ -81,4 +81,13 @@ public interface JiraFacade
      * @return the board's json
      */
     String getBoardJsonForConfig(ApplicationUser user, int boardId);
+
+    /**
+     * Gets any help text entered for a board's states
+     *
+     * @param user the logged in user
+     * @param boardCode the code for the board
+     * @return json containing the state help texts
+     */
+    String getStateHelpTexts(ApplicationUser user, String boardCode);
 }

@@ -30,7 +30,6 @@ import static org.jirban.jira.impl.Constants.OWNER;
 import static org.jirban.jira.impl.Constants.OWNING_PROJECT;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PROJECTS;
-import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
@@ -77,6 +76,7 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
     private final List<String> issueTypeNames;
+    private String stateHelpTexts;
 
     private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
@@ -333,5 +333,9 @@ public class BoardConfig {
 
     public String getPriorityName(int priorityIndex) {
         return priorityNames.get(priorityIndex);
+    }
+
+    public Map<String, String> getStateHelpTexts() {
+        return boardStates.getStateHelpTexts();
     }
 }
