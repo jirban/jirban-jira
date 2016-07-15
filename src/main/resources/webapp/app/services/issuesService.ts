@@ -57,6 +57,16 @@ export class IssuesService {
         return this.http.post(url, JSON.stringify(payload), {headers : headers})
             .timeout(IssuesService.smallTimeout, "The server did not respond in a timely manner for POST " + url);
     }
+
+    loadHelpTexts(board:string) : Observable<Response> {
+        let url = 'rest/jirban/1.0/issues/' + board + "/help";
+        let path:string = RestUrlUtil.caclulateRestUrl(url);
+        return this.http.get(path)
+            .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .map(res => (<Response>res).json());
+    }
+
+
 }
 
 class MoveIssueAction {

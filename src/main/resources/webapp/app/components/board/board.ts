@@ -24,6 +24,7 @@ import Timer = NodeJS.Timer;
 export class BoardComponent implements OnDestroy, OnInit {
 
     private boardCode:string;
+    private helpTexts:IMap<string> = {};
 
     private issueContextMenuData:IssueContextMenuData;
 
@@ -59,6 +60,16 @@ export class BoardComponent implements OnDestroy, OnInit {
             this.setWindowSize();
         });
 
+        this._issuesService.loadHelpTexts(this.boardCode).subscribe(
+            data => {
+                console.log("Got help texts " + JSON.stringify(data));
+                let content:any = data;
+                this.helpTexts = content;
+            },
+            err => {
+                console.log("Error loading help texts " + err);
+            }
+        );
     }
 
     private populateIssues(issueDataLoaded:()=>void) {
@@ -220,6 +231,18 @@ export class BoardComponent implements OnDestroy, OnInit {
         }
         return null;
     }
+
+    getPossibleStateHelp(header:BoardHeaderEntry):string {
+        if (header.rows == 2) {
+            return this.getStateHelp(header);
+        }
+        return null;
+    }
+
+    getStateHelp(header:BoardHeaderEntry):string {
+        return this.helpTexts[header.name];
+    }
+
 
     toggleHeaderVisibility(header:BoardHeaderEntry) {
         let previousBacklog:boolean = this.boardData.showBacklog;

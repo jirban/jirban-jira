@@ -24,7 +24,9 @@
                             <div *ngIf="backlogTopHeader.visible">{{backlogTopHeader.name}}</div>
                         </th>
                         <!-- The non-backlog headers -->
+                        <!-- Some of these may be states with a rowspan of two, these may have help text -->
                         <th *ngFor="let header of topHeaders ; let headerIndex=index"
+                            title="{{getPossibleStateHelp(header)}}"
                             [attr.colspan]="header.cols"
                             [attr.rowspan]="header.rows"
                             [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
@@ -38,6 +40,7 @@
                     <tr>
                         <!-- Only show the following bottom headers if the backlog is actually expanded -->
                         <th *ngFor="let header of backlogBottomHeadersIfVisible"
+                            title="{{getStateHelp(header)}}"
                             [ngClass]="header.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                             (click)="toggleHeaderVisibility(header)">
                             <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
@@ -45,6 +48,7 @@
                         </th>
                         <!-- The non-backlog headers -->
                         <th *ngFor="let header of bottomHeaders"
+                            title="{{getStateHelp(header)}}"
                             [ngClass]="header.visible ? 'visible' : 'collapsed'"
                             (click)="toggleHeaderVisibility(header)">
                             <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
