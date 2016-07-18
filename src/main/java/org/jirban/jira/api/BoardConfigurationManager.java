@@ -91,5 +91,10 @@ public interface BoardConfigurationManager {
      * @param idNode an object containing the id
      */
     void saveCustomFieldId(ApplicationUser user, ModelNode idNode);
+
+
+    String getBoardJsonConfig(ApplicationUser user, int boardId);
+
+    String getStateHelpTextsJson(ApplicationUser user, String boardCode);
 }
 

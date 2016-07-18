@@ -46,6 +46,7 @@ public class Constants {
     public static final String EMAIL = "email";
     public static final String HEADER = "header";
     public static final String HEADERS = "headers";
+    public static final String HELP = "help";
     public static final String ICON = "icon";
     public static final String ID = "id";
     public static final String ISSUE_TYPES = "issue-types";

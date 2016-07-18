@@ -22,6 +22,7 @@
 package org.jirban.jira.servlet;
 
 import static org.jirban.jira.impl.Constants.BOARDS;
+import static org.jirban.jira.impl.Constants.HELP;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.JIRBAN_VERSION;
 import static org.jirban.jira.impl.Constants.UPDATES;
@@ -119,6 +120,25 @@ public class RestEndpoint {
                         backlog != null && backlog.booleanValue(),
                         boardCode,
                         viewId));
+    }
+
+    @GET
+    @Path(ISSUES + "/{boardCode}/" + HELP)
+    public Response getBoard(
+            @PathParam("boardCode") String boardCode) throws SearchException {
+        //TODO figure out if a permission violation becomes a search exception
+        return createResponse(
+                jiraFacade.getStateHelpTexts(getUser(), boardCode));
+    }
+
+
+
+    @GET
+    @Path(BOARDS + "/{boardId}")
+    public Response getBoardConfig(@PathParam("boardId") int boardId) {
+        ApplicationUser user = getUser();
+        String json = jiraFacade.getBoardJsonForConfig(user, boardId);
+        return createResponse(json);
     }
 
     @DELETE

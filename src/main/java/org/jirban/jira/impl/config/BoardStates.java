@@ -25,6 +25,7 @@ import static org.jirban.jira.impl.Constants.BACKLOG;
 import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.HEADER;
 import static org.jirban.jira.impl.Constants.HEADERS;
+import static org.jirban.jira.impl.Constants.HELP;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.UNORDERED;
@@ -49,15 +50,18 @@ public class BoardStates {
     private final Map<String, Integer> stateIndices;
     private final List<String> states;
     private final Map<String, String> stateHeaders;
+    private final Map<String, String> stateHelpTexts;
     private final Set<String> backlogStates;
     private final Set<String> doneStates;
     private final Set<String> unorderedStates;
 
     private BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders,
+                        Map <String, String> stateHelpTexts,
                         Set<String> backlogStates, Set<String> doneStates, Set<String> unorderedStates) {
         this.stateIndices = stateIndices;
         this.states = states;
         this.stateHeaders = stateHeaders;
+        this.stateHelpTexts = stateHelpTexts;
         this.backlogStates = backlogStates;
         this.doneStates = doneStates;
         this.unorderedStates = unorderedStates;
@@ -70,6 +74,7 @@ public class BoardStates {
         final Set<String> seenHeaders = new HashSet<>();
         final List<String> states = new ArrayList<>();
         final Map<String, String> stateHeaders = new HashMap<>();
+        final Map<String, String> stateHelpTexts = new HashMap<>();
         final Map<String, Integer> stateIndices = new LinkedHashMap<>();
         final Set<String> backlogStates = new HashSet<>();
         final Set<String> doneStates = new HashSet<>();
@@ -89,6 +94,10 @@ public class BoardStates {
                 }
                 states.add(stateName);
                 stateIndices.put(stateName, i);
+
+                if (stateNode.hasDefined(HELP)) {
+                    stateHelpTexts.put(stateName, stateNode.get(HELP).asString());
+                }
 
                 boolean backlog = stateNode.hasDefined(BACKLOG) && stateNode.get(BACKLOG).asBoolean();
                 boolean unordered = stateNode.hasDefined(UNORDERED) && stateNode.get(UNORDERED).asBoolean();
@@ -148,6 +157,7 @@ public class BoardStates {
                 Collections.unmodifiableMap(stateIndices),
                 Collections.unmodifiableList(states),
                 Collections.unmodifiableMap(stateHeaders),
+                Collections.unmodifiableMap(stateHelpTexts),
                 Collections.unmodifiableSet(backlogStates),
                 Collections.unmodifiableSet(doneStates),
                 Collections.unmodifiableSet(unorderedStates));
@@ -161,6 +171,11 @@ public class BoardStates {
         for (String state : this.states) {
             final ModelNode stateNode = new ModelNode();
             stateNode.get(NAME).set(state);
+
+            final String help = stateHelpTexts.get(state);
+            if (help != null) {
+                stateNode.get(HELP).set(help);
+            }
 
             final String header = stateHeaders.get(state);
             if (header != null) {
@@ -254,5 +269,9 @@ public class BoardStates {
 
     public Set<String> getDoneStates() {
         return doneStates;
+    }
+
+    public Map<String, String> getStateHelpTexts() {
+        return stateHelpTexts;
     }
 }

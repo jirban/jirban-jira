@@ -30,6 +30,8 @@ export class ConfigComponent {
     private customFieldId:number;
     private _customFieldIdForm:ControlGroup;
 
+    private configJson:string;
+
     constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService,
                 private _formBuilder:FormBuilder, private _versionService:VersionService,
                 title:TitleFormatService) {
@@ -79,19 +81,28 @@ export class ConfigComponent {
         return id == this.selected;
     }
 
-    getConfigJson(board:any) : string {
-        let config:any = board.config;
-        let json:string = JSON.stringify(config, null, 2);
-        return json;
-    }
-
     toggleBoard(event:MouseEvent, id:number) {
         this.clearJsonErrors();
         this.edit = false;
         if (this.selected == id) {
+            this.configJson = null;
             this.selected = -1;
         } else {
             this.selected = id;
+            this._progressError.startProgress(true);
+            console.log("Loading board config " + id);
+            this._boardsService.loadBoardConfigJson(id)
+                .subscribe(
+                    data => {
+                        this.configJson = this.formatAsJson(data);
+                        console.log("Loaded config " + id);
+                    },
+                    err => {
+                        this._progressError.setError(err);
+                    },
+                    () => {
+                        this._progressError.finishProgress();
+                    });
         }
         event.preventDefault();
     }
@@ -101,7 +112,7 @@ export class ConfigComponent {
         this.edit = !this.edit;
         if (this.edit) {
             this.editForm = this._formBuilder.group({
-                "editJson": [this.getConfigJson(board), Validators.required]
+                "editJson": [this.configJson, Validators.required]
             });
         }
         event.preventDefault();
@@ -160,6 +171,8 @@ export class ConfigComponent {
                 data => {
                     console.log("Edited board");
                     this._boards = this.indexBoard(data.configs);
+                    //Reformat the json so it is indented the standard way
+                    this.configJson = this.formatAsJson(JSON.parse(value));
                     this.edit = false;
                 },
                 err => {
@@ -178,7 +191,7 @@ export class ConfigComponent {
             return;
         }
         this._progressError.startProgress(true);
-        this._boardsService.createBoard(this.newForm.value.newJson)
+        this._boardsService.createBoard(value)
             .subscribe(
                 data => {
                     console.log("Saved new board");
@@ -241,6 +254,10 @@ export class ConfigComponent {
             (entry) => entry,
             (board) => board.id);
         return boards;
+    }
+
+    private formatAsJson(data:any):string {
+        return JSON.stringify(data, null, 2);
     }
 
     get jirbanVersion():string {

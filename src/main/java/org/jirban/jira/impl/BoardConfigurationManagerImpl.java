@@ -22,13 +22,12 @@
 package org.jirban.jira.impl;
 
 import static org.jirban.jira.impl.Constants.CODE;
-import static org.jirban.jira.impl.Constants.CONFIG;
 import static org.jirban.jira.impl.Constants.CONFIGS;
-import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.jirban.jira.impl.Constants.EDIT;
 import static org.jirban.jira.impl.Constants.ID;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.PROJECTS;
+import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.ArrayList;
@@ -126,7 +125,6 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 if (canEditBoard(user, configJson)) {
                     configNode.get(EDIT).set(true);
                 }
-                configNode.get(CONFIG).set(configJson);
                 configsList.add(configNode);
             } else {
                 //A guess at what is needed to view the boards
@@ -145,6 +143,18 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         }
 
         return config.toJSONString(true);
+    }
+
+    @Override
+    public String getBoardJsonConfig(ApplicationUser user, int boardId) {
+        BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
+            @Override
+            public BoardCfg[] doInTransaction() {
+                return activeObjects.find(BoardCfg.class, Query.select().where("id = ?", boardId));
+            }
+        });
+        ModelNode configJson = ModelNode.fromJSONString(cfgs[0].getConfigJson());
+        return configJson.toJSONString(true);
     }
 
     private void addCustomFieldInfo(ApplicationUser user, ModelNode customFieldConfig) {
@@ -307,6 +317,18 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
                 return null;
             }
         });
+    }
+
+    @Override
+    public String getStateHelpTextsJson(ApplicationUser user, String boardCode) {
+        BoardConfig cfg = getBoardConfigForBoardDisplay(user, boardCode);
+        Map<String, String> helpTexts = cfg.getStateHelpTexts();
+        ModelNode output = new ModelNode();
+        output.setEmptyObject();
+        for (Map.Entry<String, String> entry : helpTexts.entrySet()) {
+            output.get(entry.getKey()).set(entry.getValue());
+        }
+        return output.toJSONString(true);
     }
 
     private Set<BoardCfg> loadBoardConfigs() {
