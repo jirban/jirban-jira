@@ -40,12 +40,11 @@ export class BoardComponent implements OnDestroy, OnInit {
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
     private boardLeftOffset:number = 0;
 
-    private _defaultPollInterval:number = 30000;
+    private _defaultPollInterval:number = 3000;
 
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
-    private _wasInvisible = false;
     private _visible:boolean = true;
 
     constructor(private _issuesService:IssuesService,
@@ -137,14 +136,6 @@ export class BoardComponent implements OnDestroy, OnInit {
             //We are not the active window so just skip this update
             this.pollIssues();
             return;
-        } else {
-            if (this._wasInvisible) {
-                //We are active window but just came into focus, show the progress icon
-                //(in case we missed enough updates to need a full refresh)
-                wasInvisible = this._wasInvisible;
-                this._wasInvisible = false;
-                this._progressError.startProgress(true);
-            }
         }
 
         //Don't use the progress monitor for this background task.
@@ -328,8 +319,8 @@ export class BoardComponent implements OnDestroy, OnInit {
     onBlur(event:Event):void{
         console.log("Blur!!!" + event);
         this._visible = false;
-        this._wasInvisible = true;
         let restartPolling:boolean = this._pollFailureCount >= this._maxPollFailureCount;
+        restartPolling = restartPolling && !this._progressError.error;
         this._pollFailureCount = 0;
         if (restartPolling) {
             this.pollIssues();
