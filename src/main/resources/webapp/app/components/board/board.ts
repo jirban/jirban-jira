@@ -312,16 +312,16 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     onFocus(event:Event):void{
-        console.log("Focus!!!" + event);
         this._visible = true;
+        console.log("Focus");
     }
 
     onBlur(event:Event):void{
-        console.log("Blur!!!" + event);
         this._visible = false;
         let restartPolling:boolean = this._pollFailureCount >= this._maxPollFailureCount;
         restartPolling = restartPolling && !this._progressError.error;
         this._pollFailureCount = 0;
+        console.log("Blur - restarting polling: " + restartPolling);
         if (restartPolling) {
             this.pollIssues();
         }
