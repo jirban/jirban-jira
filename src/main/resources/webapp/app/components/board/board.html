@@ -1,4 +1,5 @@
 <div id="board-outer" *ngIf="boardData.initialized" (window:resize)="onResize($event)"
+     (window:focus)="onFocus($event)" (window:blur)="onBlur($event)"
      (click)="hideMenus()">
     <div id="board-inner">
         <div id="table-header" [ngStyle]="{'left':-1 * boardLeftOffset}">

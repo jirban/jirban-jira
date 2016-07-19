@@ -29,8 +29,10 @@ export class BoardComponent implements OnDestroy, OnInit {
     private issueContextMenuData:IssueContextMenuData;
 
     private _pollFailureCount:number = 0;
+    private _maxPollFailureCount = 3;
 
     private _currentTimeout:Timer;
+
     private _destroyed:boolean = false;
 
     /** The calculate height of the board body */
@@ -42,6 +44,9 @@ export class BoardComponent implements OnDestroy, OnInit {
 
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
+
+    private _wasInvisible = false;
+    private _visible:boolean = true;
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
@@ -127,6 +132,21 @@ export class BoardComponent implements OnDestroy, OnInit {
             return;
         }
 
+        let wasInvisible = false;
+        if (!this._visible) {
+            //We are not the active window so just skip this update
+            this.pollIssues();
+            return;
+        } else {
+            if (this._wasInvisible) {
+                //We are active window but just came into focus, show the progress icon
+                //(in case we missed enough updates to need a full refresh)
+                wasInvisible = this._wasInvisible;
+                this._wasInvisible = false;
+                this._progressError.startProgress(true);
+            }
+        }
+
         //Don't use the progress monitor for this background task.
         //Simply set the error in it if one happened
         this._issuesService.pollBoard(this.boardData)
@@ -137,9 +157,11 @@ export class BoardComponent implements OnDestroy, OnInit {
                     this.pollIssues();
                 },
                 err => {
+                    console.log("FC" + this._pollFailureCount);
                     this._pollFailureCount++;
                     console.log(err);
-                    if (this._pollFailureCount < 3) {
+                    if (this._pollFailureCount < this._maxPollFailureCount) {
+                        this._progressError.finishProgress();
                         this.pollIssues();
                     } else {
                         if (err.status === 401) {
@@ -150,6 +172,7 @@ export class BoardComponent implements OnDestroy, OnInit {
                     }
                 },
                 () => {
+                    this._progressError.finishProgress();
                     this._pollFailureCount = 0;
                 }
             );
@@ -297,4 +320,22 @@ export class BoardComponent implements OnDestroy, OnInit {
         this.boardLeftOffset = event.target["scrollLeft"];
     }
 
+    onFocus(event:Event):void{
+        console.log("Focus!!!" + event);
+        this._visible = true;
+    }
+
+    onBlur(event:Event):void{
+        console.log("Blur!!!" + event);
+        this._visible = false;
+        this._wasInvisible = true;
+        let restartPolling:boolean = this._pollFailureCount >= this._maxPollFailureCount;
+        this._pollFailureCount = 0;
+        if (restartPolling) {
+            this.pollIssues();
+        }
+    }
 }
+
+
+
