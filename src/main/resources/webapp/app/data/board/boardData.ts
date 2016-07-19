@@ -14,6 +14,7 @@ import {ChangeSet} from "./change";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
 import {Observable} from "rxjs/Rx";
+import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
 
 
 export class BoardData {
@@ -43,6 +44,9 @@ export class BoardData {
     /** All the issue types */
     private _issueTypes:Indexed<IssueType>;
 
+    /** All the custom fields */
+    private _customFields:Indexed<CustomFieldValues>;
+
     //Issue details
     private _issueDisplayDetails:IssueDisplayDetails = new IssueDisplayDetails();
 
@@ -55,6 +59,9 @@ export class BoardData {
 
     /** Flag to only recalculate the components in the control panel when they have been changed */
     private _hasNewComponents:boolean = false;
+
+    /** Flag to only recalculate the assignees in the control panel when they have been changed */
+    private _customFieldsWithNewEntries:string[] = [];
 
     /**
      * Called on loading the board the first time
@@ -103,6 +110,21 @@ export class BoardData {
                     this._hasNewComponents = true;
                 }
 
+                if (changeSet.addedCustomFields) {
+                    //Iterate for each custom field
+                    for (let cfvs of changeSet.addedCustomFields.array) {
+                        //Make sure that the added custom fields are in alphabetical order for the control panel list
+                        let values:Indexed<CustomFieldValue> = this._customFields.forKey(cfvs.name).values;
+                        let addedValues:CustomFieldValues = changeSet.addedCustomFields.forKey(cfvs.name);
+                        for (let customFieldValue of addedValues.values.array) {
+                            values.add(customFieldValue.key, customFieldValue);
+                        }
+                        let customFieldValues:CustomFieldValue[] = values.array;
+                        customFieldValues.sort((c1:CustomFieldValue, c2:CustomFieldValue) => {return c1.displayValue.localeCompare(c2.displayValue)});
+                        values.reorder(customFieldValues, (cfv:CustomFieldValue) => cfv.key);
+                        this._customFieldsWithNewEntries.push(cfvs.name);
+                    }
+                }
 
                 if (changeSet.blacklistChanges) {
                     if (!this.blacklist) {
@@ -161,6 +183,7 @@ export class BoardData {
         this._components = new ComponentDeserializer().deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
         this._issueTypes = new IssueTypeDeserializer().deserialize(input);
+        this._customFields = new CustomFieldDeserializer().deserialize(input);
 
         if (first) {
             this._issueTable = new IssueTable(this, this._projects, this._boardFilters, this._swimlane, input);
@@ -285,6 +308,26 @@ export class BoardData {
         this._issueTable.swimlane = swimlane;
     }
 
+    get customFields():Indexed<CustomFieldValues> {
+        return this._customFields;
+    }
+
+    getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
+        let values:CustomFieldValues = this._customFields.forKey(name);
+        if (values) {
+            return values.values.forIndex(index);
+        }
+        return null;
+    }
+
+    getCustomFieldValueForKey(name:string, key:string):CustomFieldValue {
+        let values:CustomFieldValues = this._customFields.forKey(name);
+        if (values) {
+            return values.values.forKey(key);
+        }
+        return null;
+    }
+
     getIssue(issueKey:string) : IssueData {
         return this._issueTable.getIssue(issueKey);
     }
@@ -314,12 +357,13 @@ export class BoardData {
         this._issueTable.filters = this._boardFilters;
     }
 
-    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any) {
+    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any, customFieldValueFilters:IMap<any>) {
         this._boardFilters.setProjectFilter(projectFilter, this._projects.boardProjectCodes);
         this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
         this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
         this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
         this._boardFilters.setComponentFilter(componentFilter, this._components);
+        this._boardFilters.setCustomFieldValueFilters(customFieldValueFilters, this._customFields);
         this._issueTable.filters = this._boardFilters;
     }
 
@@ -369,13 +413,14 @@ export class BoardData {
 
     setFiltersFromQueryParams(queryParams:IMap<string>) {
 
-        this._boardFilters.createFromQueryParams(queryParams, 
-            (projectFilter:string,
-            priorityFilter:string,
-            issueTypeFilter:string,
-            assigneeFilter:string,
-            componentFilter:string) => {
-                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter);
+        this._boardFilters.createFromQueryParams(this, queryParams,
+            (projectFilter:any,
+            priorityFilter:any,
+            issueTypeFilter:any,
+            assigneeFilter:any,
+            componentFilter:any,
+            customFieldFilters:IMap<any>) => {
+                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
         });
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));

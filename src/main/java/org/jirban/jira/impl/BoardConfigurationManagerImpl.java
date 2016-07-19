@@ -50,8 +50,6 @@ import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
-import com.atlassian.jira.config.IssueTypeManager;
-import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.permission.GlobalPermissionKey;
 import com.atlassian.jira.permission.ProjectPermissions;
 import com.atlassian.jira.project.Project;
@@ -60,7 +58,6 @@ import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.security.plugin.ProjectPermissionKey;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.transaction.TransactionCallback;
 
 import net.java.ao.DBParam;
@@ -74,40 +71,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     private volatile Map<String, BoardConfig> boardConfigs = new ConcurrentHashMap<>();
 
-    @ComponentImport
-    private final ActiveObjects activeObjects;
-
-    @ComponentImport
-    private final IssueTypeManager issueTypeManager;
-
-    @ComponentImport
-    private final PriorityManager priorityManager;
-
-    @ComponentImport
-    private final PermissionManager permissionManager;
-
-    @ComponentImport
-    private final ProjectManager projectManager;
-
-    @ComponentImport
-    private final GlobalPermissionManager globalPermissionManager;
+    private final JiraInjectables jiraInjectables;
 
     /** The 'Rank' custom field as output by  */
     private volatile int rankCustomFieldId = -1;
 
     @Inject
-    public BoardConfigurationManagerImpl(final ActiveObjects activeObjects,
-                                         final IssueTypeManager issueTypeManager,
-                                         final PriorityManager priorityManager,
-                                         final PermissionManager permissionManager,
-                                         final ProjectManager projectManager,
-                                         final GlobalPermissionManager globalPermissionManager) {
-        this.activeObjects = activeObjects;
-        this.issueTypeManager = issueTypeManager;
-        this.priorityManager = priorityManager;
-        this.permissionManager = permissionManager;
-        this.projectManager = projectManager;
-        this.globalPermissionManager = globalPermissionManager;
+    public BoardConfigurationManagerImpl(JiraInjectables jiraInjectables) {
+        this.jiraInjectables = jiraInjectables;
     }
 
     @Override
@@ -147,10 +118,10 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     @Override
     public String getBoardJsonConfig(ApplicationUser user, int boardId) {
-        BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
+        BoardCfg[] cfgs = jiraInjectables.getActiveObjects().executeInTransaction(new TransactionCallback<BoardCfg[]>(){
             @Override
             public BoardCfg[] doInTransaction() {
-                return activeObjects.find(BoardCfg.class, Query.select().where("id = ?", boardId));
+                return jiraInjectables.getActiveObjects().find(BoardCfg.class, Query.select().where("id = ?", boardId));
             }
         });
         ModelNode configJson = ModelNode.fromJSONString(cfgs[0].getConfigJson());
@@ -165,8 +136,20 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     @Override
     public BoardConfig getBoardConfigForBoardDisplay(ApplicationUser user, final String code) {
+        BoardConfig boardConfig = getBoardConfig(code);
+        
+        if (boardConfig != null && !canViewBoard(user, boardConfig)) {
+            throw new JirbanPermissionException("Insufficient permissions to view board " +
+                    boardConfig.getName() + " (" + code + ")");
+        }
+        return boardConfig;
+    }
+
+    @Override
+    public BoardConfig getBoardConfig(final String code) {
         BoardConfig boardConfig =  boardConfigs.get(code);
         if (boardConfig == null) {
+            final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
             BoardCfg[] cfgs = activeObjects.executeInTransaction(new TransactionCallback<BoardCfg[]>(){
                 @Override
                 public BoardCfg[] doInTransaction() {
@@ -176,16 +159,14 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
             if (cfgs != null && cfgs.length == 1) {
                 BoardCfg cfg = cfgs[0];
-                boardConfig = BoardConfig.load(issueTypeManager, priorityManager, cfg.getID(), cfg.getOwningUser(), cfg.getConfigJson(), getRankCustomFieldId());
+                boardConfig = BoardConfig.load(jiraInjectables, cfg.getID(),
+                        cfg.getOwningUser(), cfg.getConfigJson(), getRankCustomFieldId());
+
                 BoardConfig old = boardConfigs.putIfAbsent(code, boardConfig);
                 if (old != null) {
                     boardConfig = old;
                 }
             }
-        }
-        if (boardConfig != null && !canViewBoard(user, boardConfig)) {
-            throw new JirbanPermissionException("Insufficient permissions to view board " +
-                    boardConfig.getName() + " (" + code + ")");
         }
         return boardConfig;
     }
@@ -199,11 +180,15 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         final BoardConfig boardConfig;
         final ModelNode validConfig;
         try {
-            boardConfig = BoardConfig.load(issueTypeManager, priorityManager, id, user.getKey(), config, getRankCustomFieldId());
+            boardConfig = BoardConfig.load(jiraInjectables, id,
+                    user.getKey(), config, getRankCustomFieldId());
+
             validConfig = boardConfig.serializeModelNodeForConfig();
         } catch (Exception e) {
             throw new JirbanValidationException("Invalid data: " + e.getMessage());
         }
+
+        final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
 
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
@@ -246,6 +231,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     @Override
     public String deleteBoard(ApplicationUser user, int id) {
+        final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
+
         final String code = activeObjects.executeInTransaction(new TransactionCallback<String>() {
             @Override
             public String doInTransaction() {
@@ -282,7 +269,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     @Override
-    public void saveCustomFieldId(ApplicationUser user, ModelNode idNode) {
+    public void saveRankCustomFieldId(ApplicationUser user, ModelNode idNode) {
         if (!canEditCustomField(user)) {
             throw new JirbanPermissionException("Only Jira Administrators can edit the custom field id");
         }
@@ -293,6 +280,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             throw new JirbanValidationException("The id needs to be a number");
         }
         String idValue = String.valueOf(id);
+
+        final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
 
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
@@ -332,6 +321,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     private Set<BoardCfg> loadBoardConfigs() {
+        final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
+
         return activeObjects.executeInTransaction(new TransactionCallback<Set<BoardCfg>>(){
             @Override
             public Set<BoardCfg> doInTransaction() {
@@ -350,6 +341,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     private int getRankCustomFieldId() {
         int customFieldId = this.rankCustomFieldId;
         if (customFieldId < 0) {
+            final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
+
             Setting[] settings = activeObjects.executeInTransaction(new TransactionCallback<Setting[]>() {
                 @Override
                 public Setting[] doInTransaction() {
@@ -381,6 +374,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     private boolean canEditCustomField(ApplicationUser user) {
         //Only Jira Administrators can tweak the custom field id
+        final GlobalPermissionManager globalPermissionManager = jiraInjectables.getGlobalPermissionManager();
+
         return globalPermissionManager.hasPermission(GlobalPermissionKey.ADMINISTER, user);
     }
 
@@ -408,6 +403,9 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     private boolean hasPermission(ApplicationUser user, String projectCode, ProjectPermissionKey[] permissions) {
+        final ProjectManager projectManager = jiraInjectables.getProjectManager();
+        final PermissionManager permissionManager = jiraInjectables.getPermissionManager();
+
         Project project = projectManager.getProjectByCurrentKey(projectCode);
         for (ProjectPermissionKey permission : permissions) {
             if (!permissionManager.hasPermission(permission, project, user)) {

@@ -27,6 +27,7 @@ import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
@@ -215,13 +216,21 @@ public class BoardChangeRegistry {
     private static class NewReferenceCollector {
         private final Map<String, Assignee> newAssignees = new HashMap<>();
         private final Map<String, Component> newComponents = new HashMap<>();
+        private final Map<String, List<CustomFieldValue>> newCustomFieldValues = new HashMap<>();
 
         void addNewAssignee(Assignee assignee) {
             newAssignees.put(assignee.getKey(), assignee);
         }
 
-        void addNewComponent(Component component) {
-            newComponents.put(component.getName(), component);
+        void addNewComponents(Set<Component> evtNewComponents) {
+            evtNewComponents.forEach(c -> newComponents.put(c.getName(), c));
+        }
+
+        void addNewCustomFieldValues(Map<String, CustomFieldValue> newCustomFields) {
+            newCustomFields.forEach((key, value) -> {
+                List<CustomFieldValue> list = this.newCustomFieldValues.computeIfAbsent(key, k -> new ArrayList<CustomFieldValue>());
+                list.add(value);
+            });
         }
 
         Map<String, Assignee> getNewAssignees() {
@@ -231,6 +240,11 @@ public class BoardChangeRegistry {
         Map<String, Component> getNewComponents() {
             return newComponents;
         }
+
+        Map<String, List<CustomFieldValue>> getNewCustomFieldValues() {
+            return newCustomFieldValues;
+        }
+
     }
 
     private class ChangeSetCollector {
@@ -318,6 +332,7 @@ public class BoardChangeRegistry {
 
             serializeAssignees(changes, newReferenceCollector.getNewAssignees());
             serializeComponents(changes, newReferenceCollector.getNewComponents());
+            serializeCustomFieldValues(changes, newReferenceCollector.getNewCustomFieldValues());
             serializeStateChanges(board, changes, processStateChanges());
             serializeBlacklist(changes);
             return output;
@@ -342,18 +357,21 @@ public class BoardChangeRegistry {
         private void serializeAssignees(ModelNode parent, Map<String, Assignee> newAssignees) {
             if (newAssignees.size() > 0) {
                 ModelNode assignees = parent.get(ASSIGNEES);
-                for (Assignee assignee : newAssignees.values()) {
-                    assignee.serialize(assignees);
-                }
+                newAssignees.values().forEach(assignee -> assignee.serialize(assignees));
             }
         }
 
         private void serializeComponents(ModelNode parent, Map<String, Component> newComponents) {
             if (newComponents.size() > 0) {
                 ModelNode components = parent.get(COMPONENTS);
-                for (Component component : newComponents.values()) {
-                    component.serialize(components);
-                }
+                newComponents.values().forEach(component -> component.serialize(components));
+            }
+        }
+
+        private void serializeCustomFieldValues(ModelNode parent, Map<String, List<CustomFieldValue>> newCustomFieldValues) {
+            if (newCustomFieldValues.size() > 0) {
+                ModelNode custom = parent.get(CUSTOM);
+                newCustomFieldValues.forEach((key, list) -> list.forEach(value -> value.serializeRegistry(custom.get(key))));
             }
         }
 
@@ -432,6 +450,8 @@ public class BoardChangeRegistry {
         private Boolean backlogStartState;
         private Boolean backlogEndState;
 
+        private Map<String, CustomFieldValue> customFieldValues;
+
         //We are interested in the latest state for the issue if it was moved or re-ranked
         //This information will then be used by the board change collector to figure out which states
         //should be shipped to the client. If several issues are moved to the same state, the one with the highest
@@ -457,9 +477,8 @@ public class BoardChangeRegistry {
         }
 
         void merge(NewReferenceCollector newReferenceCollector, BoardChange boardChange) {
-            JirbanIssueEvent event = boardChange.getEvent();
             view = boardChange.getView();
-            mergeType(event);
+            mergeType(boardChange.getEvent());
             if (type == null) {
                 //If the issue was both updated and deleted we return null
                 return;
@@ -467,7 +486,7 @@ public class BoardChangeRegistry {
             switch (type) {
                 case CREATE:
                 case UPDATE:
-                    mergeFields(event, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
+                    mergeFields(boardChange, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
                     if (boardChange.getChangedState() != null) {
                         changedState = boardChange.getChangedState();
                     }
@@ -484,7 +503,8 @@ public class BoardChangeRegistry {
             }
         }
 
-        void mergeFields(JirbanIssueEvent event, NewReferenceCollector newReferenceCollector, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
+        void mergeFields(BoardChange boardChange, NewReferenceCollector newReferenceCollector, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
+            JirbanIssueEvent event = boardChange.getEvent();
             final JirbanIssueEvent.Detail detail = event.getDetails();
             if (detail.getIssueType() != null) {
                 issueType = detail.getIssueType();
@@ -512,7 +532,7 @@ public class BoardChangeRegistry {
                 }
             }
             if (detail.getComponents() != null) {
-                if (detail.getComponents() == JirbanIssueEvent.NO_COMPONENT) {
+                if (detail.getComponents().isEmpty()) {
                     components = null;
                     clearedComponents = true;
                 } else {
@@ -524,16 +544,32 @@ public class BoardChangeRegistry {
                         //only tracks when an component is first referenced before creating the BoardChange entries
                         //Later changes to the board might use this component, in which case this information will be needed
                         //on the client
-                        for (Component newComponent : evtNewComponents) {
-                            newReferenceCollector.addNewComponent(newComponent);
-                        }
+                        newReferenceCollector.addNewComponents(evtNewComponents);
                     }
                 }
             }
             if (detail.getState() != null) {
                 state = detail.getState();
             }
+            if (boardChange.getCustomFieldValues() != null) {
+                Map<String, CustomFieldValue> customFieldValues = boardChange.getCustomFieldValues();
+                Map<String, CustomFieldValue> newCustomFieldValues = boardChange.getNewCustomFieldValues();
+                if (this.customFieldValues == null) {
+                    this.customFieldValues = new HashMap<>();
+                }
 
+                if (newCustomFieldValues != null) {
+                    //We always add the new custom field values, even if a later change might remove the need, since the board
+                    //only tracks when custom field is first referenced before creating the BoardChange entries.
+                    //Later changes to the board might use these custom fields, in which case this information will be needed
+                    //on the client
+                    newReferenceCollector.addNewCustomFieldValues(newCustomFieldValues);
+                }
+
+                for (Map.Entry<String, CustomFieldValue> entry : customFieldValues.entrySet()) {
+                    this.customFieldValues.put(entry.getKey(), entry.getValue());
+                }
+            }
         }
 
         void mergeType(JirbanIssueEvent event) {
@@ -573,6 +609,9 @@ public class BoardChangeRegistry {
                     if (components != null) {
                         components.forEach(component -> output.get(COMPONENTS).add(component));
                     }
+                    if (customFieldValues != null) {
+                        customFieldValues.forEach((key,value)-> output.get(CUSTOM, key).set(value.getKey()));
+                    }
                     output.get(STATE).set(state);
                     break;
                 case UPDATE:
@@ -591,6 +630,12 @@ public class BoardChangeRegistry {
                     }
                     if (components != null) {
                         components.forEach(component -> output.get(COMPONENTS).add(component));
+                    }
+                    if (customFieldValues != null) {
+                        customFieldValues.forEach((key, value)-> {
+                            ModelNode fieldKey = value == null ? new ModelNode() : new ModelNode(value.getKey());
+                            output.get(CUSTOM, key).set(fieldKey);
+                        });
                     }
                     if (state != null) {
                         output.get(STATE).set(state);

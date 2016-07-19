@@ -6,6 +6,8 @@ import {BoardProject, Project} from "./project";
 import {IssueChange} from "./change";
 import {JiraComponent} from "./component";
 import {Indexed} from "../../common/indexed";
+import {CustomFieldValue} from "./customField";
+import {IMap} from "../../common/map";
 
 
 export class IssueData {
@@ -18,6 +20,8 @@ export class IssueData {
     private _components:Indexed<JiraComponent>;
     private _priority:Priority;
     private _type:IssueType;
+    private _customFields:IMap<CustomFieldValue>;
+
     //The index within the issue's project's own states
     private _statusIndex:number;
     private _linked:IssueData[];
@@ -25,7 +29,7 @@ export class IssueData {
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
                 assignee:Assignee,  components:Indexed<JiraComponent>, priority:Priority, type:IssueType, statusIndex:number,
-                linked:IssueData[]) {
+                linked:IssueData[], customFields:IMap<CustomFieldValue>) {
         this._boardData = boardData;
         this._key = key;
         this._projectCode = projectCode;
@@ -37,6 +41,7 @@ export class IssueData {
         this._type = type;
         this._colour = colour;
         this._linked = linked;
+        this._customFields = customFields;
     }
 
     static createFullRefresh(boardData:BoardData, input:any) : IssueData {
@@ -71,7 +76,15 @@ export class IssueData {
                 linked.push(IssueData.createFullRefresh(boardData, linkedIssues[i]));
             }
         }
-        return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority, type, statusIndex, linked);
+        let customFieldValues:IMap<CustomFieldValue> = {};
+        if (input["custom"]) {
+            let customFields:any[] = input["custom"];
+            for (let name in customFields) {
+                let index = customFields[name];
+                customFieldValues[name] = boardData.getCustomFieldValueForIndex(name, index);
+            }
+        }
+        return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority, type, statusIndex, linked, customFieldValues);
     }
 
     static createFromChangeSet(boardData:BoardData, add:IssueChange) {
@@ -97,7 +110,15 @@ export class IssueData {
         }
 
         let linked:IssueData[];//This does not get set from the events
-        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked);
+
+        let customFieldValues:IMap<CustomFieldValue> = {};
+        if (add.customFieldValues) {
+            for (let name in add.customFieldValues) {
+                let fieldKey:string = add.customFieldValues[name];
+                customFieldValues[name] = boardData.getCustomFieldValueForKey(name, fieldKey);
+            }
+        }
+        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked, customFieldValues);
 
     }
 
@@ -164,9 +185,12 @@ export class IssueData {
     set filtered(filtered) {
         this._filtered = filtered;
     }
+    
+    get customFields():IMap<CustomFieldValue> {
+        return this._customFields;
+    }
 
-
-    //'Advanced'/'Nested' getters
+//'Advanced'/'Nested' getters
 
     get boardStatus():string {
         //The state we map to in the board (only for board projects)
@@ -271,5 +295,20 @@ export class IssueData {
                 this._components.add(component.name, component);
             }
         }
+
+        if (update.customFieldValues) {
+            for (let key in update.customFieldValues) {
+                let fieldKey:string = update.customFieldValues[key];
+                if (!fieldKey) {
+                    delete this._customFields[key];
+                } else {
+                    this._customFields[key] = this._boardData.getCustomFieldValueForKey(key, fieldKey);
+                }
+            }
+        }
+    }
+
+    getCustomFieldValue(name:string):CustomFieldValue {
+        return this._customFields[name];
     }
 }

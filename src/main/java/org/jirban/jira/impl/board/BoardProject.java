@@ -34,13 +34,15 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
-import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.BoardProjectConfig;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
+import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
@@ -84,8 +86,13 @@ public class BoardProject {
         return board.getComponentIndex(component);
     }
 
-    void serialize(ModelNode parent, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager, boolean backlog) {
-        parent.get(RANK).set(hasRankPermission(user, projectManager, permissionManager));
+    public int getCustomFieldValueIndex(CustomFieldValue customFieldValue) {
+        return board.getCustomFieldIndex(customFieldValue);
+    }
+
+
+    void serialize(JiraInjectables jiraInjectables, ModelNode parent, ApplicationUser user, boolean backlog) {
+        parent.get(RANK).set(hasRankPermission(user, jiraInjectables.getProjectManager(), jiraInjectables.getPermissionManager()));
         ModelNode projectIssues = parent.get(ISSUES);
 
         for (int i = 0 ; i < issueKeysByState.size() ; i++) {
@@ -113,9 +120,9 @@ public class BoardProject {
         return board.getConfig().getOwnerProjectCode().equals(projectConfig.getCode());
     }
 
-    static Builder builder(SearchService searchService, Board.Builder builder, BoardProjectConfig projectConfig,
+    static Builder builder(JiraInjectables jiraInjectables, Board.Builder builder, BoardProjectConfig projectConfig,
                            ApplicationUser boardOwner) {
-        return new Builder(searchService, builder, projectConfig, boardOwner);
+        return new Builder(jiraInjectables, builder, projectConfig, boardOwner);
     }
 
     static LinkedProjectContext linkedProjectContext(Board.Accessor board, LinkedProjectConfig linkedProjectConfig) {
@@ -128,9 +135,9 @@ public class BoardProject {
         return updater.build();
     }
 
-    public Updater updater(SearchService searchService, Board.Updater boardUpdater,
+    public Updater updater(JiraInjectables jiraInjectables, Board.Updater boardUpdater,
                            ApplicationUser boardOwner) {
-        return new Updater(searchService, boardUpdater, this, boardOwner);
+        return new Updater(jiraInjectables, boardUpdater, this, boardOwner);
     }
 
     public boolean isBacklogState(String state) {
@@ -155,13 +162,13 @@ public class BoardProject {
     }
 
     static class Accessor {
-        protected final SearchService searchService;
+        protected final JiraInjectables jiraInjectables;
         protected final Board.Accessor board;
         protected final BoardProjectConfig projectConfig;
         protected final ApplicationUser boardOwner;
 
-        public Accessor(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
-            this.searchService = searchService;
+        public Accessor(JiraInjectables jiraInjectables, Board.Accessor board, BoardProjectConfig projectConfig, ApplicationUser boardOwner) {
+            this.jiraInjectables = jiraInjectables;
             this.board = board;
             this.projectConfig = projectConfig;
             this.boardOwner = boardOwner;
@@ -203,11 +210,15 @@ public class BoardProject {
         }
 
         IssueLinkManager getIssueLinkManager() {
-            return board.getIssueLinkManager();
+            return jiraInjectables.getIssueLinkManager();
         }
 
         Assignee getAssignee(User assigneeUser) {
             return board.getAssignee(assigneeUser);
+        }
+
+        CustomFieldManager getCustomFieldManager() {
+            return jiraInjectables.getCustomFieldManager();
         }
 
         public String getCode() {
@@ -221,6 +232,22 @@ public class BoardProject {
         public Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
             return board.getComponents(componentObjects);
         }
+
+        public Board.Accessor getBoard() {
+            return board;
+        }
+
+        public CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, Object fieldValue) {
+            return board.getCustomFieldValue(customField, fieldValue);
+        }
+
+        public CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, String key) {
+            return board.getCustomFieldValue(customField, key);
+        }
+
+        public JiraInjectables getJiraInjectables() {
+            return jiraInjectables;
+        }
     }
 
     /**
@@ -230,9 +257,9 @@ public class BoardProject {
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
-        private Builder(SearchService searchService, Board.Accessor board, BoardProjectConfig projectConfig,
+        private Builder(JiraInjectables jiraInjectables, Board.Accessor board, BoardProjectConfig projectConfig,
                         ApplicationUser boardOwner) {
-            super(searchService, board, projectConfig, boardOwner);
+            super(jiraInjectables, board, projectConfig, boardOwner);
         }
 
         Builder addIssue(String state, Issue issue) {
@@ -251,6 +278,7 @@ public class BoardProject {
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
             Query query = queryBuilder.buildQuery();
 
+            final SearchService searchService = jiraInjectables.getSearchService();
             if (projectConfig.getQueryFilter() != null) {
                 final SearchService.ParseResult parseResult = searchService.parseQuery(
                         boardOwner.getDirectoryUser(),
@@ -300,27 +328,31 @@ public class BoardProject {
         private boolean updatedState;
 
 
-        Updater(SearchService searchService, Board.Accessor board, BoardProject project,
+        Updater(JiraInjectables jiraInjectables, Board.Accessor board, BoardProject project,
                        ApplicationUser boardOwner) {
-            super(searchService, board, project.projectConfig, boardOwner);
+            super(jiraInjectables, board, project.projectConfig, boardOwner);
             JirbanLogger.LOGGER.debug("BoardProject.Updater - init {}", project.projectConfig.getCode());
             this.project = project;
         }
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
-                          Assignee assignee, Set<Component> issueComponents, String state) {
+                          Assignee assignee, Set<Component> issueComponents, String state,
+                          Map<String, CustomFieldValue> customFieldValues) {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
-            newIssue = Issue.createForCreateEvent(this, issueKey, state, summary, issueType, priority, assignee, issueComponents);
+            newIssue = Issue.createForCreateEvent(
+                    this, issueKey, state, summary, issueType, priority, assignee, issueComponents, customFieldValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
             updatedState = newIssue != null;
             return newIssue;
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
-                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged, String state) {
+                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged,
+                          String state, Map<String, CustomFieldValue> customFieldValues) {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), rankOrStateChanged);
             this.existing = existing;
-            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority, summary, issueAssignee, issueComponents, state);
+            newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
+                    summary, issueAssignee, issueComponents, state, customFieldValues);
             if (newIssue == null && rankOrStateChanged) {
                 newIssue = existing;
             }
@@ -339,6 +371,9 @@ public class BoardProject {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - {}", issueKey);
             JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
             queryBuilder.where().issue(issueKey);
+
+            final SearchService searchService = jiraInjectables.getSearchService();
+
             SearchResults searchResults =
                     searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
@@ -424,6 +459,8 @@ public class BoardProject {
             //TODO if it is possible to narrow this down to only get the product keys that would be better than loading everything
             queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
 
+            final SearchService searchService = jiraInjectables.getSearchService();
+
             SearchResults searchResults =
                     searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
@@ -475,16 +512,6 @@ public class BoardProject {
         public SingleLoadedIssueWrapper(com.atlassian.jira.issue.Issue jiraIssue, Issue issue) {
             this.jiraIssue = jiraIssue;
             this.issue = issue;
-        }
-
-        JirbanIssueEvent createCreateEvent(JirbanIssueEvent original) {
-            return JirbanIssueEvent.createCreateEvent(original.getIssueKey(), original.getProjectCode(),
-                    jiraIssue.getIssueTypeObject().getName(),
-                    jiraIssue.getPriorityObject().getName(),
-                    jiraIssue.getSummary(),
-                    jiraIssue.getAssignee(),
-                    jiraIssue.getComponentObjects(),
-                    jiraIssue.getStatusObject().getName());
         }
 
         Issue getIssue() {

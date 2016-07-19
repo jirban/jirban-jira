@@ -23,6 +23,7 @@ package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.MAIN;
 import static org.jirban.jira.impl.Constants.PROJECTS;
@@ -43,23 +44,20 @@ import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
+import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
-import com.atlassian.jira.avatar.AvatarService;
-import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
-import com.atlassian.jira.project.ProjectManager;
-import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.ApplicationUsers;
-import com.atlassian.jira.user.util.UserManager;
 
 /**
  * The data for a board.
@@ -79,6 +77,7 @@ public class Board {
     private final Map<String, Integer> componentIndices;
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
+    private final Map<String, SortedCustomFieldValues> sortedCustomFieldValues;
 
     private final Blacklist blacklist;
 
@@ -87,6 +86,7 @@ public class Board {
                     Map<String, Component> sortedComponents,
                     Map<String, Issue> allIssues,
                     Map<String, BoardProject> projects,
+                    Map<String, SortedCustomFieldValues> sortedCustomFieldValues,
                     Blacklist blacklist) {
         this.currentView = old == null ? 0 : old.currentView + 1;
         this.boardConfig = boardConfig;
@@ -99,6 +99,7 @@ public class Board {
 
         this.allIssues = allIssues;
         this.projects = projects;
+        this.sortedCustomFieldValues = sortedCustomFieldValues;
         this.blacklist = blacklist;
     }
 
@@ -111,18 +112,17 @@ public class Board {
         return indices;
     }
 
-    public static Builder builder(SearchService searchService, AvatarService avatarService,
-                                  IssueLinkManager issueLinkManager, UserManager userManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
-        return new Builder(searchService, avatarService, issueLinkManager, boardConfig, boardOwner);
+    public static Builder builder(JiraInjectables jiraInjectables, BoardConfig boardConfig, ApplicationUser boardOwner) {
+        return new Builder(jiraInjectables, boardConfig, boardOwner);
     }
 
-    public Board handleEvent(SearchService searchService, AvatarService avatarService,
-                             IssueLinkManager issueLinkManager, ApplicationUser boardOwner, JirbanIssueEvent event, BoardChangeRegistry changeRegistry) throws SearchException {
-        Updater boardUpdater = new Updater(searchService, avatarService, issueLinkManager, this, boardOwner, changeRegistry);
+    public Board handleEvent(JiraInjectables jiraInjectables, ApplicationUser boardOwner, JirbanIssueEvent event,
+                             BoardChangeRegistry changeRegistry) throws SearchException {
+        Updater boardUpdater = new Updater(jiraInjectables, this, boardOwner, changeRegistry);
         return boardUpdater.handleEvent(event);
     }
 
-    public ModelNode serialize(boolean backlog, ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager) {
+    public ModelNode serialize(JiraInjectables jiraInjectables, boolean backlog, ApplicationUser user) {
         ModelNode outputNode = new ModelNode();
         //Sort the assignees by name
         outputNode.get(VIEW).set(currentView);
@@ -138,6 +138,12 @@ public class Board {
             componentsNode.setEmptyList();
             for (Component component : sortedComponents.values()) {
                 component.serialize(componentsNode);
+            }
+        }
+        if (sortedCustomFieldValues.size() > 0) {
+            ModelNode customNode = outputNode.get(CUSTOM);
+            for (SortedCustomFieldValues values : sortedCustomFieldValues.values()) {
+                values.serialize(customNode);
             }
         }
 
@@ -159,7 +165,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            projectEntry.getValue().serialize(project, user, projectManager, permissionManager, backlog);
+            projectEntry.getValue().serialize(jiraInjectables, project, user, backlog);
         }
 
         blacklist.serialize(outputNode);
@@ -191,15 +197,19 @@ public class Board {
         return componentIndices.get(component.getName());
     }
 
+    public int getCustomFieldIndex(CustomFieldValue customFieldValue) {
+        return sortedCustomFieldValues.get(customFieldValue.getCustomFieldName()).getCustomFieldIndex(customFieldValue);
+    }
+
     private void updateBoardInProjects() {
         for (BoardProject project : projects.values()) {
             project.setBoard(this);
         }
     }
 
-    private static Assignee createAssignee(AvatarService avatarService, ApplicationUser boardOwner, User assigneeUser) {
+    private static Assignee createAssignee(JiraInjectables jiraInjectables, ApplicationUser boardOwner, User assigneeUser) {
         ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
-        URI avatarUrl = avatarService.getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
+        URI avatarUrl = jiraInjectables.getAvatarService().getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
         Assignee assignee = Assignee.create(assigneeUser, avatarUrl.toString());
         return assignee;
     }
@@ -214,13 +224,13 @@ public class Board {
     }
 
     static abstract class Accessor {
+        protected final JiraInjectables jiraInjectables;
         protected final BoardConfig boardConfig;
-        protected final IssueLinkManager issueLinkManager;
         protected final ApplicationUser boardOwner;
 
 
-        Accessor(IssueLinkManager issueLinkManager, BoardConfig boardConfig, ApplicationUser boardOwner) {
-            this.issueLinkManager = issueLinkManager;
+        Accessor(JiraInjectables jiraInjectables, BoardConfig boardConfig, ApplicationUser boardOwner) {
+            this.jiraInjectables = jiraInjectables;
             this.boardConfig = boardConfig;
             this.boardOwner = boardOwner;
         }
@@ -246,7 +256,7 @@ public class Board {
         }
 
         IssueLinkManager getIssueLinkManager() {
-            return issueLinkManager;
+            return jiraInjectables.getIssueLinkManager();
         }
 
 
@@ -263,10 +273,18 @@ public class Board {
         abstract Issue getIssue(String issueKey);
         abstract Blacklist.Accessor getBlacklist();
 
+        abstract CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, Object fieldValue);
+
+        abstract CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, String key);
+
         abstract Set<Component> getComponents(Collection<ProjectComponent> componentObjects);
 
         public List<String> getStateNames() {
             return boardConfig.getStateNames();
+        }
+
+        public BoardConfig getConfig() {
+            return boardConfig;
         }
     }
 
@@ -294,37 +312,35 @@ public class Board {
      * Used to create a new board
      */
     public static class Builder extends Accessor {
-        private final SearchService searchService;
-        private final AvatarService avatarService;
-
         private final Map<String, Assignee> assignees = new HashMap<>();
         private final Map<String, Component> components = new HashMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
         private final Map<String, BoardProject.Builder> projects = new HashMap<>();
         private final Blacklist.Builder blacklist = new Blacklist.Builder();
+        private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
 
-        public Builder(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
+        public Builder(JiraInjectables jiraInjectables,
                        BoardConfig boardConfig, ApplicationUser boardOwner) {
-            super(issueLinkManager, boardConfig, boardOwner);
-            this.searchService = searchService;
-            this.avatarService = avatarService;
+            super(jiraInjectables, boardConfig, boardOwner);
         }
 
         public Builder load() throws SearchException {
             for (BoardProjectConfig boardProjectConfig : boardConfig.getBoardProjects()) {
                 BoardProjectConfig project = boardConfig.getBoardProject(boardProjectConfig.getCode());
-                BoardProject.Builder projectBuilder = BoardProject.builder(searchService, this, project, boardOwner);
+                BoardProject.Builder projectBuilder = BoardProject.builder(jiraInjectables, this, project, boardOwner);
                 projectBuilder.load();
                 projects.put(projectBuilder.getCode(), projectBuilder);
             }
             return this;
         }
 
+        @Override
         public Accessor addIssue(Issue issue) {
             allIssues.put(issue.getKey(), issue);
             return this;
         }
 
+        @Override
         Assignee getAssignee(User assigneeUser) {
             if (assigneeUser == null) {
                 //Unassigned issue
@@ -334,7 +350,7 @@ public class Board {
             if (assignee != null) {
                 return assignee;
             }
-            assignee = createAssignee(avatarService, boardOwner, assigneeUser);
+            assignee = createAssignee(jiraInjectables, boardOwner, assigneeUser);
             assignees.put(assigneeUser.getName(), assignee);
             return assignee;
         }
@@ -355,6 +371,19 @@ public class Board {
                 ret.add(component);
             }
             return ret;
+        }
+
+        @Override
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, Object fieldValue) {
+            final SortedCustomFieldValues.Builder customFieldBuilder =
+                    customFieldBuilders.computeIfAbsent(customFieldConfig.getId(), id -> new SortedCustomFieldValues.Builder(customFieldConfig));
+            return customFieldBuilder.getCustomFieldValue(fieldValue);
+        }
+
+        @Override
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customField, String key) {
+            //Should not get called for this code path
+            throw new IllegalStateException();
         }
 
         @Override
@@ -380,12 +409,19 @@ public class Board {
                 }
             });
 
+            Map<String, SortedCustomFieldValues> sortedCustomFieldValues = new HashMap<>();
+            for (SortedCustomFieldValues.Builder scfBuilder : this.customFieldBuilders.values()) {
+                SortedCustomFieldValues fieldValues = scfBuilder.build();
+                sortedCustomFieldValues.put(fieldValues.getFieldName(), fieldValues);
+            }
+
             Board board = new Board(
                     null, boardConfig,
                     Collections.unmodifiableMap(sortAssignees(assignees)),
                     Collections.unmodifiableMap(sortComponents(components)),
                     Collections.unmodifiableMap(allIssues),
                     Collections.unmodifiableMap(projects),
+                    Collections.unmodifiableMap(sortedCustomFieldValues),
                     blacklist.build());
 
             for (BoardProject project : projects.values()) {
@@ -400,9 +436,7 @@ public class Board {
      */
     static class Updater extends Accessor {
         private final Board board;
-        private final AvatarService avatarService;
         private final BoardChangeRegistry changeRegistry;
-        private final SearchService searchService;
         private final Blacklist.Updater blacklist;
 
         //Will only be populated if a new assignee is brought in
@@ -413,13 +447,11 @@ public class Board {
 
         private Assignee newAssignee;
         private Set<Component> newComponents;
+        private final Map<Long, SortedCustomFieldValues.Updater> customFieldUpdaters = new HashMap();
 
-        Updater(SearchService searchService, AvatarService avatarService, IssueLinkManager issueLinkManager,
-                Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
-            super(issueLinkManager, board.getConfig(), boardOwner);
+        Updater(JiraInjectables jiraInjectables, Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
+            super(jiraInjectables, board.getConfig(), boardOwner);
             this.board = board;
-            this.searchService = searchService;
-            this.avatarService = avatarService;
             this.changeRegistry = changeRegistry;
             this.blacklist = new Blacklist.Updater(board.blacklist);
 
@@ -478,6 +510,7 @@ public class Board {
                     board.sortedComponents,
                     Collections.unmodifiableMap(allIssuesCopy),
                     projectsCopy,
+                    SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
                     blacklist.build());
             boardCopy.updateBoardInProjects();
 
@@ -548,14 +581,18 @@ public class Board {
             final Assignee issueAssignee = getOrCreateIssueAssignee(evtDetail);
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
 
-            final BoardProject.Updater projectUpdater = project.updater(searchService, this, boardOwner);
+            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, this, boardOwner);
+            final Map<String, CustomFieldValue> customFieldValues
+                    = CustomFieldValue.loadCustomFieldValues(projectUpdater, evtDetail.getCustomFieldValues());
+
             final Issue existingIssue;
             final Issue newIssue;
             if (create) {
                 JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- create issue {}", event.getIssueKey());
                 existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
-                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents, evtDetail.getState());
+                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents,
+                        evtDetail.getState(), customFieldValues);
             } else {
                 existingIssue = board.allIssues.get(event.getIssueKey());
                 if (existingIssue == null) {
@@ -576,7 +613,7 @@ public class Board {
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
-                            evtDetail.isRankOrStateChanged(), evtDetail.getState());
+                            evtDetail.isRankOrStateChanged(), evtDetail.getState(), customFieldValues);
                 }
             }
 
@@ -601,6 +638,7 @@ public class Board {
                         componentsCopy == null ? board.sortedComponents : Collections.unmodifiableMap(sortComponents(componentsCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
+                        SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
                         blacklist.build());
 
                 //Register the event
@@ -633,6 +671,10 @@ public class Board {
                         changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
                                 blacklist.getAddedPriority(), blacklist.getAddedIssue());
                     }
+                    if (customFieldValues.size() > 0) {
+                        changeBuilder.addCustomFieldValues(board.sortedCustomFieldValues, customFieldValues);
+                    }
+
                     //Propagate the new state somehow
                     if (evtDetail.isRankOrStateChanged()) {
                         Issue issue = boardCopy.getIssue(event.getIssueKey());
@@ -670,6 +712,31 @@ public class Board {
         }
 
         @Override
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, Object fieldValue) {
+            //Should not get called for this code path
+            throw new IllegalStateException();
+        }
+
+        @Override
+        CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, String key) {
+            SortedCustomFieldValues boardValues = board.sortedCustomFieldValues.get(customFieldConfig.getName());
+            if (boardValues != null) {
+                CustomFieldValue customFieldValue = boardValues.getCustomFieldValue(key);
+                if (customFieldValue != null) {
+                    return customFieldValue;
+                }
+            }
+
+            final SortedCustomFieldValues.Updater customFieldUpdater =
+                    customFieldUpdaters.computeIfAbsent(customFieldConfig.getId(),
+                            id -> new SortedCustomFieldValues.Updater(
+                                    customFieldConfig,
+                                    board.sortedCustomFieldValues.get(customFieldConfig.getName())));
+
+            return customFieldUpdater.getCustomFieldValue(jiraInjectables, key);
+        }
+
+        @Override
         Accessor addIssue(Issue issue) {
             //This should not happen for this code path
             throw new IllegalStateException();
@@ -697,7 +764,7 @@ public class Board {
             } else {
                 Assignee assignee = board.sortedAssignees.get(evtAssignee.getName());
                 if (assignee == null) {
-                    assignee = Board.createAssignee(avatarService, boardOwner, evtAssignee);
+                    assignee = Board.createAssignee(jiraInjectables, boardOwner, evtAssignee);
                     newAssignee = assignee;
                     assigneesCopy = copyAndPut(board.sortedAssignees, evtAssignee.getName(), assignee, HashMap::new);
                 }
@@ -712,7 +779,7 @@ public class Board {
         private Set<Component> getOrCreateIssueComponents(Collection<ProjectComponent> evtComponents) {
             if (evtComponents == null) {
                 return null;
-            } else if (evtComponents == JirbanIssueEvent.NO_COMPONENT) {
+            } else if (evtComponents.isEmpty()) {
                 return Collections.emptySet();
             } else {
                 Set<Component> components = new HashSet<>();

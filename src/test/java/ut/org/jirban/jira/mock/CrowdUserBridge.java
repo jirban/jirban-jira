@@ -43,6 +43,8 @@ public class CrowdUserBridge {
         return mapUser(applicationUser);
     }
 
+    public
+
     static User mapUser(final ApplicationUser applicationUser) {
         if (applicationUser == null) {
             return null;

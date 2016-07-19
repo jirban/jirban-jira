@@ -26,6 +26,7 @@
                         <option value="issue-type">Issue Type</option>
                         <option value="assignee">Assignee</option>
                         <option value="component">Component</option>
+                        <option *ngFor="let customFieldValues of customFields" value="{{customFieldValues.name}}">{{customFieldValues.name}}</option>
                     </select>
                 </div>
             </div>
@@ -55,25 +56,30 @@
             <div class="setting">
                 <div class="setting-header clickable" title="{{filtersTooltip}}" (click)="clearFilters($event)">Filters</div>
                 <div class="setting-content">
-                    <div class="filter" [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'" title="{{filterTooltips['project']}}">
+                    <div [ngClass]="filtersToDisplay === 'project' ? 'filter selected' : 'filter'" title="{{filterTooltips['project']}}">
                         <a href="Filter Project" (click)="onSelectFiltersToDisplay($event, 'project')"
                            [ngClass]="getFilterLinkClass('project')">Project</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'" title="{{filterTooltips['issue-type']}}">
+                    <div [ngClass]="filtersToDisplay === 'issue-type' ? 'filter selected' : 'filter'" title="{{filterTooltips['issue-type']}}">
                         <a href="Filter Issue Type" (click)="onSelectFiltersToDisplay($event, 'issue-type')"
-                           [ngClass]="getFilterLinkClass('issue-type')"><span *ngIf="issueTypeFiltersTooltip">*</span>Issue Type</a></div>
+                           [ngClass]="getFilterLinkClass('issue-type')">Issue Type</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'" title="{{filterTooltips['priority']}}">
+                    <div [ngClass]="filtersToDisplay === 'priority' ? 'filter selected' : 'filter'" title="{{filterTooltips['priority']}}">
                         <a href="Filter Priority" (click)="onSelectFiltersToDisplay($event, 'priority')"
-                           [ngClass]="getFilterLinkClass('priority')"><span *ngIf="priorityFiltersTooltip">*</span>Priority</a></div>
+                           [ngClass]="getFilterLinkClass('priority')">Priority</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'" title="{{filterTooltips['assignee']}}">
+                    <div [ngClass]="filtersToDisplay === 'assignee' ? 'filter selected' : 'filter'" title="{{filterTooltips['assignee']}}">
                         <a href="Filter Assignee" (click)="onSelectFiltersToDisplay($event, 'assignee')"
-                           [ngClass]="getFilterLinkClass('assignee')"><span *ngIf="assigneeFiltersTooltip">*</span>Assignee</a></div>
+                           [ngClass]="getFilterLinkClass('assignee')">Assignee</a></div>
 
-                    <div class="filter" [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'" title="{{filterTooltips['component']}}">
+                    <div [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'" title="{{filterTooltips['component']}}">
                         <a href="Filter Component" (click)="onSelectFiltersToDisplay($event, 'component')"
-                           [ngClass]="getFilterLinkClass('component')"><span *ngIf="componentFiltersTooltip">*</span>Component</a></div>
+                           [ngClass]="getFilterLinkClass('component')">Component</a></div>
+                    <div *ngFor="let customField of customFields"
+                            [ngClass]="filtersToDisplay === customField.name ? 'filter selected' : 'filter'" title="{{filterTooltips[customField.name]}}">
+                        <a href="Filter {{customField.name}}" (click)="onSelectFiltersToDisplay($event, customField.name)"
+                           [ngClass]="getFilterLinkClass(customField.name)">{{customField.name}}</a></div>
+
                 </div>
             </div>
         </div>
@@ -116,7 +122,7 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'assignee')" title="Clear filter">Assignee Filter</div>
                 <div class="setting-content" title="Scroll me!" ngControlGroup="assignee">
                     <div class="setting-entry">
-                        <input type="checkbox" ngControl="{{noAssignee}}" id="assignee-$none$none"/>
+                        <input type="checkbox" ngControl="{{none}}" id="assignee-$none$none"/>
                         <label for="assignee-$none$none">None</label>
                     </div>
                     <div *ngFor="let assignee of assignees" class="setting-entry">
@@ -129,12 +135,29 @@
                 <div class="setting-header clickable" (click)="clearFilter($event, 'component')" title="Clear filter">Component Filter</div>
                 <div class="setting-content" title="Scroll me!" ngControlGroup="component">
                     <div class="setting-entry">
-                        <input type="checkbox" ngControl="{{noComponent}}" id="component-$none$none"/>
+                        <input type="checkbox" ngControl="{{none}}" id="component-$none$none"/>
                         <label for="component-$none$none">None</label>
                     </div>
                     <div *ngFor="let component of components" class="setting-entry">
                         <input type="checkbox" ngControl="{{component.name}}" id="component-{{component.name}}"/>
                         <label [attr.for]="'component-' + component.name">{{component.name}}</label>
+                    </div>
+                </div>
+            </div>
+            <div *ngFor="let customFieldValues of customFields">
+                <div class="setting" *ngIf="filtersToDisplay === customFieldValues.name">
+                    <div class="setting-header clickable" (click)="clearFilter($event, customFieldValues.name)"
+                         title="Clear filter">{{customFieldValues.name}} Filter</div>
+                    <div class="setting-content" title="Scroll me!" ngControlGroup="{{customFieldValues.name}}">
+                        <div class="setting-entry">
+                            <input type="checkbox" ngControl="{{none}}" id="custom-{{customFieldValues.name}}-{{none}}"/>
+                            <label [attr.for]="'custom-' + customFieldValues.name + '-' + none">None</label>
+                        </div>
+                        <div *ngFor="let customFieldValue of customFieldValues.values.array" class="setting-entry">
+                            <input type="checkbox" ngControl="{{customFieldValue.key}}"
+                                   id="custom-{{customFieldValues.name}}-{{customFieldValue.key}}"/>
+                            <label [attr.for]="'custom-' + customFieldValues.name + '-' + customFieldValue.key">{{customFieldValue.displayValue}}</label>
+                        </div>
                     </div>
                 </div>
             </div>

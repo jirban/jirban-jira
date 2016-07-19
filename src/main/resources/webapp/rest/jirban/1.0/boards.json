@@ -93,6 +93,15 @@
       "config" : {
         "_comment" : "This config doesn't actually match the setup for the POC4.json file. It is only here for illustrative purposes, and to see this board in the boards list."
       }
+    },
+    {
+      "id" : 5,
+      "code" : "POC5",
+      "name" : "Board with custom fields",
+      "edit" : true,
+      "config" : {
+        "_comment" : "This config doesn't actually match the setup for the POC4.json file. It is only here for illustrative purposes, and to see this board in the boards list."
+      }
     }
   ],
   "rank-custom-field" : {

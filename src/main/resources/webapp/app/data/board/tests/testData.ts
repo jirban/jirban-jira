@@ -9,6 +9,7 @@ export class TestBoardData {
     public projects:any;
     public issues:any;
     public blacklist:any;
+    public custom:any;
 
     public build() : any {
         let json:any = {};
@@ -23,6 +24,9 @@ export class TestBoardData {
         json["issues"] = TestBoardData.clone(this.issues);
         if (this.blacklist) {
             json["blacklist"] = TestBoardData.clone(this.blacklist);
+        }
+        if (this.custom) {
+            json["custom"] = TestBoardData.clone(this.custom);
         }
         //console.log(JSON.stringify(json, null, 2));
         return json;
@@ -110,6 +114,31 @@ export class TestBoardData {
               "TBG-101"
             ]
         };
+
+    public static STANDARD_CUSTOM_FIELDS:any =
+        {
+            Tester: [
+                {
+                    key: "james",
+                    value: "James Perkins"
+                },
+                {
+                    key: "kabir",
+                    value: "Kabir Khan"
+                }
+            ],
+            Documenter: [
+                {
+                    key: "kabir",
+                    value: "Kabir Khan"
+                },
+                {
+                    key: "stuart",
+                    value: "Stuart Douglas"
+                }
+            ]
+        }
+
 
     // 'Full' board ////////////
 
@@ -588,6 +617,49 @@ export class TestBoardData {
             components: [0]
         }
     };
+
+    static getFullBoardCustomFieldIssues():any {
+        let data:any = TestBoardData.clone(TestBoardData.FULL_BOARD_ISSUES);
+
+        TestBoardData.addCustomFields(data, "TDP-1", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TDP-1", "Documenter", 0);
+        TestBoardData.addCustomFields(data, "TDP-2", "Tester", 1);
+        TestBoardData.addCustomFields(data, "TDP-2", "Documenter", 1);
+        TestBoardData.addCustomFields(data, "TDP-5", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TDP-5", "Documenter", 0);
+        TestBoardData.addCustomFields(data, "TDP-6", "Tester", 1);
+        TestBoardData.addCustomFields(data, "TDP-6", "Documenter", 1);
+
+        TestBoardData.addCustomFields(data, "TBG-1", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TBG-1", "Documenter", 0);
+        TestBoardData.addCustomFields(data, "TBG-2", "Tester", 1);
+        TestBoardData.addCustomFields(data, "TBG-2", "Documenter", 1);
+
+        return data;
+    }
+
+    static getPreChangeCustomFieldIssues():any {
+        let data:any = TestBoardData.clone(TestBoardData.PRE_CHANGE_BOARD_ISSUES);
+
+        TestBoardData.addCustomFields(data, "TDP-1", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TDP-1", "Documenter", 0);
+        TestBoardData.addCustomFields(data, "TDP-2", "Tester", 1);
+        TestBoardData.addCustomFields(data, "TDP-2", "Documenter", 1);
+
+        TestBoardData.addCustomFields(data, "TBG-1", "Tester", 0);
+        TestBoardData.addCustomFields(data, "TBG-1", "Documenter", 0);
+
+        
+        return data;
+    }
+
+    static addCustomFields(issues:any, issue:string, name:string, index:number) {
+        if (!issues[issue]["custom"]) {
+            issues[issue]["custom"] = {};
+        }
+        issues[issue]["custom"][name] = index;
+    }
+
 }
 
 

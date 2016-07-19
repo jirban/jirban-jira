@@ -21,10 +21,14 @@
  */
 package ut.org.jirban.jira;
 
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
+import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
@@ -45,6 +49,7 @@ import com.atlassian.jira.mock.component.MockComponentWorker;
 import com.atlassian.jira.user.util.UserManager;
 
 import ut.org.jirban.jira.mock.CrowdUserBridge;
+import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
 import ut.org.jirban.jira.mock.MockProjectComponent;
@@ -77,6 +82,7 @@ public abstract class AbstractBoardTest {
         BoardConfigurationManager cfgManager = new BoardConfigurationManagerBuilder()
                 .addConfigActiveObjectsFromFile(cfgResource)
                 .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000")
+                .setCustomFieldManager(CustomFieldManagerBuilder.loadFromResource(cfgResource))
                 .build();
 
         MockComponentWorker worker = new MockComponentWorker();
@@ -85,10 +91,10 @@ public abstract class AbstractBoardTest {
                 .build(worker);
 
         issueRegistry = new IssueRegistry(userManager);
-        SearchService searchService = new SearchServiceBuilder()
+        SearchService searchService = new SearchServiceBuilder(worker)
                 .setIssueRegistry(issueRegistry)
                 .setSearchCallback(searchCallback)
-                .build(worker);
+                .build();
         IssueLinkManager issueLinkManager = new IssueLinkManagerBuilder().build();
         worker.init();
 
@@ -97,6 +103,7 @@ public abstract class AbstractBoardTest {
                 .setUserManager(userManager)
                 .setSearchService(searchService)
                 .setIssueLinkManager(issueLinkManager);
+
         if (init != null) {
             init.initialise(boardManagerBuilder);
         }
@@ -106,19 +113,41 @@ public abstract class AbstractBoardTest {
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
                                                                  IssueType issueType, Priority priority, String summary,
                                                                  String username, String[] components, String state) {
-        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, components, state);
+        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, components, state, null);
+    }
+
+    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
+                                                                 IssueType issueType, Priority priority, String summary,
+                                                                 String username, String[] components, String state,
+                                                                 Map<Long, String> customFieldValues) {
+        return createCreateEventAndAddToRegistry(
+                issueKey, issueType.name, priority.name, summary, username, components, state, customFieldValues);
     }
 
     protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
                                                                  String issueType, String priority, String summary,
                                                                  String username, String[] components, String state) {
+        return createCreateEventAndAddToRegistry(issueKey, issueType, priority, summary, username, components, state, null);
+    }
+
+    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
+                                                                 String issueType, String priority, String summary,
+                                                                 String username, String[] components, String state,
+                                                                 Map<Long, String> customFieldValues) {
+
         CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
         User user = userBridge.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, MockProjectComponent.createProjectComponents(components), state);
+                summary, user, MockProjectComponent.createProjectComponents(components), state, customFieldValues);
 
         issueRegistry.addIssue(projectCode, issueType, priority, summary, username, components, state);
+        if (customFieldValues != null) {
+            for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
+                issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());
+            }
+        }
+
         return create;
     }
 
@@ -129,14 +158,37 @@ public abstract class AbstractBoardTest {
         String issueTypeName = issueType == null ? null : issueType.name;
         String priorityName = priority == null ? null : priority.name;
         return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
-                components, clearComponents, state, rank);
+                components, clearComponents, state, rank, Collections.emptyMap());
     }
 
     protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
                                                                  String priorityName, String summary, String username,
                                                                  boolean unassigned, String[] components,
                                                                  boolean clearComponents, String state, boolean rank) {
+        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
+                components, clearComponents, state, rank, null);
+    }
+
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
+                                                                 Priority priority, String summary, String username,
+                                                                 boolean unassigned, String[] components,
+                                                                 boolean clearComponents, String state, boolean rank,
+                                                                 Map<Long, String> customFieldValues) {
+        String issueTypeName = issueType == null ? null : issueType.name;
+        String priorityName = priority == null ? null : priority.name;
+        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
+                components, clearComponents, state, rank, customFieldValues);
+    }
+
+    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
+                                                                 String priorityName, String summary, String username,
+                                                                 boolean unassigned, String[] components,
+                                                                 boolean clearComponents, String state, boolean rank,
+                                                                 Map<Long, String> customFieldValues) {
         Assert.assertFalse(username != null && unassigned);
+        if (clearComponents) {
+            Assert.assertNull(components);
+        }
 
         User user;
         if (unassigned) {
@@ -146,14 +198,21 @@ public abstract class AbstractBoardTest {
             user = userBridge.getUserByKey(username);
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
-        Collection<ProjectComponent> projectComponents = clearComponents ? JirbanIssueEvent.NO_COMPONENT : MockProjectComponent.createProjectComponents(components);
+        Collection<ProjectComponent> projectComponents = clearComponents ? Collections.emptySet() : MockProjectComponent.createProjectComponents(components);
         Issue issue = issueRegistry.getIssue(projectCode, issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
-                priorityName, summary, user, projectComponents, issue.getStatusObject().getName(), state, state != null || rank);
+                priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
+                state, state != null || rank, customFieldValues);
 
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
+        if (customFieldValues != null) {
+            for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
+                issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());
+            }
+        }
         return update;
     }
+
     protected enum IssueType {
         TASK(0),
         BUG(1),
@@ -193,5 +252,25 @@ public abstract class AbstractBoardTest {
 
     interface AdditionalBuilderInit {
         void initialise(BoardManagerBuilder boardManagerBuilder);
+    }
+
+    interface IssueCustomFieldChecker {
+        void check(ModelNode issue);
+    }
+
+    static class NoIssueCustomFieldChecker implements IssueCustomFieldChecker {
+        static final NoIssueCustomFieldChecker TESTER = new NoIssueCustomFieldChecker("Tester");
+        static final NoIssueCustomFieldChecker DOCUMENTER = new NoIssueCustomFieldChecker("Documenter");
+
+        private final String fieldName;
+
+        private NoIssueCustomFieldChecker(String fieldName) {
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
+        }
     }
 }

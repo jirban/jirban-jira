@@ -1,6 +1,4 @@
-import {Indexed} from '../../common/indexed';
-
-export const NO_ASSIGNEE:string = "$no$assignee";
+import {Indexed} from "../../common/indexed";
 
 export class Assignee {
     private _key:string;

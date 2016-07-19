@@ -2,7 +2,6 @@
   "name": "Test Downstream Project",
   "code": "TST",
   "owning-project": "TDP",
-  "rank-custom-field-id": 10000,
   "states": [
     {"name": "S-A", "backlog":true},
     {"name": "S-B", "backlog":true},
@@ -20,10 +19,23 @@
     "bug",
     "feature"
   ],
+  "custom": [
+    {
+      "name": "Tester",
+      "type": "user",
+      "field-id": 121212121212
+    },
+    {
+      "name": "Documenter",
+      "type": "user",
+      "field-id": 121212121213
+    }
+  ],
   "projects": {
     "TDP": {
       "query-filter": null,
       "colour": "#4667CA",
+      "custom": ["Tester", "Documenter"],
       "state-links": {
         "TDP-A" : "S-A",
         "TDP-B" : "S-B",

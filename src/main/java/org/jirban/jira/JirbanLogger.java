@@ -28,11 +28,17 @@ import org.slf4j.LoggerFactory;
  * @author Kabir Khan
  */
 public class JirbanLogger {
-    private final Logger logger = LoggerFactory.getLogger("org.jirban.jira");
+    private final Logger logger;
 
-    public static final JirbanLogger LOGGER = new JirbanLogger();
+    public static final JirbanLogger LOGGER = new JirbanLogger("org.jirban.jira");
 
-    private JirbanLogger() {
+    /**
+     * Logger to use when debugging code/new features on a remote server
+     */
+    public static final JirbanLogger PROTOTYPE = new JirbanLogger("org.jirban.jira.prototype");
+
+    private JirbanLogger(String category) {
+        logger = LoggerFactory.getLogger(category);
     }
 
     public void trace(String msg, Object...params) {

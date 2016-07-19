@@ -1,10 +1,15 @@
-import {Assignee, NO_ASSIGNEE} from "./assignee";
+import {Assignee} from "./assignee";
 import {Priority} from "./priority";
 import {IssueData} from "./issueData";
 import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
-import {JiraComponent, NO_COMPONENT} from "./component";
+import {JiraComponent} from "./component";
 import {IMap} from "../../common/map";
+import {CustomFieldValues, CustomFieldValue} from "./customField";
+import {BoardData} from "./boardData";
+import filter = require("core-js/fn/array/filter");
+
+export const NONE:string = "$n$o$n$e$";
 
 export class BoardFilters {
     private _projectFilter:any;
@@ -13,16 +18,19 @@ export class BoardFilters {
     private _assigneeFilter:any;
     private _componentFilter:any;
     private _componentFilterLength:number;
+    private _customFieldValueFilters:IMap<any>;
     private _projects:boolean = false;
     private _assignees:boolean = false;
     private _priorities:boolean = false;
     private _issueTypes:boolean = false;
     private _components:boolean = false;
+    private _customFields:IMap<boolean> = {};
     private _selectedProjectNames:string[] = [];
     private _selectedPriorityNames:string[] = [];
     private _selectedIssueTypes:string[] = [];
     private _selectedAssignees:string[] = [];
     private _selectedComponents:string[] = [];
+    private _selectedCustomFields:IMap<string[]>;
 
     setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
@@ -71,7 +79,7 @@ export class BoardFilters {
         this._assigneeFilter = filter;
         this._assignees = false;
         this._selectedAssignees = [];
-        if (filter[NO_ASSIGNEE]) {
+        if (filter[NONE]) {
             this._assignees = true;
             this._selectedAssignees.push("None");
         }
@@ -91,9 +99,9 @@ export class BoardFilters {
         this._componentFilterLength = 0;
         this._components = false;
         this._selectedComponents = [];
-        if (filter[NO_COMPONENT]) {
+        if (filter[NONE]) {
             this._components = true;
-            this._componentFilter[NO_COMPONENT] = true;
+            this._componentFilter[NONE] = true;
             this._componentFilterLength = 1;
             this._selectedComponents.push("None");
         }
@@ -108,8 +116,46 @@ export class BoardFilters {
                 }
             }
         }
-
     }
+
+    setCustomFieldValueFilters(customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>) {
+        this._customFieldValueFilters = {};
+        this._customFields = {};
+        this._selectedCustomFields = {};
+        for (let cfvs of customFields.array) {
+            let filter = customFieldValueFilters[cfvs.name];
+            let hasFilters = false;
+            let selected:string[] = [];
+            console.log(JSON.stringify(filter));
+            if (!filter) {
+                filter = {};
+            } else {
+                if (filter[NONE]) {
+                    hasFilters = true;
+                    selected.push("None")
+                }
+                for (let cfv of cfvs.values.array) {
+                    if (filter[cfv.key]) {
+                        hasFilters = true;
+                        selected.push(cfv.displayValue);
+                    }
+                }
+            }
+            this._customFieldValueFilters[cfvs.name] = filter;
+            this._customFields[cfvs.name] = hasFilters;
+            this._selectedCustomFields[cfvs.name] = selected;
+
+        }
+    }
+
+    private hasCustomValueFilter(customFieldValueFilters:IMap<any>, name:string, key:string) {
+        let filtersForField:any = customFieldValueFilters[name];
+        if (!filtersForField) {
+            return false;
+        }
+        return filtersForField[key];
+    }
+
 
     filterIssue(issue:IssueData):boolean {
         if (this.filterProject(issue.projectCode)) {
@@ -125,6 +171,9 @@ export class BoardFilters {
             return true;
         }
         if (this.filterComponentAllComponents(issue.components)) {
+            return true;
+        }
+        if (this.filterCustomFields(issue.customFields)) {
             return true;
         }
         return false;
@@ -153,7 +202,7 @@ export class BoardFilters {
 
     filterAssignee(assigneeKey:string):boolean {
         if (this._assignees) {
-            return !this._assigneeFilter[assigneeKey ? assigneeKey : NO_ASSIGNEE]
+            return !this._assigneeFilter[assigneeKey ? assigneeKey : NONE]
         }
         return false;
     }
@@ -193,18 +242,29 @@ export class BoardFilters {
         return this._componentFilter[componentKey];
     }
 
+    initialCustomFieldValueForForm(customFieldName:string, customFieldKey:string):boolean {
+        if (!this._customFields[customFieldName]) {
+            return false;
+        }
+        let customField:any = this._customFieldValueFilters[customFieldName];
+        if (!customField) {
+            return false;
+        }
+        return customField[customFieldKey];
+    }
+
     private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
         if (this._components) {
             if (!issueComponents) {
-                return !this._componentFilter[NO_COMPONENT];
+                return !this._componentFilter[NONE];
             } else {
-                if (this._componentFilterLength == 1 && this._componentFilter[NO_COMPONENT]) {
+                if (this._componentFilterLength == 1 && this._componentFilter[NONE]) {
                     //All we want to match is no components, and we have some components so return that we
                     //should be filtered out
                     return true;
                 }
                 for (let component in this._componentFilter) {
-                    if (component === NO_COMPONENT) {
+                    if (component === NONE) {
                         //We have components and we are looking for some components, for this case ignore the
                         //no components filter
                         continue;
@@ -221,26 +281,76 @@ export class BoardFilters {
 
     filterComponent(componentName:string):boolean {
         if (this._components) {
-            return !this._componentFilter[componentName ? componentName : NO_COMPONENT]
+            return !this._componentFilter[componentName ? componentName : NONE]
         }
         return false;
 
     }
 
-    createFromQueryParams(queryParams:IMap<string>,
+    filterCustomFields(customFields:IMap<CustomFieldValue>):boolean {
+        for (let customFieldName in this._customFields) {
+            if (this._customFields[customFieldName]) {
+                let hadFilters:boolean = false;
+                let match:boolean = false;
+                let filter:any = this._customFieldValueFilters[customFieldName];
+                for (let fieldName in filter) {
+                    if (!filter[fieldName]) {
+                        continue;
+                    }
+                    hadFilters = true;
+                    if (fieldName === NONE) {
+                        if (!customFields[customFieldName]){
+                            match = true;
+                            break;
+                        }
+                    } else {
+                        let customFieldValue = customFields[customFieldName]
+                        if (customFieldValue && filter[customFieldValue.key]) {
+                            match = true;
+                            break;
+                        }
+                    }
+                }
+                if (hadFilters && !match) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    filterCustomField(customFieldName:string, customFieldKey:string):boolean {
+        if (this._customFields[customFieldName]) {
+            let customField:any = this._customFieldValueFilters[customFieldName];
+            if (customField) {
+                return !customField[customFieldKey];
+            }
+        }
+        return false;
+    }
+
+    createFromQueryParams(boardData:BoardData, queryParams:IMap<string>,
                                  callback:(
-                                     projectFilter:string,
-                                     priorityFilter:string,
-                                     issueTypeFilter:string,
-                                     assigneeFilter:string,
-                                     componentFilter:string)=>void):void {
+                                     projectFilter:any,
+                                     priorityFilter:any,
+                                     issueTypeFilter:any,
+                                     assigneeFilter:any,
+                                     componentFilter:any,
+                                     customFieldFilters:IMap<any>
+                                 )=>void):void {
         let projectFilter:any = this.parseBooleanFilter(queryParams, "project");
         let priorityFilter:any = this.parseBooleanFilter(queryParams, "priority");
         let issueTypeFilter:any = this.parseBooleanFilter(queryParams, "issue-type");
         let assigneeFilter:any = this.parseBooleanFilter(queryParams, "assignee");
         let componentFilter:any = this.parseBooleanFilter(queryParams, "component");
 
-        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter);
+        let customFieldFilters:IMap<any> = {};
+        for (let customFieldValues of boardData.customFields.array) {
+            let customFilter:any = this.parseBooleanFilter(queryParams, "cf." + customFieldValues.name);
+            customFieldFilters[customFieldValues.name] = customFilter;
+        }
+
+        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
     }
 
     parseBooleanFilter(queryParams:IMap<string>, name:string):any{
@@ -264,6 +374,11 @@ export class BoardFilters {
         query += this.createQueryStringParticle("issue-type", this._issueTypes, this._issueTypeFilter);
         query += this.createQueryStringParticle("assignee", this._assignees, this._assigneeFilter);
         query += this.createQueryStringParticle("component", this._components, this._componentFilter);
+        for (let key in this._customFieldValueFilters) {
+            let customField:boolean = this._customFields[key];
+            let customFieldFilter:any = this._customFieldValueFilters[key];
+            query += this.createQueryStringParticle("cf." + key, customField, customFieldFilter);
+        }
         return query;
     }
 
@@ -304,6 +419,10 @@ export class BoardFilters {
 
     get selectedComponents():string[] {
         return this._selectedComponents;
+    }
+
+    get selectedCustomFields():IMap<string[]> {
+        return this._selectedCustomFields;
     }
 }
 

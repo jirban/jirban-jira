@@ -38,12 +38,26 @@ import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+
+import com.atlassian.jira.mock.component.MockComponentWorker;
+
+import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
+import ut.org.jirban.jira.mock.UserManagerBuilder;
 
 /**
  * @author Kabir Khan
  */
 public class BoardConfigurationManagerTest {
+    @Before
+    public void initializeMocks() throws Exception {
+        MockComponentWorker worker = new MockComponentWorker();
+        new UserManagerBuilder()
+                .addDefaultUsers()
+                .build(worker);
+        worker.init();
+    }
 
     //TODO Add more tests for things like saving, and not having the correct permissions
     @Test
@@ -53,8 +67,13 @@ public class BoardConfigurationManagerTest {
                 .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
         BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
 
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
+        original.protect();
+
         BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
         Assert.assertNotNull(boardConfig);
+        ModelNode serialized = boardConfig.serializeModelNodeForConfig();
+        Assert.assertEquals(original, serialized);
     }
 
     @Test(expected=JirbanValidationException.class)
@@ -186,6 +205,23 @@ public class BoardConfigurationManagerTest {
         loadBadConfiguration(original,
                 new DoneModifier(false, false, false, true),
                 new UnorderedModifier(false, false, false, true));
+    }
+
+    @Test
+    public void testLoadConfigurationWithCustomFields() throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
+                .addConfigActiveObjectsFromFile("config/board-custom.json")
+                .setCustomFieldManager(CustomFieldManagerBuilder.loadFromResource("config/board-custom.json"))
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
+
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-custom.json");
+        original.protect();
+
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
+        Assert.assertNotNull(boardConfig);
+        ModelNode serialized = boardConfig.serializeModelNodeForConfig();
+        Assert.assertEquals(original, serialized);
     }
 
     private void loadBadConfiguration(ModelNode original, StateModifier... modifiers) throws IOException {

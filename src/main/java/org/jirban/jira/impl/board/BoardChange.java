@@ -21,6 +21,9 @@
  */
 package org.jirban.jira.impl.board;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -60,13 +63,17 @@ public class BoardChange {
 
     //Whether or not the issue state is a backlog state (may be null in case the change doesn't do anything to an issue, just the
     private final Boolean backlogState;
+    private final Map<String, CustomFieldValue> customFieldValues;
+    private final Map<String, CustomFieldValue> newCustomFieldValues;
     private final Boolean fromBacklogState;
 
 
     private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
                         String addedBlacklistIssue, String deletedBlacklistIssue, String changedState,
-                        Boolean fromBacklogState, Boolean backlogState) {
+                        Boolean fromBacklogState, Boolean backlogState,
+                        Map<String, CustomFieldValue> customFieldValues,
+                        Map<String, CustomFieldValue> newCustomFieldValues) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
@@ -79,6 +86,8 @@ public class BoardChange {
         this.changedState = changedState;
         this.fromBacklogState = fromBacklogState;
         this.backlogState = backlogState;
+        this.customFieldValues = customFieldValues;
+        this.newCustomFieldValues = newCustomFieldValues;
     }
 
     long getTime() {
@@ -137,6 +146,13 @@ public class BoardChange {
         return fromBacklogState;
     }
 
+    public Map<String, CustomFieldValue> getCustomFieldValues() {
+        return customFieldValues;
+    }
+
+    public Map<String, CustomFieldValue> getNewCustomFieldValues() {
+        return newCustomFieldValues;
+    }
 
     public static class Builder {
         private final BoardChangeRegistry registry;
@@ -149,6 +165,8 @@ public class BoardChange {
         //The new components if any were brought in
         private Set<Component> newComponents;
 
+        private Map<String, CustomFieldValue> newCustomFieldValues;
+
         //If the blacklist was changed
         private String addedBlacklistState;
         private String addedBlacklistPriority;
@@ -160,6 +178,7 @@ public class BoardChange {
         private String changedState;
         private Boolean fromBacklogState;
         private Boolean backlogState;
+        private Map<String, CustomFieldValue> customFieldValues;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -191,7 +210,7 @@ public class BoardChange {
         }
 
         public Builder addNewComponents(Set<Component> newComponents) {
-            this.newComponents = newComponents;
+            this.newComponents = Collections.unmodifiableSet(newComponents);
             return this;
         }
 
@@ -205,9 +224,33 @@ public class BoardChange {
             return this;
         }
 
+        public Builder addCustomFieldValues(
+                Map<String, SortedCustomFieldValues> originalCustomFieldValues,
+                Map<String, CustomFieldValue> customFieldValues) {
+
+            Map<String, CustomFieldValue> newValues = new HashMap<>();
+            if (customFieldValues.size() > 0) {
+                for (Map.Entry<String, CustomFieldValue> change : customFieldValues.entrySet()) {
+                    SortedCustomFieldValues existingForField = originalCustomFieldValues.get(change.getKey());
+                    CustomFieldValue value = change.getValue();
+                    if (existingForField == null ||
+                            (value != null && existingForField.getCustomFieldValue(value.getKey()) == null)) {
+                        newValues.put(change.getKey(), change.getValue());
+                    }
+                }
+                this.customFieldValues = Collections.unmodifiableMap(customFieldValues);
+            }
+            if (newValues.size() > 0) {
+                this.newCustomFieldValues = Collections.unmodifiableMap(newValues);
+            }
+            return this;
+        }
+
         public void buildAndRegister() {
-            BoardChange change = new BoardChange(view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState, fromBacklogState, backlogState);
+            BoardChange change = new BoardChange(
+                    view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState,
+                    fromBacklogState, backlogState, customFieldValues, newCustomFieldValues);
             registry.registerChange(change);
         }
     }

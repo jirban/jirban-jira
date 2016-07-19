@@ -1,8 +1,9 @@
-import {Assignee} from "./assignee";
-import {AssigneeDeserializer} from "./assignee";
+import {Assignee, AssigneeDeserializer} from "./assignee";
 import {Indexed} from "../../common/indexed";
 import {BlacklistData} from "./blacklist";
 import {JiraComponent, ComponentDeserializer} from "./component";
+import {CustomFieldDeserializer, CustomFieldValues} from "./customField";
+import {IMap} from "../../common/map";
 export class ChangeSet {
     private _view:number;
 
@@ -12,6 +13,7 @@ export class ChangeSet {
 
     private _addedAssignees:Assignee[];
     private _addedComponents:JiraComponent[];
+    private _addedCustomFields:Indexed<CustomFieldValues>;
 
     private _blacklistChange:BlacklistData;
     private _blacklistClearedIssues:string[];
@@ -50,6 +52,9 @@ export class ChangeSet {
         }
         if (changes.components) {
             this._addedComponents = new ComponentDeserializer().deserialize(changes).array;
+        }
+        if (changes.custom) {
+            this._addedCustomFields = new CustomFieldDeserializer().deserialize(changes);
         }
 
         let blacklist:any = changes.blacklist;
@@ -116,6 +121,10 @@ export class ChangeSet {
         return this._addedComponents;
     }
 
+    get addedCustomFields():Indexed<CustomFieldValues> {
+        return this._addedCustomFields;
+    }
+
     addToBlacklist(blacklist:BlacklistData) {
         blacklist.addChanges(this._blacklistChange);
     }
@@ -132,11 +141,15 @@ export class IssueChange {
     private _summary:string;
     private _state:string;
     private _assignee:string;
-    private _unassigned:boolean = false;
     private _components:string[];
+    private _customFieldValues:IMap<string>;
+
+    //Only set on update
+    private _unassigned:boolean = false;
     private _clearedComponents:boolean = false;
 
-    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string, components:string[]) {
+    constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string,
+                components:string[], customFieldValues:IMap<string>) {
         this._key = key;
         this._type = type;
         this._priority = priority;
@@ -144,6 +157,7 @@ export class IssueChange {
         this._state = state;
         this._assignee = assignee;
         this._components = components;
+        this._customFieldValues = customFieldValues;
     }
 
     get key():string {
@@ -182,12 +196,33 @@ export class IssueChange {
         return this._clearedComponents;
     }
 
+    get customFieldValues():IMap<string> {
+        return this._customFieldValues;
+    }
+
     static deserializeAdd(input:any) : IssueChange {
-        return new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee, input.components);
+        return new IssueChange(input.key, input.type, input.priority, input.summary,
+            input.state, input.assignee, input.components, input.custom);
     }
 
     static deserializeUpdate(input:any) : IssueChange {
-        let change:IssueChange = new IssueChange(input.key, input.type, input.priority, input.summary, input.state, input.assignee, input.components);
+        // let clearedCustomFields:string[] = [];
+        // let custom:Indexed<CustomFieldValue> = new Indexed<CustomFieldValue>();
+        // if (input.custom) {
+        //     for (let key in input.custom) {
+        //         let customValue = input.custom[key];
+        //         if (!customValue) {
+        //             clearedCustomFields.push(key);
+        //         } else {
+        //             custom.add(key, new CustomFieldValue(key, customValue));
+        //         }
+        //     }
+        // }
+
+        let change:IssueChange =
+            new IssueChange(
+                input.key, input.type, input.priority, input.summary,
+                input.state, input.assignee, input.components, input.custom);
         if (input.unassigned) {
             change._unassigned = true;
         }

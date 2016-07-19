@@ -28,6 +28,7 @@ import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.DELETE;
 import static org.jirban.jira.impl.Constants.EMAIL;
 import static org.jirban.jira.impl.Constants.ISSUES;
@@ -43,6 +44,7 @@ import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
 import static org.jirban.jira.impl.Constants.UNASSIGNED;
+import static org.jirban.jira.impl.Constants.VALUE;
 import static org.jirban.jira.impl.Constants.VIEW;
 
 import java.util.Arrays;
@@ -70,12 +72,21 @@ import com.atlassian.jira.issue.search.SearchException;
 public class BoardChangeRegistryTest extends AbstractBoardTest {
 
     private void setupInitialBoard(String cfgResource) throws Exception {
-        initializeMocks(cfgResource);
-        setupInitialBoard();
+        setupInitialBoard(cfgResource, null);
     }
 
+    private void setupInitialBoard(String cfgResource, AdditionalSetup additionalSetup) throws Exception {
+        initializeMocks(cfgResource);
+        setupIssues(additionalSetup);
+    }
+
+
     @Before
-    public void setupInitialBoard() throws SearchException {
+    public void setupIssues() throws SearchException {
+        setupIssues(null);
+    }
+
+    public void setupIssues(AdditionalSetup additionalSetup) throws SearchException {
         issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
         issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");     //2
         issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");    //3
@@ -87,6 +98,10 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", new String[]{"C3"}, "TBG-X");  //1
         issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");      //2
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");    //3
+
+        if (additionalSetup != null) {
+            additionalSetup.setup();
+        }
 
         checkViewId(0);
         checkNoIssueChanges(0, 0);
@@ -119,6 +134,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkAssignees(0, 1);
         checkComponents(0, 1);
+        checkNoCustomFields(0, 1);
         checkAdds(0, 1);
         checkUpdates(0, 1);
         checkDeletes(0, 1, "TDP-3");
@@ -130,6 +146,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(0, 2);
         checkComponents(0, 2);
+        checkNoCustomFields(0, 2);
         checkAdds(0, 2);
         checkUpdates(0, 2);
         checkDeletes(0, 2, "TDP-3", "TDP-7");
@@ -143,6 +160,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(0, 3);
         checkComponents(0, 3);
+        checkNoCustomFields(0, 3);
         checkAdds(0, 3);
         checkUpdates(0, 3);
         checkDeletes(0, 3, "TDP-3", "TDP-7", "TBG-1");
@@ -161,6 +179,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkAssignees(0, 1);
         checkComponents(0, 1);
+        checkNoCustomFields(0, 1);
         checkDeletes(0, 1);
         checkUpdates(0, 1);
         checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"));
@@ -173,6 +192,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(0, 2, "jason");
         checkComponents(0, 2);
+        checkNoCustomFields(0, 2);
         checkDeletes(0, 2);
         checkUpdates(0, 2);
         checkAdds(0, 2,
@@ -195,6 +215,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(0, 3, "jason");
         checkComponents(0, 3);
+        checkNoCustomFields(0, 3);
         checkDeletes(0, 3);
         checkUpdates(0, 3);
         checkAdds(0, 3,
@@ -206,6 +227,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         checkAssignees(1, 3, "jason");
         checkComponents(1, 3);
+        checkNoCustomFields(1, 3);
         checkDeletes(1, 3);
         checkUpdates(1, 3);
         checkAdds(1, 3,
@@ -215,6 +237,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkAssignees(2, 3);
         checkComponents(2, 3);
+        checkNoCustomFields(2, 3);
         checkDeletes(2, 3);
         checkUpdates(2, 3);
         checkAdds(2, 3,
@@ -232,6 +255,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(1);
         checkAssignees(0, 1);
         checkComponents(0, 1);
+        checkNoCustomFields(0, 1);
         checkDeletes(0, 1);
         checkUpdates(0, 1);
         checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"));
@@ -244,6 +268,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(0, 2);
         checkComponents(0, 2, "C5", "C6");
+        checkNoCustomFields(0, 2);
         checkDeletes(0, 2);
         checkUpdates(0, 2);
         checkAdds(0, 2,
@@ -254,6 +279,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         checkAssignees(1, 2);
         checkComponents(1, 2, "C5", "C6");
+        checkNoCustomFields(1, 2);
         checkDeletes(1, 2);
         checkAdds(1, 2,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"));
@@ -267,6 +293,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(0, 3);
         checkComponents(0, 3, "C5", "C6");
+        checkNoCustomFields(0, 3);
         checkDeletes(0, 3);
         checkUpdates(0, 3);
         checkAdds(0, 3,
@@ -278,6 +305,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         checkAssignees(1, 3);
         checkComponents(1, 3, "C5", "C6");
+        checkNoCustomFields(1, 3);
         checkDeletes(1, 3);
         checkUpdates(1, 3);
         checkAdds(1, 3,
@@ -287,6 +315,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkAssignees(2, 3);
         checkComponents(2, 3);
+        checkNoCustomFields(2, 3);
         checkDeletes(2, 3);
         checkUpdates(2, 3);
         checkAdds(2, 3,
@@ -297,7 +326,167 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     @Test
-    public void testUpdateSameIssueNonAssigneesOrComponents() throws Exception {
+    public void testCreateIssuesCustomFields() throws Exception {
+        setupInitialBoard("config/board-custom.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        //Create an issue which does not bring in custom fields
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D");
+        boardManager.handleEvent(create);
+        checkViewId(1);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
+
+        //Create an issue which brings in a custom field
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "jason");
+        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create);
+        checkViewId(2);
+        changes = getChangesJson(0, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"jason"}, null);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"));
+        changes = getChangesJson(1, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"jason"}, null);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"));
+
+        //Create an issue which brings in a custom field and reuses one of the existing ones
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "jason");
+        customFieldValues.put(documenterId, "kabir");
+        create = createCreateEventAndAddToRegistry("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create);
+        checkViewId(3);
+        changes = getChangesJson(0, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), new DocumenterChecker("kabir")));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10"));
+        changes = getChangesJson(1, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), new DocumenterChecker("kabir")));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10"));
+        changes = getChangesJson(2, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, null, new String[]{"kabir"});
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), new DocumenterChecker("kabir")));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10"));
+
+        //Create an issue which brings in no custom fields
+        create = createCreateEventAndAddToRegistry("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D");
+        boardManager.handleEvent(create);
+        checkViewId(4);
+        changes = getChangesJson(0, 4);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), new DocumenterChecker("kabir")),
+                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
+        changes = getChangesJson(1, 4);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
+                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), new DocumenterChecker("kabir")),
+                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
+        changes = getChangesJson(2, 4);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, null, new String[]{"kabir"});
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                        new TesterChecker("jason"), new DocumenterChecker("kabir")),
+                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
+        changes = getChangesJson(3, 4);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
+                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
+        checkNoBlacklistChanges(changes);
+        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
+    }
+
+    @Test
+    public void testUpdateSameIssueNoNewData() throws Exception {
         //Do a noop update
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
         boardManager.handleEvent(update);
@@ -311,6 +500,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Check assignees and deletes extra well here so we don't have to in the other tests
         checkAssignees(0, 1);
         checkComponents(0, 1);
+        checkNoCustomFields(0, 1);
         checkDeletes(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, "Seven-1", null, null, null));
         checkNoBlacklistChanges(0, 1);
@@ -322,6 +512,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(0, 2);
         checkComponents(0, 2);
+        checkNoCustomFields(0, 2);
         checkDeletes(0, 2);
         checkUpdates(0, 2, new IssueData("TDP-7", IssueType.BUG, null, "Seven-1", null, null, null));
         checkAssignees(1, 2);
@@ -337,6 +528,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(0, 3);
         checkComponents(0, 3);
+        checkNoCustomFields(0, 3);
         checkDeletes(0, 3);
         checkUpdates(0, 3, new IssueData("TDP-7", IssueType.BUG, Priority.HIGHEST, "Seven-1", null, null, null));
         checkAssignees(1, 3);
@@ -354,13 +546,14 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
 
     @Test
-    public void testSameIssueAssignees() throws Exception {
-        //Do a noop update
+    public void testUpdateSameIssueAssignees() throws Exception {
+        //Do an update not bringing in any new data
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "kabir", false, null, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(1);
         checkAssignees(0, 1);
         checkComponents(0, 1);
+        checkNoCustomFields(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, null, "kabir", null, null));
         checkNoBlacklistChanges(0, 1);
         checkNoStateChanges(0, 1);
@@ -370,6 +563,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(0, 2);
         checkComponents(0, 2);
+        checkNoCustomFields(0, 2);
         checkUpdates(0, 2, new IssueData("TDP-7", null, null, null, null, true, null, false, null));
         checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, true, null, false, null));
         checkNoBlacklistChanges(0, 2);
@@ -380,6 +574,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(0, 3, "jason");
         checkComponents(0, 3);
+        checkNoCustomFields(0, 3);
         checkUpdates(0, 3, new IssueData("TDP-7", null, null, null, "jason", false, null, false, null));
         checkAssignees(1, 3, "jason");
         checkUpdates(1, 3, new IssueData("TDP-7", null, null, null, "jason", false, null, false, null));
@@ -393,6 +588,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(4);
         checkAssignees(0, 4, "jason");
         checkComponents(0, 4);
+        checkNoCustomFields(0, 4);
         checkUpdates(0, 4, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
         checkAssignees(1, 4, "jason");
         checkUpdates(1, 4, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
@@ -406,14 +602,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     @Test
-    public void testSameIssueComponents() throws Exception {
-        //Do a noop update
+    public void testUpdateSameIssueComponents() throws Exception {
+        //Do an update not bringing in any new data
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false,
                 new String[]{"C1"}, false, null, false);
         boardManager.handleEvent(update);
         checkViewId(1);
         checkAssignees(0, 1);
         checkComponents(0, 1);
+        checkNoCustomFields(0, 1);
         checkUpdates(0, 1, new IssueData("TDP-7", null, null, null, null, new String[]{"C1"}, null));
         checkNoBlacklistChanges(0, 1);
         checkNoStateChanges(0, 1);
@@ -423,6 +620,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(2);
         checkAssignees(0, 2);
         checkComponents(0, 2);
+        checkNoCustomFields(0, 2);
         checkUpdates(0, 2, new IssueData("TDP-7", null, null, null, null, false, null, true, null));
         checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, false, null, true, null));
         checkNoBlacklistChanges(0, 2);
@@ -434,12 +632,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(3);
         checkAssignees(0, 3);
         checkComponents(0, 3, "C-10");
+        checkNoCustomFields(0, 3);
         checkUpdates(0, 3, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C-10"}, false, null));
         checkAssignees(1, 3);
         checkComponents(1, 3, "C-10");
+        checkNoCustomFields(1, 3);
         checkUpdates(1, 3, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C-10"}, false, null));
         checkAssignees(2, 3);
         checkComponents(2, 3, "C-10");
+        checkNoCustomFields(2, 3);
         checkUpdates(2, 3, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C-10"}, false, null));
         checkNoBlacklistChanges(0, 3);
         checkNoStateChanges(0, 3);
@@ -449,18 +650,126 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkViewId(4);
         checkAssignees(0, 4);
         checkComponents(0, 4, "C-10");
+        checkNoCustomFields(0, 4);
         checkUpdates(0, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkAssignees(1, 4);
         checkComponents(1, 4, "C-10");
+        checkNoCustomFields(1, 4);
         checkUpdates(1, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkAssignees(2, 4);
         checkComponents(2, 4, "C-10");
+        checkNoCustomFields(2, 4);
         checkUpdates(2, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkAssignees(3, 4);
         checkComponents(3, 4);
+        checkNoCustomFields(3, 4);
         checkUpdates(3, 4, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
         checkNoBlacklistChanges(0, 4);
         checkNoStateChanges(0, 4);
+    }
+
+    @Test
+    public void testUpdateSameIssueCustomFields() throws Exception {
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+        setupInitialBoard("config/board-custom.json", new AdditionalSetup() {
+            @Override
+            public void setup() {
+                //Make sure that 'kabir' is in the list of custom fields
+                issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("brian"));
+                issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("stuart"));
+            }
+        });
+
+        //Do an update not bringing in any new data
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "brian");
+        customFieldValues.put(documenterId, "stuart");
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7",
+                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        checkViewId(1);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, null, null, new TesterChecker("brian"), new DocumenterChecker("stuart")));
+        checkNoBlacklistChanges(changes);
+        checkNoStateChanges(changes);
+
+        //Clear one of the custom fields
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "");
+        update = createUpdateEventAndAddToRegistry("TDP-7",
+                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        checkViewId(2);
+        changes = getChangesJson(0, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null)));
+        checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null)));
+        checkNoBlacklistChanges(changes);
+        checkNoStateChanges(changes);
+
+        //Clear the other custom field
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(documenterId, "");
+        update = createUpdateEventAndAddToRegistry("TDP-7",
+                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        checkViewId(3);
+        changes = getChangesJson(0, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null), new DocumenterChecker(null)));
+        checkUpdates(1, 3, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null), new DocumenterChecker(null)));
+        checkUpdates(2, 3, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new DocumenterChecker(null)));
+        checkNoBlacklistChanges(changes);
+        checkNoStateChanges(changes);
+
+        //Now add custom fields bringing in new data
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "james");
+        customFieldValues.put(documenterId, "jason");
+        update = createUpdateEventAndAddToRegistry("TDP-7",
+                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        checkViewId(4);
+        changes = getChangesJson(0, 4);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"james"}, new String[]{"jason"});
+        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
+        checkUpdates(1, 4, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
+        checkUpdates(2, 4, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
+        checkUpdates(3, 4, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
+        checkNoBlacklistChanges(changes);
+        checkNoStateChanges(changes);
+
+        //Update other custom fields bringing in new data
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "jason");
+        customFieldValues.put(documenterId, "james");
+        update = createUpdateEventAndAddToRegistry("TDP-7",
+                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update);
+        checkViewId(5);
+        changes = getChangesJson(0, 5);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkCustomFields(changes, new String[]{"james", "jason"}, new String[]{"james", "jason"});
+        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
+        checkUpdates(1, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
+        checkUpdates(2, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
+        checkUpdates(3, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
+        checkUpdates(4, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
+        checkNoBlacklistChanges(changes);
+        checkNoStateChanges(changes);
+
+
     }
 
     @Test
@@ -574,17 +883,27 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     @Test
-    public void testCreateAndDeleteIssueWithNewAssigneesAndComponents() throws Exception {
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A");
+    public void testCreateAndDeleteIssueWithNewData() throws Exception {
+        setupInitialBoard("config/board-custom.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "brian");
+        customFieldValues.put(documenterId, "stuart");
+
+        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8",
+                IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", customFieldValues);
         boardManager.handleEvent(event);
 
-        checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A"));
+        checkAdds(0, 1, new IssueData("TDP-8",
+                IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", new TesterChecker("brian"), new DocumenterChecker("stuart")));
         checkUpdates(0, 1);
         checkDeletes(0, 1);
         checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(0, 1);
         checkAssignees(0, 1, "jason");
         checkComponents(0, 1, new String[]{"C-X", "C-Y"});
+        checkCustomFields(0, 1, new String[]{"brian"}, new String[]{"stuart"});
 
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
@@ -599,6 +918,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(0, 2);
         checkAssignees(0, 2, "jason");
         checkComponents(0, 2, new String[]{"C-X", "C-Y"});
+        checkCustomFields(0, 2, new String[]{"brian"}, new String[]{"stuart"});
     }
 
     @Test
@@ -816,6 +1136,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog not visible
         ModelNode nonBacklogChanges = getChangesJson(0, 1);
@@ -824,6 +1145,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -844,6 +1166,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the backlog to the non-backlog will appear as an add when the backlog is hidden
@@ -853,6 +1176,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -873,6 +1197,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the backlog to the non-backlog will appear as an add when the backlog is hidden
@@ -884,6 +1209,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -904,6 +1230,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the non-backlog to the backlog will appear as a delete when the backlog is hidden
@@ -915,6 +1242,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -935,6 +1263,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the non-backlog to the non-backlog will behave normally
@@ -946,6 +1275,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -985,6 +1315,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges, "jason");
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
@@ -995,6 +1326,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges, "jason");
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -1014,6 +1346,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges, "jason");
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
@@ -1024,6 +1357,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges, "jason");
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -1043,6 +1377,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new component. This is needed, since e.g. another visible issue might be
@@ -1053,6 +1388,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -1072,6 +1408,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new component. This is needed, since e.g. another visible issue might be
@@ -1082,6 +1419,84 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
+        checkNoCustomFields(nonBacklogChanges);
+    }
+
+    @Test
+    public void testNewCustomFieldsForNewIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "kabir");
+        customFieldValues.put(documenterId, "stuart");
+
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8",
+                IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", customFieldValues);
+        boardManager.handleEvent(create);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", new TesterChecker("kabir")));
+        checkUpdates(backlogChanges);
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        checkCustomFields(backlogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
+        //created using that assignee, and the server has no record of which clients have which assignee.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+        checkCustomFields(nonBacklogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+    }
+
+    @Test
+    public void testNewCustomFieldsForUpdatedIssueInBacklogWithBacklogStatesConfigured() throws Exception {
+        //Override the default configuration set up by the @Before method to one with backlog states set up
+        setupInitialBoard("config/board-tdp-backlog.json");
+
+        final Long testerId = 121212121212L;
+        final Long documenterId = 121212121213L;
+
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(testerId, "kabir");
+        customFieldValues.put(documenterId, "stuart");
+
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1",
+                (String)null, null, null, null, false, null, false, "TDP-B", false, customFieldValues);
+        boardManager.handleEvent(update);
+
+        //Backlog visible
+        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        checkAdds(backlogChanges);
+        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B", new TesterChecker("kabir"), new DocumenterChecker("stuart")));
+        checkDeletes(backlogChanges);
+        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
+        checkNoBlacklistChanges(backlogChanges);
+        checkAssignees(backlogChanges);
+        checkComponents(backlogChanges);
+        checkCustomFields(backlogChanges, new String[]{"kabir"}, new String[]{"stuart"});
+
+        //Backlog invisible
+        //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
+        //created using that assignee, and the server has no record of which clients have which assignee.
+        ModelNode nonBacklogChanges = getChangesJson(0, 1);
+        checkNoIssueChanges(nonBacklogChanges);
+        checkNoStateChanges(nonBacklogChanges);
+        checkNoBlacklistChanges(nonBacklogChanges);
+        checkAssignees(nonBacklogChanges);
+        checkComponents(nonBacklogChanges);
+        checkCustomFields(nonBacklogChanges, new String[]{"kabir"}, new String[]{"stuart"});
     }
 
     @Test
@@ -1102,6 +1517,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         ModelNode nonBacklogChanges = getChangesJson(0, 1);
@@ -1112,6 +1528,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-C", "TDP-1", "TDP-3", "TDP-7"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
 
         //Move to another non-backlog state
         update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
@@ -1126,6 +1543,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
         backlogChanges = getChangesJson(1, 2, true);
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
@@ -1134,6 +1552,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         nonBacklogChanges = getChangesJson(0, 2);
@@ -1144,6 +1563,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
         nonBacklogChanges = getChangesJson(1, 2);
         //From a non-backlog to a non-backlog state appears as an update
         checkAdds(nonBacklogChanges);
@@ -1153,6 +1573,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
 
         //Move to a bl state
         update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-A", false);
@@ -1167,6 +1588,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
         backlogChanges = getChangesJson(1, 3, true);
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
@@ -1175,6 +1597,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
         backlogChanges = getChangesJson(2, 3, true);
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
@@ -1183,6 +1606,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
+        checkNoCustomFields(backlogChanges);
 
         //Backlog invisible
         nonBacklogChanges = getChangesJson(0, 3);
@@ -1191,6 +1615,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
         nonBacklogChanges = getChangesJson(1, 3);
         //The non-blacklog->blacklog move appears as a delete
         checkAdds(nonBacklogChanges);
@@ -1200,6 +1625,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
         nonBacklogChanges = getChangesJson(2, 3);
         //The non-blacklog->blacklog move appears as a delete
         checkAdds(nonBacklogChanges);
@@ -1209,6 +1635,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
+        checkNoCustomFields(nonBacklogChanges);
     }
 
     @Test
@@ -1444,6 +1871,12 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 Assert.assertEquals(expected.assignee, nullOrString(node.get(ASSIGNEE)));
                 Assert.assertEquals(expected.state, nullOrString(node.get("state")));
                 checkIssueComponents(expected.components, node);
+                if (expected.customFieldCheckers.length == 0) {
+                    Assert.assertFalse(node.hasDefined(CUSTOM));
+                }
+                for (IssueCustomFieldChecker checker : expected.customFieldCheckers) {
+                    checker.check(node);
+                }
             }
         }
     }
@@ -1486,6 +1919,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 } else {
                     Assert.assertFalse(node.has(CLEAR_COMPONENTS));
                 }
+
+                if (expected.customFieldCheckers.length == 0) {
+                    Assert.assertFalse(node.hasDefined(CUSTOM));
+                }
+                for (IssueCustomFieldChecker checker : expected.customFieldCheckers) {
+                    checker.check(node);
+                }
             }
         }
     }
@@ -1514,6 +1954,50 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             }
         }
     }
+
+
+    private void checkNoCustomFields(int fromView, int expectedView) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkNoCustomFields(changesNode);
+    }
+
+    private void checkNoCustomFields(ModelNode changesNode) throws SearchException {
+        Assert.assertEquals(1, changesNode.keys().size());
+        Assert.assertFalse(changesNode.hasDefined(CHANGES, CUSTOM));
+    }
+
+    private void checkCustomFields(int fromView, int expectedView, String[] testers, String[] documenters) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView, expectedView);
+        checkCustomFields(changesNode, testers, documenters);
+    }
+
+    private void checkCustomFields(ModelNode changesNode, String[] testers, String[] documenters) {
+        Assert.assertEquals(1, changesNode.keys().size());
+        ModelNode custom = changesNode.get(CHANGES, CUSTOM);
+        Assert.assertTrue(custom.isDefined());
+
+        checkCustomField(custom.get("Tester"), testers);
+        checkCustomField(custom.get("Documenter"), documenters);
+    }
+
+    private void checkCustomField(ModelNode userNode, String[] expectedUsers) {
+        if (expectedUsers == null) {
+            Assert.assertFalse(userNode.isDefined());
+            return;
+        }
+        Set<String> expected = new HashSet<>(Arrays.asList(expectedUsers));
+        Assert.assertTrue(userNode.isDefined());
+        List<ModelNode> users = userNode.asList();
+        Assert.assertEquals(expected.size(), users.size());
+
+        for (ModelNode user : users) {
+            String key = user.get(KEY).asString();
+            Assert.assertTrue(expected.remove(key));
+            Assert.assertTrue(user.get(VALUE).asString().toLowerCase().startsWith(key));
+        }
+    }
+
+
 
     private void checkComponents(int fromView, int expectedView, String...expectedComponents) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
@@ -1662,13 +2146,16 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         private final boolean unassigned;
         private final String[] components;
         private final boolean clearedComponents;
+        private final IssueCustomFieldChecker[] customFieldCheckers;
 
-        IssueData(String key, IssueType type, Priority priority, String summary, String assignee, String[] components, String state) {
-            this(key, type, priority, summary, assignee, false, components, false, state);
+        IssueData(String key, IssueType type, Priority priority, String summary, String assignee,
+                  String[] components, String state, IssueCustomFieldChecker...customFieldCheckers) {
+            this(key, type, priority, summary, assignee, false, components, false, state, customFieldCheckers);
         }
 
         IssueData(String key, IssueType type, Priority priority, String summary, String assignee,
-                  boolean unassigned, String[] components, boolean clearedComponents, String state) {
+                  boolean unassigned, String[] components, boolean clearedComponents, String state,
+                  IssueCustomFieldChecker...customFieldCheckers) {
             this.key = key;
             this.type = type;
             this.priority = priority;
@@ -1678,6 +2165,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             this.state = state;
             this.components = components;
             this.clearedComponents = clearedComponents;
+            this.customFieldCheckers = customFieldCheckers;
         }
     }
 
@@ -1691,5 +2179,51 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             this.state = state;
             this.issues = issues;
         }
+    }
+
+    static class DefaultIssueCustomFieldChecker implements IssueCustomFieldChecker {
+        private final String fieldName;
+        private final String key;
+
+        public DefaultIssueCustomFieldChecker(String fieldName, String key) {
+            this.fieldName = fieldName;
+            this.key = key;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            if (key != null) {
+                Assert.assertTrue(issue.hasDefined(CUSTOM, fieldName));
+                Assert.assertEquals(key, issue.get(CUSTOM, fieldName).asString());
+            } else {
+                Assert.assertTrue(issue.has(CUSTOM, fieldName));
+                Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
+            }
+        }
+    }
+
+    static class TesterChecker extends DefaultIssueCustomFieldChecker {
+        public TesterChecker(String key) {
+            super("Tester", key);
+        }
+    }
+
+    static class DocumenterChecker extends DefaultIssueCustomFieldChecker {
+        public DocumenterChecker(String key) {
+            super("Documenter", key);
+        }
+    }
+
+    static class ClearedCustomFieldsChecker implements IssueCustomFieldChecker {
+        static final ClearedCustomFieldsChecker INSTANCE = new ClearedCustomFieldsChecker();
+
+        @Override
+        public void check(ModelNode issue) {
+            Assert.assertFalse(issue.hasDefined(CUSTOM));
+        }
+    }
+
+    interface AdditionalSetup {
+        void setup();
     }
 }

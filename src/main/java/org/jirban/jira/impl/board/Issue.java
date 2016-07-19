@@ -21,6 +21,7 @@
 package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ASSIGNEE;
+import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.LINKED_ISSUES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
@@ -31,7 +32,9 @@ import static org.jirban.jira.impl.Constants.TYPE;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -129,10 +132,12 @@ public abstract class Issue {
      * @param priority the priority
      * @param assignee the assignee
      * @param components the component
+     * @param customFieldValues
      * @return the issue
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
-                                      String summary, String issueType, String priority, Assignee assignee, Set<Component> components) {
+                                      String summary, String issueType, String priority, Assignee assignee,
+                                      Set<Component> components, Map<String, CustomFieldValue> customFieldValues) {
         Builder builder = new Builder(project, issueKey);
         builder.setState(state);
         builder.setSummary(summary);
@@ -140,6 +145,7 @@ public abstract class Issue {
         builder.setPriority(priority);
         builder.setAssignee(assignee);
         builder.setComponents(components);
+        builder.setCustomFieldValues(customFieldValues);
 
         //TODO linked issues
         return builder.build();
@@ -152,26 +158,29 @@ public abstract class Issue {
      * for fields we are not interested in, in which case we don't care about the change, and return {@code null}.If
      * the issue is for a state, priority or issue type not configured, {@code null} will be returned, having
      * updated the 'missing' maps in Board.
-     *
-     * @param project the project the issue belongs to
+     *  @param project the project the issue belongs to
      * @param existing the issue to update
      * @param issueType the new issue type
      * @param priority the new issue priority
      * @param summary the new issue summary
      * @param issueAssignee the new issue assignee
      * @param issueComponents the new issue components
-     *@param state the state of the issue  @return the new issue
+     * @param state the state of the issue  @return the new issue
+     * @param customFieldValues the custom field values
      */
     static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
-                                    String summary, Assignee issueAssignee, Set<Component> issueComponents, String state) {
+                                    String summary, Assignee issueAssignee, Set<Component> issueComponents,
+                                    String state, Map<String, CustomFieldValue> customFieldValues) {
         if (existing instanceof BoardIssue == false) {
             return null;
         }
-        return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority, summary, issueAssignee, issueComponents, state);
+        return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority,
+                summary, issueAssignee, issueComponents, state, customFieldValues);
     }
 
     private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
-                                    String summary, Assignee issueAssignee, Set<Component> issueComponents, String state) {
+                                            String summary, Assignee issueAssignee, Set<Component> issueComponents,
+                                            String state, Map<String, CustomFieldValue> customFieldValues) {
         Builder builder = new Builder(project, existing);
         boolean changed = false;
         if (issueType != null) {
@@ -210,6 +219,10 @@ public abstract class Issue {
             changed = true;
             builder.setState(state);
         }
+        if (customFieldValues.size() > 0) {
+            changed = true;
+            builder.setCustomFieldValues(customFieldValues);
+        }
         if (changed) {
             return builder.build();
         }
@@ -226,16 +239,19 @@ public abstract class Issue {
         /** The index of the priority in the owning board config */
         private final Integer priorityIndex;
         private final List<LinkedIssue> linkedIssues;
+        private final Map<String, CustomFieldValue> customFieldValues;
 
         public BoardIssue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary,
                           Integer issueTypeIndex, Integer priorityIndex, Assignee assignee,
-                          Set<Component> components, List<LinkedIssue> linkedIssues) {
+                          Set<Component> components, List<LinkedIssue> linkedIssues,
+                          Map<String, CustomFieldValue> customFieldValues) {
             super(project, key, state, stateIndex, summary);
             this.issueTypeIndex = issueTypeIndex;
             this.priorityIndex = priorityIndex;
             this.assignee = assignee;
             this.components = components;
             this.linkedIssues = linkedIssues;
+            this.customFieldValues = customFieldValues;
         }
 
         boolean hasLinkedIssues() {
@@ -260,6 +276,12 @@ public abstract class Issue {
                 for (Component component : components) {
                     //This map will always be populated
                     issueNode.get(Constants.COMPONENTS).add(boardProject.getComponentIndex(component));
+                }
+            }
+            if (customFieldValues.size() > 0) {
+                ModelNode custom = issueNode.get(CUSTOM);
+                for (CustomFieldValue customFieldValue : customFieldValues.values()) {
+                    custom.get(customFieldValue.getCustomFieldName()).set(boardProject.getCustomFieldValueIndex(customFieldValue));
                 }
             }
             if (hasLinkedIssues()) {
@@ -306,7 +328,9 @@ public abstract class Issue {
         String state;
         Integer stateIndex;
         Set<LinkedIssue> linkedIssues;
-
+        //Will only be set for an update
+        Map<String, CustomFieldValue> originalCustomFieldValues;
+        Map<String, CustomFieldValue> customFieldValues;
 
         private Builder(BoardProject.Accessor project) {
             this.project = project;
@@ -335,6 +359,7 @@ public abstract class Issue {
             } else {
                 this.linkedIssues = Collections.emptySet();
             }
+            this.originalCustomFieldValues = existing.customFieldValues;
         }
 
         void load(com.atlassian.jira.issue.Issue issue) {
@@ -345,6 +370,9 @@ public abstract class Issue {
             setIssueType(issue.getIssueTypeObject().getName());
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
+
+            customFieldValues =
+                    CustomFieldValue.loadCustomFieldValues(project, issue);
 
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
             addLinkedIssues(issueLinkManager.getOutwardLinks(issue.getId()), true);
@@ -429,10 +457,43 @@ public abstract class Issue {
 
         Issue build() {
             if (issueTypeIndex != null && priorityIndex != null && stateIndex != null) {
-                List<LinkedIssue> linkedList = linkedIssues == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
-                return new BoardIssue(project.getConfig(), issueKey, state, stateIndex, summary, issueTypeIndex, priorityIndex, assignee, components, linkedList);
+                List<LinkedIssue> linkedList = linkedIssues == null ?
+                        Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
+
+                //Map<String, CustomFieldValue> builtCustomFieldValues
+                return new BoardIssue(
+                        project.getConfig(), issueKey, state, stateIndex, summary,
+                        issueTypeIndex, priorityIndex, assignee, components, linkedList,
+                        mergeCustomFieldValues());
             }
             return null;
+        }
+
+        private Map<String, CustomFieldValue> mergeCustomFieldValues() {
+            if (originalCustomFieldValues == null) {
+                //We are creating a new issue
+                return Collections.unmodifiableMap(customFieldValues);
+            } else {
+                if (customFieldValues == null) {
+                    return originalCustomFieldValues;
+                }
+                Map<String, CustomFieldValue> merged = new HashMap<>(originalCustomFieldValues);
+                for (Map.Entry<String, CustomFieldValue> entry : customFieldValues.entrySet()) {
+                    if (entry.getValue() == null) {
+                        merged.remove(entry.getKey());
+                    } else {
+                        merged.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                return Collections.unmodifiableMap(merged);
+            }
+        }
+
+        public Builder setCustomFieldValues(Map<String, CustomFieldValue> customFieldValues) {
+            if (customFieldValues != null) {
+                this.customFieldValues = customFieldValues;
+            }
+            return this;
         }
     }
  }

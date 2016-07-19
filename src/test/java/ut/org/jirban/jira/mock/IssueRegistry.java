@@ -46,7 +46,7 @@ import com.atlassian.jira.user.util.UserManager;
  */
 public class IssueRegistry {
     private final CrowdUserBridge userBridge;
-    private final Map<String, Map<String, Issue>> issuesByProject = new HashMap<>();
+    private final Map<String, Map<String, MockIssue>> issuesByProject = new HashMap<>();
 
     public IssueRegistry(UserManager userManager) {
         this.userBridge = new CrowdUserBridge(userManager);
@@ -54,7 +54,7 @@ public class IssueRegistry {
 
     public IssueRegistry addIssue(String projectCode, String issueType, String priority, String summary,
                                   String assignee, String[] components, String state) {
-        Map<String, Issue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
+        Map<String, MockIssue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
         String issueKey = projectCode + "-" + (issues.size() + 1);
         issues.put(issueKey, new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
                 userBridge.getUserByKey(assignee), MockProjectComponent.createProjectComponents(components), MockStatus.create(state)));
@@ -64,7 +64,7 @@ public class IssueRegistry {
 
     public void updateIssue(String issueKey, String projectCode, String issueTypeName, String priorityName,
                             String summary, String assignee, String[] components, String state) {
-        Map<String, Issue> issues = issuesByProject.get(projectCode);
+        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
         Assert.assertNotNull(issues);
         Issue issue = issues.get(issueKey);
         Assert.assertNotNull(issue);
@@ -81,9 +81,19 @@ public class IssueRegistry {
         }
         Status status = state == null ? issue.getStatusObject() : MockStatus.create(state);
 
-        Issue newIssue = new MockIssue(issueKey, issueType, priority, summ,
+        MockIssue newIssue = new MockIssue(issueKey, issueType, priority, summ,
                 assigneeUser, comps, status);
         issues.put(issueKey, newIssue);
+    }
+
+    public void setCustomField(String issueKey, Long customFieldId, Object value) {
+        String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
+        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
+        Assert.assertNotNull(issues);
+        MockIssue issue = issues.get(issueKey);
+        Assert.assertNotNull(issue);
+
+        issue.setCustomField(customFieldId, value);
     }
 
 
@@ -92,7 +102,7 @@ public class IssueRegistry {
             String projectCode = searchIssueKey.substring(0, searchIssueKey.indexOf("-"));
             return Collections.singletonList(getIssue(projectCode, searchIssueKey));
         }
-        Map<String, Issue> issues = issuesByProject.get(project);
+        Map<String, MockIssue> issues = issuesByProject.get(project);
         if (issues == null) {
             return Collections.emptyList();
         }
@@ -111,7 +121,7 @@ public class IssueRegistry {
     }
 
     public Issue getIssue(String projectCode, String issueKey) {
-        Map<String, Issue> issues = issuesByProject.get(projectCode);
+        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
         return issues.get(issueKey);
     }
 }
