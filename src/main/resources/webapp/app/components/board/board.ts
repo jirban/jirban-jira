@@ -40,7 +40,7 @@ export class BoardComponent implements OnDestroy, OnInit {
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
     private boardLeftOffset:number = 0;
 
-    private _defaultPollInterval:number = 3000;
+    private _defaultPollInterval:number = 30000;
 
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
