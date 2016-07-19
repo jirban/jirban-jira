@@ -76,7 +76,6 @@ public class BoardConfig {
     private final Map<String, NameAndUrl> issueTypes;
     private final Map<String, Integer> issueTypeIndex;
     private final List<String> issueTypeNames;
-    private String stateHelpTexts;
 
     private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
                         int rankCustomFieldId,
