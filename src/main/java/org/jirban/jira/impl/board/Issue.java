@@ -116,8 +116,8 @@ public abstract class Issue {
      * @param project the builder for the project containing the issues
      * @return the builder
      */
-    static Builder builder(BoardProject.Accessor project) {
-        return new Builder(project);
+    static Builder builder(BoardProject.Accessor project, IssueLoadStrategy issueLoadStrategy) {
+        return new Builder(project, issueLoadStrategy);
     }
 
     /**
@@ -319,32 +319,38 @@ public abstract class Issue {
     static class Builder {
         private final BoardProject.Accessor project;
 
-        String issueKey;
-        String summary;
-        Assignee assignee;
-        Set<Component> components;
-        Integer issueTypeIndex;
-        Integer priorityIndex;
-        String state;
-        Integer stateIndex;
-        Set<LinkedIssue> linkedIssues;
+        private final IssueLoadStrategy issueLoadStrategy;
+        private String issueKey;
+        private String summary;
+        private Assignee assignee;
+        private Set<Component> components;
+        private Integer issueTypeIndex;
+        private Integer priorityIndex;
+        private String state;
+        private Integer stateIndex;
+        private Set<LinkedIssue> linkedIssues;
         //Will only be set for an update
-        Map<String, CustomFieldValue> originalCustomFieldValues;
-        Map<String, CustomFieldValue> customFieldValues;
+        private Map<String, CustomFieldValue> originalCustomFieldValues;
+        private Map<String, CustomFieldValue> customFieldValues;
 
-        private Builder(BoardProject.Accessor project) {
+        private Builder(BoardProject.Accessor project, IssueLoadStrategy issueLoadStrategy) {
             this.project = project;
             this.issueKey = null;
+            this.issueLoadStrategy = issueLoadStrategy == null ? new LazyLoadStrategy(project) : issueLoadStrategy;
         }
 
         private Builder(BoardProject.Accessor project, String issueKey) {
+            //Used when handling a create event for an issue
             this.project = project;
             this.issueKey = issueKey;
+            this.issueLoadStrategy = new LazyLoadStrategy(project);
         }
 
         private Builder(BoardProject.Accessor project, BoardIssue existing) {
+            //Used when handling an update event for an issue
             this.project = project;
             this.issueKey = existing.getKey();
+            this.issueLoadStrategy = new LazyLoadStrategy(project);
             this.summary = existing.getSummary();
             this.assignee = existing.assignee;
             this.components = existing.components;
@@ -371,13 +377,15 @@ public abstract class Issue {
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
 
-            customFieldValues =
-                    CustomFieldValue.loadCustomFieldValues(project, issue);
+            //Load the custom fields
+            issueLoadStrategy.handle(issue, this);
 
             final IssueLinkManager issueLinkManager = project.getIssueLinkManager();
             addLinkedIssues(issueLinkManager.getOutwardLinks(issue.getId()), true);
             addLinkedIssues(issueLinkManager.getInwardLinks(issue.getId()), false);
         }
+
+
 
         private Builder setIssueKey(String issueKey) {
             this.issueKey = issueKey;
@@ -456,6 +464,7 @@ public abstract class Issue {
         }
 
         Issue build() {
+            issueLoadStrategy.finish();
             if (issueTypeIndex != null && priorityIndex != null && stateIndex != null) {
                 List<LinkedIssue> linkedList = linkedIssues == null ?
                         Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(linkedIssues));
@@ -472,7 +481,7 @@ public abstract class Issue {
         private Map<String, CustomFieldValue> mergeCustomFieldValues() {
             if (originalCustomFieldValues == null) {
                 //We are creating a new issue
-                return Collections.unmodifiableMap(customFieldValues);
+                return customFieldValues == null ? Collections.emptyMap() : Collections.unmodifiableMap(customFieldValues);
             } else {
                 if (customFieldValues == null) {
                     return originalCustomFieldValues;
@@ -494,6 +503,37 @@ public abstract class Issue {
                 this.customFieldValues = customFieldValues;
             }
             return this;
+        }
+
+        String getIssueKey() {
+            return issueKey;
+        }
+    }
+
+    /**
+     * <p>Loads up things like custom fields using the entities. This is done lazily for each issue, and is
+     * fine when we are handling events to create or update entities.</p>
+     * <p>This is not suitable for loading the full board, since the lazy loading results in an extra sql
+     * query behind the scenes for every single custom field, for every single issue. When loading the full board
+     * we instead do a bulk load to avoid this performance overhead.</p>
+     * <p>For unit tests we currently use the lazy loading mechanism to load the custom fields, this is mainly
+     * to avoid having to set up the mocks at present.</p>
+     */
+    private static class LazyLoadStrategy implements IssueLoadStrategy {
+        private final BoardProject.Accessor project;
+
+        private LazyLoadStrategy(BoardProject.Accessor project) {
+            this.project = project;
+        }
+
+        @Override
+        public void handle(com.atlassian.jira.issue.Issue issue, Builder builder) {
+            builder.setCustomFieldValues(CustomFieldValue.loadCustomFieldValues(project, issue));
+        }
+
+        @Override
+        public void finish() {
+
         }
     }
  }

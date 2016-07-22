@@ -271,11 +271,11 @@ public class BoardConfig {
         return customFieldConfigsByJiraName.get(jiraCustomFieldName);
     }
 
-    public CustomFieldConfig getCustomFieldConfigForJirbanId(String jirbanName) {
+    public CustomFieldConfig getCustomFieldConfigForJirbanName(String jirbanName) {
         return customFieldConfigsByJirbanName.get(jirbanName);
     }
 
-    public CustomFieldConfig getCustomFieldConfigForJirbanId(Long jiraId) {
+    public CustomFieldConfig getCustomFieldConfigForJirbanName(Long jiraId) {
         return customFieldConfigsByJiraId.get(jiraId);
     }
     /**

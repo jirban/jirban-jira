@@ -39,7 +39,7 @@ public class CustomFieldValue {
 
         final Map<String, CustomFieldValue> fields = new HashMap<>(customFieldNames.size());
         for (String customFieldName : customFieldNames) {
-            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfigForJirbanId(customFieldName);
+            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfigForJirbanName(customFieldName);
             Object customFieldValue = issue.getCustomFieldValue(customFieldConfig.getJiraCustomField());
             if (customFieldValue == null) {
                 continue;
@@ -58,7 +58,7 @@ public class CustomFieldValue {
 
         final Map<String, CustomFieldValue> fields = new HashMap<>(customFieldNames.size());
         for (String customFieldName : customFieldNames) {
-            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfigForJirbanId(customFieldName);
+            CustomFieldConfig customFieldConfig = project.getBoard().getConfig().getCustomFieldConfigForJirbanName(customFieldName);
             String value = customFieldValues.get(customFieldConfig.getId());
 
             if (value != null) {

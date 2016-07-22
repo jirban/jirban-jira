@@ -60,6 +60,7 @@ public abstract class CustomFieldUtil {
         public String getUpdateEventValue(String changeKey, String changeValue) {
             return changeKey;
         }
+
     };
 
     public static final CustomFieldUtil VERSION = new CustomFieldUtil() {
@@ -87,5 +88,7 @@ public abstract class CustomFieldUtil {
         public String getUpdateEventValue(String changeKey, String changeValue) {
             return changeValue;
         }
+
     };
+
 }

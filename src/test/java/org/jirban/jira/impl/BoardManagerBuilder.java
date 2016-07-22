@@ -34,6 +34,7 @@ import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.project.version.VersionManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.util.UserManager;
@@ -104,6 +105,7 @@ public class BoardManagerBuilder {
         final IssueTypeManager issueTypeManager = null;
         final PriorityManager priorityManager = null;
         final UserService userService = null;
+        final VersionManager versionManager = null;
 
         JiraInjectables jiraInjectables = new JiraInjectables(
                 activeObjects,
@@ -118,7 +120,8 @@ public class BoardManagerBuilder {
                 projectManager,
                 priorityManager,
                 searchService,
-                userService);
+                userService,
+                versionManager);
 
         return new BoardManagerImpl(jiraInjectables, boardConfigurationManager);
     }

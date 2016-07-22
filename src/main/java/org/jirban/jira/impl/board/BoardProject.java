@@ -294,14 +294,21 @@ public class BoardProject {
             SearchResults searchResults =
                         searchService.search(boardOwner.getDirectoryUser(), query, PagerFilter.getUnlimitedFilter());
 
+            final BulkIssueLoadStrategy issueLoadStrategy = BulkIssueLoadStrategy.create(this);
+            List<Issue.Builder> issueBuilders = new ArrayList<>();
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
-                Issue.Builder issueBuilder = Issue.builder(this);
+                Issue.Builder issueBuilder = Issue.builder(this, issueLoadStrategy);
                 issueBuilder.load(jiraIssue);
+                issueBuilders.add(issueBuilder);
+            }
+
+            for (Issue.Builder issueBuilder : issueBuilders) {
                 Issue issue = issueBuilder.build();
                 if (issue != null) {
                     addIssue(issue.getState(), issue);
                 }
             }
+
         }
 
         BoardProject build() {
@@ -382,7 +389,7 @@ public class BoardProject {
                 JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - no issue found");
                 return null;
             }
-            Issue.Builder issueBuilder = Issue.builder(this);
+            Issue.Builder issueBuilder = Issue.builder(this, null);
             issueBuilder.load(issues.get(0));
             newIssue = issueBuilder.build();
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - found {}", newIssue);

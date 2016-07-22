@@ -1,14 +1,11 @@
 package org.jirban.jira.impl.board;
 
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.sql.Types;
 import java.util.function.Function;
 
 import org.jboss.dmr.ModelNode;
-import org.ofbiz.core.entity.GenericEntityException;
 import org.ofbiz.core.entity.jdbc.SQLProcessor;
 import org.osgi.framework.BundleReference;
 
@@ -29,26 +26,6 @@ public class RawSqlLoader {
             return new RawSqlLoader(dataSourceName);
         }
         return null;
-    }
-
-    public void loadCustomFields() {
-        SQLProcessor sqlProcessor = new SQLProcessor(dataSourceName);
-        final Connection connection;
-        try {
-            connection = sqlProcessor.getConnection();
-        } catch (GenericEntityException e) {
-            e.printStackTrace();
-            return;
-        }
-        try {
-            //TODO use datasource
-        } finally {
-            try {
-                connection.close();
-            } catch (SQLException ignore) {
-            }
-
-        }
     }
 
     public ModelNode executeQuery(String sql) {
