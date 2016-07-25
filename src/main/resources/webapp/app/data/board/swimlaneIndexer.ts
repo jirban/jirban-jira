@@ -48,7 +48,7 @@ export class SwimlaneIndexerFactory {
             return new AssigneeSwimlaneIndexer(filters, boardData, initTable);
         } else if (swimlane === "component") {
             return new ComponentSwimlaneIndexer(filters, boardData, initTable);
-        } else {
+        } else if (swimlane) {
             let cfvs:CustomFieldValues = boardData.customFields.forKey(swimlane);
             if (cfvs) {
                 return new CustomFieldSwimlaneIndexer(filters, boardData, initTable, swimlane, cfvs.values);
