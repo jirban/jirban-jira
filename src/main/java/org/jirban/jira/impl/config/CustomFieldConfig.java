@@ -22,12 +22,13 @@ public abstract class CustomFieldConfig {
     private final String name;
     private final Type type;
     private final CustomField customField;
+    private final CustomFieldUtil util;
 
-
-    protected CustomFieldConfig(String name, Type type, CustomField customField) {
+    protected CustomFieldConfig(String name, Type type, CustomField customField, CustomFieldUtil util) {
         this.name = name;
         this.type = type;
         this.customField = customField;
+        this.util = util;
     }
 
     public String getName() {
@@ -41,8 +42,6 @@ public abstract class CustomFieldConfig {
     public CustomField getJiraCustomField() {
         return customField;
     }
-
-    public abstract CustomFieldUtil getUtil();
 
     public static CustomFieldConfig load(CustomFieldManager customFieldMgr, ModelNode customFieldCfgNode) {
         if (!customFieldCfgNode.hasDefined(NAME)) {
@@ -115,6 +114,10 @@ public abstract class CustomFieldConfig {
         result = 31 * result + type.hashCode();
         result = 31 * result + customField.getIdAsLong().intValue();
         return result;
+    }
+
+    public CustomFieldUtil getUtil() {
+        return util;
     }
 
     public enum Type {

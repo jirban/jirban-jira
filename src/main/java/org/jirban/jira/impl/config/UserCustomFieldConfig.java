@@ -9,11 +9,6 @@ import com.atlassian.jira.issue.fields.CustomField;
  */
 public class UserCustomFieldConfig extends CustomFieldConfig {
     UserCustomFieldConfig(String name, Type type, CustomField customField) {
-        super(name, type, customField);
-    }
-
-    @Override
-    public CustomFieldUtil getUtil() {
-        return CustomFieldUtil.USER;
+        super(name, type, customField, CustomFieldUtil.USER);
     }
 }

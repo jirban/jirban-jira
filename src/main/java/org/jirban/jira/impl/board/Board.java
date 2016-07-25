@@ -286,6 +286,8 @@ public class Board {
         public BoardConfig getConfig() {
             return boardConfig;
         }
+
+        public abstract void addBulkLoadedCustomFieldValue(CustomFieldConfig config, CustomFieldValue value);
     }
 
     private static Map<String, Assignee> sortAssignees(Map<String, Assignee> assignees) {
@@ -390,6 +392,14 @@ public class Board {
         Issue getIssue(String issueKey) {
             //Should not get called for this code path
             throw new IllegalStateException();
+        }
+
+        @Override
+        public void addBulkLoadedCustomFieldValue(CustomFieldConfig customFieldConfig, CustomFieldValue value) {
+            final SortedCustomFieldValues.Builder customFieldBuilder =
+                    customFieldBuilders.computeIfAbsent(customFieldConfig.getId(), id -> new SortedCustomFieldValues.Builder(customFieldConfig));
+            customFieldBuilder.addBulkLoadedCustomFieldValue(value);
+
         }
 
         @Override
@@ -713,6 +723,12 @@ public class Board {
 
         @Override
         CustomFieldValue getCustomFieldValue(CustomFieldConfig customFieldConfig, Object fieldValue) {
+            //Should not get called for this code path
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public void addBulkLoadedCustomFieldValue(CustomFieldConfig config, CustomFieldValue value) {
             //Should not get called for this code path
             throw new IllegalStateException();
         }

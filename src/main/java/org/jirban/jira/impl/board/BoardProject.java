@@ -161,7 +161,7 @@ public class BoardProject {
         return true;
     }
 
-    static class Accessor {
+    public static class Accessor {
         protected final JiraInjectables jiraInjectables;
         protected final Board.Accessor board;
         protected final BoardProjectConfig projectConfig;
@@ -253,7 +253,7 @@ public class BoardProject {
     /**
      * Used to load a project when creating a new board
      */
-    static class Builder extends Accessor {
+    public static class Builder extends Accessor {
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
@@ -322,6 +322,10 @@ public class BoardProject {
             }
 
             return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
+        }
+
+        public void addBulkLoadedCustomFieldValue(CustomFieldConfig customFieldConfig, CustomFieldValue value) {
+            board.addBulkLoadedCustomFieldValue(customFieldConfig, value);
         }
     }
 

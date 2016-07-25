@@ -29,7 +29,7 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
 
     private final String dataSourceName = "defaultDS";
     private final BoardProject.Builder project;
-    private final Map<Long, CustomFieldConfig> customFields = new HashMap<>();
+    private final Map<Long, BulkLoadContext<?>> customFieldContexts = new HashMap<>();
     private final List<Long> ids = new ArrayList<>();
     private final Map<Long, String> issues = new HashMap<>();
     private final Map<Long, Issue.Builder> builders = new HashMap<>();
@@ -40,7 +40,9 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
         for (String cfName : project.getConfig().getCustomFieldNames()) {
             CustomFieldConfig customFieldConfig =
                     project.getBoard().getConfig().getCustomFieldConfigForJirbanName(cfName);
-            customFields.put(customFieldConfig.getId(), customFieldConfig);
+            BulkLoadContext<?> ctx =
+                    customFieldConfig.getUtil().createBulkLoadContext(project.getJiraInjectables(), customFieldConfig);
+            customFieldContexts.put(customFieldConfig.getId(), ctx);
         }
     }
 
@@ -88,18 +90,17 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
         for (int i = 0 ; i < ids.size() ; i++) {
             idBatch.add(ids.get(i));
             if (idBatch.size() == BATCH_SIZE) {
-                loadDataForBatch(sqlProcessor, customFields, idBatch);
+                loadDataForBatch(sqlProcessor, idBatch);
                 idBatch.clear();
             }
         }
         if (idBatch.size() > 0) {
-            loadDataForBatch(sqlProcessor, customFields, idBatch);
+            loadDataForBatch(sqlProcessor, idBatch);
         }
     }
 
-    private void loadDataForBatch(SQLProcessor sqlProcessor,
-                                  Map<Long, CustomFieldConfig> customFields, List<Long> idBatch) {
-        final String sql = createSql(customFields, idBatch);
+    private void loadDataForBatch(SQLProcessor sqlProcessor, List<Long> idBatch) {
+        final String sql = createSql(idBatch);
 
         try (final ResultSet rs = sqlProcessor.executeQuery(sql)){
             while (rs.next()) {
@@ -111,27 +112,28 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
                     numValue = null;
                 }
 
-                processCustomFieldValue(customFields, issueId, customFieldId, stringValue, numValue);
+                processCustomFieldValue(issueId, customFieldId, stringValue, numValue);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void processCustomFieldValue(Map<Long, CustomFieldConfig> customFields, Long issueId, Long customFieldId, String stringValue, Long numValue) {
+    private void processCustomFieldValue(Long issueId, Long customFieldId, String stringValue, Long numValue) {
         Issue.Builder builder = builders.get(issueId);
-        CustomFieldConfig customFieldConfig = customFields.get(customFieldId);
+        BulkLoadContext<?> bulkLoadContext = customFieldContexts.get(customFieldId);
 
-        System.out.println("Loaded for " + builder.getIssueKey() + " " + stringValue + " " + numValue);
-
-        //TODO load the data
-        //How we do this depends on the custom field type (i.e. use the util)
-        //For the user fields, we should check the existing users in the board, and use that first. If it does not exist, we need to load it
-        //For the version fields, we need a cache of id->string. Check existing versions in the board first, if it does not exist we need to load it.
-        //CustomFieldValue value = customFieldConfig.getUtil().loadBulkLoadedValue(project, customFieldConfig, stringValue, numValue);
+        CustomFieldValue value = bulkLoadContext.getCachedCustomFieldValue(stringValue, numValue);
+        if (value == null) {
+            value = bulkLoadContext.loadAndCacheCustomFieldValue(stringValue, numValue);
+            //Add the loaded custom field value to board
+            project.addBulkLoadedCustomFieldValue(bulkLoadContext.getConfig(), value);
+        }
+        //Add the custom field to the issue
+        builder.addCustomFieldValue(value);
     }
 
-    private String createSql(Map<Long, CustomFieldConfig> customFields, List<Long> idBatch) {
+    private String createSql(List<Long> idBatch) {
         StringBuilder sb = new StringBuilder()
                 .append("select j.id, cv.customfield, cv.stringvalue, cv.numbervalue ")
                 .append("from project p, jiraissue j, customfieldvalue cv ")
@@ -141,7 +143,7 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
                 .append("customfield in (");
 
         boolean first = true;
-        for (Long cfId : customFields.keySet()) {
+        for (Long cfId : customFieldContexts.keySet()) {
             if (first) {
                 first = false;
             } else {

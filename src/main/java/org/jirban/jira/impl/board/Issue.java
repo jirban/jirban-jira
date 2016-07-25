@@ -498,16 +498,25 @@ public abstract class Issue {
             }
         }
 
-        public Builder setCustomFieldValues(Map<String, CustomFieldValue> customFieldValues) {
+        Builder setCustomFieldValues(Map<String, CustomFieldValue> customFieldValues) {
             if (customFieldValues != null) {
                 this.customFieldValues = customFieldValues;
             }
             return this;
         }
 
+        Builder addCustomFieldValue(CustomFieldValue value) {
+            if (customFieldValues == null) {
+                customFieldValues = new HashMap<>();
+            }
+            customFieldValues.put(value.getKey(), value);
+            return this;
+        }
+
         String getIssueKey() {
             return issueKey;
         }
+
     }
 
     /**
