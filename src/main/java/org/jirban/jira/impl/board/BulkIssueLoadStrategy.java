@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.ofbiz.core.entity.jdbc.SQLProcessor;
 import org.osgi.framework.BundleReference;
@@ -120,6 +121,8 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
     }
 
     private void processCustomFieldValue(Long issueId, Long customFieldId, String stringValue, Long numValue) {
+        JirbanLogger.LOGGER.trace("Processing bulk issue {}. customFieldId:{}, stringValue:{}, numValue:{}",
+                issueId, customFieldId, stringValue, numValue);
         Issue.Builder builder = builders.get(issueId);
         BulkLoadContext<?> bulkLoadContext = customFieldContexts.get(customFieldId);
 
@@ -164,7 +167,9 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
         }
         sb.append(")");
 
-        return sb.toString();
+        final String sql = sb.toString();
+        JirbanLogger.LOGGER.debug("SQL query: {}", sql);
+        return sql;
     }
 
 }
