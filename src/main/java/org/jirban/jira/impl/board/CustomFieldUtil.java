@@ -25,7 +25,9 @@ public abstract class CustomFieldUtil {
 
     public abstract String getUpdateEventValue(String changeKey, String changeValue);
 
-    Map<String, CustomFieldValue> sortFields(Map<String, CustomFieldValue> fields) {
+    abstract BulkLoadContext<?> createBulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig);
+
+    public Map<String, CustomFieldValue> sortFields(Map<String, CustomFieldValue> fields) {
         List<CustomFieldValue> fieldValues = new ArrayList<>(fields.values());
         Collections.sort(fieldValues, Comparator.comparing(CustomFieldValue::getValueForComparator, String.CASE_INSENSITIVE_ORDER));
         LinkedHashMap<String, CustomFieldValue> result = new LinkedHashMap<>();
@@ -37,12 +39,12 @@ public abstract class CustomFieldUtil {
 
     public static final CustomFieldUtil USER = new CustomFieldUtil() {
         @Override
-        CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
+        public CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
             return UserCustomFieldValue.load(customFieldConfig, customFieldValue);
         }
 
         @Override
-        String getKey(Object fieldValue) {
+        public String getKey(Object fieldValue) {
             return UserCustomFieldValue.getKeyForValue(fieldValue);
         }
 
@@ -52,7 +54,7 @@ public abstract class CustomFieldUtil {
         }
 
         @Override
-        CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
+        public CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
             return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
         }
 
@@ -60,16 +62,31 @@ public abstract class CustomFieldUtil {
         public String getUpdateEventValue(String changeKey, String changeValue) {
             return changeKey;
         }
+
+        @Override
+        BulkLoadContext<?> createBulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig) {
+            return new BulkLoadContext<String>(jiraInjectables, customFieldConfig) {
+                @Override
+                String getCacheKey(String stringValue, Long numericValue) {
+                    return stringValue;
+                }
+
+                @Override
+                CustomFieldValue loadCustomFieldValue(String key) {
+                    return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+                }
+            };
+        }
     };
 
     public static final CustomFieldUtil VERSION = new CustomFieldUtil() {
         @Override
-        CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
+        public CustomFieldValue loadCustomField(CustomFieldConfig customFieldConfig, Object customFieldValue) {
             return VersionCustomFieldValue.load(customFieldConfig, customFieldValue);
         }
 
         @Override
-        String getKey(Object fieldValue) {
+        public String getKey(Object fieldValue) {
             return VersionCustomFieldValue.getKeyForValue(fieldValue);
         }
 
@@ -79,13 +96,28 @@ public abstract class CustomFieldUtil {
         }
 
         @Override
-        CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
-            return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+        public CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
+            return VersionCustomFieldValue.load(customFieldConfig, key);
         }
 
         @Override
         public String getUpdateEventValue(String changeKey, String changeValue) {
             return changeValue;
+        }
+
+        @Override
+        BulkLoadContext<?> createBulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig) {
+            return new BulkLoadContext<Long>(jiraInjectables, customFieldConfig) {
+                @Override
+                Long getCacheKey(String stringValue, Long numericValue) {
+                    return numericValue;
+                }
+
+                @Override
+                CustomFieldValue loadCustomFieldValue(Long id) {
+                    return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, id);
+                }
+            };
         }
     };
 }

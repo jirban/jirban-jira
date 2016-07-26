@@ -67,9 +67,12 @@ public class SortedCustomFieldValues {
         }
 
         CustomFieldValue getCustomFieldValue(Object customFieldValue) {
-            final CustomFieldUtil util = config.getUtil();
             return fields.computeIfAbsent(
-                    util.getKey(customFieldValue), s -> util.loadCustomField(config, customFieldValue));
+                    config.getUtil().getKey(customFieldValue), s -> config.getUtil().loadCustomField(config, customFieldValue));
+        }
+
+        void addBulkLoadedCustomFieldValue(CustomFieldValue customFieldValue) {
+            fields.put(customFieldValue.getKey(), customFieldValue);
         }
 
         SortedCustomFieldValues build() {
@@ -84,9 +87,8 @@ public class SortedCustomFieldValues {
         }
 
         CustomFieldValue getCustomFieldValue(JiraInjectables jiraInjectables, String key) {
-            final CustomFieldUtil util = config.getUtil();
             return fields.computeIfAbsent(
-                    key, s -> util.loadCustomFieldFromKey(jiraInjectables, config, key));
+                    key, s -> config.getUtil().loadCustomFieldFromKey(jiraInjectables, config, key));
         }
 
         static Map<String, SortedCustomFieldValues> merge(Map<Long, SortedCustomFieldValues.Updater> updates, Map<String, SortedCustomFieldValues> original) {

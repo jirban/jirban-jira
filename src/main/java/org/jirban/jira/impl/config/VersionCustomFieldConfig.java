@@ -9,12 +9,6 @@ import com.atlassian.jira.issue.fields.CustomField;
  */
 public class VersionCustomFieldConfig extends CustomFieldConfig {
     VersionCustomFieldConfig(String name, Type type, CustomField customField) {
-        super(name, type, customField);
+        super(name, type, customField, CustomFieldUtil.VERSION);
     }
-
-    @Override
-    public CustomFieldUtil getUtil() {
-        return CustomFieldUtil.VERSION;
-    }
-
 }

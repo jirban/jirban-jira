@@ -14,6 +14,7 @@ import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.project.version.VersionManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.util.UserManager;
@@ -55,17 +56,22 @@ public class JiraInjectables {
     @ComponentImport
     private final ProjectManager projectManager;
 
+
     @ComponentImport
     private final PriorityManager priorityManager;
 
     @ComponentImport
     private final SearchService searchService;
 
-    //Jira does not like injecting this one, so use the ComponentAccessor
-    private volatile UserManager jiraUserManager;
-
     @ComponentImport
     private final UserService userService;
+
+    @ComponentImport
+    private final VersionManager versionManager;
+
+
+    //Jira does not like injecting this one, so use the ComponentAccessor
+    private volatile UserManager jiraUserManager;
 
 
     @Inject
@@ -75,7 +81,7 @@ public class JiraInjectables {
                            final IssueLinkManager issueLinkManager, final IssueTypeManager issueTypeManager,
                            final PermissionManager permissionManager, final ProjectManager projectManager,
                            final PriorityManager priorityManager, final SearchService searchService,
-                           final UserService userService) {
+                           final UserService userService, final VersionManager versionManager) {
         this.activeObjects = activeObjects;
         this.applicationProperties = applicationProperties;
         this.avatarService = avatarService;
@@ -89,6 +95,7 @@ public class JiraInjectables {
         this.priorityManager = priorityManager;
         this.searchService = searchService;
         this.userService = userService;
+        this.versionManager = versionManager;
     }
 
     public ActiveObjects getActiveObjects() {
@@ -148,5 +155,9 @@ public class JiraInjectables {
 
     public UserService getUserService() {
         return userService;
+    }
+
+    public VersionManager getVersionManager() {
+        return versionManager;
     }
 }

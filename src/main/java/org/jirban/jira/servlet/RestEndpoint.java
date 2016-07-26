@@ -44,8 +44,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.JiraFacade;
 import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.board.RawSqlLoader;
 
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.issue.search.SearchException;
@@ -178,6 +180,40 @@ public class RestEndpoint {
         jiraFacade.saveCustomFieldId(user, ModelNode.fromJSONString(value));
         String json = "{}";
         return createResponse(json);
+    }
+
+    @POST
+    @Path("db-explorer")
+    public Response executeSql(@Context HttpServletRequest req, String queryJson) {
+        ApplicationUser user = getUser();
+
+        //Some lockdown of urls and users
+        boolean valid = false;
+        final String host = req.getHeader("host");
+        if (host != null) {
+            if (host.startsWith("localhost")) {
+                if (user.getKey().equals("admin")) {
+                    valid = true;
+                }
+            } else if (host.equals("issues.stage.jboss.org")) {
+                if (user.getKey().equals("kabirkhan")) {
+                    valid = true;
+                }
+            }
+        }
+        if (!valid) {
+            throw new JirbanValidationException("You are not allowed to execute sql queries on this server");
+        }
+
+        ModelNode node = ModelNode.fromJSONString(queryJson);
+        String sql = node.get("sql").asString().trim();
+        if (!sql.toUpperCase().startsWith("SELECT")) {
+            throw new JirbanValidationException("Only select statements are allowed");
+        }
+
+        //TODO configure this if needed
+        RawSqlLoader loader = RawSqlLoader.create("defaultDS");
+        return createResponse(loader.executeQuery(sql).toJSONString(true));
     }
 
 

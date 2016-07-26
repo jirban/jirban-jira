@@ -161,7 +161,7 @@ public class BoardProject {
         return true;
     }
 
-    static class Accessor {
+    public static class Accessor {
         protected final JiraInjectables jiraInjectables;
         protected final Board.Accessor board;
         protected final BoardProjectConfig projectConfig;
@@ -253,7 +253,7 @@ public class BoardProject {
     /**
      * Used to load a project when creating a new board
      */
-    static class Builder extends Accessor {
+    public static class Builder extends Accessor {
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
@@ -294,14 +294,21 @@ public class BoardProject {
             SearchResults searchResults =
                         searchService.search(boardOwner.getDirectoryUser(), query, PagerFilter.getUnlimitedFilter());
 
+            final BulkIssueLoadStrategy issueLoadStrategy = BulkIssueLoadStrategy.create(this);
+            List<Issue.Builder> issueBuilders = new ArrayList<>();
             for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
-                Issue.Builder issueBuilder = Issue.builder(this);
+                Issue.Builder issueBuilder = Issue.builder(this, issueLoadStrategy);
                 issueBuilder.load(jiraIssue);
+                issueBuilders.add(issueBuilder);
+            }
+
+            for (Issue.Builder issueBuilder : issueBuilders) {
                 Issue issue = issueBuilder.build();
                 if (issue != null) {
                     addIssue(issue.getState(), issue);
                 }
             }
+
         }
 
         BoardProject build() {
@@ -315,6 +322,10 @@ public class BoardProject {
             }
 
             return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
+        }
+
+        public void addBulkLoadedCustomFieldValue(CustomFieldConfig customFieldConfig, CustomFieldValue value) {
+            board.addBulkLoadedCustomFieldValue(customFieldConfig, value);
         }
     }
 
@@ -382,7 +393,7 @@ public class BoardProject {
                 JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - no issue found");
                 return null;
             }
-            Issue.Builder issueBuilder = Issue.builder(this);
+            Issue.Builder issueBuilder = Issue.builder(this, null);
             issueBuilder.load(issues.get(0));
             newIssue = issueBuilder.build();
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - found {}", newIssue);

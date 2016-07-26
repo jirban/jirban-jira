@@ -50,29 +50,41 @@ export class ProgressErrorService {
         } else if (error.status == 404) {
             err = "The requested resource could not be found.";
         } else {
-            if (typeof error === "string") {
-                err = error;
-            } else if (typeof error === "object") {
-                err = error.message;
-                if (!err) {
-                    let body = error._body;
-                    if (body) {
-                        body = JSON.parse(body);
-                        if (body.message) {
-                            err = body.message;
-                        } else {
-                            err = JSON.stringify(body);
-                        }
-                    } else {
-                        err = JSON.stringify(error);
-                    }
-                }
-            }
+            err = ProgressErrorService.parseErrorString(error);
         }
         this._progress = false;
         this._error = err;
     }
 
+    static parseErrorCodeAndString(error:any):string {
+        let err = error.status;
+        err += ": ";
+        err += ProgressErrorService.parseErrorString(error);
+        return err;
+    }
+
+    private static parseErrorString(error:any):string {
+        let err:string;
+        if (typeof error === "string") {
+            err = error;
+        } else if (typeof error === "object") {
+            err = error.message;
+            if (!err) {
+                let body = error._body;
+                if (body) {
+                    body = JSON.parse(body);
+                    if (body.message) {
+                        err = body.message;
+                    } else {
+                        err = JSON.stringify(body);
+                    }
+                } else {
+                    err = JSON.stringify(error);
+                }
+            }
+        }
+        return err;
+    }
     setErrorString(error:string) {
         console.log("Setting error: " + error);
         this._progress = false;
