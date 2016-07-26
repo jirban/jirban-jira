@@ -97,7 +97,7 @@ public abstract class CustomFieldUtil {
 
         @Override
         public CustomFieldValue loadCustomFieldFromKey(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
-            return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+            return VersionCustomFieldValue.load(customFieldConfig, key);
         }
 
         @Override
@@ -114,8 +114,8 @@ public abstract class CustomFieldUtil {
                 }
 
                 @Override
-                CustomFieldValue loadCustomFieldValue(Long key) {
-                    return null;
+                CustomFieldValue loadCustomFieldValue(Long id) {
+                    return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, id);
                 }
             };
         }

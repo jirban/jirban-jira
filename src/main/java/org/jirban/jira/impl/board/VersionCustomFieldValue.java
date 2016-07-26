@@ -19,8 +19,13 @@ public class VersionCustomFieldValue extends CustomFieldValue {
         return loadValue(config, (List<Version>)customFieldValue);
     }
 
-    public static CustomFieldValue load(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, String key) {
+    public static CustomFieldValue load(CustomFieldConfig customFieldConfig, String key) {
         return new VersionCustomFieldValue(customFieldConfig.getName(), key, key);
+    }
+
+    public static CustomFieldValue load(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig, Long id) {
+        final Version version = jiraInjectables.getVersionManager().getVersion(id);
+        return new VersionCustomFieldValue(customFieldConfig.getName(), version.getName(), version.getName());
     }
 
     private static VersionCustomFieldValue loadValue(CustomFieldConfig config, List<Version> customFieldValue) {
