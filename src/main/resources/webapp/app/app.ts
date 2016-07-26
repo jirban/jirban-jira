@@ -1,6 +1,6 @@
 //our root app component
 import {Component} from "@angular/core";
-import {RouteConfig, ROUTER_DIRECTIVES, Route, Router} from "@angular/router-deprecated";
+import {RouteConfig, ROUTER_DIRECTIVES, Route, Router, ComponentInstruction} from "@angular/router-deprecated";
 import {BoardComponent} from "./components/board/board";
 import {BoardsComponent} from "./components/boards/boards";
 import {ConfigComponent} from "./components/config/config";
@@ -58,12 +58,21 @@ export class App {
         this._progressError = progressError;
         this.loginUrl = RestUrlUtil.caclulateRestUrl("login.jsp");
 
-        router.subscribe((route:string) => {
+        router.subscribe((route:Route) => {
             //Hack to hide the body scroll bars on the board page.
             //This is only really necessary on FireFox on linux, where the board's table
             //seems have extra width added to allow for the scrollbars on the board's divs
             let showBodyScrollbars:boolean = true;
-            if (route.startsWith("board?board")) {
+
+            let instruction:ComponentInstruction = route["instruction"];
+            if (!instruction) {
+                throw new Error("No route name found");
+            }
+            let routeName:string = instruction["routeName"];
+            if (!routeName) {
+                throw new Error("No route name found");
+            }
+            if (routeName === "Board") {
                 showBodyScrollbars = false;
             }
             document.getElementsByTagName("body")[0].className = showBodyScrollbars ? "" : "no-scrollbars";
