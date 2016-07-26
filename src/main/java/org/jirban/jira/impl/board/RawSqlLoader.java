@@ -6,6 +6,7 @@ import java.sql.Types;
 import java.util.function.Function;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanValidationException;
 import org.ofbiz.core.entity.jdbc.SQLProcessor;
 import org.osgi.framework.BundleReference;
 
@@ -29,6 +30,10 @@ public class RawSqlLoader {
     }
 
     public ModelNode executeQuery(String sql) {
+        if (true) {
+            throw new JirbanValidationException("Db Explorer disabled");
+        }
+        
         if (!sql.contains("limit")) {
             //Limit the numbers, we don't want to crash the production instance while nosing around
             sql += " limit 100";
