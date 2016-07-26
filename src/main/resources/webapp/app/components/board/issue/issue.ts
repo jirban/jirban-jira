@@ -55,12 +55,13 @@ export class IssueComponent {
     }
 
     private showIssueContextMenuEvent(event : MouseEvent, issueId:string) {
+        event.preventDefault();
+        event.stopPropagation();
         this.issueContextMenu.emit({
             x: event.clientX,
             y: event.clientY,
             issueId: issueId
         })
-        event.preventDefault();
     }
 
     private defaultContextMenu(event:MouseEvent) {
