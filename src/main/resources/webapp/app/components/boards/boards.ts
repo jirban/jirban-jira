@@ -1,5 +1,5 @@
 import {Component} from "@angular/core";
-import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
+import {ROUTER_DIRECTIVES} from "@angular/router";
 import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {AppHeaderService} from "../../services/appHeaderService";

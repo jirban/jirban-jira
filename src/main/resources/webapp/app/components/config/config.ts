@@ -36,8 +36,7 @@ export class ConfigComponent {
                 private _formBuilder:FormBuilder, private _versionService:VersionService,
                 appHeaderService:AppHeaderService) {
         this.loadBoards();
-        appHeaderService.setTitle("Configuration of boards");
-
+        appHeaderService.setTitle("Configuration of boardsc");
     }
 
     private loadBoards() {

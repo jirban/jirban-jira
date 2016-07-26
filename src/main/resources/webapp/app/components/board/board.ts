@@ -1,5 +1,4 @@
 import {Component, OnDestroy} from "@angular/core";
-import {RouteParams} from "@angular/router-deprecated";
 import {IssuesService} from "../../services/issuesService";
 import {BoardData} from "../../data/board/boardData";
 import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
@@ -12,6 +11,7 @@ import {KanbanViewComponent} from "./view/kanban/kanbanview";
 import {RankViewComponent} from "./view/rank/rankview";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
+import {Router, ActivatedRoute} from "@angular/router";
 import Timer = NodeJS.Timer;
 
 
@@ -36,14 +36,17 @@ export class BoardComponent implements OnDestroy {
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService,
-                routeParams:RouteParams,
+                route:ActivatedRoute,
+                router:Router,
                 appHeader:AppHeaderService) {
         console.log("Create board");
-        let queryString:IMap<string> = routeParams.params;
-        this.boardCode = routeParams.get('board');
+        let params:IMap<string> = route.snapshot.params;
+        let queryString:IMap<string> = router.routerState.snapshot.queryParams;
+
+        this.boardCode = params['board'];
         appHeader.setTitle("Board (" + this.boardCode + ")");
 
-        let view = routeParams.get('view');
+        let view = appHeader['view'];
         if (view) {
             this.view = view;
             if (view === VIEW_RANK) {

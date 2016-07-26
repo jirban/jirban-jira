@@ -1,14 +1,10 @@
 //our root app component
 import {Component} from "@angular/core";
-import {RouteConfig, ROUTER_DIRECTIVES, Route, Router} from "@angular/router-deprecated";
 import {BoardComponent} from "./components/board/board";
-import {BoardsComponent} from "./components/boards/boards";
-import {ConfigComponent} from "./components/config/config";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {RestUrlUtil} from "./common/RestUrlUtil";
 import {VersionService} from "./services/versionService";
-import {DbExplorerComponent} from "./components/dbexplorer/dbexplorer";
-import {AccessLogViewComponent} from "./components/access/accessLogView";
+import {ROUTER_DIRECTIVES} from "@angular/router";
 import {AppHeaderService} from "./services/appHeaderService";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
@@ -21,9 +17,9 @@ const VERSION:number = 2;
 
 <div class="toolbar">
     <div class="toolbar-left">
-        <span> <a [routerLink]="['/Boards']" class="toolbar-link">Boards</a></span>
+        <span> <a [routerLink]="['/boards']" class="toolbar-link">Boards</a></span>
         <!-- TODO Only display this if it is an admin -->
-        <span> <a [routerLink]="['/Config']" class="toolbar-link">Config</a></span>
+        <span> <a [routerLink]="['/config']" class="toolbar-link">Config</a></span>
     </div>
     <div class="toolbar-right" [innerHTML]="completedMessage"></div>
 </div>
@@ -43,21 +39,11 @@ const VERSION:number = 2;
     `,
     directives: [ROUTER_DIRECTIVES, BoardComponent]
 })
-@RouteConfig([
-    new Route({path: '/', component: BoardsComponent, name: 'Boards'}),
-    new Route({path: '/board', component: BoardComponent, name: 'Board'}),
-    new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
-    new Route({path: '/config', component: ConfigComponent, name: 'Config'}),
-    new Route({path: '/access-log', component: AccessLogViewComponent, name: 'AccessLog'}),
-    new Route({path: '/dbexplorer', component: DbExplorerComponent, name: 'DbExplorer'})
-])
 export class App {
-    _router:Router;
     _progressError:ProgressErrorService;
     loginUrl:string;
 
-    constructor(router:Router, progressError:ProgressErrorService, versionService:VersionService, appHeaderService:AppHeaderService) {
-        this._router = router;
+    constructor(progressError:ProgressErrorService, versionService:VersionService, appHeaderService:AppHeaderService) {
         this._progressError = progressError;
         this.loginUrl = RestUrlUtil.caclulateRestUrl("login.jsp");
 
@@ -67,6 +53,7 @@ export class App {
             //seems have extra width added to allow for the scrollbars on the board's divs
             document.getElementsByTagName("body")[0].className = disable ? "no-scrollbars" : "";
         });
+        
 
         versionService.initialise(VERSION, progressError);
     }
