@@ -7,6 +7,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.JiraFacade;
@@ -75,7 +76,16 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
 
     @Override
     public String getBoardJson(ApplicationUser user, boolean backlog, String code) throws SearchException {
-        return boardManager.getBoardJson(user, backlog, code);
+        try {
+            return boardManager.getBoardJson(user, backlog, code);
+        } catch (Exception e) {
+            //Last parameter is the exception (it does not match a {} entry)
+            JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Error loading board {}", code, e);
+            if (e instanceof SearchException || e instanceof RuntimeException) {
+                throw e;
+            }
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

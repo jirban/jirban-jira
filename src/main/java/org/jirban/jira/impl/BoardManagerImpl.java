@@ -190,7 +190,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     }
                 }
             } catch (JirbanValidationException e) {
-                JirbanLogger.LOGGER.error("Error loading board {} {}", boardCode, e.getMessage());
+                JirbanLogger.LOGGER.error("Error loading custom fields {} {}", boardCode, e.getMessage());
             }
         }
         return result != null ? result : Collections.emptySet();
