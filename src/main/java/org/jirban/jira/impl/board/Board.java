@@ -292,7 +292,7 @@ public class Board {
 
     private static Map<String, Assignee> sortAssignees(Map<String, Assignee> assignees) {
         List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
-        Collections.sort(assigneeNames, Comparator.comparing(Assignee::getKey, String.CASE_INSENSITIVE_ORDER));
+        Collections.sort(assigneeNames, Comparator.comparing(Assignee::getDisplayName, String.CASE_INSENSITIVE_ORDER));
         LinkedHashMap<String, Assignee> result = new LinkedHashMap<>();
         for (Assignee assignee : assigneeNames) {
             result.put(assignee.getKey(), assignee);
