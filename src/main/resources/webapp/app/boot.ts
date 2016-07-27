@@ -1,14 +1,13 @@
-
 //our root app component
 import {provide, enableProdMode} from "@angular/core";
 import {bootstrap} from "@angular/platform-browser-dynamic";
 import {Title} from "@angular/platform-browser";
 import {HTTP_PROVIDERS} from "@angular/http";
-import {APP_BASE_HREF, LocationStrategy, HashLocationStrategy} from "@angular/common";
 import {ROUTER_PROVIDERS} from "@angular/router-deprecated";
 import {App} from "./app";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {TitleFormatService} from "./services/TitleFormatService";
+import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/common";
 
 
 enableProdMode();
