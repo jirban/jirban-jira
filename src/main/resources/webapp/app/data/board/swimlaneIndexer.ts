@@ -49,9 +49,13 @@ export class SwimlaneIndexerFactory {
         } else if (swimlane === "component") {
             return new ComponentSwimlaneIndexer(filters, boardData, initTable);
         } else if (swimlane) {
-            let cfvs:CustomFieldValues = boardData.customFields.forKey(swimlane);
-            if (cfvs) {
-                return new CustomFieldSwimlaneIndexer(filters, boardData, initTable, swimlane, cfvs.values);
+            if (boardData && boardData.customFields) {
+                let cfvs:CustomFieldValues = boardData.customFields.forKey(swimlane);
+                if (cfvs) {
+                    return new CustomFieldSwimlaneIndexer(filters, boardData, initTable, swimlane, cfvs.values);
+                }
+            } else {
+                console.log("Unknown swimlane '" + swimlane + "'. boardData:" + boardData);
             }
         }
 
