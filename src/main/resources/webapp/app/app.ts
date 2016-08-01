@@ -11,7 +11,7 @@ import {DbExplorerComponent} from "./components/dbexplorer/dbexplorer";
 import {AccessLogViewComponent} from "./components/access/accessLogView";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
-const VERSION:number = 1;
+const VERSION:number = 2;
 
 @Component({
     selector: 'my-app',
