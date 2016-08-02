@@ -68,6 +68,7 @@ public class Constants {
     public static final String PROJECTS = "projects";
     public static final String QUERY_FILTER = "query-filter";
     public static final String RANK = "rank";
+    public static final String RANKED = "ranked";
     public static final String RANK_CUSTOM_FIELD = "rank-custom-field";
     public static final String RANK_CUSTOM_FIELD_ID = "rank-custom-field-id";
     public static final String REMOVED_ISSUES = "removed-issues";

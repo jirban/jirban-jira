@@ -291,6 +291,7 @@ public abstract class Issue {
                     linkedIssuesNode.add(linkedIssueNode);
                 }
             }
+
             return issueNode;
         }
 

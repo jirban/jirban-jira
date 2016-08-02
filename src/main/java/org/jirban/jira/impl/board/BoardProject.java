@@ -23,6 +23,7 @@ package org.jirban.jira.impl.board;
 
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.RANK;
+import static org.jirban.jira.impl.Constants.RANKED;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,11 +67,13 @@ public class BoardProject {
 
     private volatile Board board;
     private final BoardProjectConfig projectConfig;
+    private final List<String> rankedIssueKeys;
     //TODO linkedhashset for the issues list?
     private final List<List<String>> issueKeysByState;
 
-    private BoardProject(BoardProjectConfig projectConfig, List<List<String>> issueKeysByState) {
+    private BoardProject(BoardProjectConfig projectConfig, List<String> rankedIssueKeys, List<List<String>> issueKeysByState) {
         this.projectConfig = projectConfig;
+        this.rankedIssueKeys = rankedIssueKeys;
         this.issueKeysByState = issueKeysByState;
     }
 
@@ -109,6 +112,13 @@ public class BoardProject {
 
             projectIssues.add(issuesForStateNode);
         }
+
+        ModelNode ranked = new ModelNode();
+        ranked.setEmptyList();
+        for (String key : rankedIssueKeys) {
+            ranked.add(key);
+        }
+        parent.get(RANKED).set(ranked);
     }
 
     public List<String> getIssuesForOwnState(String ownState) {
@@ -254,6 +264,7 @@ public class BoardProject {
      * Used to load a project when creating a new board
      */
     public static class Builder extends Accessor {
+        private final List<String> rankedIssueKeys = new ArrayList<>();
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
@@ -300,6 +311,7 @@ public class BoardProject {
                 Issue.Builder issueBuilder = Issue.builder(this, issueLoadStrategy);
                 issueBuilder.load(jiraIssue);
                 issueBuilders.add(issueBuilder);
+                rankedIssueKeys.add(jiraIssue.getKey());
             }
 
             for (Issue.Builder issueBuilder : issueBuilders) {
@@ -321,7 +333,10 @@ public class BoardProject {
                 resultIssues.add(Collections.synchronizedList(issues));
             }
 
-            return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
+            return new BoardProject(
+                    projectConfig,
+                    Collections.unmodifiableList(rankedIssueKeys),
+                    Collections.unmodifiableList(resultIssues));
         }
 
         public void addBulkLoadedCustomFieldValue(CustomFieldConfig customFieldConfig, CustomFieldValue value) {
@@ -434,7 +449,11 @@ public class BoardProject {
                     issuesKeysByStateCopy.add(project.issueKeysByState.get(i));
                 }
             }
-            return new BoardProject(projectConfig, Collections.unmodifiableList(issuesKeysByStateCopy));
+            //TODO update the ranked issue list
+            return new BoardProject(
+                    projectConfig,
+                    Collections.unmodifiableList(project.rankedIssueKeys),
+                    Collections.unmodifiableList(issuesKeysByStateCopy));
         }
 
         private List<String> deleteFromState(int stateIndex, String issueKey) {
