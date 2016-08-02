@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from "@angular/core";
+import {Component, OnDestroy} from "@angular/core";
 import {RouteParams} from "@angular/router-deprecated";
 import {IssuesService} from "../../services/issuesService";
 import {BoardData} from "../../data/board/boardData";
@@ -21,154 +21,44 @@ import Timer = NodeJS.Timer;
     styleUrls: ['app/components/board/board.css'],
     directives: [IssueComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
 })
-export class BoardComponent implements OnDestroy, OnInit {
+export class BoardComponent implements OnDestroy {
 
     private boardCode:string;
-    private helpTexts:IMap<string> = {};
 
     private issueContextMenuData:IssueContextMenuData;
-
-    private _pollFailureCount:number = 0;
-    private _maxPollFailureCount = 3;
-
-    private _currentTimeout:Timer;
-
-    private _destroyed:boolean = false;
 
     /** The calculate height of the board body */
     private boardBodyHeight:number;
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
     private boardLeftOffset:number = 0;
 
-    private _defaultPollInterval:number = 30000;
-
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
-
-    private _visible:boolean = true;
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService,
                 routeParams:RouteParams,
                 title:TitleFormatService) {
+        console.log("Create board");
         let queryString:IMap<string> = routeParams.params;
         this.boardCode = routeParams.get('board');
         title.setTitle("Board (" + this.boardCode + ")");
 
         this._boardData.setBacklogFromQueryParams(queryString);
 
-        this.populateIssues(() => {
+        this._issuesService.populateIssues(this.boardCode, () => {
             //Loading filters does not work until the issue data is loaded
             _boardData.setFiltersFromQueryParams(queryString);
             this.setWindowSize();
-        });
+        })
 
-        this._issuesService.loadHelpTexts(this.boardCode).subscribe(
-            data => {
-                console.log("Got help texts " + JSON.stringify(data));
-                let content:any = data;
-                this.helpTexts = content;
-            },
-            err => {
-                console.log("Error loading help texts " + err);
-            }
-        );
-    }
-
-    private populateIssues(issueDataLoaded:()=>void) {
-        this._progressError.startProgress(true);
-        this._issuesService.getIssuesData(this.boardCode, this._boardData.showBacklog).subscribe(
-            data => {
-                this.setIssueData(data);
-                issueDataLoaded();
-            },
-            err => {
-                this._progressError.setError(err);
-            },
-            () => {
-                this.pollIssues();
-                this._progressError.finishProgress();
-            }
-        );
-    }
-
-    ngOnInit():any {
-
-        return null;
+        this._issuesService.loadHelpTexts(this.boardCode, this._boardData);
     }
 
     ngOnDestroy():any {
-        this.clearPollTimeout();
-        this._destroyed = true;
-        return null;
+        this._issuesService.destroy();
     }
-
-    private clearPollTimeout() {
-        let timeout:Timer = this._currentTimeout;
-        if (timeout) {
-            clearTimeout(timeout);
-        }
-    }
-
-    private setIssueData(issueData:any) {
-        this._boardData.deserialize(this.boardCode, issueData);
-        this.setWindowSize();
-    }
-
-    private pollIssues() {
-        this._currentTimeout = setTimeout(()=>{this.doPoll()}, this._defaultPollInterval);
-    }
-
-    private doPoll() {
-        if (this._destroyed) {
-            return;
-        }
-        if (this._progressError.progress) {
-            //Another request is already in progress (probably a move)
-            //Just do another poll and return so we don't clash the error codes etc.
-            this.pollIssues();
-            return;
-        }
-
-        let wasInvisible = false;
-        if (!this._visible) {
-            //We are not the active window so just skip this update
-            this.pollIssues();
-            return;
-        }
-
-        //Don't use the progress monitor for this background task.
-        //Simply set the error in it if one happened
-        this._issuesService.pollBoard(this.boardData)
-            .subscribe(
-                data => {
-                    console.log("----> Received changes: " + JSON.stringify(data));
-                    this.boardData.processChanges(data);
-                    this.pollIssues();
-                },
-                err => {
-                    console.log("FC" + this._pollFailureCount);
-                    this._pollFailureCount++;
-                    console.log(err);
-                    if (this._pollFailureCount < this._maxPollFailureCount) {
-                        this._progressError.finishProgress();
-                        this.pollIssues();
-                    } else {
-                        if (err.status === 401) {
-                            this._progressError.setError(err);
-                        } else {
-                            this._progressError.setError("Connection to the board lost.");
-                        }
-                    }
-                },
-                () => {
-                    this._progressError.finishProgress();
-                    this._pollFailureCount = 0;
-                }
-            );
-    }
-
 
     private get visibleColumns():boolean[] {
         return this._boardData.headers.stateVisibilities;
@@ -254,7 +144,7 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     getStateHelp(header:BoardHeaderEntry):string {
-        return this.helpTexts[header.name];
+        return this._boardData.helpTexts[header.name];
     }
 
 
@@ -264,18 +154,7 @@ export class BoardComponent implements OnDestroy, OnInit {
         this._boardData.headers.toggleHeaderVisibility(header);
 
         if (this.boardData.showBacklog != previousBacklog) {
-            this._progressError.startProgress(true);
-            this._issuesService.getIssuesData(this.boardCode, this._boardData.showBacklog).subscribe(
-                data => {
-                    this.boardData.processChanges(data);
-                },
-                err => {
-                    this._progressError.setError(err);
-                },
-                () => {
-                    this._progressError.finishProgress();
-                }
-            );
+            this._issuesService.toggleBacklog();
         }
     }
 
@@ -312,19 +191,12 @@ export class BoardComponent implements OnDestroy, OnInit {
     }
 
     onFocus(event:Event):void{
-        this._visible = true;
+        this._issuesService.visible = true;
         console.log("Focus");
     }
 
     onBlur(event:Event):void{
-        this._visible = false;
-        let restartPolling:boolean = this._pollFailureCount >= this._maxPollFailureCount;
-        restartPolling = restartPolling && !this._progressError.error;
-        this._pollFailureCount = 0;
-        console.log("Blur - restarting polling: " + restartPolling);
-        if (restartPolling) {
-            this.pollIssues();
-        }
+        this._issuesService.visible = false;
     }
 }
 

@@ -63,6 +63,8 @@ export class BoardData {
     /** Flag to only recalculate the assignees in the control panel when they have been changed */
     private _customFieldsWithNewEntries:string[] = [];
 
+    private _helpTexts:IMap<string> = {};
+
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -294,7 +296,7 @@ export class BoardData {
 
     get showBacklog():boolean {
         if (!this._headers) {
-            return false;
+            return this._showBacklog;
         }
         return this._headers.showBacklog;
     }
@@ -369,6 +371,14 @@ export class BoardData {
 
     get filters():BoardFilters {
         return this._boardFilters;
+    }
+
+    get helpTexts():IMap<string> {
+        return this._helpTexts;
+    }
+
+    set helpTexts(value:IMap<string>) {
+        this._helpTexts = value;
     }
 
     hideHideables() {
