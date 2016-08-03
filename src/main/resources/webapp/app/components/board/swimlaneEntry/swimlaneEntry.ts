@@ -14,7 +14,7 @@ import {CharArrayRegistry} from "../../../common/charArrayRegistry";
     outputs: ['issueContextMenu', 'toggleBacklogVisibility'],
     selector: 'swimlane-entry',
     templateUrl: 'app/components/board/swimlaneEntry/swimlaneEntry.html',
-    styleUrls: ['app/components/board//board.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
+    styleUrls: ['app/components/board/view/kanban/kanbanview.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
     directives: [IssueComponent]
 })
 export class SwimlaneEntryComponent {

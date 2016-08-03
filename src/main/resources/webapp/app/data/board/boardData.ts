@@ -13,7 +13,7 @@ import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
-import {Observable} from "rxjs/Rx";
+import {Observable, Subject} from "rxjs/Rx";
 import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
 
 
@@ -34,6 +34,7 @@ export class BoardData {
     public blacklist:BlacklistData;
 
     public initialized = false;
+    private _initializedSubjects:Subject<void>[] = [];
 
     /** All the assignees */
     private _assignees:Indexed<Assignee>;
@@ -65,6 +66,8 @@ export class BoardData {
 
     private _helpTexts:IMap<string> = {};
 
+
+
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -75,8 +78,26 @@ export class BoardData {
         this.internalDeserialize(input, true);
 
         this.initialized = true;
+        for (let subject of this._initializedSubjects) {
+            subject.next(null);
+        }
         return this;
     }
+
+    registerInitializedCallback(callback:()=>void):void {
+        if (!this.initialized) {
+            let subject:Subject<void> = new Subject<void>();
+            this._initializedSubjects.push(subject);
+            subject.asObservable().subscribe(
+                done => {
+                    callback();
+                }
+            );
+        } else {
+            callback();
+        }
+    }
+
 
     /**
      * Called when we receive a change set from the server
