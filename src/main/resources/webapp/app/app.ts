@@ -8,6 +8,7 @@ import {ProgressErrorService} from "./services/progressErrorService";
 import {RestUrlUtil} from "./common/RestUrlUtil";
 import {VersionService} from "./services/versionService";
 import {DbExplorerComponent} from "./components/dbexplorer/dbexplorer";
+import {AccessLogViewComponent} from "./components/access/accessLogView";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 1;
@@ -46,6 +47,7 @@ const VERSION:number = 1;
     new Route({path: '/board', component: BoardComponent, name: 'Board'}),
     new Route({path: '/boards', component: BoardsComponent, name: 'Boards'}),
     new Route({path: '/config', component: ConfigComponent, name: 'Config'}),
+    new Route({path: '/access-log', component: AccessLogViewComponent, name: 'AccessLog'}),
     new Route({path: '/dbexplorer', component: DbExplorerComponent, name: 'DbExplorer'})
 ])
 export class App {

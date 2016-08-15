@@ -1,0 +1,14 @@
+<table>
+    <tr>
+        <td><b>#</b></td>
+        <td><b>User</b></td>
+        <td><b>Board</b></td>
+        <td><b>Date</b></td>
+    </tr>
+    <tr *ngFor="let entry of entries; let i = index">
+        <td>{{i + 1}}</td>
+        <td>{{entry.userName}} ({{entry.userKey}})</td>
+        <td>{{entry.board}}</td>
+        <td>{{entry.time}}</td>
+    </tr>
+</table>
