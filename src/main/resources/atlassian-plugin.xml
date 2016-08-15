@@ -46,6 +46,7 @@
     <description>The module configuring the Active Objects service used by this plugin</description>
     <entity>org.jirban.jira.impl.activeobjects.BoardCfg</entity>
     <entity>org.jirban.jira.impl.activeobjects.Setting</entity>
+    <entity>org.jirban.jira.impl.activeobjects.UserAccess</entity>
   </ao>
 
   <web-item name="Jirban Agile Menu item" key="jirban-config" section="greenhopper_menu/greenhopper_menu_dropdown" weight="1000">

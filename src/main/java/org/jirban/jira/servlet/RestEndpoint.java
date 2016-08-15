@@ -90,12 +90,17 @@ public class RestEndpoint {
     @Path(BOARDS)
     public Response getBoards(@QueryParam("full") Boolean full) {
         final String json;
-        if (full != null && full.booleanValue()) {
-            json = jiraFacade.getBoardConfigurations(getUser());
-        } else {
-            json = jiraFacade.getBoardsForDisplay(getUser());
+        try {
+            if (full != null && full.booleanValue()) {
+                json = jiraFacade.getBoardConfigurations(getUser());
+            } else {
+                json = jiraFacade.getBoardsForDisplay(getUser());
+            }
+            return createResponse(json);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            throw e;
         }
-        return createResponse(json);
     }
 
     @GET
@@ -103,6 +108,9 @@ public class RestEndpoint {
     public Response getBoard(
             @PathParam("boardCode") String boardCode,
             @QueryParam("backlog") Boolean backlog) throws SearchException {
+
+        jiraFacade.logUserAccess(getUser(), boardCode);
+
         //TODO figure out if a permission violation becomes a search exception
         return createResponse(
                 jiraFacade.getBoardJson(
@@ -216,6 +224,12 @@ public class RestEndpoint {
         return createResponse(loader.executeQuery(sql).toJSONString(true));
     }
 
+    @GET
+    @Path("access-log")
+    public Response getUserAccesses() {
+        ApplicationUser user = getUser();
+        return createResponse(jiraFacade.getUserAccessJson(user));
+    }
 
     private Response createResponse(ModelNode modelNode) {
         return createResponse(modelNode.toJSONString(true));

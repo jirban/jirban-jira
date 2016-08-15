@@ -1,8 +1,6 @@
 package org.jirban.jira.impl.activeobjects;
 
-import java.sql.Date;
-
-import com.atlassian.jira.user.ApplicationUser;
+import java.util.Date;
 
 import net.java.ao.Entity;
 import net.java.ao.Preload;
@@ -15,8 +13,16 @@ import net.java.ao.schema.NotNull;
 public interface UserAccess extends Entity {
 
     @NotNull
-    ApplicationUser getUser();
-    void setUser(ApplicationUser user);
+    String getUserKey();
+    void setUserKey(String key);
+
+    @NotNull
+    String getUserName();
+    void setUserName(String name);
+
+    @NotNull
+    String getBoardCode();
+    void setBoardCode(String code);
 
     @NotNull
     Date getTime();
