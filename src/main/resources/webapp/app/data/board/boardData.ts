@@ -94,9 +94,9 @@ export class BoardData {
                     for (let assignee of changeSet.addedAssignees) {
                         this._assignees.add(assignee.key, assignee);
                     }
-                    let assignees:Assignee[] = this._assignees.array;
-                    assignees.sort((a1:Assignee, a2:Assignee) => {return a1.name.localeCompare(a2.name)});
-                    this._assignees.reorder(assignees, (assignee:Assignee) => assignee.name);
+                    this._assignees.sortAndReorder(
+                        (a1:Assignee, a2:Assignee) => {return a1.name.localeCompare(a2.name)},
+                        (assignee:Assignee) => assignee.key);
                     this._hasNewAssignees = true;
                 }
                 if (changeSet.addedComponents) {
@@ -104,9 +104,9 @@ export class BoardData {
                     for (let component of changeSet.addedComponents) {
                         this._components.add(component.name, component);
                     }
-                    let components:JiraComponent[] = this._components.array;
-                    components.sort((c1:JiraComponent, c2:JiraComponent) => {return c1.name.localeCompare(c2.name)});
-                    this._components.reorder(components, (component:JiraComponent) => component.name);
+                    this._components.sortAndReorder(
+                        (c1:JiraComponent, c2:JiraComponent) => {return c1.name.localeCompare(c2.name)},
+                        (component:JiraComponent) => component.name);
                     this._hasNewComponents = true;
                 }
 
@@ -114,14 +114,14 @@ export class BoardData {
                     //Iterate for each custom field
                     for (let cfvs of changeSet.addedCustomFields.array) {
                         //Make sure that the added custom fields are in alphabetical order for the control panel list
-                        let values:Indexed<CustomFieldValue> = this._customFields.forKey(cfvs.name).values;
+                        let customFieldValues:Indexed<CustomFieldValue> = this._customFields.forKey(cfvs.name).values;
                         let addedValues:CustomFieldValues = changeSet.addedCustomFields.forKey(cfvs.name);
                         for (let customFieldValue of addedValues.values.array) {
-                            values.add(customFieldValue.key, customFieldValue);
+                            customFieldValues.add(customFieldValue.key, customFieldValue);
                         }
-                        let customFieldValues:CustomFieldValue[] = values.array;
-                        customFieldValues.sort((c1:CustomFieldValue, c2:CustomFieldValue) => {return c1.displayValue.localeCompare(c2.displayValue)});
-                        values.reorder(customFieldValues, (cfv:CustomFieldValue) => cfv.key);
+                        customFieldValues.sortAndReorder(
+                            (c1:CustomFieldValue, c2:CustomFieldValue) => {return c1.displayValue.localeCompare(c2.displayValue)},
+                            (cfv:CustomFieldValue) => cfv.key);
                         this._customFieldsWithNewEntries.push(cfvs.name);
                     }
                 }
