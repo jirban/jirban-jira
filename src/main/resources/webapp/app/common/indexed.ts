@@ -105,13 +105,12 @@ export class Indexed<T> {
         }
     }
 
-    reorder(values:T[], keyValue:(t:T)=>string) {
-        for (let i:number = 0 ; i < values.length ; i++) {
-            this._array[i] = values[i];
-            this._indices[keyValue(values[i])] = i;
+    sortAndReorder(valueComparison: (a: T, b: T) => number, keyValue:(t:T)=>string) {
+        this._array.sort(valueComparison);
+        for (let i:number = 0 ; i < this._array.length ; i++) {
+            this._indices[keyValue(this._array[i])] = i;
         }
     }
-
 
     get array():T[] {
         return this._array;

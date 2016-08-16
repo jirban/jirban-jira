@@ -90,4 +90,21 @@ public interface JiraFacade
      * @return json containing the state help texts
      */
     String getStateHelpTexts(ApplicationUser user, String boardCode);
+
+    /**
+     * Logs a user access
+     *
+     * @param user the logged in user
+     * @param boardCode the board code
+     */
+    void logUserAccess(ApplicationUser user, String boardCode);
+
+    /**
+     * Loads the list of accesses
+     *
+     * @param user the currently logged in user
+     * @return json of the user accesses
+     */
+    String getUserAccessJson(ApplicationUser user);
+
 }

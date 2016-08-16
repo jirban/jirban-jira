@@ -11,6 +11,7 @@ import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.JiraFacade;
+import org.jirban.jira.api.UserAccessManager;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -23,6 +24,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     private final BoardConfigurationManager boardConfigurationManager;
 
     private final BoardManager boardManager;
+
+    private final UserAccessManager userAccessManager;
 
     private static final String jirbanVersion;
 
@@ -44,9 +47,11 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
 
     @Inject
     public JiraFacadeImpl(final BoardConfigurationManager boardConfigurationManager,
-                          final BoardManager boardManager) {
+                          final BoardManager boardManager,
+                          final UserAccessManager userAccessManager) {
         this.boardConfigurationManager = boardConfigurationManager;
         this.boardManager = boardManager;
+        this.userAccessManager = userAccessManager;
     }
 
     @Override
@@ -111,6 +116,17 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     @Override
     public String getJirbanVersion() {
         return jirbanVersion;
+    }
+
+
+    @Override
+    public void logUserAccess(ApplicationUser user, String boardCode) {
+        userAccessManager.logUserAccess(user, boardCode);
+    }
+
+    @Override
+    public String getUserAccessJson(ApplicationUser user) {
+        return userAccessManager.getUserAccessJson(user);
     }
 
     @Override
