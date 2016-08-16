@@ -96,7 +96,7 @@ export class BoardData {
                     }
                     let assignees:Assignee[] = this._assignees.array;
                     assignees.sort((a1:Assignee, a2:Assignee) => {return a1.name.localeCompare(a2.name)});
-                    this._assignees.reorder(assignees, (assignee:Assignee) => assignee.key);
+                    this._assignees.reorder(assignees, (assignee:Assignee) => assignee.name);
                     this._hasNewAssignees = true;
                 }
                 if (changeSet.addedComponents) {
