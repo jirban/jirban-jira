@@ -49,4 +49,8 @@ export class HealthPanelComponent {
         this.closeHealthPanel.emit({});
         event.preventDefault();
     }
+
+    private get rightOffset() : number {
+        return this.boardData.blacklist ? 30 : 0;
+    }
 }

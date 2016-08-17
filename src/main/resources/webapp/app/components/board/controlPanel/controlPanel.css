@@ -1,7 +1,7 @@
 #control-panel {
     background: white;
     position: fixed;
-    right: 50px;
+    right: 75px; /* Will be recalculated if health icon is shown */
     bottom: 10px;
     width: 530px;
     max-height: 300px;
