@@ -1579,55 +1579,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     @Test
-    public void testMoveIssueWithUnorderedStatesConfigured() throws Exception {
-        //Override the default configuration set up by the @Before method to one with unordered states set up
-        setupInitialBoard("config/board-tdp-unordered.json");
-
-        //Move an issue to the unordered state
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
-        searchCallback.searched = false;
-        boardManager.handleEvent(update);
-        Assert.assertFalse(searchCallback.searched);
-
-        ModelNode changes = getChangesJson(0, 1);
-        checkAdds(changes);
-        checkUpdates(changes, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
-        checkDeletes(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-1"));
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-
-        //Move an issue out of an unordered state
-        update = createUpdateEventAndAddToRegistry("TDP-4", (String)null, null, null, null, false, null, false, "TDP-A", false);
-        searchCallback.searched = false;
-        boardManager.handleEvent(update);
-        Assert.assertTrue(searchCallback.searched);
-
-        changes = getChangesJson(0, 2);
-        checkAdds(changes);
-        checkUpdates(changes,
-                new IssueData("TDP-1", null, null, null, null, null, "TDP-D"),
-                new IssueData("TDP-4", null, null, null, null, null, "TDP-A"));
-        checkDeletes(changes);
-        checkStateChanges(changes,
-                new StateChangeData("TDP", "TDP-D", "TDP-1"),
-                new StateChangeData("TDP", "TDP-A", "TDP-4", "TDP-5"));
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-
-        changes = getChangesJson(1, 2);
-        checkAdds(changes);
-        checkUpdates(changes,
-                new IssueData("TDP-4", null, null, null, null, null, "TDP-A"));
-        checkDeletes(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-A", "TDP-4", "TDP-5"));
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-
-        //TODO the same for issues in the TBG project
-    }
-
-    @Test
     public void testMoveIssueWithDoneStatesConfigured() throws Exception {
         //Override the default configuration set up by the @Before method to one with done states set up
         setupInitialBoard("config/board-tdp-done.json");

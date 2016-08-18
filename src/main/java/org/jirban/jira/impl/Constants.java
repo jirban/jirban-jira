@@ -77,7 +77,6 @@ public class Constants {
     public static final String STATES = "states";
     public static final String SUMMARY = "summary";
     public static final String TYPE = "type";
-    public static final String UNORDERED = "unordered";
     public static final String UPDATE = "update";
     public static final String UPDATES = "updates";
     public static final String UNASSIGNED = "unassigned";

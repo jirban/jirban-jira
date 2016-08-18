@@ -209,10 +209,6 @@ public class BoardProjectConfig extends ProjectConfig {
         return boardStates.isBacklogState(boardStateIndex);
     }
 
-    public boolean isUnorderedState(int boardStateIndex) {
-        return boardStates.isUnorderedState(boardStateIndex);
-    }
-
     public boolean isDoneState(int boardStateIndex) {
         return boardStates.isDoneState(boardStateIndex);
     }

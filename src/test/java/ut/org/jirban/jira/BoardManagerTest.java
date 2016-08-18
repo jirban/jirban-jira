@@ -44,7 +44,6 @@ import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
-import static org.jirban.jira.impl.Constants.UNORDERED;
 import static org.jirban.jira.impl.Constants.VALUE;
 import static org.jirban.jira.impl.board.CustomFieldValue.UNSET_VALUE;
 
@@ -79,30 +78,24 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
         //No 'special' states
         Assert.assertFalse(boardNode.hasDefined(BACKLOG));
-        Assert.assertFalse(boardNode.hasDefined(UNORDERED));
         Assert.assertFalse(boardNode.hasDefined(DONE));
 
         initializeMocks("config/board-tdp-backlog.json");
         boardNode = getJsonCheckingViewIdAndUsers(0);
         //The first 2 states are 'backlog' states (they must always be at the start)
         Assert.assertEquals(2, boardNode.get(BACKLOG).asInt());
-        Assert.assertFalse(boardNode.hasDefined(UNORDERED));
         Assert.assertFalse(boardNode.hasDefined(DONE));
 
         initializeMocks("config/board-tdp-unordered.json");
         boardNode = getJsonCheckingViewIdAndUsers(0);
         Assert.assertFalse(boardNode.hasDefined(BACKLOG));
         //The second, and third states are 'unordered'
-        Assert.assertEquals(2, boardNode.get(UNORDERED).asList().size());
-        Assert.assertEquals(2, boardNode.get(UNORDERED).asList().get(0).asInt());
-        Assert.assertEquals(3, boardNode.get(UNORDERED).asList().get(1).asInt());
         Assert.assertFalse(boardNode.hasDefined(DONE));
 
 
         initializeMocks("config/board-tdp-done.json");
         boardNode = getJsonCheckingViewIdAndUsers(0);
         Assert.assertFalse(boardNode.hasDefined(BACKLOG));
-        Assert.assertFalse(boardNode.hasDefined(UNORDERED));
         //The last 2 states are 'done' states (they must always be at the end)
         Assert.assertEquals(2, boardNode.get(DONE).asInt());
 
@@ -924,101 +917,6 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2);
 
     }
-
-    @Test
-    public void testLoadBoardWithUnorderedStatesConfigured() throws Exception {
-        //Override the default configuration set up by the @Before method to one with unordered states set up
-        initializeMocks("config/board-tdp-unordered.json");
-
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");     //2
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "brian", null, "TDP-C");                  //3
-        issueRegistry.addIssue("TDP", "task", "high", "Four", "brian", null, "TDP-D");                //4
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", new String[]{"C3"}, "TBG-X");  //1
-        issueRegistry.addIssue("TBG", "task", "high", "Two", "brian", null, "TBG-Y");                    //2
-
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkComponents(boardNode, "C1", "C2", "C3");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
-        checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
-        checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
-
-        ModelNode allIssues = getIssuesCheckingSize(boardNode, 6);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", new int[]{0}, 0, 1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", new int[]{2}, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {"TBG-2"},
-                {}});
-
-        //Move an issue and make sure that no state recalculation query is done
-        searchCallback.searched = false;
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, "TDP-D", false);
-        boardManager.handleEvent(update);
-        Assert.assertFalse(searchCallback.searched);
-
-        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        getIssuesCheckingSize(boardNode, 6);
-
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4", "TDP-1"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {"TBG-2"},
-                {}});
-
-        searchCallback.searched = false;
-        update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
-                null, null, false, null, false, "TBG-Y", false);
-        boardManager.handleEvent(update);
-        Assert.assertFalse(searchCallback.searched);
-
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        getIssuesCheckingSize(boardNode, 6);
-
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4", "TDP-1"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {},
-                {"TBG-2", "TBG-1"},
-                {}});
-
-        //A sanity check to make sure that the searchCallback.searched does get set to true whan moving to a state
-        // without 'unordered' set
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update);
-        Assert.assertTrue(searchCallback.searched);
-
-        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4"}});
-    }
-
 
     @Test
     public void testLoadBoardWithDoneStatesConfigured() throws Exception {
