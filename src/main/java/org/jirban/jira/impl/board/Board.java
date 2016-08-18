@@ -165,7 +165,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            projectEntry.getValue().serialize(jiraInjectables, project, user, backlog);
+            projectEntry.getValue().serialize(jiraInjectables, this, project, user, backlog);
         }
 
         blacklist.serialize(outputNode);
@@ -221,6 +221,15 @@ public class Board {
     BoardChangeRegistry.IssueChange createCreateIssueChange(BoardChangeRegistry registry, String issueKey) {
         Issue issue = allIssues.get(issueKey);
         return issue.convertToCreateIssueChange(registry, getConfig());
+    }
+
+    public boolean isBacklogIssue(BoardProjectConfig projectConfig, String issueKey) {
+        Issue issue = allIssues.get(issueKey);
+        int boardIndex = projectConfig.mapOwnStateOntoBoardStateIndex(issue.getState());
+        if (boardConfig.isBacklogState(boardIndex)) {
+            return true;
+        }
+        return false;
     }
 
     static abstract class Accessor {
@@ -623,7 +632,7 @@ public class Board {
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
-                            evtDetail.isRankOrStateChanged(), evtDetail.getState(), customFieldValues);
+                            evtDetail.isReranked(), evtDetail.getState(), customFieldValues);
                 }
             }
 
@@ -634,9 +643,9 @@ public class Board {
                     board.allIssues;
 
             JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - newIssue {}; updatedBlacklist {}; changedRankOrState {}",
-                    newIssue, blacklist.isUpdated(), evtDetail.isRankOrStateChanged());
+                    newIssue, blacklist.isUpdated(), evtDetail.isReranked());
 
-            if (newIssue != null || blacklist.isUpdated() || evtDetail.isRankOrStateChanged()) {
+            if (newIssue != null || blacklist.isUpdated() || evtDetail.isReranked()) {
                 //The project's issue tables will be updated if needed
                 JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Copying project {}", project.getCode());
                 final BoardProject projectCopy = projectUpdater.build();
@@ -686,7 +695,7 @@ public class Board {
                     }
 
                     //Propagate the new state somehow
-                    if (evtDetail.isRankOrStateChanged()) {
+                    if (evtDetail.isReranked()) {
                         Issue issue = boardCopy.getIssue(event.getIssueKey());
                         if (issue != null) {
                             final String state = issue.getState();

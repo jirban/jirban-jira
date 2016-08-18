@@ -184,7 +184,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(0, 1);
         checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"));
         checkNoBlacklistChanges(0, 1);
-        checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
 
         //Now add an issue which brings in new assignees
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X");
@@ -198,15 +197,12 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(0, 2,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"));
-        checkStateChanges(0, 2, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
 
         checkAssignees(1, 2, "jason");
         checkDeletes(1, 2);
         checkAdds(1, 2,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"));
         checkNoBlacklistChanges(0, 2);
-        checkStateChanges(1, 2, new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
 
 
         //Add another one not bringing in new assignees
@@ -222,8 +218,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
 
         checkAssignees(1, 3, "jason");
         checkComponents(1, 3);
@@ -233,8 +227,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(1, 3,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(1, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkAssignees(2, 3);
         checkComponents(2, 3);
         checkNoCustomFields(2, 3);
@@ -242,8 +234,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkNoBlacklistChanges(0, 3);
     }
 
@@ -260,7 +250,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(0, 1);
         checkAdds(0, 1, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"));
         checkNoBlacklistChanges(0, 1);
-        checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
 
         //Now add an issue which brings in new components
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X");
@@ -274,8 +263,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(0, 2,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"));
-        checkStateChanges(0, 2, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
 
         checkAssignees(1, 2);
         checkComponents(1, 2, "C5", "C6");
@@ -284,7 +271,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(1, 2,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"));
         checkNoBlacklistChanges(0, 2);
-        checkStateChanges(1, 2, new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
 
 
         //Add another one not bringing in new components
@@ -300,8 +286,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"),
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
 
         checkAssignees(1, 3);
         checkComponents(1, 3, "C5", "C6");
@@ -311,8 +295,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(1, 3,
                 new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"),
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(1, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkAssignees(2, 3);
         checkComponents(2, 3);
         checkNoCustomFields(2, 3);
@@ -320,8 +302,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"),
-                new StateChangeData("TBG", "TBG-X", "TBG-1", "TBG-3", "TBG-4"));
         checkNoBlacklistChanges(0, 3);
     }
 
@@ -343,7 +323,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(changes);
         checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
 
         //Create an issue which brings in a custom field
         Map<Long, String> customFieldValues = new HashMap<>();
@@ -363,7 +342,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
                         new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"));
         changes = getChangesJson(1, 2);
         checkAssignees(changes);
         checkComponents(changes);
@@ -374,7 +352,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
                         new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9"));
 
         //Create an issue which brings in a custom field and reuses one of the existing ones
         customFieldValues = new HashMap<>();
@@ -397,7 +374,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
                         new TesterChecker("jason"), new DocumenterChecker("kabir")));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10"));
         changes = getChangesJson(1, 3);
         checkAssignees(changes);
         checkComponents(changes);
@@ -410,7 +386,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
                         new TesterChecker("jason"), new DocumenterChecker("kabir")));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10"));
         changes = getChangesJson(2, 3);
         checkAssignees(changes);
         checkComponents(changes);
@@ -421,7 +396,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
                         new TesterChecker("jason"), new DocumenterChecker("kabir")));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10"));
 
         //Create an issue which brings in no custom fields
         create = createCreateEventAndAddToRegistry("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D");
@@ -443,7 +417,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
                         NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
         changes = getChangesJson(1, 4);
         checkAssignees(changes);
         checkComponents(changes);
@@ -458,7 +431,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
                         NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
         changes = getChangesJson(2, 4);
         checkAssignees(changes);
         checkComponents(changes);
@@ -471,7 +443,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
                         NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
         changes = getChangesJson(3, 4);
         checkAssignees(changes);
         checkComponents(changes);
@@ -482,7 +453,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
                         NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
         checkNoBlacklistChanges(changes);
-        checkStateChanges(changes, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8", "TDP-9", "TDP-10", "TDP-11"));
     }
 
     @Test
@@ -799,18 +769,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
         checkAdds(0, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(0, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
 
         checkUpdates(1, 3,
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
         checkAdds(1, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(1, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
 
         checkUpdates(2, 3);
         checkAdds(2, 3,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkStateChanges(2, 3, new StateChangeData("TDP", "TDP-D", "TDP-4", "TDP-8"));
         checkNoBlacklistChanges(0, 3);
 
 
@@ -826,26 +793,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
         checkAdds(0, 4,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", null, "TDP-C"));
-        checkStateChanges(0, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         checkAssignees(1, 4, "jason");
         checkUpdates(1, 4,
                 new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
         checkAdds(1, 4,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", null, "TDP-C"));
-        checkStateChanges(1, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         checkAssignees(2, 4, "jason");
         checkUpdates(2, 4);
         checkAdds(2, 4,
                 new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", null, "TDP-C"));
-        checkStateChanges(2, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         checkAssignees(3, 4, "jason");
         checkUpdates(3, 4,
                 new IssueData("TDP-8", null, null, null, "jason", null, "TDP-C"));
         checkAdds(3, 4);
-        checkStateChanges(3, 4, new StateChangeData("TDP", "TDP-C", "TDP-3", "TDP-7", "TDP-8"));
 
         //This will not appear in change sets including the create, it becomes a noop
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
@@ -899,7 +862,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", new TesterChecker("brian"), new DocumenterChecker("stuart")));
         checkUpdates(0, 1);
         checkDeletes(0, 1);
-        checkStateChanges(0, 1, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(0, 1);
         checkAssignees(0, 1, "jason");
         checkComponents(0, 1, new String[]{"C-X", "C-Y"});
@@ -1132,7 +1094,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-A"));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1162,7 +1123,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1193,7 +1153,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-2", null, null, null, null, null, "TDP-C"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-C", "TDP-2", "TDP-3", "TDP-7"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1205,7 +1164,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(nonBacklogChanges, new IssueData("TDP-2", IssueType.TASK, Priority.HIGH, "Two", "kabir", new String[]{"C2"}, "TDP-C"));
         checkDeletes(nonBacklogChanges);
         checkUpdates(nonBacklogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-C", "TDP-2", "TDP-3", "TDP-7"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
@@ -1226,7 +1184,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-B"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-2", "TDP-3", "TDP-6"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1259,7 +1216,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-D"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-3", "TDP-4"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1271,7 +1227,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-D"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-3", "TDP-4"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
@@ -1311,7 +1266,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "jason", null, "TDP-A"));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges, "jason");
         checkComponents(backlogChanges);
@@ -1342,7 +1296,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, "jason", null, "TDP-B"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges, "jason");
         checkComponents(backlogChanges);
@@ -1373,7 +1326,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", new String[]{"C-X", "C-Y"}, "TDP-A"));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
@@ -1404,7 +1356,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, new String[]{"C-X", "C-Y"}, "TDP-B"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
@@ -1442,7 +1393,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", new TesterChecker("kabir")));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5", "TDP-8"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1481,7 +1431,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B", new TesterChecker("kabir"), new DocumenterChecker("stuart")));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-B", "TDP-1", "TDP-2", "TDP-6"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1513,7 +1462,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-C"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-C", "TDP-1", "TDP-3", "TDP-7"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1525,7 +1473,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(nonBacklogChanges, new IssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "kabir", new String[]{"C1"}, "TDP-C"));
         checkUpdates(nonBacklogChanges);
         checkDeletes(nonBacklogChanges);
-        checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-C", "TDP-1", "TDP-3", "TDP-7"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkNoCustomFields(nonBacklogChanges);
@@ -1539,7 +1486,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1548,7 +1494,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1560,7 +1505,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(nonBacklogChanges, new IssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "kabir", new String[]{"C1"}, "TDP-D"));
         checkUpdates(nonBacklogChanges);
         checkDeletes(nonBacklogChanges);
-        checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkNoCustomFields(nonBacklogChanges);
@@ -1569,7 +1513,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(nonBacklogChanges);
         checkUpdates(nonBacklogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
         checkDeletes(nonBacklogChanges);
-        checkStateChanges(nonBacklogChanges, new StateChangeData("TDP", "TDP-D", "TDP-1", "TDP-4"));
         checkNoBlacklistChanges(nonBacklogChanges);
         checkAssignees(nonBacklogChanges);
         checkComponents(nonBacklogChanges);
@@ -1584,7 +1527,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1593,7 +1535,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -1602,7 +1543,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(backlogChanges);
         checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
         checkDeletes(backlogChanges);
-        checkStateChanges(backlogChanges, new StateChangeData("TDP", "TDP-A", "TDP-1", "TDP-5"));
         checkNoBlacklistChanges(backlogChanges);
         checkAssignees(backlogChanges);
         checkComponents(backlogChanges);
@@ -2057,41 +1997,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             }
         }
     }
-
-    private void checkStateChanges(int fromView, int expectedView, StateChangeData... expectedChanges) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkStateChanges(changesNode, expectedChanges);
-    }
-
-    private void checkStateChanges(ModelNode changesNode, StateChangeData... expectedChanges) throws SearchException {
-        Map<String, Map<String, List<String>>> expected = new HashMap<>();
-        for (StateChangeData change : expectedChanges) {
-            Map<String, List<String>> expectedForProject = expected.computeIfAbsent(change.projectCode, p -> new HashMap<>());
-            expectedForProject.put(change.state, Arrays.asList(change.issues));
-        }
-
-        ModelNode statesNode = changesNode.get(CHANGES, STATES);
-        Assert.assertEquals(expected.size(), statesNode.keys().size());
-
-        for (Map.Entry<String, Map<String, List<String>>> projectEntry : expected.entrySet()) {
-            ModelNode projectChangeNode = statesNode.get(projectEntry.getKey());
-            Assert.assertTrue(projectChangeNode.isDefined());
-
-            Map<String, List<String>> projectChanges = projectEntry.getValue();
-            Assert.assertEquals(projectChanges.size(), projectChangeNode.keys().size());
-
-            for (Map.Entry<String, List<String>> stateEntry : projectChanges.entrySet()) {
-                List<ModelNode> issuesList = projectChangeNode.get(stateEntry.getKey()).asList();
-                List<String> expectedIssues = stateEntry.getValue();
-                Assert.assertEquals(expectedIssues.size(), issuesList.size());
-
-                for (int i = 0 ; i < issuesList.size() ; i++) {
-                    Assert.assertEquals(expectedIssues.get(i), issuesList.get(i).asString());
-                }
-            }
-        }
-    }
-
 
     String nullOrString(ModelNode node) {
         if (node.isDefined()) {

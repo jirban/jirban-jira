@@ -39,6 +39,7 @@ import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
 import static org.jirban.jira.impl.Constants.PROJECTS;
 import static org.jirban.jira.impl.Constants.RANK;
+import static org.jirban.jira.impl.Constants.RANKED;
 import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
@@ -133,12 +134,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 1);
         checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-5"},
-                {"TDP-2", "TDP-6"},
-                {"TDP-3", "TDP-7"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{},{},{},{}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG");
     }
 
     @Test
@@ -161,12 +158,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -11);
         checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 0);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{{}, {}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2", "TBG-4"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP");
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
     }
 
     @Test
@@ -203,16 +196,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-5"},
-                {"TDP-2", "TDP-6"},
-                {"TDP-3", "TDP-7"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2", "TBG-4"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
     }
 
     @Test
@@ -250,16 +235,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-5"},
-                {"TDP-2", "TDP-6"},
-                {"TDP-7"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2", "TBG-4"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Delete an issue in main project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
@@ -279,16 +256,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-5"},
-                {"TDP-2", "TDP-6"},
-                {},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2", "TBG-4"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
@@ -307,16 +276,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-5"},
-                {"TDP-2", "TDP-6"},
-                {},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-3"},
-                {"TBG-2", "TBG-4"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6);
+        checkProjectRankedIssues(boardNode, "TBG", 2, 3, 4);
+
 
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
@@ -334,16 +296,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
         checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-5"},
-                {"TDP-2", "TDP-6"},
-                {},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {},
-                {"TBG-2", "TBG-4"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6);
+        checkProjectRankedIssues(boardNode, "TBG", 2, 4);
     }
 
     @Test
@@ -377,16 +331,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-5"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2"},
-                {}});
+        System.out.println(boardNode.get(PROJECTS, MAIN));
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+
 
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", null, new String[]{"C1"}, "TBG-X");
@@ -408,16 +356,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", new int[]{0}, 0, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-5"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3", "TBG-4"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+
     }
 
     @Test
@@ -449,16 +390,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-5"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
 
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "stuart", null, "TBG-X");
@@ -479,16 +412,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 0, 3);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-5"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3", "TBG-4"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
     }
 
     @Test
@@ -523,16 +448,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-5"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+
 
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
                 "Four", "brian", new String[]{"J", "K"}, "TBG-X");
@@ -553,16 +471,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
         checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", new int[]{5, 6}, 0, 0);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-5"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3", "TBG-4"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+
     }
 
     @Test
@@ -593,16 +504,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2", "TDP-4"},
-                {"TDP-3"},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
 
         //Do updates of single fields, don't bother checking everything now. Just the issue tables and the changed issue
         //We will do a full check later
@@ -697,16 +600,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
         checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", new int[]{1}, 1, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {},
-                {"TDP-2", "TDP-4"},
-                {"TDP-3"},
-                {"TDP-1"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {"TBG-2", "TBG-3"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
     }
 
     @Test
@@ -739,16 +634,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 3);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, 1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+
     }
 
     @Test
@@ -803,16 +691,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", new int[]{4}, 0, -1);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-3"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
     }
 
     @Test
@@ -826,10 +706,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
 
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-1", "TBG-1");
         checkNoCustomFields(boardNode);
@@ -841,10 +719,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-1", "TBG-1", "TDP-3");
         checkNoCustomFields(boardNode);
 
@@ -855,18 +731,18 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
         checkNoCustomFields(boardNode);
 
-        //Move an issue from a bad state to a good state
+        //Move an issue from a bad state to a good state, this does not affect the blacklist which is ok since the config is broken anyway
         event = createUpdateEventAndAddToRegistry("TDP-4", (IssueType) null, null, null, null, false, null, false, "TDP-A", false);
         boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
         getJsonCheckingViewIdAndUsers(2, "kabir");
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
 
         //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
         //bad configuration notices though so the bad state remains in the list
@@ -875,10 +751,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3");
     }
 
@@ -893,10 +767,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
 
         checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1");
         checkNoCustomFields(boardNode);
@@ -908,10 +780,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1", "TDP-3");
         checkNoCustomFields(boardNode);
 
@@ -922,14 +792,12 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
         checkNoCustomFields(boardNode);
 
-        //Move an issue from a bad issue type to a good issue type
+        //Move an issue from a bad issue type to a good issue type, this does not affect the blacklist which is ok since the config is broken anyway
         event = createUpdateEventAndAddToRegistry("TDP-4", IssueType.TASK, null, null, null, false, null, false, null, false);
         boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
@@ -942,10 +810,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3");
     }
 
@@ -960,10 +826,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1");
         checkNoCustomFields(boardNode);
 
@@ -974,10 +838,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1", "TDP-3");
         checkNoCustomFields(boardNode);
 
@@ -988,15 +850,13 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
         checkNoCustomFields(boardNode);
 
 
-        //Move an issue from a bad priority to a good priority
+        //Move an issue from a bad priority to a good priority, this does not affect the blacklist which is ok since the config is broken anyway
         event = createUpdateEventAndAddToRegistry("TDP-4", null, Priority.HIGH, null, null, false, null, false, null, false);
         boardManager.handleEvent(event);
         //Since the issue has been blacklisted the view id is the same
@@ -1009,10 +869,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {}, {"TDP-2"}, {}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {}, {}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 2);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
         checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3");
     }
 
@@ -1042,16 +900,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {},
-                {},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
 
 
         //Now check with the backlog
@@ -1070,16 +920,9 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", new int[]{2}, 0, 1);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2"},
-                {"TDP-3"},
-                {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {"TBG-2"},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2);
+
     }
 
     @Test
@@ -1204,16 +1047,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
 
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //An event putting a 'done' issue into one of the normal states should result in the issue and any assignees/components being brought in
 
@@ -1230,16 +1065,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 0);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Bring in new assignees/components
         update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
@@ -1255,16 +1082,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 1);
         checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", new int[]{0}, 0, 0);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 1);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3", "TDP-4"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
 
 
         update = createUpdateEventAndAddToRegistry("TBG-2", (IssueType)null, null,
@@ -1281,16 +1100,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", new int[]{0}, 0, 0);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3", "TDP-4"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-2"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2);
 
         //Check moving an issue to a done state
         update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
@@ -1305,16 +1116,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-1", "TBG-2"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2);
 
         update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
                 null, null, false, null, false, "TBG-Y", false);
@@ -1327,16 +1130,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-2"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
 
         //Check that moving an issue from a done state to another done state does not trigger a change
         update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
@@ -1350,16 +1145,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-2"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
 
         //Test that updating an issue in a 'done' does not trigger a change
         update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.LOW,
@@ -1373,16 +1160,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
         checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
-        checkProjectIssues(boardNode, "TDP", new String[][]{
-                {"TDP-1", "TDP-3"},
-                {"TDP-2"},
-                {},
-                {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{
-                {},
-                {"TBG-2"},
-                {},
-                {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 2);
     }
 
     @Test
@@ -1434,8 +1213,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0));
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
     }
 
     @Test
@@ -1464,8 +1243,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), new TesterChecker(0));
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Add issues to main project
         //Add an issue
@@ -1531,8 +1310,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.HIGH, "Three", null, 1, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4", "TDP-5", "TDP-6"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {"TBG-2", "TBG-3"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
     }
 
     @Test
@@ -1572,8 +1351,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
 
 
         //Create an issue in the main project with more custom fields set
@@ -1595,8 +1374,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 0, 0, new TesterChecker(2), new DocumenterChecker(0));
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1", "TDP-5"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Create an issue in the other project, which does NOT have the Documenter field configured for the board
         customFieldValues.put(testerId, "james");
@@ -1618,8 +1397,8 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 0, 0, new TesterChecker(3), new DocumenterChecker(0));
         checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1", "TDP-5"}, {"TDP-2"}, {"TDP-3"}, {"TDP-4"}});
-        checkProjectIssues(boardNode, "TBG", new String[][]{{}, {"TBG-1"}, {"TBG-2"}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2);
     }
 
 
@@ -1656,7 +1435,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(0));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         //Unset custom fields, this will not remove it from the lookup list of field values
         customFieldValues = new HashMap<>();
@@ -1673,8 +1452,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
-
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         //Clear all custom fields in an issue, they will stay in the lookup list of field values
         customFieldValues = new HashMap<>();
@@ -1691,7 +1469,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
@@ -1706,7 +1484,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
     }
 
     @Test
@@ -1743,8 +1521,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(0), new DocumenterChecker(0));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), new DocumenterChecker(1));
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
-
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         //Update and bring in a new documenter, the unused 'jason' stays in the list
         customFieldValues = new HashMap<>();
@@ -1760,7 +1537,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         allIssues = getIssuesCheckingSize(boardNode, 2);
         checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(0), new DocumenterChecker(0));
         checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), new DocumenterChecker(2));
-        checkProjectIssues(boardNode, "TDP", new String[][]{{"TDP-1"}, {"TDP-2"}, {}, {}});
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2);
     }
 
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
@@ -1821,7 +1598,15 @@ public class BoardManagerTest extends AbstractBoardTest {
                 Assert.assertEquals(issueTable[i][j], issuesForState.get(j).asString());
             }
         }
+    }
 
+    private void checkProjectRankedIssues(ModelNode boardNode, String projectCode, int...issueNumbers) {
+        Assert.assertTrue(boardNode.hasDefined(PROJECTS, MAIN, projectCode, RANKED));
+        List<ModelNode> ranked = boardNode.get(PROJECTS, MAIN, projectCode, RANKED).asList();
+        Assert.assertEquals(issueNumbers.length, ranked.size());
+        for (int i = 0 ; i < issueNumbers.length ; i++) {
+            Assert.assertEquals(projectCode + "-" + issueNumbers[i], ranked.get(i).asString());
+        }
     }
 
     private void checkUsers(ModelNode board, String...users) {

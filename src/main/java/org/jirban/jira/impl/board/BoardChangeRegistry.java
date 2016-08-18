@@ -383,10 +383,10 @@ public class BoardChangeRegistry {
 
                     BoardProject project = board.getBoardProject(projectCode);
                     for (String state : changesForProject) {
-                        final ModelNode stateChangesNode = parent.get(Constants.STATES, projectCode, state);
-                        for (String issueKey : project.getIssuesForOwnState(state)) {
-                            stateChangesNode.add(issueKey);
-                        }
+//                        final ModelNode stateChangesNode = parent.get(Constants.STATES, projectCode, state);
+//                        for (String issueKey : project.getIssuesForOwnState(state)) {
+//                            stateChangesNode.add(issueKey);
+//                        }
                     }
                 }
             }
