@@ -58,8 +58,6 @@ public class BoardChange {
     private final String addedBlacklistIssue;
     private final String deletedBlacklistIssue;
 
-    //If the state was changed
-    private final String changedState;
 
     //Whether or not the issue state is a backlog state (may be null in case the change doesn't do anything to an issue, just the
     private final Boolean backlogState;
@@ -70,7 +68,7 @@ public class BoardChange {
 
     private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
-                        String addedBlacklistIssue, String deletedBlacklistIssue, String changedState,
+                        String addedBlacklistIssue, String deletedBlacklistIssue,
                         Boolean fromBacklogState, Boolean backlogState,
                         Map<String, CustomFieldValue> customFieldValues,
                         Map<String, CustomFieldValue> newCustomFieldValues) {
@@ -83,7 +81,6 @@ public class BoardChange {
         this.addedBlacklistIssueType = addedBlacklistIssueType;
         this.addedBlacklistIssue = addedBlacklistIssue;
         this.deletedBlacklistIssue = deletedBlacklistIssue;
-        this.changedState = changedState;
         this.fromBacklogState = fromBacklogState;
         this.backlogState = backlogState;
         this.customFieldValues = customFieldValues;
@@ -134,10 +131,6 @@ public class BoardChange {
         return addedBlacklistIssue != null || deletedBlacklistIssue != null;
     }
 
-    String getChangedState() {
-        return changedState;
-    }
-
     public Boolean getBacklogState() {
         return backlogState;
     }
@@ -175,7 +168,6 @@ public class BoardChange {
         private String deletedBlacklistIssue;
 
         //If the state was recalculated
-        private String changedState;
         private Boolean fromBacklogState;
         private Boolean backlogState;
         private Map<String, CustomFieldValue> customFieldValues;
@@ -201,11 +193,6 @@ public class BoardChange {
 
         public Builder deleteBlacklist(String deletedIssue) {
             deletedBlacklistIssue = deletedIssue;
-            return this;
-        }
-
-        public Builder addStateRecalculation(String state) {
-            changedState = state;
             return this;
         }
 
@@ -249,7 +236,7 @@ public class BoardChange {
         public void buildAndRegister() {
             BoardChange change = new BoardChange(
                     view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue, changedState,
+                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue,
                     fromBacklogState, backlogState, customFieldValues, newCustomFieldValues);
             registry.registerChange(change);
         }

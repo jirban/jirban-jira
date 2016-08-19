@@ -694,15 +694,6 @@ public class Board {
                         changeBuilder.addCustomFieldValues(board.sortedCustomFieldValues, customFieldValues);
                     }
 
-                    //Propagate the new state somehow
-                    if (evtDetail.isReranked()) {
-                        Issue issue = boardCopy.getIssue(event.getIssueKey());
-                        if (issue != null) {
-                            final String state = issue.getState();
-                            changeBuilder.addStateRecalculation(state);
-                        }
-                    }
-
                     if (existingIssue != null) {
                         changeBuilder.setFromBacklogState(project.isBacklogState(existingIssue.getState()));
                     }
