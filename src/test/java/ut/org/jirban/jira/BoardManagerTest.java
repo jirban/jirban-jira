@@ -1438,6 +1438,202 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
     }
 
+
+    @Test
+    public void testIrrelevantChange() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
+        getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+
+        //Create an update event which doesn't change anything we are interested in and make sure the view id stays at zero
+        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, false, null);
+        boardManager.handleEvent(event);
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        checkNoBlacklist(boardNode);
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+
+    }
+
+    @Test
+    public void testRankIssue() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
+        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
+        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
+        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
+        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
+        getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+
+        //Rank an issue to somewhere in the middle in main project and check board
+        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-4");
+        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
+        checkNoBlacklist(boardNode);
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 3, 1, 4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+
+        //Rank an issue to the start of the main project and check board
+        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-2");
+        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        checkNoBlacklist(boardNode);
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3,  4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+
+        //Rank an issue to the end of the main project and check board
+        issueRegistry.rerankIssue("TDP", "TDP-1", null);
+        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
+        checkNoBlacklist(boardNode);
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 3,  4, 5, 6, 7, 1);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+
+        //Rank an issue in the other project and check board
+        issueRegistry.rerankIssue("TBG", "TBG-2", "TBG-4");
+        event = JirbanIssueEvent.createUpdateEvent("TBG-2", "TBG", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
+        checkNoBlacklist(boardNode);
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 3,  4, 5, 6, 7, 1);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 3, 2, 4);
+
+        //Check that all the issue datas are as expected
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+    }
+
+    @Test
+    public void testRankIssueBeforeBlacklistedIssue() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "BAD");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "BAD");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
+        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+
+        //Rank an issue to before a blacklisted issue and check board
+        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-3");
+        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
+        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 1, 5, 6, 7);
+
+        //Try again, board should be the same
+        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-3");
+        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
+        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 1, 5, 6, 7);
+
+        //Rank somewhere not blacklisted
+        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-7");
+        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
+        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 5, 6, 1, 7);
+
+        //Check that all the issue datas are as expected
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 5);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 1);
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 1);
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
+    }
+
+
+    @Test
+    public void testRankIssueBeforeBlacklistedIssueEnd() throws Exception {
+        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
+        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
+        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
+        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "BAD");
+        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "BAD");
+        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "BAD");
+        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "BAD");
+        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+
+        //Rank an issue to before a blacklisted issue. There are only blacklisted issues left, so the issue should get inserted at the end
+        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-4");
+        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
+        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-4", "TDP-5", "TDP-6", "TDP-7");
+        checkComponents(boardNode);
+        checkNoCustomFields(boardNode);
+        checkProjectRankedIssues(boardNode, "TDP", 2, 3, 1);
+
+
+        //Check that all the issue datas are as expected
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 3);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
+    }
+
     private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
         return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);
     }

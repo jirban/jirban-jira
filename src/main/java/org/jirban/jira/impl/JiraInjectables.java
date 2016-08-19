@@ -3,6 +3,8 @@ package org.jirban.jira.impl;
 import javax.inject.Inject;
 import javax.inject.Named;
 
+import org.jirban.jira.api.NextRankedIssueUtil;
+
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.avatar.AvatarService;
 import com.atlassian.jira.bc.issue.IssueService;
@@ -73,6 +75,8 @@ public class JiraInjectables {
     //Jira does not like injecting this one, so use the ComponentAccessor
     private volatile UserManager jiraUserManager;
 
+    private final NextRankedIssueUtil nextRankedIssueUtil;
+
 
     @Inject
     public JiraInjectables(final ActiveObjects activeObjects, final ApplicationProperties applicationProperties,
@@ -81,7 +85,8 @@ public class JiraInjectables {
                            final IssueLinkManager issueLinkManager, final IssueTypeManager issueTypeManager,
                            final PermissionManager permissionManager, final ProjectManager projectManager,
                            final PriorityManager priorityManager, final SearchService searchService,
-                           final UserService userService, final VersionManager versionManager) {
+                           final UserService userService, final VersionManager versionManager,
+                           final NextRankedIssueUtil nextRankedIssueUtil) {
         this.activeObjects = activeObjects;
         this.applicationProperties = applicationProperties;
         this.avatarService = avatarService;
@@ -96,6 +101,7 @@ public class JiraInjectables {
         this.searchService = searchService;
         this.userService = userService;
         this.versionManager = versionManager;
+        this.nextRankedIssueUtil = nextRankedIssueUtil;
     }
 
     public ActiveObjects getActiveObjects() {
@@ -159,5 +165,9 @@ public class JiraInjectables {
 
     public VersionManager getVersionManager() {
         return versionManager;
+    }
+
+    public NextRankedIssueUtil getNextRankedIssueUtil() {
+        return nextRankedIssueUtil;
     }
 }

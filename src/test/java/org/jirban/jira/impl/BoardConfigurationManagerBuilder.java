@@ -182,7 +182,8 @@ public class BoardConfigurationManagerBuilder {
                 priorityManager,
                 searchService,
                 userService,
-                versionManager);
+                versionManager,
+                null);
 
         return new BoardConfigurationManagerImpl(jiraInjectables);
     }

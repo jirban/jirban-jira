@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.junit.Assert;
 
 import com.atlassian.crowd.embedded.api.User;
@@ -44,7 +45,7 @@ import com.atlassian.jira.user.util.UserManager;
 /**
  * @author Kabir Khan
  */
-public class IssueRegistry {
+public class IssueRegistry implements NextRankedIssueUtil {
     private final CrowdUserBridge userBridge;
     private final Map<String, Map<String, MockIssue>> issuesByProject = new HashMap<>();
 
@@ -123,5 +124,42 @@ public class IssueRegistry {
     public Issue getIssue(String projectCode, String issueKey) {
         Map<String, MockIssue> issues = issuesByProject.get(projectCode);
         return issues.get(issueKey);
+    }
+
+    public void rerankIssue(String projectCode, String issueKey, String beforeIssueKey) {
+        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
+        MockIssue issue = issues.get(issueKey);
+        List<String> issueList = new ArrayList<>(issues.keySet());
+        issueList.remove(issueKey);
+        if (beforeIssueKey == null) {
+            issueList.add(issueKey);
+        } else {
+            int index = issueList.indexOf(beforeIssueKey);
+            issueList.add(index, issueKey);
+        }
+
+        Map<String, MockIssue> newIssues = new LinkedHashMap<>();
+        for (String key : issueList) {
+            newIssues.put(key, issues.get(key));
+        }
+
+        issuesByProject.put(projectCode, newIssues);
+    }
+
+    @Override
+    public String findNextRankedIssue(String issueKey) {
+        int index = issueKey.indexOf("-");
+        String projectCode = issueKey.substring(0, index);
+        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
+        boolean found = false;
+        for (MockIssue issue : issues.values()) {
+            if (found) {
+                return issue.getKey();
+            }
+            if (issue.getKey().equals(issueKey)) {
+                found = true;
+            }
+        }
+        return null;
     }
 }

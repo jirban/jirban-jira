@@ -23,6 +23,7 @@ package org.jirban.jira.impl;
 
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.api.NextRankedIssueUtil;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.avatar.AvatarService;
@@ -56,6 +57,7 @@ public class BoardManagerBuilder {
     private BoardConfigurationManager boardConfigurationManager;
     private ProjectManager projectManager = ProjectManagerBuilder.getAnyProjectManager();
     private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
+    private NextRankedIssueUtil nextRankedIssueUtil;
 
     public BoardManagerBuilder() {
     }
@@ -95,6 +97,11 @@ public class BoardManagerBuilder {
         return this;
     }
 
+    public BoardManagerBuilder setNextRankedIssueUtil(NextRankedIssueUtil nextRankedIssueUtil) {
+        this.nextRankedIssueUtil = nextRankedIssueUtil;
+        return this;
+    }
+
     public BoardManager build() {
         //These are not needed for this code path at the moment
         final ActiveObjects activeObjects = null;
@@ -121,7 +128,8 @@ public class BoardManagerBuilder {
                 priorityManager,
                 searchService,
                 userService,
-                versionManager);
+                versionManager,
+                nextRankedIssueUtil);
 
         return new BoardManagerImpl(jiraInjectables, boardConfigurationManager);
     }

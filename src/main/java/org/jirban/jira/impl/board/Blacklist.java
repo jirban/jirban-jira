@@ -217,7 +217,7 @@ public class Blacklist {
         @Override
         public boolean isBlackListed(String issueKey) {
             if (issues == null) {
-                return false;
+                return original.isBlacklisted(issueKey);
             }
             return issues.contains(issueKey);
         }

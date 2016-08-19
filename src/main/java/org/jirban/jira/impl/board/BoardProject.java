@@ -34,6 +34,7 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
@@ -339,26 +340,22 @@ public class BoardProject {
             newIssue = Issue.createForCreateEvent(
                     this, issueKey, state, summary, issueType, priority, assignee, issueComponents, customFieldValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
-            //A new issue should have the lowest rank
+
             if (newIssue != null) {
-                rankedIssueKeys = new ArrayList<>(project.rankedIssueKeys);
-                rankedIssueKeys.add(newIssue.getKey());
+                rankedIssueKeys = rankIssues(issueKey);
             }
             return newIssue;
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
-                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged,
+                          Assignee issueAssignee, Set<Component> issueComponents, boolean reranked,
                           String state, Map<String, CustomFieldValue> customFieldValues) {
-            JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), rankOrStateChanged);
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), reranked);
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
                     summary, issueAssignee, issueComponents, state, customFieldValues);
-            if (newIssue == null && rankOrStateChanged) {
-                newIssue = existing;
-            }
-            JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}", existing, newIssue);
-            if (newIssue != null && rankOrStateChanged) {
-                rankedIssueKeys = rankIssues();
+            JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}. Reranked: {}", existing, newIssue, reranked);
+            if (reranked) {
+                rankedIssueKeys = rankIssues(existing.getKey());
             }
             return newIssue;
         }
@@ -368,9 +365,36 @@ public class BoardProject {
             rankedIssueKeys.remove(issue.getKey());
         }
 
-        List<String> rankIssues() {
-            //TODO
-            return new ArrayList<>(project.rankedIssueKeys);
+        List<String> rankIssues(String issueKey) {
+            NextRankedIssueUtil nextRankedIssueUtil = jiraInjectables.getNextRankedIssueUtil();
+            String nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(issueKey);
+            //If the next issue is blacklisted, keep searching until we find the next valid one
+            while (nextIssueKey != null && board.getBlacklist().isBlackListed(nextIssueKey)) {
+                nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(nextIssueKey);
+            }
+            final List<String> newRankedKeys = new ArrayList<>();
+            if (nextIssueKey == null) {
+                //Add it at the end
+                project.rankedIssueKeys.forEach(key -> {
+                    if (!key.equals(issueKey)) {
+                        //Don't copy the one we are moving to the end
+                        newRankedKeys.add(key);
+                    }
+                });
+                newRankedKeys.add(issueKey);
+            } else {
+                final String nextKey = nextIssueKey;
+                //Remove it from the middle and add it at the end
+                project.rankedIssueKeys.forEach(key -> {
+                    if (key.equals(nextKey)) {
+                        newRankedKeys.add(issueKey);
+                    }
+                    if (!key.equals(issueKey)) {
+                        newRankedKeys.add(key);
+                    }
+                });
+            }
+            return new ArrayList<>(newRankedKeys);
         }
 
         Issue loadSingleIssue(String issueKey) throws SearchException {
@@ -392,7 +416,7 @@ public class BoardProject {
             issueBuilder.load(issues.get(0));
             newIssue = issueBuilder.build();
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - found {}", newIssue);
-            rankedIssueKeys = rankIssues();
+            rankedIssueKeys = rankIssues(issueKey);
             return newIssue;
         }
 
