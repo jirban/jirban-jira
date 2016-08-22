@@ -162,21 +162,7 @@ export class TestBoardData {
                     "S-4": "TDP-D"
                 },
                 colour : "#4667CA",
-                issues : [
-                    [
-                        "TDP-1",
-                        "TDP-5"
-                    ],
-                    [
-                        "TDP-2",
-                        "TDP-6"
-                    ],
-                    [
-                        "TDP-3",
-                        "TDP-7"
-                    ],
-                    ["TDP-4"]
-                ]
+                ranked : ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"]
             },
             TBG : {
                 states : [
@@ -188,18 +174,7 @@ export class TestBoardData {
                     "S-2" : "TBG-X",
                     "S-3" : "TBG-Y",
                 },
-                issues : [
-                    [],
-                    [
-                        "TBG-1",
-                        "TBG-3"
-                    ],
-                    [
-                        "TBG-2",
-                        "TBG-4"
-                    ],
-                    []
-                ]
+                ranked: ["TBG-1", "TBG-2", "TBG-3", "TBG-4"]
             }
         },
         linked : {TUP : {states : [
@@ -323,21 +298,7 @@ export class TestBoardData {
                     "S-4": "TDP-D"
                 },
                 colour : "#4667CA",
-                issues : [
-                    [
-                        "TDP-1",
-                        "TDP-5"
-                    ],
-                    [
-                        "TDP-2",
-                        "TDP-6"
-                    ],
-                    [
-                        "TDP-3",
-                        "TDP-7"
-                    ],
-                    ["TDP-4"]
-                ]
+                ranked : ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"]
             }
         }
     };
@@ -441,18 +402,7 @@ export class TestBoardData {
                     "S-2" : "TBG-X",
                     "S-3" : "TBG-Y",
                 },
-                issues : [
-                    [],
-                    [
-                        "TBG-1",
-                        "TBG-3"
-                    ],
-                    [
-                        "TBG-2",
-                        "TBG-4"
-                    ],
-                    []
-                ]
+                ranked : ["TBG-1", "TBG-2", "TBG-3", "TBG-4"]
             }
         }
     };
@@ -564,12 +514,7 @@ export class TestBoardData {
                     "S-4": "TDP-D"
                 },
                 colour : "#4667CA",
-                issues : [
-                    ["TDP-1"],
-                    ["TDP-2"],
-                    [],
-                    []
-                ]
+                ranked : ["TDP-1", "TDP-2"],
             },
             TBG : {
                 colour : "#CA6746",
@@ -577,12 +522,7 @@ export class TestBoardData {
                     "S-2" : "TBG-X",
                     "S-3" : "TBG-Y"
                 },
-                issues : [
-                    [],
-                    ["TBG-1"],
-                    [],
-                    []
-                ]
+                ranked : ["TBG-1"]
             }
         }
     };
