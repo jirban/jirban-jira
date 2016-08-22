@@ -24,7 +24,7 @@ describe('BoardData tests', ()=> {
             //Delete from the standard config to simulate a project with absolutely no issues
             delete data.components;
             delete data.assignees;
-            data.projects.main.TDP.issues=[[], [], [], []];
+            data.projects.main.TDP.ranked=[];
 
             let boardData:BoardData = new BoardData();
             boardData.deserialize("tst", data);
