@@ -90,6 +90,9 @@ public class BoardProject {
         return board.getCustomFieldIndex(customFieldValue);
     }
 
+    public List<String> getRankedIssueKeys() {
+        return rankedIssueKeys;
+    }
 
     void serialize(JiraInjectables jiraInjectables, Board board, ModelNode parent, ApplicationUser user, boolean backlog) {
         //Whether the user can rank issues or not

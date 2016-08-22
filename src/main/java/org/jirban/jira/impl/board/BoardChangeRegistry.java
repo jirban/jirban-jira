@@ -28,12 +28,14 @@ import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
 import static org.jirban.jira.impl.Constants.CUSTOM;
+import static org.jirban.jira.impl.Constants.INDEX;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.NEW;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.RANK;
 import static org.jirban.jira.impl.Constants.REMOVED_ISSUES;
 import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
@@ -277,6 +279,7 @@ public class BoardChangeRegistry {
                 blacklistChange.populate(boardChange);
             }
 
+
             if (boardChange.getView() > view) {
                 view = boardChange.getView();
             }
@@ -290,7 +293,8 @@ public class BoardChangeRegistry {
             Set<IssueChange> newIssues = new HashSet<>();
             Set<IssueChange> updatedIssues = new HashSet<>();
             Set<IssueChange> deletedIssues = new HashSet<>();
-            sortIssues(board, newIssues, updatedIssues, deletedIssues);
+            Map<String, Set<String>> rerankedIssuesByProject = new HashMap();
+            sortIssues(board, newIssues, updatedIssues, deletedIssues, rerankedIssuesByProject);
 
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
@@ -302,6 +306,29 @@ public class BoardChangeRegistry {
             serializeComponents(changes, newReferenceCollector.getNewComponents());
             serializeCustomFieldValues(changes, newReferenceCollector.getNewCustomFieldValues());
             serializeBlacklist(changes);
+
+            if (rerankedIssuesByProject.size() > 0) {
+
+                for (Map.Entry<String, Set<String>> projectEntry : rerankedIssuesByProject.entrySet()) {
+
+                    final Set<String> rerankedIssues = projectEntry.getValue();
+                    final BoardProject project = board.getBoardProject(projectEntry.getKey());
+                    final List<String> rankedIssueKeys = project.getRankedIssueKeys();
+
+                    for (int i = 0; i < rankedIssueKeys.size() ; i++) {
+                        final String issueKey = rankedIssueKeys.get(i);
+
+                        if (rerankedIssues.contains(issueKey)) {
+                            final ModelNode ranked = changes.get(RANK, projectEntry.getKey());
+
+                            ModelNode rankEntry = new ModelNode();
+                            rankEntry.get(INDEX).set(i);
+                            rankEntry.get(KEY).set(issueKey);
+                            ranked.add(rankEntry);
+                        }
+                    }
+                }
+            }
             return output;
         }
 
@@ -343,24 +370,29 @@ public class BoardChangeRegistry {
         }
 
         private void sortIssues(Board board, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues,
-                                Set<IssueChange> deletedIssues) {
+                                Set<IssueChange> deletedIssues,
+                                Map<String, Set<String>> rerankedIssuesByProject) {
             for (IssueChange change : issueChanges.values()) {
                 Assignee newAssignee = null;
                 Map<String, Component> newComponentsForIssue = null;
+                boolean rank = false;
                 if (change.type == CREATE) {
                     if (backlog || !change.backlogEndState) {
                         newIssues.add(change);
+                        rank = true;
                     }
                 } else if (change.type == UPDATE) {
                     if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
                         updatedIssues.add(change);
+                        rank = change.reranked;
                     } else if (change.backlogStartState && !change.backlogEndState) {
                         //This is being moved from the backlog to the non-backlog with the backlog hidden. Treat this
                         //as an add for the client. We need to create a new IssueChange containing all the relevant data
                         //since an update only contains the changed data
                         IssueChange createWithAllData = board.createCreateIssueChange(BoardChangeRegistry.this, change.issueKey);
                         newIssues.add(createWithAllData);
-                    } else if (!change.backlogStartState && change.backlogEndState) {
+                        rank = true;
+                    } else if (!backlog && !change.backlogStartState && change.backlogEndState) {
                         //This is being moved from the non-backlog to the backlog with the backlog hidden. Treat this
                         //as a delete for the client.
                         IssueChange delete = new IssueChange(change.projectCode, change.issueKey, null);
@@ -370,6 +402,12 @@ public class BoardChangeRegistry {
                     }
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
+                }
+
+                if (rank) {
+                    Set<String> rerankedIssues =
+                            rerankedIssuesByProject.computeIfAbsent(change.projectCode, k -> new HashSet<String>());
+                    rerankedIssues.add(change.issueKey);
                 }
             }
         }
@@ -388,7 +426,9 @@ public class BoardChangeRegistry {
         private final String issueKey;
         private int view;
         private Type type;
+        private boolean reranked;
 
+        //Will be null if the issue was both created and updated
         private String issueType;
         private String priority;
         private String summary;
@@ -429,7 +469,11 @@ public class BoardChangeRegistry {
             }
             switch (type) {
                 case CREATE:
+                    reranked = true;
                 case UPDATE:
+                    if (!reranked) {
+                        reranked = boardChange.getEvent().getDetails().isReranked();
+                    }
                     mergeFields(boardChange, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
                     if (boardChange.getBacklogState() != null) {
                         backlogEndState = boardChange.getBacklogState();

@@ -208,7 +208,7 @@ public abstract class AbstractBoardTest {
         Issue issue = issueRegistry.getIssue(projectCode, issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
                 priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
-                state, state != null || rank, customFieldValues);
+                state, rank, customFieldValues);
 
         issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
         if (customFieldValues != null) {

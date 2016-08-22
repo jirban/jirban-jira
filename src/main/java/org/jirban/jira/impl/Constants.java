@@ -51,6 +51,7 @@ public class Constants {
     public static final String HELP = "help";
     public static final String ICON = "icon";
     public static final String ID = "id";
+    public static final String INDEX = "index";
     public static final String ISSUE_TYPES = "issue-types";
     public static final String ISSUES = "issues";
     public static final String JIRBAN_VERSION = "jirban-version";
