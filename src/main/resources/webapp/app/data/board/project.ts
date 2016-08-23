@@ -52,24 +52,18 @@ export class Projects {
     }
 
     deleteIssues(deletedIssues:IssueData[]) {
-        let issuesByProjectAndBoardState:IMap<IMap<IMap<IssueData>>> = {};
+        let issuesByProject:IMap<IMap<IssueData>> = {};
         for (let issue of deletedIssues) {
-            let issuesByBoardState:IMap<IMap<IssueData>> = issuesByProjectAndBoardState[issue.projectCode];
-            if (!issuesByBoardState) {
-                issuesByBoardState = {};
-                issuesByProjectAndBoardState[issue.projectCode] = issuesByBoardState;
-            }
-
-            let issues:IMap<IssueData> = issuesByBoardState[issue.boardStatus];
+            let issues:IMap<IssueData> = issuesByProject[issue.projectCode];
             if (!issues) {
                 issues = {};
-                issuesByBoardState[issue.boardStatus] = issues;
+                issuesByProject[issue.projectCode] = issues;
             }
             issues[issue.key] = issue;
         }
 
-        for (let projectCode in issuesByProjectAndBoardState) {
-            this._boardProjects.forKey(projectCode).deleteIssues(issuesByProjectAndBoardState[projectCode]);
+        for (let projectCode in issuesByProject) {
+            this._boardProjects.forKey(projectCode).deleteIssues(issuesByProject[projectCode]);
         }
     }
 
@@ -173,9 +167,9 @@ export class BoardProject extends Project {
         return this._states.indices[state];
     }
 
-    deleteIssues(deletedIssuesByBoardState:IMap<IMap<IssueData>>) {
+    /*
+    deleteIssues(deletedIssuesByBoardState:IMap<IMap<IssueData>) {
         //TODO reintroduce this
-        /*
         for (let boardState in deletedIssuesByBoardState) {
             let issueTableIndex:number = this._boardStates.indices[boardState];
             let deletedIssues:IMap<IssueData> = deletedIssuesByBoardState[boardState];
@@ -187,7 +181,17 @@ export class BoardProject extends Project {
                     i++;
                 }
             }
-        }*/
+        }
+    }
+     */
+    deleteIssues(deletedIssues:IMap<IssueData>) {
+        for (let i:number = 0 ; i < this._rankedIssueKeys.length ; ) {
+            if (deletedIssues[this._rankedIssueKeys[i]]) {
+                this._rankedIssueKeys.splice(i, 1);
+            } else {
+                i++;
+            }
+        }
     }
 
     isValidState(state:string):boolean {
