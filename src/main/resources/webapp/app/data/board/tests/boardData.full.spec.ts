@@ -921,11 +921,6 @@ describe('BoardData tests', ()=> {
                             type: "bug",
                             state: "TDP-B"
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-B" : ["TDP-1", "TDP-2"]
-                        }
                     }
                 }
             };
@@ -951,11 +946,6 @@ describe('BoardData tests', ()=> {
                             type: "bug",
                             state: "TDP-C"
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-C" : ["TDP-1"]
-                        }
                     }
                 }
             };
@@ -981,11 +971,6 @@ describe('BoardData tests', ()=> {
                             type: "bug",
                             state: "TBG-Y"
                         }]
-                    },
-                    states: {
-                        TBG : {
-                            "TBG-Y" : ["TBG-1"]
-                        }
                     }
                 }
             };
@@ -1027,11 +1012,6 @@ describe('BoardData tests', ()=> {
                             assignee : "kabir"
 
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-B" : ["TDP-2", "TDP-3"]
-                        }
                     }
                 }
             };
@@ -1066,11 +1046,6 @@ describe('BoardData tests', ()=> {
                             assignee : "jason"
 
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-C" : ["TDP-3"]
-                        }
                     },
                     assignees : [{
                         key : "jason",
@@ -1112,11 +1087,6 @@ describe('BoardData tests', ()=> {
                             assignee : "kabir"
 
                         }]
-                    },
-                    states: {
-                        TBG : {
-                            "TBG-X" : ["TBG-2", "TBG-1"]
-                        }
                     }
                 }
             };
@@ -1152,11 +1122,6 @@ describe('BoardData tests', ()=> {
                             assignee : "brian"
 
                         }]
-                    },
-                    states: {
-                        TBG : {
-                            "TBG-Y" : ["TBG-2"]
-                        }
                     }
                 }
             };
@@ -1200,11 +1165,6 @@ describe('BoardData tests', ()=> {
                                 Tester: "kabir",
                                 Documenter: "stuart"}
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-B" : ["TDP-2", "TDP-3"]
-                        }
                     }
                 }
             };

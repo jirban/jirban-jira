@@ -101,10 +101,11 @@ export class IssueTable {
                     console.log("Could not find issue to update " + update.key);
                     continue;
                 }
-                if (update.state) {
-                    //The issue has moved its state, so we need to delete it from the old state column
-                    deletedIssues.push(issue);
-                }
+                //No longer needed, the rank is independent of this
+                // if (update.state) {
+                //     //The issue has moved its state, so we need to delete it from the old state column
+                //     deletedIssues.push(issue);
+                // }
             }
         }
 
