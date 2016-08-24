@@ -2,6 +2,7 @@ import {Indexed} from "../../common/indexed";
 import {IMap} from "../../common/map";
 import {IssueData} from "./issueData";
 import {IssueTable} from "./issueTable";
+import {RankChange} from "./change";
 import ownKeys = Reflect.ownKeys;
 
 /**
@@ -167,23 +168,6 @@ export class BoardProject extends Project {
         return this._states.indices[state];
     }
 
-    /*
-    deleteIssues(deletedIssuesByBoardState:IMap<IMap<IssueData>) {
-        //TODO reintroduce this
-        for (let boardState in deletedIssuesByBoardState) {
-            let issueTableIndex:number = this._boardStates.indices[boardState];
-            let deletedIssues:IMap<IssueData> = deletedIssuesByBoardState[boardState];
-            let issueKeysForState:string[] = this._issueKeys[issueTableIndex];
-            for (let i:number = 0 ; i < issueKeysForState.length ; ) {
-                if (deletedIssues[issueKeysForState[i]]) {
-                    issueKeysForState.splice(i, 1);
-                } else {
-                    i++;
-                }
-            }
-        }
-    }
-     */
     deleteIssues(deletedIssues:IMap<IssueData>) {
         for (let i:number = 0 ; i < this._rankedIssueKeys.length ; ) {
             if (deletedIssues[this._rankedIssueKeys[i]]) {
@@ -218,11 +202,36 @@ export class BoardProject extends Project {
         return this.mapStateStringToBoardIndex(ownState);
     }
 
-    updateStateIssues(stateIndex:number, issueKeys:string[]) {
-        //TODO reintroduce this
-        //this._issueKeys[stateIndex] = issueKeys;
-    }
 
+    updateIssueRanks(rankedIssues:IMap<boolean>, rankChanges:RankChange[]) {
+        let changeIndex:number = 0;
+        let change:RankChange = rankChanges[changeIndex];
+        let copy:string[] = [];
+        for (let i:number = 0 ; i < this._rankedIssueKeys.length ; i++) {
+            let current:string = this._rankedIssueKeys[i];
+            if (!change) {
+                //We have processed all the changes so just add the issues
+                copy.push(current);
+            } else {
+                if (i == change.index) {
+                    copy.push(change.key);
+                    changeIndex++;
+                    change = changeIndex < rankChanges.length ? rankChanges[changeIndex] : null;
+                } else {
+                    if (!rankedIssues[current]) {
+                        copy.push(current)
+                    }
+                }
+            }
+        }
+
+        while (change) {
+            copy[change.index] = change.key;
+            changeIndex++;
+            change = rankChanges[changeIndex];
+        }
+        this._rankedIssueKeys = copy;
+    }
 }
 
 

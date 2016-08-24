@@ -5,7 +5,7 @@ import {IMap} from "../../common/map";
 import {BoardFilters} from "./boardFilters";
 import {SwimlaneIndexer, SwimlaneIndexerFactory} from "./swimlaneIndexer";
 import {Indexed} from "../../common/indexed";
-import {ChangeSet} from "./change";
+import {ChangeSet, RankChange} from "./change";
 import {Subject, Observable} from "rxjs/Rx";
 
 export class IssueTable {
@@ -101,11 +101,6 @@ export class IssueTable {
                     console.log("Could not find issue to update " + update.key);
                     continue;
                 }
-                //No longer needed, the rank is independent of this
-                // if (update.state) {
-                //     //The issue has moved its state, so we need to delete it from the old state column
-                //     deletedIssues.push(issue);
-                // }
             }
         }
 
@@ -134,20 +129,14 @@ export class IssueTable {
             }
         }
 
-        //Now update the changed states
-        if (changeSet.stateChanges) {
+        //Now update the issue ranks
+        if (changeSet.rankChanges) {
             //let ownerProject:BoardProject = this._projects.ownerProject;
-            for (let projectCode in changeSet.stateChanges.indices) {
+            for (let projectCode in changeSet.rankChanges) {
 
-                let projectStates:Indexed<string[]> = changeSet.stateChanges.forKey(projectCode);
+                let projectRankChanges:RankChange[] = changeSet.rankChanges[projectCode];
                 let project:BoardProject = this._projects.boardProjects.forKey(projectCode);
-
-                for (let stateName in projectStates.indices) {
-
-                    let boardState:string = project.mapStateStringToBoard(stateName);
-                    let boardIndex:number = boardData.indexedBoardStateNames.indices[boardState];
-                    project.updateStateIssues(boardIndex, projectStates.forKey(stateName));
-                }
+                project.updateIssueRanks(changeSet.rankedIssues, changeSet.rankChanges[projectCode]);
             }
         }
 
