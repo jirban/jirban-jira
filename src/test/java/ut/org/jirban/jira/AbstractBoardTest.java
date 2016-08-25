@@ -205,12 +205,12 @@ public abstract class AbstractBoardTest {
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         Collection<ProjectComponent> projectComponents = clearComponents ? Collections.emptySet() : MockProjectComponent.createProjectComponents(components);
-        Issue issue = issueRegistry.getIssue(projectCode, issueKey);
+        Issue issue = issueRegistry.getIssue(issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
                 priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
                 state, rank, customFieldValues);
 
-        issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
+        issueRegistry.updateIssue(issueKey, issueTypeName, priorityName, summary, username, components, state);
         if (customFieldValues != null) {
             for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
                 issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());

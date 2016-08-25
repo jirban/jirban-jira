@@ -1947,6 +1947,114 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changes);
     }
 
+    @Test
+    public void testDeleteAndRankIssues() throws Exception {
+        issueRegistry.deleteIssue("TDP-3");
+        JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
+        boardManager.handleEvent(event);
+        ModelNode changesNode = getChangesJson(0, 1);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-3");
+        checkNoBlacklistChanges(changesNode);
+        checkNoRankChanges(changesNode);
+
+        issueRegistry.deleteIssue("TDP-7");
+        event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
+        boardManager.handleEvent(event);
+        changesNode = getChangesJson(0, 2);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-3", "TDP-7");
+        checkNoBlacklistChanges(changesNode);
+        checkNoRankChanges(changesNode);
+
+        issueRegistry.rerankIssue("TDP-1", null);
+        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        boardManager.handleEvent(event);
+        //0 -> 3
+        changesNode = getChangesJson(0, 3);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-3", "TDP-7");
+        checkNoBlacklistChanges(changesNode);
+        checkRankChanges(changesNode, new RankChange(4, "TDP-1"));
+        //1 -> 3
+        changesNode = getChangesJson(1, 3);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-7");
+        checkNoBlacklistChanges(changesNode);
+        checkRankChanges(changesNode, new RankChange(4, "TDP-1"));
+        //2 -> 3
+        changesNode = getChangesJson(2, 3);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode);
+        checkNoBlacklistChanges(changesNode);
+        checkRankChanges(changesNode, new RankChange(4, "TDP-1"));
+
+        //Now delete the reranked issue
+        issueRegistry.deleteIssue("TDP-1");
+        event = JirbanIssueEvent.createDeleteEvent("TDP-1", "TDP");
+        boardManager.handleEvent(event);
+        //0 -> 4
+        changesNode = getChangesJson(0, 4);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-3", "TDP-7", "TDP-1");
+        checkNoBlacklistChanges(changesNode);
+        checkNoRankChanges(changesNode);
+        //1 -> 4
+        changesNode = getChangesJson(1, 4);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-7", "TDP-1");
+        checkNoBlacklistChanges(changesNode);
+        checkNoRankChanges(changesNode);
+        //2 -> 4
+        changesNode = getChangesJson(2, 4);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-1");
+        checkNoBlacklistChanges(changesNode);
+        checkNoRankChanges(changesNode);
+        //3 -> 4
+        changesNode = getChangesJson(3, 4);
+        checkAssignees(changesNode);
+        checkComponents(changesNode);
+        checkNoCustomFields(changesNode);
+        checkAdds(changesNode);
+        checkUpdates(changesNode);
+        checkDeletes(changesNode, "TDP-1");
+        checkNoBlacklistChanges(changesNode);
+        checkNoRankChanges(changesNode);
+    }
+
     private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
         ModelNode changesNode = getChangesJson(fromView, expectedView);
         checkNoIssueChanges(changesNode);

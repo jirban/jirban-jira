@@ -63,9 +63,9 @@ public class IssueRegistry implements NextRankedIssueUtil {
     }
 
 
-    public void updateIssue(String issueKey, String projectCode, String issueTypeName, String priorityName,
+    public void updateIssue(String issueKey, String issueTypeName, String priorityName,
                             String summary, String assignee, String[] components, String state) {
-        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
+        Map<String, MockIssue> issues = issuesByProject.get(getProjectCode(issueKey));
         Assert.assertNotNull(issues);
         Issue issue = issues.get(issueKey);
         Assert.assertNotNull(issue);
@@ -101,7 +101,7 @@ public class IssueRegistry implements NextRankedIssueUtil {
     List<Issue> getIssueList(String searchIssueKey, String project, String searchStatus, Collection<String> doneStatesFilter) {
         if (searchIssueKey != null) {
             String projectCode = searchIssueKey.substring(0, searchIssueKey.indexOf("-"));
-            return Collections.singletonList(getIssue(projectCode, searchIssueKey));
+            return Collections.singletonList(getIssue(searchIssueKey));
         }
         Map<String, MockIssue> issues = issuesByProject.get(project);
         if (issues == null) {
@@ -121,12 +121,13 @@ public class IssueRegistry implements NextRankedIssueUtil {
         return ret;
     }
 
-    public Issue getIssue(String projectCode, String issueKey) {
-        Map<String, MockIssue> issues = issuesByProject.get(projectCode);
+    public Issue getIssue(String issueKey) {
+        Map<String, MockIssue> issues = issuesByProject.get(getProjectCode(issueKey));
         return issues.get(issueKey);
     }
 
-    public void rerankIssue(String projectCode, String issueKey, String beforeIssueKey) {
+    public void rerankIssue(String issueKey, String beforeIssueKey) {
+        String projectCode = getProjectCode(issueKey);
         Map<String, MockIssue> issues = issuesByProject.get(projectCode);
         MockIssue issue = issues.get(issueKey);
         List<String> issueList = new ArrayList<>(issues.keySet());
@@ -161,5 +162,15 @@ public class IssueRegistry implements NextRankedIssueUtil {
             }
         }
         return null;
+    }
+
+    public void deleteIssue(String issueKey) {
+        Map<String, MockIssue> issues = issuesByProject.get(getProjectCode(issueKey));
+        issues.remove(issueKey);
+    }
+
+    private String getProjectCode(String issueKey) {
+        int index = issueKey.indexOf("-");
+        return issueKey.substring(0, index);
     }
 }

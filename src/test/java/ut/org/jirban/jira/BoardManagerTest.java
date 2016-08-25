@@ -1496,7 +1496,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
 
         //Rank an issue to somewhere in the middle in main project and check board
-        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-4");
+        issueRegistry.rerankIssue("TDP-1", "TDP-4");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
@@ -1507,7 +1507,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue to the start of the main project and check board
-        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-2");
+        issueRegistry.rerankIssue("TDP-1", "TDP-2");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
@@ -1518,7 +1518,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue to the end of the main project and check board
-        issueRegistry.rerankIssue("TDP", "TDP-1", null);
+        issueRegistry.rerankIssue("TDP-1", null);
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
@@ -1529,7 +1529,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue in the other project and check board
-        issueRegistry.rerankIssue("TBG", "TBG-2", "TBG-4");
+        issueRegistry.rerankIssue("TBG-2", "TBG-4");
         event = JirbanIssueEvent.createUpdateEvent("TBG-2", "TBG", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
@@ -1566,7 +1566,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
         //Rank an issue to before a blacklisted issue and check board
-        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-3");
+        issueRegistry.rerankIssue("TDP-1", "TDP-3");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
@@ -1576,7 +1576,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TDP", 2, 1, 5, 6, 7);
 
         //Try again, board should be the same
-        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-3");
+        issueRegistry.rerankIssue("TDP-1", "TDP-3");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
@@ -1586,7 +1586,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkProjectRankedIssues(boardNode, "TDP", 2, 1, 5, 6, 7);
 
         //Rank somewhere not blacklisted
-        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-7");
+        issueRegistry.rerankIssue("TDP-1", "TDP-7");
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
@@ -1617,7 +1617,7 @@ public class BoardManagerTest extends AbstractBoardTest {
         getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
 
         //Rank an issue to before a blacklisted issue. There are only blacklisted issues left, so the issue should get inserted at the end
-        issueRegistry.rerankIssue("TDP", "TDP-1", "TDP-4");
+        issueRegistry.rerankIssue("TDP-1", "TDP-4");
         JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
         boardManager.handleEvent(event);
         ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");

@@ -373,32 +373,32 @@ public class BoardChangeRegistry {
                                 Set<IssueChange> deletedIssues,
                                 Map<String, Set<String>> rerankedIssuesByProject) {
             for (IssueChange change : issueChanges.values()) {
-                Assignee newAssignee = null;
-                Map<String, Component> newComponentsForIssue = null;
                 boolean rank = false;
                 if (change.type == CREATE) {
-                    if (backlog || !change.backlogEndState) {
+                    if (backlog || change.backlogEndState != null && !change.backlogEndState) {
                         newIssues.add(change);
                         rank = true;
                     }
                 } else if (change.type == UPDATE) {
-                    if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
+                    if (backlog ||
+                            (!change.backlogStartState && change.backlogEndState != null && !change.backlogEndState)) {
                         updatedIssues.add(change);
                         rank = change.reranked;
-                    } else if (change.backlogStartState && !change.backlogEndState) {
+                    } else if (change.backlogStartState && change.backlogEndState != null && !change.backlogEndState) {
                         //This is being moved from the backlog to the non-backlog with the backlog hidden. Treat this
                         //as an add for the client. We need to create a new IssueChange containing all the relevant data
                         //since an update only contains the changed data
                         IssueChange createWithAllData = board.createCreateIssueChange(BoardChangeRegistry.this, change.issueKey);
                         newIssues.add(createWithAllData);
                         rank = true;
-                    } else if (!backlog && !change.backlogStartState && change.backlogEndState) {
+                    } else if (!backlog && !change.backlogStartState && change.backlogEndState != null && change.backlogEndState) {
                         //This is being moved from the non-backlog to the backlog with the backlog hidden. Treat this
                         //as a delete for the client.
                         IssueChange delete = new IssueChange(change.projectCode, change.issueKey, null);
                         delete.type = DELETE;
-                        delete.type = DELETE;
                         deletedIssues.add(delete);
+                    } else {
+                        rank = change.reranked;
                     }
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
