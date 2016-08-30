@@ -135,8 +135,10 @@ export class IssueTable {
             for (let projectCode in changeSet.rankChanges) {
 
                 let projectRankChanges:RankChange[] = changeSet.rankChanges[projectCode];
-                let project:BoardProject = this._projects.boardProjects.forKey(projectCode);
-                project.updateIssueRanks(changeSet.rankedIssues, changeSet.rankChanges[projectCode]);
+                if (projectRankChanges && projectRankChanges.length > 0) {
+                    let project: BoardProject = this._projects.boardProjects.forKey(projectCode);
+                    project.updateIssueRanks(changeSet.rankedIssues, changeSet.rankChanges[projectCode]);
+                }
             }
         }
 

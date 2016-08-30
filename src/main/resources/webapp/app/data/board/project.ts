@@ -207,21 +207,18 @@ export class BoardProject extends Project {
         let changeIndex:number = 0;
         let change:RankChange = rankChanges[changeIndex];
         let copy:string[] = [];
-        for (let i:number = 0 ; i < this._rankedIssueKeys.length ; i++) {
+        for (let i:number = 0 ; i < this._rankedIssueKeys.length ; ) {
             let current:string = this._rankedIssueKeys[i];
-            if (!change) {
-                //We have processed all the changes so just add the issues
-                copy.push(current);
+            let insertIndex = copy.length;
+            if (change && insertIndex == change.index) {
+                copy.push(change.key);
+                changeIndex++;
+                change = changeIndex < rankChanges.length ? rankChanges[changeIndex] : null;
             } else {
-                if (i == change.index) {
-                    copy.push(change.key);
-                    changeIndex++;
-                    change = changeIndex < rankChanges.length ? rankChanges[changeIndex] : null;
-                } else {
-                    if (!rankedIssues[current]) {
-                        copy.push(current)
-                    }
+                if (!rankedIssues[current]) {
+                    copy.push(current)
                 }
+                i++;
             }
         }
 

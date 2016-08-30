@@ -9,6 +9,7 @@ import {JiraComponent} from "../component";
 import {SwimlaneData} from "../issueTable";
 import {CustomFieldValues, CustomFieldValue} from "../customField";
 import {IMap} from "../../../common/map";
+import {BoardProject} from "../project";
 
 /**
  * This tests application of the expected json onto the BoardData component on the client which is so central to the display of the board.
@@ -1021,7 +1022,263 @@ describe('BoardData tests', ()=> {
     });
 
     describe("Update issue rank", () => {
-        fail("Implement rank issues tests");
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize("tst",
+                TestBoardData.create(TestBoardData.PRE_RERANK_BOARD_PROJECTS, TestBoardData.PRE_RERANK_BOARD_ISSUES));
+        });
+
+
+        it("Move end issue to start", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [{index: 0, key: "TDP-4"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-4", "TDP-1", "TDP-2", "TDP-3"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+        });
+
+        it("Move one middle issue to start", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [{index: 0, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-1", "TDP-2", "TDP-4"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+        });
+
+        it("Move start issue to end", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [{index: 3, key: "TDP-1"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-2", "TDP-3", "TDP-4", "TDP-1"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+        });
+
+        it("Move one middle issue to end", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [{index: 3, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-2", "TDP-4", "TDP-3"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Swap middle issues", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [{index: 1, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-3", "TDP-2", "TDP-4"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Rank two issues", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [
+                            {index: 1, key: "TDP-3"},
+                            {index: 3, key: "TDP-2"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-3", "TDP-4", "TDP-2"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Rank all issues", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    ranked: {
+                        TDP: [
+                            {index: 0, key: "TDP-3"},
+                            {index: 1, key: "TDP-4"},
+                            {index: 2, key: "TDP-1"},
+                            {index: 3, key: "TDP-2"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-4", "TDP-1", "TDP-2"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Combine issue delete with rank", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-1"]
+                    },
+                    ranked: {
+                        TDP: [{index: 0, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-2", "TDP-4"]})
+            let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it ("State updates, deletes and adds", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-3"],
+                        "update" : [{
+                            key: "TDP-2",
+                            type: "issue",
+                            state: "TDP-D"
+                        }],
+                        "new": [{
+                            key: "TDP-5",
+                            state : "TDP-D",
+                            summary : "Five",
+                            priority : "high",
+                            type : "bug",
+                            assignee : "kabir"
+
+                        }]
+                    },
+
+                    ranked: {
+                        TDP: [
+                            {index: 0, key: "TDP-5"},
+                            {index: 1, key: "TDP-2"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-5", "TDP-2", "TDP-1", "TDP-4"]})
+            let layout:any = [["TDP-1"], ["TBG-1"], [], ["TDP-5", "TDP-2", "TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-2", "TDP-5");
+            expect(updatedIssues.array.length).toBe(2);
+            let updatedIssue:IssueData = updatedIssues.forKey("TDP-2");
+            checkBoardIssue(updatedIssue, "TDP-2", "issue", "high", "kabir", ["Second"], "Two");
+            updatedIssue = updatedIssues.forKey("TDP-5");
+            checkBoardIssue(updatedIssue, "TDP-5", "bug", "high", "kabir", null, "Five");
+
+        });
     });
 
     describe("Create issue", () => {
@@ -1058,7 +1315,6 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-
             checkAssignees(boardData, "brian", "kabir");
 
 
@@ -2160,6 +2416,19 @@ describe('BoardData tests', ()=> {
                 } else {
                     fail("Bad project " + issue.projectCode);
                 }
+            }
+        }
+    }
+
+    function checkBoardRank(boardData:BoardData, ranks:any) {
+        for (let projectCode in ranks) {
+            let expectedOrder:string[] = ranks[projectCode];
+
+            let project:BoardProject = boardData.boardProjects.forKey(projectCode);
+            let order:string[] = project.rankedIssueKeys;
+            expect(order.length).toBe(expectedOrder.length);
+            for (let i = 0 ; i < order.length ; i++) {
+                expect(order[i]).toBe(expectedOrder[i]);
             }
         }
     }

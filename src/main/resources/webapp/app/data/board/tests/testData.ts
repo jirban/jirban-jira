@@ -409,63 +409,6 @@ export class TestBoardData {
 
     public static NON_OWNER_ONLY_BOARD_ISSUES:any =
     {
-        "TDP-1" : {
-            key : "TDP-1",
-            state : 0,
-            summary : "One",
-            priority : 0,
-            type : 0,
-            assignee : 0,
-            components: [0]
-        },
-        "TDP-2" : {
-            key : "TDP-2",
-            state : 1,
-            summary : "Two",
-            priority : 1,
-            type : 1,
-            assignee : 1,
-            components: [1]
-        },
-        "TDP-3" : {
-            key : "TDP-3",
-            state : 2,
-            summary : "Three",
-            priority : 2,
-            type : 2
-        },
-        "TDP-4" : {
-            key : "TDP-4",
-            state : 3,
-            summary : "Four",
-            priority : 3,
-            type : 3
-        },
-        "TDP-5" : {
-            key : "TDP-5",
-            state : 0,
-            summary : "Five",
-            priority : 0,
-            type : 0,
-            assignee : 0,
-            components: [0]
-        },
-        "TDP-6" : {
-            key : "TDP-6",
-            state : 1,
-            summary : "Six",
-            priority : 1,
-            type : 1,
-            assignee : 1,
-            components: [1]
-        },
-        "TDP-7" : {
-            key : "TDP-7",
-            state : 2,
-            summary : "Seven",
-            priority : 2,
-            type : 2
-        },
         "TBG-1" : {
             key : "TBG-1",
             state : 0,
@@ -546,6 +489,78 @@ export class TestBoardData {
             type : 1,
             assignee : 1,
             components: [1]
+        },
+        "TBG-1" : {
+            key : "TBG-1",
+            state : 0,
+            summary : "One",
+            priority : 0,
+            type : 0,
+            assignee : 0,
+            components: [0]
+        }
+    };
+
+    // Less data in boards for change tests //////////
+
+    public static PRE_RERANK_BOARD_PROJECTS:any =
+    {
+        owner : "TDP",
+        main : {
+            TDP : {
+                "state-links" : {
+                    "S-1": "TDP-A",
+                    "S-2": "TDP-B",
+                    "S-3": "TDP-C",
+                    "S-4": "TDP-D"
+                },
+                colour : "#4667CA",
+                ranked : ["TDP-1", "TDP-2", "TDP-3", "TDP-4"],
+            },
+            TBG : {
+                colour : "#CA6746",
+                "state-links" : {
+                    "S-2" : "TBG-X",
+                    "S-3" : "TBG-Y"
+                },
+                ranked : ["TBG-1"]
+            }
+        }
+    };
+
+    public static PRE_RERANK_BOARD_ISSUES:any =
+    {
+        "TDP-1" : {
+            key : "TDP-1",
+            state : 0,
+            summary : "One",
+            priority : 0,
+            type : 0,
+            assignee : 0,
+            components: [0]
+        },
+        "TDP-2" : {
+            key : "TDP-2",
+            state : 1,
+            summary : "Two",
+            priority : 1,
+            type : 1,
+            assignee : 1,
+            components: [1]
+        },
+        "TDP-3" : {
+            key : "TDP-3",
+            state : 2,
+            summary : "Three",
+            priority : 2,
+            type : 2
+        },
+        "TDP-4" : {
+            key : "TDP-4",
+            state : 3,
+            summary : "Four",
+            priority : 3,
+            type : 3
         },
         "TBG-1" : {
             key : "TBG-1",
