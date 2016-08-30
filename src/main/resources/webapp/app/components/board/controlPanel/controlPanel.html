@@ -15,7 +15,7 @@
                     </div>
                 </div>
             </div>
-            <div class="setting top-space">
+            <div class="setting top-space" *ngIf="showSwimlane">
                 <div class="setting-header clickable" (click)="clearSwimlane($event)" title="Clear swimlane">Swimlane</div>
                 <div class="setting-content-small">
                     <select ngControl="swimlane" class="setting-input" >

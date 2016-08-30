@@ -1,9 +1,9 @@
 <div id="panel-menu">
     <div class="panel">
         <img src="images/heart-3x.png" class="blink" (click)="toggleHealthPanel()" *ngIf="boardData.blacklist" title="Problems in server configuration"/>
-        <img src="images/eye-3x.png" (click)="toggleView()" title="Toggle View"/>
+        <img src="images/eye-3x.png" (click)="toggleViewEvent()" title="Toggle View"/>
         <img src="images/cog-3x.png" (click)="toggleControlPanel()" title="Board settings"/>
     </div>
 </div>
 <health-panel *ngIf="healthPanel" (closeHealthPanel)="onCloseHealthPanel($event)"></health-panel>
-<control-panel *ngIf="controlPanel" (closeControlPanel)="onCloseControlPanel($event)"></control-panel>
+<control-panel *ngIf="controlPanel" (closeControlPanel)="onCloseControlPanel($event)" [view]="view"></control-panel>

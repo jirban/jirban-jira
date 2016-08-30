@@ -9,6 +9,8 @@ import {ProgressErrorService} from "../../services/progressErrorService";
 import {TitleFormatService} from "../../services/TitleFormatService";
 import {IMap} from "../../common/map";
 import {KanbanViewComponent} from "./view/kanban/kanbanview";
+import {RankViewComponent} from "./view/rank/rankview";
+import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import Timer = NodeJS.Timer;
 
 
@@ -20,11 +22,12 @@ import Timer = NodeJS.Timer;
     selector: 'board',
     providers: [IssuesService, BoardData],
     templateUrl: 'app/components/board/board.html',
-    directives: [KanbanViewComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
+    directives: [KanbanViewComponent, RankViewComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
 })
 export class BoardComponent implements OnDestroy {
 
     private boardCode:string;
+    private view:string = VIEW_KANBAN;
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
@@ -35,6 +38,11 @@ export class BoardComponent implements OnDestroy {
         let queryString:IMap<string> = routeParams.params;
         this.boardCode = routeParams.get('board');
         title.setTitle("Board (" + this.boardCode + ")");
+
+        let view = routeParams.get('view');
+        if (view) {
+            this.view = view;
+        }
 
         this._boardData.setBacklogFromQueryParams(queryString);
 
@@ -66,6 +74,18 @@ export class BoardComponent implements OnDestroy {
     onBlur(event:Event):void{
         console.log("Blur");
         this._issuesService.visible = false;
+    }
+
+    onToggleView(event:Event) {
+        if (this.view === VIEW_KANBAN) {
+            this.view = VIEW_RANK;
+        } else if (this.view === VIEW_RANK) {
+            this.view = VIEW_KANBAN;
+        } else {
+            console.error("Unknown original view " + this.view);
+        }
+
+        console.log("View changed to " + this.view);
     }
 }
 

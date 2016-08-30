@@ -1,11 +1,18 @@
 <div (window:focus)="onFocus($event)" (window:blur)="onBlur($event)">
 
-    <kanban-view
+    <kanban-view *ngIf="view === 'kbv'"
             [boardCode]="boardCode"
             [issuesService]="issuesService"
             [boardData]="boardData">
     </kanban-view>
+    <rank-view *ngIf="view === 'rv'"
+                 [boardCode]="boardCode"
+                 [issuesService]="issuesService"
+                 [boardData]="boardData">
+    </rank-view>
 </div>
 <!-- The panel with links to the control and health panels -->
-<panel-menu></panel-menu>
+<panel-menu
+        (toggleView)="onToggleView($event)"
+        [view]="view"></panel-menu>
 

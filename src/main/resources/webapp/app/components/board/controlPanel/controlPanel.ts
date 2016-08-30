@@ -9,9 +9,11 @@ import {Priority} from "../../../data/board/priority";
 import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
 import {CustomFieldValues} from "../../../data/board/customField";
+import {VIEW_KANBAN} from "../../../common/constants";
 
 @Component({
     selector: 'control-panel',
+    inputs: ['view'],
     outputs: ['closeControlPanel'],
     templateUrl: 'app/components/board/controlPanel/controlPanel.html',
     styleUrls: ['app/components/board/controlPanel/controlPanel.css'],
@@ -33,6 +35,8 @@ export class ControlPanelComponent {
 
     private filtersTooltip:string;
     private filterTooltips:IMap<string> = {};
+
+    private view:string;
 
     constructor(private boardData:BoardData, private formBuilder:FormBuilder) {
     }
@@ -383,12 +387,16 @@ export class ControlPanelComponent {
 
 
     private updateLinkUrl() {
+        console.log("Update link url");
         let url:string = window.location.href;
         let index = url.lastIndexOf("?");
         if (index >= 0) {
             url = url.substr(0, index);
         }
         url = this.boardData.createQueryStringParticeles(url);
+        if (this.view != VIEW_KANBAN) {
+            url += "&view=" + this.view;
+        }
 
         console.log(url);
         this.linkUrl = url;
@@ -416,6 +424,10 @@ export class ControlPanelComponent {
 
     private get customFields():CustomFieldValues[] {
         return this.boardData.customFields.array;
+    }
+
+    private get showSwimlane():boolean {
+        return this.view == VIEW_KANBAN;
     }
 }
 
