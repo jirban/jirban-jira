@@ -1037,7 +1037,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [{index: 0, key: "TDP-4"}]
                     }
                 }
@@ -1062,7 +1062,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [{index: 0, key: "TDP-3"}]
                     }
                 }
@@ -1087,7 +1087,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [{index: 3, key: "TDP-1"}]
                     }
                 }
@@ -1112,7 +1112,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [{index: 3, key: "TDP-3"}]
                     }
                 }
@@ -1136,7 +1136,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [{index: 1, key: "TDP-3"}]
                     }
                 }
@@ -1160,7 +1160,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [
                             {index: 1, key: "TDP-3"},
                             {index: 3, key: "TDP-2"}]
@@ -1185,7 +1185,7 @@ describe('BoardData tests', ()=> {
                 changes: {
                     view: 1,
                     issues: null,
-                    ranked: {
+                    rank: {
                         TDP: [
                             {index: 0, key: "TDP-3"},
                             {index: 1, key: "TDP-4"},
@@ -1214,7 +1214,7 @@ describe('BoardData tests', ()=> {
                     issues: {
                         "delete" : ["TDP-1"]
                     },
-                    ranked: {
+                    rank: {
                         TDP: [{index: 0, key: "TDP-3"}]
                     }
                 }
@@ -1254,7 +1254,7 @@ describe('BoardData tests', ()=> {
                         }]
                     },
 
-                    ranked: {
+                    rank: {
                         TDP: [
                             {index: 0, key: "TDP-5"},
                             {index: 1, key: "TDP-2"}]
@@ -1306,7 +1306,7 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    ranked: {
+                    rank: {
                         TDP: [{index: 2, key: "TDP-3"}]
                     }
                 }
@@ -1350,7 +1350,7 @@ describe('BoardData tests', ()=> {
                         avatar : "/avatars/jason.png",
                         name : "Jason Greene"
                     }],
-                    ranked: {
+                    rank: {
                         TDP: [{index: 2, key: "TDP-3"}]
                     }
                 }
@@ -1391,7 +1391,7 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    ranked: {
+                    rank: {
                         TBG: [{index: 1, key: "TBG-2"}]
                     }
                 }
@@ -1431,7 +1431,7 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    ranked: {
+                    rank: {
                         TBG: [{index: 1, key: "TBG-2"}]
                     }
                 }
@@ -1478,7 +1478,7 @@ describe('BoardData tests', ()=> {
                                 Documenter: "stuart"}
                         }]
                     },
-                    ranked: {
+                    rank: {
                         TDP: [{index: 2, key: "TDP-3"}]
                     }
                 }
@@ -1531,7 +1531,7 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    ranked: {
+                    rank: {
                         TDP: [{index: 2, key: "TDP-3"}, {index: 3, key: "TDP-4"}],
                         TBG: [{index: 1, key: "TBG-2"}]
                     }

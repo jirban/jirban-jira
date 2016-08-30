@@ -134,7 +134,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testDeleteIssues() throws Exception {
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
-        boardManager.handleEvent(delete);
+        boardManager.handleEvent(delete, nextRankedIssueUtil);
         ModelNode changesNode = getChangesJson(0, 1);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -146,7 +146,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changesNode);
 
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
-        boardManager.handleEvent(delete);
+        boardManager.handleEvent(delete, nextRankedIssueUtil);
         changesNode = getChangesJson(0, 2);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -159,7 +159,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
 
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
-        boardManager.handleEvent(delete);
+        boardManager.handleEvent(delete, nextRankedIssueUtil);
         changesNode = getChangesJson(0, 3);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -178,7 +178,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     public void testCreateIssuesAssignees() throws Exception {
         //Add an issue which does not bring in new assignees
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         ModelNode changesNode = getChangesJson(0, 1);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -191,7 +191,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Now add an issue which brings in new assignees
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 2
         changesNode = getChangesJson(0, 2);
         checkAssignees(changesNode, "jason");
@@ -217,7 +217,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Add another one not bringing in new assignees
         create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 3
         changesNode = getChangesJson(0, 3);
         checkAssignees(changesNode, "jason");
@@ -262,7 +262,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     public void testCreateIssuesComponents() throws Exception {
         //Add an issue which does not bring in new components
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         ModelNode changesNode = getChangesJson(0, 1);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -275,7 +275,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Now add an issue which brings in new components
         create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 2
         changesNode = getChangesJson(0, 2);
         checkAssignees(changesNode);
@@ -303,7 +303,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Add another one not bringing in new components
         create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 3
         changesNode = getChangesJson(0, 3);
         checkAssignees(changesNode);
@@ -351,7 +351,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Create an issue which does not bring in custom fields
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAssignees(changes);
         checkComponents(changes);
@@ -366,7 +366,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
         create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D", customFieldValues);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         changes = getChangesJson(0, 2);
         //0 -> 2
         checkAssignees(changes);
@@ -399,7 +399,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "jason");
         customFieldValues.put(documenterId, "kabir");
         create = createCreateEventAndAddToRegistry("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D", customFieldValues);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         changes = getChangesJson(0, 3);
         //0 -> 3
         checkAssignees(changes);
@@ -445,7 +445,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Create an issue which brings in no custom fields
         create = createCreateEventAndAddToRegistry("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 4
         changes = getChangesJson(0, 4);
         checkAssignees(changes);
@@ -514,13 +514,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     public void testUpdateSameIssueNoNewData() throws Exception {
         //Do a noop update
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(0);
         checkNoIssueChanges(0, 0);
         checkNoRankChanges(0, 0);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         //Check assignees and deletes extra well here so we don't have to in the other tests
         checkAssignees(changes);
@@ -534,7 +534,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
 
         update = createUpdateEventAndAddToRegistry("TDP-7", IssueType.BUG, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 2
         changes = getChangesJson(0, 2);
         checkAssignees(changes);
@@ -557,7 +557,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
 
         update = createUpdateEventAndAddToRegistry("TDP-7", null, Priority.HIGHEST, null, null, false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 3
         changes = getChangesJson(0, 3);
         checkAssignees(changes);
@@ -593,7 +593,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     public void testUpdateSameIssueAssignees() throws Exception {
         //Do an update not bringing in any new data
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "kabir", false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAssignees(changes);
         checkComponents(changes);
@@ -605,7 +605,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changes);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, true, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         changes = getChangesJson(0, 2);
         checkAssignees(changes);
         checkComponents(changes);
@@ -618,7 +618,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, true, null, false, null));
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "jason", false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0->3
         changes = getChangesJson(0, 3);
         checkAssignees(changes, "jason");
@@ -651,7 +651,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changes);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "brian", false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0->4
         changes = getChangesJson(0, 4);
         checkAssignees(changes, "jason");
@@ -699,7 +699,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Do an update not bringing in any new data
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false,
                 new String[]{"C1"}, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAssignees(changes);
         checkComponents(changes);
@@ -711,7 +711,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changes);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, true, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 2
         changes = getChangesJson(0, 2);
         checkAssignees(changes);
@@ -735,7 +735,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false,
                 new String[]{"C-10"}, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 3
         changes = getChangesJson(0, 3);
         checkAssignees(changes);
@@ -768,7 +768,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changes);
 
         update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, new String[]{"C1", "C2"}, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 4
         changes = getChangesJson(0, 4);
         checkAssignees(changes);
@@ -830,7 +830,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "stuart");
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7",
                 (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(1);
         ModelNode changes = getChangesJson(0, 1);
         checkAssignees(changes);
@@ -845,7 +845,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "");
         update = createUpdateEventAndAddToRegistry("TDP-7",
                 (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(2);
         changes = getChangesJson(0, 2);
         checkAssignees(changes);
@@ -861,7 +861,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "");
         update = createUpdateEventAndAddToRegistry("TDP-7",
                 (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(3);
         changes = getChangesJson(0, 3);
         checkAssignees(changes);
@@ -879,7 +879,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "jason");
         update = createUpdateEventAndAddToRegistry("TDP-7",
                 (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(4);
         changes = getChangesJson(0, 4);
         checkAssignees(changes);
@@ -898,7 +898,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(documenterId, "james");
         update = createUpdateEventAndAddToRegistry("TDP-7",
                 (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(5);
         changes = getChangesJson(0, 5);
         checkAssignees(changes);
@@ -916,7 +916,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testUpdateSeveralIssues() throws Exception {
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkDeletes(changes);
         checkUpdates(changes, new IssueData("TDP-7", null, null, "Seven-1", null, null, null));
@@ -925,7 +925,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkNoRankChanges(changes);
 
         update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, null, null, "kabir", false, null, false, null, false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         changes = getChangesJson(0, 2);
         checkDeletes(changes);
         checkUpdates(changes,
@@ -939,7 +939,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Create, update and delete TDP-8 to make sure that does not affect the others
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 3
         changes = getChangesJson(0, 3);
         checkDeletes(changes);
@@ -971,7 +971,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //This should appear as an add for change sets including its previous create, and an update for change
         //sets not including the create
         update = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, null, "jason", false, null, false, "TDP-C", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 4
         changes = getChangesJson(0, 4);
         checkAssignees(changes, "jason");
@@ -1010,7 +1010,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //This will not appear in change sets including the create, it becomes a noop
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
-        boardManager.handleEvent(delete);
+        boardManager.handleEvent(delete, nextRankedIssueUtil);
         changes = getChangesJson(0, 5);
         //0 -> 5
         checkAssignees(changes, "jason");
@@ -1062,7 +1062,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8",
                 IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", customFieldValues);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
 
         ModelNode changes = getChangesJson(0, 1);
         checkAdds(changes, new IssueData("TDP-8",
@@ -1077,7 +1077,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
 
         //Although we have deleted the issue introducing the new assignee and components, we should still send those
         //down since they will exist on the server now, so if another issue changes to use those the clients will need a copy.
@@ -1096,7 +1096,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testBlacklistBadCreatedState() throws SearchException {
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.FEATURE, Priority.HIGH, "Eight", null, null, "BadState");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-8"}, null);
@@ -1104,15 +1104,15 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
 
         event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = createUpdateEventAndAddToRegistry("TDP-8", "NewBadType", null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-8"});
@@ -1125,22 +1125,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testBlacklistBadUpdatedState() throws SearchException {
         JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType)null, null, null, null, false, null, false, "BadState", false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-7"}, null);
         checkNoRankChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = createUpdateEventAndAddToRegistry("TDP-7", "NewBadType", null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-7"});
@@ -1153,22 +1153,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testBlacklistBadCreatedIssueType() throws SearchException {
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", "BadType", Priority.HIGH.name, "Eight", null, null, "TDP-C");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-8"}, null);
         checkNoRankChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = createUpdateEventAndAddToRegistry("TDP-8", "NewBadType", null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-8"});
@@ -1181,22 +1181,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testBlacklistBadUpdatedIssueType() throws SearchException {
         JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", "BadType", null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-7"}, null);
         checkNoRankChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = createUpdateEventAndAddToRegistry("TDP-7", "NewBadType", null, null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-7"});
@@ -1209,22 +1209,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testBlacklistBadCreatedPriority() throws SearchException {
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.FEATURE.name, "BadPriority", "Eight", null, null, "TDP-C");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-8"}, null);
         checkNoRankChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-8", null, (Priority)null, "Eight-1", null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = createUpdateEventAndAddToRegistry("TDP-8", null, "NewBadPriority", null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-8"});
@@ -1237,22 +1237,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     @Test
     public void testBlacklistBadUpdatedPriority() throws SearchException {
         JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", null, "BadPriority", null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
         checkNoIssueChanges(0, 1);
         checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-7"}, null);
         checkNoRankChanges(0, 1);
 
         event = createUpdateEventAndAddToRegistry("TDP-7", null, (Priority)null, "Eight-1", null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = createUpdateEventAndAddToRegistry("TDP-7", null, "NewBadPriority", null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(2);
         checkNoIssueChanges(0, 2);
         checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-7"});
@@ -1268,7 +1268,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-1", null, "high", null, null, false, null, false, null, false);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1);
 
         //Backlog visible
@@ -1299,7 +1299,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Do a create in the backlog
         JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-A");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1328,7 +1328,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-B", false);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         checkViewId(1);
 
         //Backlog visible
@@ -1360,7 +1360,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-C", false);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         checkViewId(1);
 
         //Backlog visible
@@ -1393,7 +1393,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-B", false);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         checkViewId(1);
 
         //Backlog visible
@@ -1427,7 +1427,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
         checkViewId(1);
 
         //Backlog visible
@@ -1460,7 +1460,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-2", "Bad Type", "Bad Priority", null, null, false, null, false, null, false);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1480,7 +1480,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "jason", null, "TDP-A");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1512,7 +1512,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, "jason", false, null, false, "TDP-B", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1544,7 +1544,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", new String[]{"C-X", "C-Y"}, "TDP-A");
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1576,7 +1576,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, new String[]{"C-X", "C-Y"}, false, "TDP-B", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1615,7 +1615,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8",
                 IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", customFieldValues);
-        boardManager.handleEvent(create);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1655,7 +1655,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1",
                 (String)null, null, null, null, false, null, false, "TDP-B", false, customFieldValues);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1688,7 +1688,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Move to a non-backlog state
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-C", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
@@ -1714,7 +1714,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Move to another non-backlog state
         update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         backlogChanges = getChangesJson(0, 2, true);
@@ -1761,7 +1761,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Move to a bl state
         update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         backlogChanges = getChangesJson(0, 3, true);
@@ -1836,7 +1836,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Move an issue into a done state should appear as a delete
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
         searchCallback.searched = false;
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         Assert.assertFalse(searchCallback.searched);
 
         ModelNode changes = getChangesJson(0, 1);
@@ -1851,7 +1851,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Move an issue from a done state into a normal state will force a full refresh
         update = createUpdateEventAndAddToRegistry("TDP-4", (String)null, null, null, null, false, null, false, "TDP-A", false);
         searchCallback.searched = false;
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         Assert.assertTrue(searchCallback.searched);
 
         getChangesEnsuringFullRefresh(0);
@@ -1865,7 +1865,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Move an issue already in a done state into a done state should not appear as a change
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
         searchCallback.searched = false;
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         Assert.assertFalse(searchCallback.searched);
 
         //No changes
@@ -1889,12 +1889,12 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Moving a done issue to a non-done state should cause a full refresh
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         getChangesEnsuringFullRefresh(0);
 
         //Moving the issue back to a done state should appear as a delete
         update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAdds(changes);
         checkUpdates(changes);
@@ -1907,7 +1907,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Moving the issue back to a non-done state should cause a full refresh
         update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         getChangesEnsuringFullRefresh(0);
     }
 
@@ -1918,7 +1918,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Moving a done issue to a done state should appear as a delete
         JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-D", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAdds(changes);
         checkUpdates(changes);
@@ -1930,13 +1930,13 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Moving the issue back to a non-done state should cause a full refresh
         update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-A", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         getChangesEnsuringFullRefresh(0);
 
 
         //Moving the issue back to a done state should appear as a delete
         update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-C", false);
-        boardManager.handleEvent(update);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
         changes = getChangesJson(0, 1);
         checkAdds(changes);
         checkUpdates(changes);
@@ -1951,7 +1951,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     public void testDeleteAndRankIssues() throws Exception {
         issueRegistry.deleteIssue("TDP-3");
         JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         ModelNode changesNode = getChangesJson(0, 1);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -1964,7 +1964,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         issueRegistry.deleteIssue("TDP-7");
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         changesNode = getChangesJson(0, 2);
         checkAssignees(changesNode);
         checkComponents(changesNode);
@@ -1977,7 +1977,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         issueRegistry.rerankIssue("TDP-1", null);
         event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         //0 -> 3
         changesNode = getChangesJson(0, 3);
         checkAssignees(changesNode);
@@ -2012,7 +2012,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Now delete the reranked issue
         issueRegistry.deleteIssue("TDP-1");
         event = JirbanIssueEvent.createDeleteEvent("TDP-1", "TDP");
-        boardManager.handleEvent(event);
+        boardManager.handleEvent(event, nextRankedIssueUtil);
         //0 -> 4
         changesNode = getChangesJson(0, 4);
         checkAssignees(changesNode);

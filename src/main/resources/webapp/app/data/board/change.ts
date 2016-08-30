@@ -65,7 +65,7 @@ export class ChangeSet {
             }
         }
 
-        let ranked:any = changes.ranked;
+        let ranked:any = changes.rank;
         if (ranked) {
             this._rankChanges = {};
             this._rankedIssues = {};

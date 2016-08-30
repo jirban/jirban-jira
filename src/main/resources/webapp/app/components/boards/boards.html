@@ -2,6 +2,7 @@
 <ul>
     <li *ngFor="let board of boards">
         <a [routerLink]="['/Board', {board: board.code}]">{{board.name}}</a>
+        [<a [routerLink]="['/Board', {board: board.code, view: rankViewParameter, bl: true}]">rank</a>]
     </li>
 </ul>
 <hr>

@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jirban.jira.api.NextRankedIssueUtil;
+import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.junit.Assert;
 
 import com.atlassian.crowd.embedded.api.User;
@@ -40,6 +41,7 @@ import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.status.Status;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 
 /**
@@ -148,7 +150,7 @@ public class IssueRegistry implements NextRankedIssueUtil {
     }
 
     @Override
-    public String findNextRankedIssue(String issueKey) {
+    public String findNextRankedIssue(BoardProjectConfig projectConfig, ApplicationUser boardOwner, String issueKey) {
         int index = issueKey.indexOf("-");
         String projectCode = issueKey.substring(0, index);
         Map<String, MockIssue> issues = issuesByProject.get(projectCode);
@@ -163,6 +165,7 @@ public class IssueRegistry implements NextRankedIssueUtil {
         }
         return null;
     }
+
 
     public void deleteIssue(String issueKey) {
         Map<String, MockIssue> issues = issuesByProject.get(getProjectCode(issueKey));

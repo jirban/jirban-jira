@@ -6,11 +6,12 @@ import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent} from "./issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {TitleFormatService} from "../../services/TitleFormatService";
+import {AppHeaderService} from "../../services/appHeaderService";
 import {IMap} from "../../common/map";
 import {KanbanViewComponent} from "./view/kanban/kanbanview";
 import {RankViewComponent} from "./view/rank/rankview";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
+import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
 import Timer = NodeJS.Timer;
 
 
@@ -28,20 +29,26 @@ export class BoardComponent implements OnDestroy {
 
     private boardCode:string;
     private view:string = VIEW_KANBAN;
+    private issueContextMenuData:IssueContextMenuData;
+
+    private _wasBacklogForced:boolean = false;
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 private _progressError:ProgressErrorService,
                 routeParams:RouteParams,
-                title:TitleFormatService) {
+                appHeader:AppHeaderService) {
         console.log("Create board");
         let queryString:IMap<string> = routeParams.params;
         this.boardCode = routeParams.get('board');
-        title.setTitle("Board (" + this.boardCode + ")");
+        appHeader.setTitle("Board (" + this.boardCode + ")");
 
         let view = routeParams.get('view');
         if (view) {
             this.view = view;
+            if (view === VIEW_RANK) {
+                this._wasBacklogForced = true;
+            }
         }
 
         this._boardData.setBacklogFromQueryParams(queryString);
@@ -76,16 +83,55 @@ export class BoardComponent implements OnDestroy {
         this._issuesService.visible = false;
     }
 
+    private hideMenus() {
+        this._boardData.hideHideables();
+        this.issueContextMenuData = null;
+    }
+
+    private onShowIssueContextMenu(issueContextMenuData:IssueContextMenuData) {
+        console.log("Got event");
+        this.issueContextMenuData = issueContextMenuData;
+    }
+
+    onCloseIssueContextMenu(event:any) {
+        this.issueContextMenuData = null;
+    }
+
+
     onToggleView(event:Event) {
+        this.hideMenus();
         if (this.view === VIEW_KANBAN) {
             this.view = VIEW_RANK;
+            this.forceBacklog();
         } else if (this.view === VIEW_RANK) {
             this.view = VIEW_KANBAN;
+            this.unforceBacklog();
+
         } else {
             console.error("Unknown original view " + this.view);
         }
-
         console.log("View changed to " + this.view);
+    }
+
+    private forceBacklog() {
+        if (!this._boardData.showBacklog && this._boardData.headers.backlogTopHeader) {
+            //Load up the board again with the backlog
+            this.toggleBacklog();
+            this._wasBacklogForced = true;
+        }
+    }
+
+    private unforceBacklog() {
+        if (this._wasBacklogForced && this._boardData.headers.backlogTopHeader) {
+            this.toggleBacklog();
+            this._wasBacklogForced = false;
+        }
+    }
+
+    private toggleBacklog() {
+        console.log("Toggling backlog");
+        this._boardData.headers.toggleHeaderVisibility(this._boardData.headers.backlogTopHeader);
+        this._issuesService.toggleBacklog();
     }
 }
 

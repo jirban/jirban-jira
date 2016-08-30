@@ -6,7 +6,7 @@ import {HTTP_PROVIDERS} from "@angular/http";
 import {ROUTER_PROVIDERS} from "@angular/router-deprecated";
 import {App} from "./app";
 import {ProgressErrorService} from "./services/progressErrorService";
-import {TitleFormatService} from "./services/TitleFormatService";
+import {AppHeaderService} from "./services/appHeaderService";
 import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/common";
 
 
@@ -15,7 +15,7 @@ bootstrap(App, [
     HTTP_PROVIDERS,
     ROUTER_PROVIDERS,
     ProgressErrorService,
-    TitleFormatService,
+    AppHeaderService,
     provide(LocationStrategy, {useClass: HashLocationStrategy}),
     provide(APP_BASE_HREF, {useValue: '../../app/'}),
     Title

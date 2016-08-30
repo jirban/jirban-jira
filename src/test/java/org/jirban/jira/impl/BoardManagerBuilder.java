@@ -128,8 +128,7 @@ public class BoardManagerBuilder {
                 priorityManager,
                 searchService,
                 userService,
-                versionManager,
-                nextRankedIssueUtil);
+                versionManager);
 
         return new BoardManagerImpl(jiraInjectables, boardConfigurationManager);
     }

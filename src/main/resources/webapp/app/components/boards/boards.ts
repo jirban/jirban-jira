@@ -2,8 +2,9 @@ import {Component} from "@angular/core";
 import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
 import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {TitleFormatService} from "../../services/TitleFormatService";
+import {AppHeaderService} from "../../services/appHeaderService";
 import {VersionService} from "../../services/versionService";
+import {VIEW_RANK} from "../../common/constants";
 
 @Component({
     selector: 'boards',
@@ -14,9 +15,10 @@ import {VersionService} from "../../services/versionService";
 })
 export class BoardsComponent {
     private boards:any[];
+    private rankViewParameter:string = VIEW_RANK;
 
-    constructor(private _boardsService:BoardsService, private _versionService:VersionService, progressError:ProgressErrorService, title:TitleFormatService) {
-        title.setTitle("List of boards");
+    constructor(private _boardsService:BoardsService, private _versionService:VersionService, progressError:ProgressErrorService, appHeaderService:AppHeaderService) {
+        appHeaderService.setTitle("List of boards");
         progressError.startProgress(true);
         _boardsService.loadBoardsList(true).subscribe(
             data => {

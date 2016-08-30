@@ -64,7 +64,7 @@ public interface BoardManager {
      *
      * @param event the event
      */
-    void handleEvent(JirbanIssueEvent event);
+    void handleEvent(JirbanIssueEvent event, NextRankedIssueUtil nextRankedIssueUtil);
 
     /**
      * Gets the changes for a board. The client passes in their view id, and the delta is passed back to the client in

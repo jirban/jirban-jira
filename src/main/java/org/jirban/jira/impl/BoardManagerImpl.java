@@ -41,6 +41,7 @@ import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.board.Board;
 import org.jirban.jira.impl.board.BoardChangeRegistry;
 import org.jirban.jira.impl.config.BoardConfig;
@@ -233,7 +234,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public void handleEvent(JirbanIssueEvent event) {
+    public void handleEvent(JirbanIssueEvent event, NextRankedIssueUtil nextRankedIssueUtil) {
         //Jira seems to only handle one event at a time, which is good
 
         List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(event.getProjectCode());
@@ -250,7 +251,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
             final ApplicationUser boardOwner = jiraInjectables.getJiraUserManager().getUserByKey(board.getConfig().getOwningUserKey());
             try {
                 JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Handling event on board {}", board.getConfig().getCode());
-                Board newBoard = board.handleEvent(jiraInjectables, boardOwner, event, changeRegistry);
+                Board newBoard = board.handleEvent(jiraInjectables, nextRankedIssueUtil, boardOwner, event, changeRegistry);
                 if (newBoard == null) {
                     //The changes in the issue were not relevant
                     return;

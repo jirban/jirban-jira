@@ -66,8 +66,6 @@ export class BoardData {
 
     private _helpTexts:IMap<string> = {};
 
-
-
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -97,7 +95,6 @@ export class BoardData {
             callback();
         }
     }
-
 
     /**
      * Called when we receive a change set from the server
@@ -335,6 +332,10 @@ export class BoardData {
         return this._customFields;
     }
 
+    get rankedIssues():IssueData[] {
+        return this._issueTable.rankedIssues;
+    }
+
     getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
         let values:CustomFieldValues = this._customFields.forKey(name);
         if (values) {
@@ -437,8 +438,10 @@ export class BoardData {
     }
 
     setBacklogFromQueryParams(queryParams:IMap<string>):void {
-        if (queryParams["bl"]) {
-            this._showBacklog = queryParams["bl"] === "true";
+        if (!!queryParams["bl"]) {
+            //Sometimes this is parsed as a boolean and sometimes as a string
+            let bl:any = queryParams["bl"];
+            this._showBacklog = bl === "true" || bl === true;
         }
     }
 
@@ -507,7 +510,6 @@ export class BoardData {
     canRank(projectCode:string):boolean {
         return this._projects.canRank(projectCode);
     }
-
 }
 
 

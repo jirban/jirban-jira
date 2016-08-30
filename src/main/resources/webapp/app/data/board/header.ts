@@ -101,7 +101,7 @@ export class BoardHeaders {
             stateVisibilitiesSubject = new Subject<void>();
         }
 
-        let backlogTopHeader:BoardHeaderEntry;
+        let backlogTopHeader:CategoryHeaderEntry;
         let backlogBottomHeaders:BoardHeaderEntry[] = [];
         let topHeaders:BoardHeaderEntry[] = [];
         let bottomHeaders:BoardHeaderEntry[] = [];
@@ -139,8 +139,14 @@ export class BoardHeaders {
             } else {
                 mainStates.push(boardStates.array[i]);
             }
+
         }
 
+        if (backlogTopHeader && boardData && !boardData.headers && boardData.showBacklog) {
+            //Force the backlog to be visible
+            backlogTopHeader.forceVisible();
+            showBacklog = true;
+        }
 
         return new BoardHeaders(boardData, boardStateNames, boardStates,
             backlogStates, mainStates,
@@ -347,6 +353,12 @@ class StateCategory {
             }
         }
     }
+
+    forceVisible(stateVisibilities:boolean[]) {
+        for (let state of this._states) {
+            stateVisibilities[state.index] = true;
+        }
+    }
 }
 
 export class State {
@@ -442,6 +454,7 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
+    /** Do not call directly, use BoardHeaders.toggleHeaderVisibility() */
     abstract toggleVisibility():void;
 }
 
@@ -471,12 +484,17 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
         return this._category.backlog;
     }
 
+    /** Do not call directly, use BoardHeaders.toggleHeaderVisibility() */
     toggleVisibility() {
         this._category.toggleVisibility(this._stateVisibilities);
     }
 
     get isCategory():boolean {
         return true;
+    }
+
+    forceVisible() {
+        this._category.forceVisible(this._stateVisibilities);
     }
 }
 
@@ -505,6 +523,7 @@ class StateHeaderEntry extends BoardHeaderEntry {
         return this._state.backlog;
     }
 
+    /** Do not call directly, use BoardHeaders.toggleHeaderVisibility() */
     toggleVisibility() {
         this._state.toggleVisibility(this._stateVisibilities);
     }

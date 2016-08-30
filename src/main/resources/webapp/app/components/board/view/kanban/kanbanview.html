@@ -1,5 +1,4 @@
-<div id="board-outer" *ngIf="initialized" (window:resize)="onResize($event)"
-     (click)="hideMenus()">
+<div id="board-outer" *ngIf="initialized" (window:resize)="onResize($event)">
     <div id="board-inner">
         <div id="table-header" [ngStyle]="{'left':-1 * boardLeftOffset}">
             <table id="header-table">
@@ -78,7 +77,7 @@
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
-                                           [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
+                                           [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
@@ -93,7 +92,7 @@
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
-                                           [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
+                                           [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
@@ -109,12 +108,10 @@
                                 [swimlane]="swimlane"
                                 [boardLeftOffset]="boardLeftOffset"
                                 [hidden]="swimlane.filtered"
-                                (issueContextMenu)="showIssueContextMenu($event)"
+                                (showIssueContextMenu)="onShowIssueContextMenu($event)"
                                 (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-<!-- The issue context menu -->
-<issue-context-menu [data]="issueContextMenuData" (closeContextMenu)="onCloseIssueContextMenu($event)"></issue-context-menu>

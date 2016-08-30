@@ -1,1 +1,62 @@
-<div>Hello</div>
+<div id="board-outer" *ngIf="initialized" (window:resize)="onResize($event)">
+    <div id="board-inner">
+        <div id="table-header" [ngStyle]="{'left':-1 * boardLeftOffset}">
+            <table id="header-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2"
+                            class="issue"
+                            [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': 'black'}">Issue</th>
+                        <th *ngIf="backlogTopHeader"
+                            [attr.colspan]="backlogTopHeader.cols"
+                            [attr.rowspan]="backlogTopHeader.rows"
+                            [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': 'grey'}"
+                            title="{{backlogTopHeader.name}}">
+                            <div>{{getAbbreviatedHeader(backlogTopHeader.name)}}</div>
+                        </th>
+                        <th *ngFor="let header of topHeaders ; let headerIndex=index"
+                            [attr.colspan]="header.cols"
+                            [attr.rowspan]="header.rows"
+                            [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
+                            title="{{header.name}}">
+                            <div>{{getAbbreviatedHeader(header.name)}}</div>
+                            <div>({{header.totalIssues}})</div>
+                        </th>
+                    </tr>
+                    <tr>
+                        <th *ngFor="let header of backlogBottomHeaders"
+                            title="{{header.name}}">
+                            <div>{{getAbbreviatedHeader(header.name)}}</div>
+                            <div>({{header.totalIssues}})</div>
+                        </th>
+                        <th *ngFor="let header of bottomHeaders"
+                            title="{{header.name}}">
+                            <div>{{getAbbreviatedHeader(header.name)}}</div>
+                            <div>({{header.totalIssues}})</div>
+                        </th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        <div id="table-body"
+             [style.height]="boardBodyHeight"
+             (scroll)="scrollTableBodyX($event)">
+            <table id="body-table">
+                <tbody>
+                    <tr *ngFor="let issue of rankedIssues" [hidden]="issue.filtered"
+                        title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}&#013;{{issue.priority.name}}&#013;{{issue.type.name}}">
+                        <td class="issue">
+                            <ul class="issues-list">
+                                <issue [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
+                            </ul>
+                        </td>
+                        <td *ngFor="let state of boardStates ; let i = index"
+                            [ngClass]="i === issue.boardStatusIndex ? 'selected-state' : ''">
+                            &nbsp;
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

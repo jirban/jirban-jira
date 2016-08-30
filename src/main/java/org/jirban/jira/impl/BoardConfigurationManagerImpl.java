@@ -73,8 +73,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     private final JiraInjectables jiraInjectables;
 
-    /** The 'Rank' custom field as output by  */
-    private volatile int rankCustomFieldId = -1;
+    /** The 'Rank' custom field id */
+    private volatile long rankCustomFieldId = -1;
 
     @Inject
     public BoardConfigurationManagerImpl(JiraInjectables jiraInjectables) {
@@ -129,7 +129,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     private void addCustomFieldInfo(ApplicationUser user, ModelNode customFieldConfig) {
-        int customFieldId = getRankCustomFieldId();
+        long customFieldId = getRankCustomFieldId();
         customFieldConfig.get(ID).set(customFieldId);
         customFieldConfig.get(EDIT).set(canEditCustomField(user));
     }
@@ -338,8 +338,8 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
         });
     }
 
-    private int getRankCustomFieldId() {
-        int customFieldId = this.rankCustomFieldId;
+    public long getRankCustomFieldId() {
+        long customFieldId = this.rankCustomFieldId;
         if (customFieldId < 0) {
             final ActiveObjects activeObjects = jiraInjectables.getActiveObjects();
 

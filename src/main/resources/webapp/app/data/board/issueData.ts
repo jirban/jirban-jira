@@ -8,6 +8,7 @@ import {JiraComponent} from "./component";
 import {Indexed} from "../../common/indexed";
 import {CustomFieldValue} from "./customField";
 import {IMap} from "../../common/map";
+import {isNumber} from "@angular/common/src/facade/lang";
 
 
 export class IssueData {
@@ -26,6 +27,9 @@ export class IssueData {
     private _statusIndex:number;
     private _linked:IssueData[];
     private _filtered:boolean = false;
+    private _boardStatus:string;
+    private _boardStatusIndex:number;
+    private _ownStatus:string;
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
                 assignee:Assignee,  components:Indexed<JiraComponent>, priority:Priority, type:IssueType, statusIndex:number,
@@ -185,7 +189,7 @@ export class IssueData {
     set filtered(filtered) {
         this._filtered = filtered;
     }
-    
+
     get customFields():IMap<CustomFieldValue> {
         return this._customFields;
     }
@@ -194,21 +198,34 @@ export class IssueData {
 
     get boardStatus():string {
         //The state we map to in the board (only for board projects)
-        let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
-        let myStatusName:string = project.states.forIndex(this._statusIndex);
-        let boardStatus:string = project.mapStateStringToBoard(myStatusName);
-        return boardStatus;
+        if (!this._boardStatus) {
+            let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
+            let myStatusName:string = project.states.forIndex(this._statusIndex);
+            this._boardStatus = project.mapStateStringToBoard(myStatusName);
+        }
+        return this._boardStatus;
+    }
+
+    get boardStatusIndex():number {
+        if (!isNumber(this._boardStatusIndex)) {
+            let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
+            this._boardStatusIndex = project.mapStateIndexToBoardIndex(this._statusIndex);
+        }
+        return this._boardStatusIndex;
     }
 
     get ownStatus():string {
         //Used to report the status in mouse-over a card
         //Note that projects will report their own jira project status rather than
         // the mapped board state in which they appear
-        let project:Project = this._boardData.linkedProjects[this._projectCode];
-        if (!project) {
-            project = this._boardData.boardProjects.forKey(this._projectCode);
+        if (!this._ownStatus) {
+            let project:Project = this._boardData.linkedProjects[this._projectCode];
+            if (!project) {
+                project = this._boardData.boardProjects.forKey(this._projectCode);
+            }
+            this._ownStatus = project.getStateText(this._statusIndex);
         }
-        return project.getStateText(this._statusIndex);
+        return this._ownStatus;
     }
 
     get assigneeName():string {
@@ -280,6 +297,8 @@ export class IssueData {
         if (update.state) {
             let project:BoardProject = this.boardProject;
             this._statusIndex = project.getOwnStateIndex(update.state);
+            this._ownStatus = null;
+            this._boardStatus = null;
         }
         if (update.unassigned) {
             this._assignee = null;

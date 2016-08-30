@@ -13,6 +13,7 @@ export class IssueTable {
     private _issueTable:IssueData[][];
     private _swimlaneTable:SwimlaneData[];
     private _totalIssuesByState:number[];
+    private _rankedIssues:IssueData[] = [];
 
     private _swimlaneVisibitilySubject:Subject<void> = new Subject<void>();
 
@@ -75,6 +76,10 @@ export class IssueTable {
 
     get swimlaneVisibilityObservable():Observable<void> {
         return this._swimlaneVisibitilySubject;
+    }
+
+    get rankedIssues(): IssueData[] {
+        return this._rankedIssues;
     }
 
     toggleSwimlaneVisibility(swimlaneIndex:number) {
@@ -189,12 +194,15 @@ export class IssueTable {
             this._issueTable = this.createIssueTable();
             this._swimlaneTable = null;
         }
+
     }
+
 
     private createIssueTable() : IssueData[][] {
         let numStates = this._boardData.boardStateNames.length;
 
         this._totalIssuesByState = new Array<number>(numStates);
+        this._rankedIssues = [];
 
         let issueCounters = new Array<StateIssueCounter>(numStates);
         let issueTable:IssueData[][] = new Array<IssueData[]>(numStates);
@@ -216,6 +224,8 @@ export class IssueTable {
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
                 issueCounter.increment();
                 issue.filtered = this._filters.filterIssue(issue);
+
+                this._rankedIssues.push(issue);
             }
         }
 
@@ -230,6 +240,7 @@ export class IssueTable {
         let numStates = this._boardData.boardStateNames.length;
 
         this._totalIssuesByState = new Array<number>(numStates);
+        this._rankedIssues = [];
 
         let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
         let issueCounters = new Array<StateIssueCounter>(numStates);
@@ -256,6 +267,8 @@ export class IssueTable {
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
                 issueCounter.increment();
                 issue.filtered = this._filters.filterIssue(issue);
+
+                this._rankedIssues.push(issue);
             }
         }
 

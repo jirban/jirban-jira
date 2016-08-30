@@ -1,13 +1,12 @@
 //a simple service
 import {Injectable} from "@angular/core";
 import {Headers, Http, Response} from "@angular/http";
-import {Observable} from "rxjs/Observable";
+import {Observable, Subject} from "rxjs/Rx";
 import "rxjs/add/operator/map";
 import {BoardData} from "../data/board/boardData";
 import {RestUrlUtil} from "../common/RestUrlUtil";
 import {IssueData} from "../data/board/issueData";
 import {BoardProject} from "../data/board/project";
-import {Observer} from "rxjs/Observer";
 import {ProgressErrorService} from "./progressErrorService";
 import Timer = NodeJS.Timer;
 
@@ -77,13 +76,14 @@ export class IssuesService {
             url += "?backlog=" + true;
         }
         let path:string = RestUrlUtil.caclulateRestUrl(url);
+        console.log("Poll " + path);
         return this._http.get(path)
             .timeout(this._bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());
     }
 
-    moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string, beforeKey:string, afterKey:string):Observable<any>{
-        let mi:MoveIssueAction = new MoveIssueAction(this, this._http, boardData, issue, toBoardState, beforeKey, afterKey);
+    moveIssue(boardData:BoardData, issue:IssueData, toBoardState:string):Observable<any>{
+        let mi:MoveIssueAction = new MoveIssueAction(this, this._http, boardData, issue, toBoardState);
         return mi.execute();
     }
 
@@ -133,12 +133,44 @@ export class IssuesService {
         );
     }
 
+    performRerank(issue:IssueData, beforeKey:string, afterKey:string):Observable<any> {
+        let observableWrapper:ObservableWrapper = new ObservableWrapper();
+        let path: string = this._boardData.jiraUrl + '/rest/greenhopper/1.0/rank';
+        let payload: any = {
+            customFieldId: this._boardData.rankCustomFieldId,
+            issueKeys: [issue.key],
+        };
+        if (beforeKey) {
+            payload.rankBeforeKey = beforeKey;
+        }
+        if (afterKey) {
+            payload.rankAfterKey = afterKey;
+        }
+
+        let headers: Headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Accept", "application/json");
+
+        console.log("PUT " + JSON.stringify(payload) + " to " + path);
+        this._http.put(path, JSON.stringify(payload), {headers: headers})
+            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + path)
+            .map(res => (<Response>res).json())
+            .subscribe(
+                data => {
+                    this.refreshBoardFollowingIssueChange(observableWrapper);
+                },
+                error => observableWrapper.setError(error)
+            );
+        return observableWrapper.observable;
+    }
+
     private getIssuesData(board:string, backlog:boolean) : Observable<Response> {
         let url = 'rest/jirban/1.0/issues/' + board;
         if (backlog) {
             url += "?backlog=" + true;
         }
         let path:string = RestUrlUtil.caclulateRestUrl(url);
+        console.log("Populate " + path);
         return this._http.get(path)
             .timeout(this._bigTimeout, "The server did not respond in a timely manner for GET " + path)
             .map(res => (<Response>res).json());
@@ -203,44 +235,33 @@ export class IssuesService {
                 }
             );
     }
+
+    //Only for use from within this file
+    refreshBoardFollowingIssueChange(observableWrapper:ObservableWrapper) {
+        this.pollBoard(this._boardData)
+            .subscribe(
+                data => {
+                    this._boardData.processChanges(data);
+                    observableWrapper.done();
+                },
+                error => observableWrapper.setError(error));
+    }
 }
 
 class MoveIssueAction {
     private _toOwnState:string;
 
-    private _changeState:boolean;
-    private _changeRank:boolean;
-
-    private _observable:Observable<any>;
-    private _observer:Observer<any>;
+    private _observableWrapper:ObservableWrapper = new ObservableWrapper();
 
     constructor(private _issuesService:IssuesService, private _http:Http, private _boardData:BoardData, private _issue:IssueData,
-                     private _toBoardState:string, private _beforeKey:string, private _afterKey:string) {
+                     private _toBoardState:string) {
         let project:BoardProject = _boardData.boardProjects.forKey(_issue.projectCode);
         this._toOwnState = project.mapBoardStateToOwnState(_toBoardState);
-        this._changeState = this._toOwnState != this._issue.ownStatus;
-        this._changeRank = (this._beforeKey || this._afterKey) ? true : false;
-
-        this._observable = Observable.create((observer:Observer<any>) => {
-            this._observer = observer;
-        })
-
-        this._observable.subscribe(
-            data => {},
-            error => {console.error(error)},
-            () => {}
-        );
     }
 
     execute():Observable<any> {
-        if (this._changeState) {
-            this.getTransitionsAndPerform();
-        } else if (this._changeRank) {
-            this.performRerank();
-        } else {
-            this.done();
-        }
-        return this._observable;
+        this.getTransitionsAndPerform();
+        return this._observableWrapper.observable;
     }
 
     getTransitionsAndPerform() {
@@ -255,7 +276,7 @@ class MoveIssueAction {
             .map(res => (<Response>res).json())
             .subscribe(
                 data => this.performStateTransition(data),
-                error => this.setError(error)
+                error => this._observableWrapper.setError(error)
             );
     }
 
@@ -276,7 +297,7 @@ class MoveIssueAction {
             if (this._toOwnState != this._toBoardState) {
                 state = state + "(" + this._toOwnState + ")";
             }
-            this.setError({msg: "Could not find a valid transition to " + state});
+            this._observableWrapper.setError({message: "Could not find a valid transition to " + state});
         } else {
             let path = this._boardData.jiraUrl + '/rest/api/2/issue/' + this._issue.key + '/transitions';
             //path = path + "?issueIdOrKey=" + this._issue.key;
@@ -293,66 +314,30 @@ class MoveIssueAction {
                 //.map(res => (<Response>res).json())
                 .subscribe(
                     data => {
-                        if (this._changeRank) {
-                            this.performRerank();
-                        } else {
-                            this.refreshBoard();
-                        }
+                        this._issuesService.refreshBoardFollowingIssueChange(this._observableWrapper);
                     },
-                    error => this.setError(error)
+                    error => this._observableWrapper.setError(error)
                 );
         }
     }
+}
 
-    performRerank() {
-        let path:string = this._boardData.jiraUrl + '/rest/greenhopper/1.0/rank';
-        let payload:any =  {
-            customFieldId: this._boardData.rankCustomFieldId,
-            issueKeys: [this._issue.key],
-        };
-        if (this._beforeKey) {
-            payload.rankBeforeKey = this._beforeKey;
-        }
-        if (this._afterKey) {
-            payload.rankAfterKey = this._afterKey;
-        }
+class ObservableWrapper {
+    private _observable:Subject<any> = new Subject<any>();
 
-        let headers:Headers = new Headers();
-        headers.append("Content-Type", "application/json");
-        headers.append("Accept", "application/json");
-
-        console.log("PUT " + JSON.stringify(payload) + " to " + path);
-        this._http.put(path, JSON.stringify(payload), {headers : headers})
-            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + path)
-            .map(res => (<Response>res).json())
-            .subscribe(
-                data => {
-                    this.refreshBoard();
-                },
-                error => this.setError(error)
-            );
-    }
-
-    refreshBoard() {
-        this._issuesService.pollBoard(this._boardData)
-            .subscribe(
-                data => {
-                    this._boardData.processChanges(data);
-                    this.done();
-                },
-                error => this.setError(error));
+    get observable(): Subject<any> {
+        return this._observable;
     }
 
     done() {
-        this._observer.next({});
-        this._observer.complete();
+        this._observable.next({});
+        this._observable.complete();
     }
 
-    private setError(error:any) {
-        this._observer.error(error);
+    setError(error:any) {
+        this._observable.error(error);
     }
 
 }
-
 
 
