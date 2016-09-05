@@ -4,14 +4,12 @@ import {BoardData} from "../../data/board/boardData";
 import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
 import {PanelMenuComponent} from "./panelMenu/panelMenu";
 import {IssueContextMenuComponent} from "./issueContextMenu/issueContextMenu";
-import {ProgressErrorService} from "../../services/progressErrorService";
-import {AppHeaderService} from "../../services/appHeaderService";
 import {IMap} from "../../common/map";
 import {KanbanViewComponent} from "./view/kanban/kanbanview";
 import {RankViewComponent} from "./view/rank/rankview";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
-import {Router, ActivatedRoute} from "@angular/router";
+import {Router} from "@angular/router";
 import Timer = NodeJS.Timer;
 
 
@@ -35,33 +33,35 @@ export class BoardComponent implements OnDestroy {
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
-                private _progressError:ProgressErrorService,
-                route:ActivatedRoute,
-                router:Router,
-                appHeader:AppHeaderService) {
+                router:Router) {
         console.log("Create board");
-        let params:IMap<string> = route.snapshot.params;
         let queryString:IMap<string> = router.routerState.snapshot.queryParams;
 
-        this.boardCode = params['board'];
-        appHeader.setTitle("Board (" + this.boardCode + ")");
-
-        let view = appHeader['view'];
-        if (view) {
-            this.view = view;
-            if (view === VIEW_RANK) {
-                this._wasBacklogForced = true;
+        router.routerState.queryParams.subscribe((params) => {
+            let queryParams:IMap<string> = params;
+            let code:string = queryParams['board'];
+            if (!code) {
+                return;
             }
-        }
+            this.boardCode = code;
 
-        this._boardData.setBacklogFromQueryParams(queryString);
+            let view = queryParams['view'];
+            if (view) {
+                this.view = view;
+                if (view === VIEW_RANK) {
+                    this._wasBacklogForced = true;
+                }
+            }
 
-        this._issuesService.populateIssues(this.boardCode, () => {
-            //Loading filters does not work until the issue data is loaded
-            _boardData.setFiltersFromQueryParams(queryString);
-        })
+            this._boardData.setBacklogFromQueryParams(queryParams);
 
-        this._issuesService.loadHelpTexts(this.boardCode, this._boardData);
+            this._issuesService.populateIssues(this.boardCode, () => {
+                //Loading filters does not work until the issue data is loaded
+                _boardData.setFiltersFromQueryParams(queryParams);
+            })
+
+            this._issuesService.loadHelpTexts(this.boardCode, this._boardData);
+        });
     }
 
     ngOnDestroy():any {

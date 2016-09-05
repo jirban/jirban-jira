@@ -1,8 +1,8 @@
 <p>Please select your board</p>
 <ul>
     <li *ngFor="let board of boards">
-        <a [routerLink]="['/Board', {board: board.code}]">{{board.name}}</a>
-        [<a [routerLink]="['/Board', {board: board.code, view: rankViewParameter, bl: true}]">rank</a>]
+        <a [routerLink]="['/board']" [queryParams]="{board: board.code}">{{board.name}}</a>
+        [<a [routerLink]="['/board']" [queryParams]="{board: board.code, view: rankViewParameter, bl: true}">rank</a>]
     </li>
 </ul>
 <hr>
