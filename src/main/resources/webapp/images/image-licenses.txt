@@ -1,8 +1,10 @@
 ** https://useiconic.com/open/ **
 cog-3x.png
+eye-3x.png
 heart-3x.png
 move-2x.png
 person-4x.png
+resize-width-2x.png
 resize-height-2x.png
 
 ** Public Domain **

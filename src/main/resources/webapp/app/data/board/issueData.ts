@@ -27,6 +27,8 @@ export class IssueData {
     private _statusIndex:number;
     private _linked:IssueData[];
     private _filtered:boolean = false;
+
+    //Cached status fields
     private _boardStatus:string;
     private _boardStatusIndex:number;
     private _ownStatus:string;
@@ -299,6 +301,7 @@ export class IssueData {
             this._statusIndex = project.getOwnStateIndex(update.state);
             this._ownStatus = null;
             this._boardStatus = null;
+            this._boardStatusIndex = null;
         }
         if (update.unassigned) {
             this._assignee = null;
