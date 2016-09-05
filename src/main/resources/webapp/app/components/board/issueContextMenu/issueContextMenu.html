@@ -52,12 +52,12 @@
         </div>
     </div>
     <div class="centered-form-container">
-        <form class="centered-form" (ngSubmit)="saveComment()" [ngFormModel]="commentForm" #f="ngForm">
+        <form class="centered-form" (ngSubmit)="saveComment()" [formGroup]="commentForm" #f="ngForm">
             <div class="comment-label">
                 <label for="comment">Please note that all comments will be <b>public</b>! To make private comments, visit the Jira issue.</label>
             </div>
             <div class="comment-box-container">
-                <textarea id="comment" ngControl="comment" class="comment-box"></textarea>
+                <textarea id="comment" formControlName="comment" class="comment-box"></textarea>
             </div>
             <div class="comment-button-container">
                 <button type="submit" class="comment-button" [disabled]="!f.form.valid">Save</button>

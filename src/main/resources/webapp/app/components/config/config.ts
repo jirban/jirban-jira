@@ -1,15 +1,16 @@
 import {Component} from "@angular/core";
-import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {AppHeaderService} from "../../services/appHeaderService";
 import {VersionService} from "../../services/versionService";
 import {BoardsService} from "../../services/boardsService";
+import {Validators, FormControl, FormGroup, REACTIVE_FORM_DIRECTIVES} from "@angular/forms";
 
 @Component({
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
+    directives: [REACTIVE_FORM_DIRECTIVES],
     templateUrl: 'app/components/config/config.html'
 })
 export class ConfigComponent {
@@ -18,23 +19,23 @@ export class ConfigComponent {
     private edit:boolean = false;
     private deleting = false;
 
-    private editForm:ControlGroup;
-    private deleteForm:ControlGroup;
-    private newForm:ControlGroup;
+    private editForm:FormGroup;
+    private deleteForm:FormGroup;
+    private newForm:FormGroup;
     private jsonErrorEdit:string = null;
     private jsonErrorCreate:string = null;
 
     private canEditCustomFieldId:boolean;
     private customFieldId:number;
-    private _customFieldIdForm:ControlGroup;
+    private _customFieldIdForm:FormGroup;
 
     private configJson:string;
 
     constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService,
-                private _formBuilder:FormBuilder, private _versionService:VersionService,
+                private _versionService:VersionService,
                 appHeaderService:AppHeaderService) {
         this.loadBoards();
-        appHeaderService.setTitle("Configuration of boardsc");
+        appHeaderService.setTitle("Configuration of boards");
     }
 
     private loadBoards() {
@@ -65,8 +66,8 @@ export class ConfigComponent {
     }
 
     private updateNewForm() {
-        this.newForm = this._formBuilder.group({
-            "newJson": ["", Validators.required]
+        this.newForm = new FormGroup({
+            "newJson": new FormControl("", Validators.required)
         });
     }
 
@@ -108,8 +109,8 @@ export class ConfigComponent {
         this.clearJsonErrors();
         this.edit = !this.edit;
         if (this.edit) {
-            this.editForm = this._formBuilder.group({
-                "editJson": [this.configJson, Validators.required]
+            this.editForm = new FormGroup({
+                "editJson": new FormControl(this.configJson, Validators.required)
             });
         }
         event.preventDefault();
@@ -122,8 +123,8 @@ export class ConfigComponent {
             //I wasn't able to get 'this' working with the lambda below
             let component:ConfigComponent = this;
 
-            this.deleteForm = this._formBuilder.group({
-                "boardName": ['', Validators.compose([Validators.required, (control:Control) => {
+            this.deleteForm = new FormGroup({
+                "boardName": new FormControl('', Validators.compose([Validators.required, (control:FormControl) => {
                     if (component.selected) {
                         let board:any = component._boards.forKey(component.selected.toString());
                         if (board.name != control.value) {
@@ -131,7 +132,7 @@ export class ConfigComponent {
                         }
                     }
                     return null;
-                }])]
+                }]))
             })
         }
         event.preventDefault();
@@ -213,10 +214,10 @@ export class ConfigComponent {
         }
     }
 
-    get customFieldIdForm():ControlGroup {
+    get customFieldIdForm():FormGroup {
         if (!this._customFieldIdForm) {
-            this._customFieldIdForm = this._formBuilder.group({
-                "customFieldId": [this.customFieldId, Validators.pattern("[0-9]*")]
+            this._customFieldIdForm = new FormGroup({
+                "customFieldId": new FormControl(this.customFieldId, Validators.pattern("[0-9]*"))
             });
         }
         return this._customFieldIdForm;

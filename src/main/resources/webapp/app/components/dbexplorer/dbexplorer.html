@@ -1,5 +1,5 @@
-<form (ngSubmit)="executeSql()" [ngFormModel]="sqlForm" #f="ngForm">
-    <textarea cols="100" rows="5" name="sql" ngControl="sql"></textarea>
+<form (ngSubmit)="executeSql()" [formGroup]="sqlForm" #f="ngForm">
+    <textarea cols="100" rows="5" name="sql" formControlName="sql"></textarea>
     <div>
         <button type="submit" [disabled]="!f.form.valid">Execute</button>
     </div>

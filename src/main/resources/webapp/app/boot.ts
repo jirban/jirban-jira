@@ -8,6 +8,7 @@ import {ProgressErrorService} from "./services/progressErrorService";
 import {AppHeaderService} from "./services/appHeaderService";
 import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/common";
 import {APP_ROUTER_PROVIDERS} from "./routes";
+import {provideForms, disableDeprecatedForms} from "@angular/forms";
 
 
 enableProdMode();
@@ -16,6 +17,8 @@ bootstrap(App, [
     ProgressErrorService,
     AppHeaderService,
     APP_ROUTER_PROVIDERS,
+    disableDeprecatedForms(),
+    provideForms(),
     provide(LocationStrategy, {useClass: HashLocationStrategy}),
     provide(APP_BASE_HREF, {useValue: '../../app/'}),
     Title

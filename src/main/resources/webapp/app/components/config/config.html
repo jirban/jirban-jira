@@ -15,9 +15,9 @@
                     <a  *ngIf="!deleting && board.edit" href="edit" (click)="toggleEdit($event, board)">Edit</a>
                     <a *ngIf="!deleting && board.edit" href="delete" (click)="toggleDelete($event, board.id)">Delete</a>
                     <div *ngIf="deleting">
-                        <form (ngSubmit)="deleteBoard()" [ngFormModel]="deleteForm" #f="ngForm">
+                        <form (ngSubmit)="deleteBoard()" [formGroup]="deleteForm" #f="ngForm">
                             <label>Type in the 'name' field of the board to delete it <b>permanently</b>:</label>
-                            <input type="text" ngControl="boardName"/>
+                            <input type="text" formControlName="boardName"/>
                             <a href="cancel" (click)="toggleDelete($event, board.id)">Cancel</a>
                             <button type="submit" [disabled]="!f.form.valid">Delete</button>
                         </form>
@@ -25,8 +25,8 @@
                     <pre>{{configJson}}</pre>
                 </div>
                 <div *ngIf="edit">
-                    <form (ngSubmit)="editBoard()" [ngFormModel]="editForm" #f="ngForm">
-                        <textarea cols="100" rows="15" name="editJson" ngControl="editJson" (keyup)="clearJsonErrors()"></textarea>
+                    <form (ngSubmit)="editBoard()" [formGroup]="editForm" #f="ngForm">
+                        <textarea cols="100" rows="15" name="editJson" formControlName="editJson" (keyup)="clearJsonErrors()"></textarea>
                         <div *ngIf="jsonErrorEdit">{{jsonErrorEdit}}</div>
                         <div>
                             <a href="cancel" (click)="toggleEdit($event, board)">Cancel</a>
@@ -45,8 +45,8 @@
         the main projects in the board.
     </div>
     <div>
-        <form (ngSubmit)="newBoard()" [ngFormModel]="newForm" #f="ngForm">
-            <textarea cols="100" rows="15" name="newJson" ngControl="newJson" (keyup)="clearJsonErrors()"></textarea>
+        <form (ngSubmit)="newBoard()" [formGroup]="newForm" #f="ngForm">
+            <textarea cols="100" rows="15" name="newJson" formControlName="newJson" (keyup)="clearJsonErrors()"></textarea>
             <div *ngIf="jsonErrorCreate">{{jsonErrorCreate}}</div>
             <div>
                 <button type="submit" [disabled]="!f.form.valid">Save</button>
@@ -58,10 +58,10 @@
     <hr/>
     <div>Enter the custom field id for Jira Agile's 'Rank' attribute:</div>
     <div>
-        <form (ngSubmit)="saveCustomFieldId()" [ngFormModel]="customFieldIdForm" #f="ngForm">
+        <form (ngSubmit)="saveCustomFieldId()" [formGroup]="customFieldIdForm" #f="ngForm">
             <div>
             <input type="customFieldId" required="required" type="number"
-                   ngControl="customFieldId"/>
+                   formControlName="customFieldId"/>
             </div>
             <div>
                 <button type="submit" [disabled]="!f.form.valid">Save</button>

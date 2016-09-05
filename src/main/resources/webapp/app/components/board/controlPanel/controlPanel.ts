@@ -1,5 +1,4 @@
 import {Component, EventEmitter} from "@angular/core";
-import {AbstractControl, Control, ControlGroup, FormBuilder, FORM_DIRECTIVES} from "@angular/common";
 import {Assignee} from "../../../data/board/assignee";
 import {JiraComponent} from "../../../data/board/component";
 import {BoardData} from "../../../data/board/boardData";
@@ -10,6 +9,7 @@ import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
 import {CustomFieldValues} from "../../../data/board/customField";
 import {VIEW_KANBAN} from "../../../common/constants";
+import {REACTIVE_FORM_DIRECTIVES, FormGroup, FormControl, AbstractControl} from "@angular/forms";
 
 @Component({
     selector: 'control-panel',
@@ -17,13 +17,13 @@ import {VIEW_KANBAN} from "../../../common/constants";
     outputs: ['closeControlPanel'],
     templateUrl: 'app/components/board/controlPanel/controlPanel.html',
     styleUrls: ['app/components/board/controlPanel/controlPanel.css'],
-    directives: [FORM_DIRECTIVES]
+    directives: [REACTIVE_FORM_DIRECTIVES]
 })
 export class ControlPanelComponent {
 
-    private _controlForm:ControlGroup;
-    private _assigneeFilterForm:ControlGroup;
-    private _componentFilterForm:ControlGroup;
+    private _controlForm:FormGroup;
+    private _assigneeFilterForm:FormGroup;
+    private _componentFilterForm:FormGroup;
 
     private closeControlPanel:EventEmitter<any> = new EventEmitter();
 
@@ -38,53 +38,53 @@ export class ControlPanelComponent {
 
     private view:string;
 
-    constructor(private boardData:BoardData, private formBuilder:FormBuilder) {
+    constructor(private boardData:BoardData) {
     }
 
-    private get controlForm():ControlGroup {
+    private get controlForm():FormGroup {
         if (this._controlForm) {
             return this._controlForm;
         }
 
-        let form:ControlGroup = this.formBuilder.group({});
-        form.addControl("swimlane", new Control(this.boardData.swimlane));
+        let form:FormGroup = new FormGroup({});
+        form.addControl("swimlane", new FormControl(this.boardData.swimlane));
 
-        let detailForm:ControlGroup = this.formBuilder.group({});
+        let detailForm:FormGroup = new FormGroup({});
         form.addControl("detail", detailForm);
-        detailForm.addControl("assignee", new Control(this.boardData.issueDisplayDetails.assignee));
-        detailForm.addControl("description", new Control(this.boardData.issueDisplayDetails.summary));
-        detailForm.addControl("info", new Control(this.boardData.issueDisplayDetails.info));
-        detailForm.addControl("linked", new Control(this.boardData.issueDisplayDetails.linkedIssues));
+        detailForm.addControl("assignee", new FormControl(this.boardData.issueDisplayDetails.assignee));
+        detailForm.addControl("description", new FormControl(this.boardData.issueDisplayDetails.summary));
+        detailForm.addControl("info", new FormControl(this.boardData.issueDisplayDetails.info));
+        detailForm.addControl("linked", new FormControl(this.boardData.issueDisplayDetails.linkedIssues));
 
         let filters:BoardFilters = this.boardData.filters;
 
-        let projectFilterForm:ControlGroup = this.formBuilder.group({});
+        let projectFilterForm:FormGroup = new FormGroup({});
         for (let projectName of this.boardData.boardProjectCodes) {
-            projectFilterForm.addControl(projectName, new Control(filters.initialProjectValueForForm(projectName)));
+            projectFilterForm.addControl(projectName, new FormControl(filters.initialProjectValueForForm(projectName)));
         }
 
-        let priorityFilterForm:ControlGroup = this.formBuilder.group({});
+        let priorityFilterForm:FormGroup = new FormGroup({});
         for (let priority of this.priorities) {
-            priorityFilterForm.addControl(priority.name, new Control(filters.initialPriorityValueForForm(priority.name)));
+            priorityFilterForm.addControl(priority.name, new FormControl(filters.initialPriorityValueForForm(priority.name)));
         }
 
-        let issueTypeFilterForm:ControlGroup = this.formBuilder.group({});
+        let issueTypeFilterForm:FormGroup = new FormGroup({});
         for (let issueType of this.issueTypes) {
-            issueTypeFilterForm.addControl(issueType.name, new Control(filters.initialIssueTypeValueForForm(issueType.name)));
+            issueTypeFilterForm.addControl(issueType.name, new FormControl(filters.initialIssueTypeValueForForm(issueType.name)));
         }
 
-        let assigneeFilterForm:ControlGroup = this.formBuilder.group({});
+        let assigneeFilterForm:FormGroup = new FormGroup({});
         //The unassigned assignee and the ones configured in the project
-        assigneeFilterForm.addControl(NONE, new Control(filters.initialAssigneeValueForForm(NONE)));
+        assigneeFilterForm.addControl(NONE, new FormControl(filters.initialAssigneeValueForForm(NONE)));
         for (let assignee of this.assignees) {
-            assigneeFilterForm.addControl(assignee.key, new Control(filters.initialAssigneeValueForForm(assignee.key)));
+            assigneeFilterForm.addControl(assignee.key, new FormControl(filters.initialAssigneeValueForForm(assignee.key)));
         }
 
-        let componentFilterForm:ControlGroup = this.formBuilder.group({});
+        let componentFilterForm:FormGroup = new FormGroup({});
         //The unassigned assignee and the ones configured in the project
-        componentFilterForm.addControl(NONE, new Control(filters.initialComponentValueForForm(NONE)));
+        componentFilterForm.addControl(NONE, new FormControl(filters.initialComponentValueForForm(NONE)));
         for (let component of this.components) {
-            componentFilterForm.addControl(component.name, new Control(filters.initialComponentValueForForm(component.name)));
+            componentFilterForm.addControl(component.name, new FormControl(filters.initialComponentValueForForm(component.name)));
         }
 
         //Add to the main form
@@ -97,10 +97,10 @@ export class ControlPanelComponent {
         //Add the custom fields form(s) to the main form
         if (this.customFields.length > 0) {
             for (let customFieldValues of this.customFields) {
-                let customFieldForm:ControlGroup = this.formBuilder.group({});
-                customFieldForm.addControl(NONE, new Control(filters.initialCustomFieldValueForForm(customFieldValues.name, NONE)))
+                let customFieldForm:FormGroup = new FormGroup({});
+                customFieldForm.addControl(NONE, new FormControl(filters.initialCustomFieldValueForForm(customFieldValues.name, NONE)))
                 for (let customFieldValue of customFieldValues.values.array) {
-                    customFieldForm.addControl(customFieldValue.key, new Control(filters.initialCustomFieldValueForForm(customFieldValues.name, customFieldValue.key)));
+                    customFieldForm.addControl(customFieldValue.key, new FormControl(filters.initialCustomFieldValueForForm(customFieldValues.name, customFieldValue.key)));
                 }
                 form.addControl(customFieldValues.name, customFieldForm);
             }
@@ -155,8 +155,8 @@ export class ControlPanelComponent {
         return this._controlForm;
     }
 
-    private addControlAndRecordInitialValue(form:ControlGroup, initialStateRecorder:any, groupName:string, name:string, value:any) {
-        form.addControl(name, new Control(value));
+    private addControlAndRecordInitialValue(form:FormGroup, initialStateRecorder:any, groupName:string, name:string, value:any) {
+        form.addControl(name, new FormControl(value));
 
         let recorder:any = initialStateRecorder;
         if (groupName) {
@@ -185,33 +185,33 @@ export class ControlPanelComponent {
 
     private clearFilter(event:MouseEvent, name:string) {
         event.preventDefault();
-        let filter:ControlGroup = <ControlGroup>this._controlForm.controls[name];
+        let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
         for (let key in filter.controls) {
-            let control:Control = <Control>filter.controls[key];
+            let control:FormControl = <FormControl>filter.controls[key];
             control.updateValue(false);
         }
     }
 
     private clearSwimlane(event:MouseEvent) {
         event.preventDefault();
-        let swimlane:Control = <Control>this._controlForm.controls['swimlane'];
+        let swimlane:FormControl = <FormControl>this._controlForm.controls['swimlane'];
         swimlane.updateValue(null);
     }
 
     private clearDetail(event:MouseEvent) {
         event.preventDefault();
-        let group:ControlGroup = <ControlGroup>this._controlForm.controls['detail'];
+        let group:FormGroup = <FormGroup>this._controlForm.controls['detail'];
 
-        let control:Control = <Control>group.controls['assignee'];
+        let control:FormControl = <FormControl>group.controls['assignee'];
         control.updateValue(true);
 
-        control = <Control>group.controls['description'];
+        control = <FormControl>group.controls['description'];
         control.updateValue(true);
 
-        control = <Control>group.controls['info'];
+        control = <FormControl>group.controls['info'];
         control.updateValue(true);
 
-        control = <Control>group.controls['linked'];
+        control = <FormControl>group.controls['linked'];
         control.updateValue(true);
     }
 
@@ -220,7 +220,7 @@ export class ControlPanelComponent {
             //TODO look into using an Observable for this
             for (let assignee of this.boardData.assignees.array) {
                 if (!this._assigneeFilterForm.controls[assignee.key]) {
-                    this._assigneeFilterForm.addControl(assignee.key, new Control(false));
+                    this._assigneeFilterForm.addControl(assignee.key, new FormControl(false));
                 }
             }
         }
@@ -232,7 +232,7 @@ export class ControlPanelComponent {
             //TODO look into using an Observable for this instead
             for (let component of this.boardData.components.array) {
                 if (!this._componentFilterForm.controls[component.name]) {
-                    this._componentFilterForm.addControl(component.name, new Control(false));
+                    this._componentFilterForm.addControl(component.name, new FormControl(false));
                 }
             }
         }
@@ -370,15 +370,15 @@ export class ControlPanelComponent {
         this.filtersToDisplay = filter;
     }
 
-    private grabInitialFormValues(form:ControlGroup):any {
+    private grabInitialFormValues(form:FormGroup):any {
         let values:any = {};
 
         for (let key in form.controls) {
             let ac:AbstractControl = form.controls[key];
-            if (ac instanceof Control) {
+            if (ac instanceof FormControl) {
                 values[key] = ac.value;
             } else {
-                values[key] = this.grabInitialFormValues(<ControlGroup>ac);
+                values[key] = this.grabInitialFormValues(<FormGroup>ac);
             }
         }
 
@@ -439,20 +439,20 @@ class DirtyChecker {
     constructor(private _lastValues:any) {
     }
 
-    static create(form:ControlGroup):DirtyChecker {
+    static create(form:FormGroup):DirtyChecker {
         let dirtyChecker:DirtyChecker = new DirtyChecker(DirtyChecker.initialize(form));
         return dirtyChecker;
     }
 
-    private static initialize(form:ControlGroup):any {
+    private static initialize(form:FormGroup):any {
         let values:any = {};
 
         for (let key in form.controls) {
             let ac:AbstractControl = form.controls[key];
-            if (ac instanceof Control) {
+            if (ac instanceof FormControl) {
                 values[key] = ac.value;
             } else {
-                values[key] = DirtyChecker.initialize(<ControlGroup>ac);
+                values[key] = DirtyChecker.initialize(<FormGroup>ac);
             }
         }
         return values;

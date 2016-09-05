@@ -1,10 +1,10 @@
 import {Component} from "@angular/core";
 import {BoardsService} from "../../services/boardsService";
 import {AppHeaderService} from "../../services/appHeaderService";
-import {FormBuilder, ControlGroup, Validators} from "@angular/common";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {Http, Headers} from "@angular/http";
 import {ProgressErrorService} from "../../services/progressErrorService";
+import {FormControl, FormGroup, Validators, REACTIVE_FORM_DIRECTIVES} from "@angular/forms";
 
 /**
  * Backing class for functionality to explore the DB
@@ -13,17 +13,18 @@ import {ProgressErrorService} from "../../services/progressErrorService";
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
+    directives: [REACTIVE_FORM_DIRECTIVES],
     templateUrl: 'app/components/dbexplorer/dbexplorer.html'
 })
 export class DbExplorerComponent {
-    private sqlForm:ControlGroup;
+    private sqlForm:FormGroup;
     private error:string;
     private result:any;
 
-    constructor(formBuilder:FormBuilder, appHeaderService:AppHeaderService, private _http:Http) {
+    constructor(appHeaderService:AppHeaderService, private _http:Http) {
         appHeaderService.setTitle("DB Explorer");
-        this.sqlForm = formBuilder.group({
-            "sql": ["", Validators.required]
+        this.sqlForm = new FormGroup({
+            "sql": new FormControl(null, Validators.required)
         });
     }
 

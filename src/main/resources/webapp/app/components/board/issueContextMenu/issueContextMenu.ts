@@ -1,5 +1,4 @@
 import {Component, EventEmitter} from "@angular/core";
-import {ControlGroup, FormBuilder, Validators} from "@angular/common";
 import {BoardData} from "../../../data/board/boardData";
 import {IssueData} from "../../../data/board/issueData";
 import {IssuesService} from "../../../services/issuesService";
@@ -9,6 +8,7 @@ import {Hideable} from "../../../common/hide";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {VIEW_RANK} from "../../../common/constants";
 import {BoardProject} from "../../../data/board/project";
+import {FormGroup, FormControl, Validators, REACTIVE_FORM_DIRECTIVES} from "@angular/forms";
 
 @Component({
     inputs: ['data', 'view'],
@@ -16,7 +16,7 @@ import {BoardProject} from "../../../data/board/project";
     selector: 'issue-context-menu',
     templateUrl: 'app/components/board/issueContextMenu/issueContextMenu.html',
     styleUrls: ['app/components/board/issueContextMenu/issueContextMenu.css'],
-    directives: [IssueComponent]
+    directives: [IssueComponent, REACTIVE_FORM_DIRECTIVES]
 })
 export class IssueContextMenuComponent implements Hideable {
     private _data:IssueContextMenuData;
@@ -36,7 +36,7 @@ export class IssueContextMenuComponent implements Hideable {
     private statesColumnHeight:number;
 
 
-    private commentForm:ControlGroup;
+    private commentForm:FormGroup;
     private commentPanelLeft:number;
 
     private rankPanelTop:number;
@@ -49,7 +49,7 @@ export class IssueContextMenuComponent implements Hideable {
     private closeContextMenu:EventEmitter<any> = new EventEmitter();
 
     constructor(private _boardData:BoardData, private _issuesService:IssuesService,
-                private _progressError:ProgressErrorService, private _formBuilder:FormBuilder) {
+                private _progressError:ProgressErrorService) {
         _boardData.registerHideable(this);
     }
 
@@ -144,8 +144,8 @@ export class IssueContextMenuComponent implements Hideable {
         event.preventDefault();
         this.hideAllMenus();
         this.showPanel = "comment";
-        this.commentForm = this._formBuilder.group({
-            "comment": ["", Validators.required]
+        this.commentForm = new FormGroup({
+            "comment": new FormControl("", Validators.required)
         });
     }
 
