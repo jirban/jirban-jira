@@ -2,21 +2,19 @@ import {Component, EventEmitter} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
 import {IssueData} from "../../../data/board/issueData";
 import {IssuesService} from "../../../services/issuesService";
-import {IssueComponent} from "../issue/issue";
 import {ProgressErrorService} from "../../../services/progressErrorService";
 import {Hideable} from "../../../common/hide";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {VIEW_RANK} from "../../../common/constants";
 import {BoardProject} from "../../../data/board/project";
-import {FormGroup, FormControl, Validators, REACTIVE_FORM_DIRECTIVES} from "@angular/forms";
+import {FormGroup, FormControl, Validators} from "@angular/forms";
 
 @Component({
     inputs: ['data', 'view'],
     outputs: ['closeContextMenu'],
     selector: 'issue-context-menu',
     templateUrl: 'app/components/board/issueContextMenu/issueContextMenu.html',
-    styleUrls: ['app/components/board/issueContextMenu/issueContextMenu.css'],
-    directives: [IssueComponent, REACTIVE_FORM_DIRECTIVES]
+    styleUrls: ['app/components/board/issueContextMenu/issueContextMenu.css']
 })
 export class IssueContextMenuComponent implements Hideable {
     private _data:IssueContextMenuData;

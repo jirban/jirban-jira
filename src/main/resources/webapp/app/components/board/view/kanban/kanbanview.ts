@@ -1,8 +1,5 @@
 import {Component} from "@angular/core";
 import {BoardData} from "../../../../data/board/boardData";
-import {IssueComponent} from "../../issue/issue";
-import {SwimlaneEntryComponent} from "../../swimlaneEntry/swimlaneEntry";
-import {PanelMenuComponent} from "../../panelMenu/panelMenu";
 import {ProgressErrorService} from "../../../../services/progressErrorService";
 import {AppHeaderService} from "../../../../services/appHeaderService";
 import {BoardHeaderEntry, State} from "../../../../data/board/header";
@@ -16,8 +13,7 @@ import {IssuesService} from "../../../../services/issuesService";
     inputs: ["boardCode", "issuesService", "boardData"],
     outputs: ["showIssueContextMenu"],
     templateUrl: 'app/components/board/view/kanban/kanbanview.html',
-    styleUrls: ['app/components/board/view/kanban/kanbanview.css'],
-    directives: [IssueComponent, PanelMenuComponent, SwimlaneEntryComponent]
+    styleUrls: ['app/components/board/view/kanban/kanbanview.css']
 })
 export class KanbanViewComponent extends FixedHeaderView {
 

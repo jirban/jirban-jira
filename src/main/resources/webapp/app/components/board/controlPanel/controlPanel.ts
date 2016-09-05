@@ -9,15 +9,14 @@ import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
 import {CustomFieldValues} from "../../../data/board/customField";
 import {VIEW_KANBAN} from "../../../common/constants";
-import {REACTIVE_FORM_DIRECTIVES, FormGroup, FormControl, AbstractControl} from "@angular/forms";
+import {FormGroup, FormControl, AbstractControl} from "@angular/forms";
 
 @Component({
     selector: 'control-panel',
     inputs: ['view'],
     outputs: ['closeControlPanel'],
     templateUrl: 'app/components/board/controlPanel/controlPanel.html',
-    styleUrls: ['app/components/board/controlPanel/controlPanel.css'],
-    directives: [REACTIVE_FORM_DIRECTIVES]
+    styleUrls: ['app/components/board/controlPanel/controlPanel.css']
 })
 export class ControlPanelComponent {
 

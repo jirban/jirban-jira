@@ -1,7 +1,5 @@
 import {Component, EventEmitter} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
-import {ControlPanelComponent} from "../controlPanel/controlPanel";
-import {HealthPanelComponent} from "../healthPanel/healthPanel";
 import {Hideable} from "../../../common/hide";
 
 @Component({
@@ -9,9 +7,7 @@ import {Hideable} from "../../../common/hide";
     inputs: ['view'],
     outputs: ['toggleView'],
     templateUrl: 'app/components/board/panelMenu/panelMenu.html',
-    styleUrls: ['app/components/board/panelMenu/panelMenu.css'],
-    directives: [ControlPanelComponent, HealthPanelComponent]
-
+    styleUrls: ['app/components/board/panelMenu/panelMenu.css']
 })
 export class PanelMenuComponent implements Hideable {
     private controlPanel:boolean = false;

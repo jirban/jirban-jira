@@ -1,5 +1,4 @@
 import {Component} from "@angular/core";
-import {ROUTER_DIRECTIVES} from "@angular/router";
 import {BoardsService} from "../../services/boardsService";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {AppHeaderService} from "../../services/appHeaderService";
@@ -10,8 +9,7 @@ import {VIEW_RANK} from "../../common/constants";
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    templateUrl: 'app/components/boards/boards.html',
-    directives: [ROUTER_DIRECTIVES]
+    templateUrl: 'app/components/boards/boards.html'
 })
 export class BoardsComponent {
     private boards:any[];

@@ -4,7 +4,7 @@ import {AppHeaderService} from "../../services/appHeaderService";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {Http, Headers} from "@angular/http";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {FormControl, FormGroup, Validators, REACTIVE_FORM_DIRECTIVES} from "@angular/forms";
+import {FormControl, FormGroup, Validators} from "@angular/forms";
 
 /**
  * Backing class for functionality to explore the DB
@@ -13,7 +13,6 @@ import {FormControl, FormGroup, Validators, REACTIVE_FORM_DIRECTIVES} from "@ang
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    directives: [REACTIVE_FORM_DIRECTIVES],
     templateUrl: 'app/components/dbexplorer/dbexplorer.html'
 })
 export class DbExplorerComponent {

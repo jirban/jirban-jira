@@ -1,12 +1,7 @@
 import {Component, OnDestroy} from "@angular/core";
 import {IssuesService} from "../../services/issuesService";
 import {BoardData} from "../../data/board/boardData";
-import {SwimlaneEntryComponent} from "./swimlaneEntry/swimlaneEntry";
-import {PanelMenuComponent} from "./panelMenu/panelMenu";
-import {IssueContextMenuComponent} from "./issueContextMenu/issueContextMenu";
 import {IMap} from "../../common/map";
-import {KanbanViewComponent} from "./view/kanban/kanbanview";
-import {RankViewComponent} from "./view/rank/rankview";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
 import {Router} from "@angular/router";
@@ -20,8 +15,7 @@ import Timer = NodeJS.Timer;
 @Component({
     selector: 'board',
     providers: [IssuesService, BoardData],
-    templateUrl: 'app/components/board/board.html',
-    directives: [KanbanViewComponent, RankViewComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
+    templateUrl: 'app/components/board/board.html'
 })
 export class BoardComponent implements OnDestroy {
 

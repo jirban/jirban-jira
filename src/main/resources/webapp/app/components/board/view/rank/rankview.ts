@@ -1,10 +1,6 @@
 import {Component} from "@angular/core";
 import {IssuesService} from "../../../../services/issuesService";
 import {BoardData} from "../../../../data/board/boardData";
-import {IssueComponent} from "../../issue/issue";
-import {SwimlaneEntryComponent} from "../../swimlaneEntry/swimlaneEntry";
-import {PanelMenuComponent} from "../../panelMenu/panelMenu";
-import {IssueContextMenuComponent} from "../../issueContextMenu/issueContextMenu";
 import {ProgressErrorService} from "../../../../services/progressErrorService";
 import {AppHeaderService} from "../../../../services/appHeaderService";
 import {BoardHeaderEntry, State} from "../../../../data/board/header";
@@ -18,8 +14,7 @@ import {FixedHeaderView} from "../fixedHeaderView";
     inputs: ["boardCode", "issuesService", "boardData"],
     outputs: ["showIssueContextMenu"],
     templateUrl: 'app/components/board/view/rank/rankview.html',
-    styleUrls: ['app/components/board/view/rank/rankview.css'],
-    directives: [IssueComponent, IssueContextMenuComponent, PanelMenuComponent, SwimlaneEntryComponent]
+    styleUrls: ['app/components/board/view/rank/rankview.css']
 })
 export class RankViewComponent extends FixedHeaderView {
 

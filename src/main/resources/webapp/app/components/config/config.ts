@@ -4,13 +4,12 @@ import {ProgressErrorService} from "../../services/progressErrorService";
 import {AppHeaderService} from "../../services/appHeaderService";
 import {VersionService} from "../../services/versionService";
 import {BoardsService} from "../../services/boardsService";
-import {Validators, FormControl, FormGroup, REACTIVE_FORM_DIRECTIVES} from "@angular/forms";
+import {Validators, FormControl, FormGroup} from "@angular/forms";
 
 @Component({
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    directives: [REACTIVE_FORM_DIRECTIVES],
     templateUrl: 'app/components/config/config.html'
 })
 export class ConfigComponent {

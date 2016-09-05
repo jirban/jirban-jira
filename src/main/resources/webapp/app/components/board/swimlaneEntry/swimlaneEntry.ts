@@ -1,6 +1,5 @@
 import {Component, EventEmitter} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
-import {IssueComponent} from "../issue/issue";
 import {SwimlaneData} from "../../../data/board/issueTable";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
 import {CharArrayRegistry} from "../../../common/charArrayRegistry";
@@ -16,8 +15,7 @@ import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
     outputs: ['showIssueContextMenu', 'toggleBacklogVisibility'],
     selector: 'swimlane-entry',
     templateUrl: 'app/components/board/swimlaneEntry/swimlaneEntry.html',
-    styleUrls: ['app/components/board/view/kanban/kanbanview.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
-    directives: [IssueComponent]
+    styleUrls: ['app/components/board/view/kanban/kanbanview.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css']
 })
 export class SwimlaneEntryComponent {
     public swimlane : SwimlaneData;

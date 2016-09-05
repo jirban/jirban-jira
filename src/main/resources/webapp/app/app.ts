@@ -1,11 +1,9 @@
 //our root app component
 import {Component} from "@angular/core";
-import {BoardComponent} from "./components/board/board";
-import {ProgressErrorService} from "./services/progressErrorService";
-import {RestUrlUtil} from "./common/RestUrlUtil";
 import {VersionService} from "./services/versionService";
-import {ROUTER_DIRECTIVES} from "@angular/router";
+import {ProgressErrorService} from "./services/progressErrorService";
 import {AppHeaderService} from "./services/appHeaderService";
+import {RestUrlUtil} from "./common/RestUrlUtil";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
 const VERSION:number = 2;
@@ -34,11 +32,7 @@ const VERSION:number = 2;
     </div>
     <div *ngIf="!notLoggedIn" class="error-message" [innerHTML]="error"></div>
     <div *ngIf="notLoggedIn" class="error-message"><a href="{{loginUrl}}" class="error-message" (click)="onClickMessageLoginLink($event)">Log in</a> to Jira again.</div>
-</div>
-
-    `,
-    directives: [ROUTER_DIRECTIVES, BoardComponent]
-})
+</div>`})
 export class App {
     _progressError:ProgressErrorService;
     loginUrl:string;
