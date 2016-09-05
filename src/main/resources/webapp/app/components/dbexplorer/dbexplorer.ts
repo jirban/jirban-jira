@@ -1,5 +1,4 @@
 import {Component} from "@angular/core";
-import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
 import {BoardsService} from "../../services/boardsService";
 import {AppHeaderService} from "../../services/appHeaderService";
 import {FormBuilder, ControlGroup, Validators} from "@angular/common";
@@ -14,8 +13,7 @@ import {ProgressErrorService} from "../../services/progressErrorService";
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    templateUrl: 'app/components/dbexplorer/dbexplorer.html',
-    directives: [ROUTER_DIRECTIVES]
+    templateUrl: 'app/components/dbexplorer/dbexplorer.html'
 })
 export class DbExplorerComponent {
     private sqlForm:ControlGroup;

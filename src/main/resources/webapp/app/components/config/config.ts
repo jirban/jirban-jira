@@ -1,18 +1,16 @@
 import {Component} from "@angular/core";
-import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
-import {BoardsService} from "../../services/boardsService";
 import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {AppHeaderService} from "../../services/appHeaderService";
 import {VersionService} from "../../services/versionService";
+import {BoardsService} from "../../services/boardsService";
 
 @Component({
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    templateUrl: 'app/components/config/config.html',
-    directives: [ROUTER_DIRECTIVES]
+    templateUrl: 'app/components/config/config.html'
 })
 export class ConfigComponent {
     private _boards:Indexed<any>;
