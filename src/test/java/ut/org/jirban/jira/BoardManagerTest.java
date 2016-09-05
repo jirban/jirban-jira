@@ -86,13 +86,6 @@ public class BoardManagerTest extends AbstractBoardTest {
         Assert.assertEquals(2, boardNode.get(BACKLOG).asInt());
         Assert.assertFalse(boardNode.hasDefined(DONE));
 
-        initializeMocks("config/board-tdp-unordered.json");
-        boardNode = getJsonCheckingViewIdAndUsers(0);
-        Assert.assertFalse(boardNode.hasDefined(BACKLOG));
-        //The second, and third states are 'unordered'
-        Assert.assertFalse(boardNode.hasDefined(DONE));
-
-
         initializeMocks("config/board-tdp-done.json");
         boardNode = getJsonCheckingViewIdAndUsers(0);
         Assert.assertFalse(boardNode.hasDefined(BACKLOG));

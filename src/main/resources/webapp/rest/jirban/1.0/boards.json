@@ -69,7 +69,7 @@
     {
       "id" : 2,
       "code" : "POC2",
-      "name" : "Test board with backlog, unordered and done states set up",
+      "name" : "Test board with backlog and done states set up",
       "edit" : true,
       "config" : {
 

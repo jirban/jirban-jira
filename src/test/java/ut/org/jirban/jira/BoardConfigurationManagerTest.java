@@ -156,7 +156,7 @@ public class BoardConfigurationManagerTest {
         ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
         original.protect();
 
-        //A state can have at the most of one of [header, backlog, done], also an 'unordered' cannot be 'backlog' or 'done' but may have a header
+        //A state can have at the most of one of [header, backlog, done]
         //ok
         loadAndValidateConfiguration(original,
                 new BacklogModifier(true, true, false, false),

@@ -54,7 +54,6 @@ export class BoardHeaders {
     static deserialize(boardData:BoardData, input:any):BoardHeaders {
         let backlogSize:number = input.backlog ? input.backlog : 0;
         let doneSize:number = input.done ? input.done : 0;
-        let unorderedStates:number[] = input.unordered ? input.unordered : [];
 
         let boardStateNames:Indexed<string> = new Indexed<string>();
         let boardStates:Indexed<State> = new Indexed<State>();
@@ -76,8 +75,7 @@ export class BoardHeaders {
             }
 
             let doneState:boolean = index >= input.states.length - doneSize;
-            let unordered:boolean = unorderedStates.indexOf(index) >= 0;
-            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, doneState, unordered, category);
+            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, doneState, category);
             boardStates.add(state.name, stateEntry);
             if (category) {
                 category.states.push(stateEntry);
@@ -364,7 +362,7 @@ class StateCategory {
 export class State {
 
     constructor(private _boardData:BoardData, private _name:string, private _index:number,
-                private _backlog:boolean, private _done:boolean, private _unordered:boolean, private _category:StateCategory) {
+                private _backlog:boolean, private _done:boolean, private _category:StateCategory) {
         //console.log(_index);
     }
 
@@ -390,10 +388,6 @@ export class State {
 
     get done():boolean {
         return this._done;
-    }
-
-    get unordered() {
-        return this._unordered;
     }
 
     isVisible(stateVisibilities:boolean[]):boolean{

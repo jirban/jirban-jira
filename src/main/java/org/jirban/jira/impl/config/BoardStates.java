@@ -190,7 +190,6 @@ public class BoardStates {
 
         Set<String> headers = new LinkedHashSet<>();
         final ModelNode headersNode = new ModelNode();
-        final ModelNode unorderedStates = new ModelNode();
 
         for (int i = 0 ; i < this.states.size() ; i++) {
             final String state = this.states.get(i);

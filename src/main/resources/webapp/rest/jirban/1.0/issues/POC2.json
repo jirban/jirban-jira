@@ -30,7 +30,6 @@
   "headers" : ["Analysis", "Development", "Awaiting Release", "Verified"],
   "backlog":3,
   "done":2,
-  "unordered":[18, 19],
   "assignees" : [
     {
       "key" : "emuckenhuber",
