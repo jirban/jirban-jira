@@ -24,6 +24,7 @@ import {FixedHeaderView} from "../fixedHeaderView";
 export class RankViewComponent extends FixedHeaderView {
 
     private _abbreviatedHeaderRegistry:AbbreviatedHeaderRegistry = new AbbreviatedHeaderRegistry();
+    private _mainStates:State[];
 
     constructor(_progressError:ProgressErrorService,
                 _appHeaderService:AppHeaderService) {
@@ -62,7 +63,17 @@ export class RankViewComponent extends FixedHeaderView {
     }
 
     get boardStates():State[] {
-        return this._boardData.boardStates;
+        if (!this._mainStates) {
+            let boardStates:State[] = this._boardData.boardStates;
+            this._mainStates = [];
+            //Don't show the done states
+            for (let state of boardStates) {
+                if (!state.done) {
+                    this._mainStates.push(state);
+                }
+            }
+        }
+        return this._mainStates;
     }
 }
 
