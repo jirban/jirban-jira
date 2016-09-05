@@ -28,12 +28,14 @@ import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
 import static org.jirban.jira.impl.Constants.CUSTOM;
+import static org.jirban.jira.impl.Constants.INDEX;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.NEW;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
+import static org.jirban.jira.impl.Constants.RANK;
 import static org.jirban.jira.impl.Constants.REMOVED_ISSUES;
 import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.STATES;
@@ -252,7 +254,6 @@ public class BoardChangeRegistry {
         private int view;
         private final Map<String, IssueChange> issueChanges = new HashMap<>();
         private final BlacklistChange blacklistChange = new BlacklistChange();
-        private final Set<String> issuesWithStateChanges = new HashSet<>();
         private NewReferenceCollector newReferenceCollector = new NewReferenceCollector();
 
         public ChangeSetCollector(boolean backlog, int endView) {
@@ -274,44 +275,14 @@ public class BoardChangeRegistry {
                         issueChanges.remove(issueChange.issueKey);
                     }
                 }
-                if (issueChange.changedState != null) {
-                    issuesWithStateChanges.add(issueKey);
-                } else {
-                    issuesWithStateChanges.remove(issueKey);
-                }
             } else {
                 blacklistChange.populate(boardChange);
             }
 
+
             if (boardChange.getView() > view) {
                 view = boardChange.getView();
             }
-        }
-
-        private Map<String, Set<String>> processStateChanges() {
-            //Several issues might undergo the same state changes, and be moved out,
-            //make sure the last one wins
-            Map<String, Set<String>> stateChangesByProject = new HashMap<>();
-            Map<String, Map<String, Integer>> stateChangeViewsByProject = new HashMap<>();
-
-            for (String issueKey : issuesWithStateChanges) {
-                IssueChange change = issueChanges.get(issueKey);
-                if (change != null) {
-                    if (backlog || !change.backlogEndState) {
-                        String changedState = change.changedState;
-
-                        Set<String> stateChangesByState = stateChangesByProject.computeIfAbsent(change.projectCode, pc -> new HashSet<>());
-                        Map<String, Integer> viewsByState = stateChangeViewsByProject.computeIfAbsent(change.projectCode, pc -> new HashMap<>());
-
-                        Integer maxView = viewsByState.get(changedState);
-                        if (maxView == null || maxView < change.view) {
-                            viewsByState.put(changedState, change.view);
-                            stateChangesByState.add(changedState);
-                        }
-                    }
-                }
-            }
-            return stateChangesByProject;
         }
 
         ModelNode serialize(Board board) {
@@ -322,7 +293,8 @@ public class BoardChangeRegistry {
             Set<IssueChange> newIssues = new HashSet<>();
             Set<IssueChange> updatedIssues = new HashSet<>();
             Set<IssueChange> deletedIssues = new HashSet<>();
-            sortIssues(board, newIssues, updatedIssues, deletedIssues);
+            Map<String, Set<String>> rerankedIssuesByProject = new HashMap();
+            sortIssues(board, newIssues, updatedIssues, deletedIssues, rerankedIssuesByProject);
 
             ModelNode issues = new ModelNode();
             serializeIssues(issues, newIssues, updatedIssues, deletedIssues);
@@ -333,8 +305,30 @@ public class BoardChangeRegistry {
             serializeAssignees(changes, newReferenceCollector.getNewAssignees());
             serializeComponents(changes, newReferenceCollector.getNewComponents());
             serializeCustomFieldValues(changes, newReferenceCollector.getNewCustomFieldValues());
-            serializeStateChanges(board, changes, processStateChanges());
             serializeBlacklist(changes);
+
+            if (rerankedIssuesByProject.size() > 0) {
+
+                for (Map.Entry<String, Set<String>> projectEntry : rerankedIssuesByProject.entrySet()) {
+
+                    final Set<String> rerankedIssues = projectEntry.getValue();
+                    final BoardProject project = board.getBoardProject(projectEntry.getKey());
+                    final List<String> rankedIssueKeys = project.getRankedIssueKeys();
+
+                    for (int i = 0; i < rankedIssueKeys.size() ; i++) {
+                        final String issueKey = rankedIssueKeys.get(i);
+
+                        if (rerankedIssues.contains(issueKey)) {
+                            final ModelNode ranked = changes.get(RANK, projectEntry.getKey());
+
+                            ModelNode rankEntry = new ModelNode();
+                            rankEntry.get(INDEX).set(i);
+                            rankEntry.get(KEY).set(issueKey);
+                            ranked.add(rankEntry);
+                        }
+                    }
+                }
+            }
             return output;
         }
 
@@ -375,51 +369,45 @@ public class BoardChangeRegistry {
             }
         }
 
-        private void serializeStateChanges(Board board, ModelNode parent, Map<String, Set<String>> stateChangesByProject) {
-            if (stateChangesByProject.size() > 0) {
-                for (Map.Entry<String, Set<String>> projectEntry : stateChangesByProject.entrySet()) {
-                    final String projectCode = projectEntry.getKey();
-                    final Set<String> changesForProject = projectEntry.getValue();
-
-                    BoardProject project = board.getBoardProject(projectCode);
-                    for (String state : changesForProject) {
-                        final ModelNode stateChangesNode = parent.get(Constants.STATES, projectCode, state);
-                        for (String issueKey : project.getIssuesForOwnState(state)) {
-                            stateChangesNode.add(issueKey);
-                        }
-                    }
-                }
-            }
-        }
-
         private void sortIssues(Board board, Set<IssueChange> newIssues, Set<IssueChange> updatedIssues,
-                                Set<IssueChange> deletedIssues) {
+                                Set<IssueChange> deletedIssues,
+                                Map<String, Set<String>> rerankedIssuesByProject) {
             for (IssueChange change : issueChanges.values()) {
-                Assignee newAssignee = null;
-                Map<String, Component> newComponentsForIssue = null;
+                boolean rank = false;
                 if (change.type == CREATE) {
-                    if (backlog || !change.backlogEndState) {
+                    if (backlog || change.backlogEndState != null && !change.backlogEndState) {
                         newIssues.add(change);
+                        rank = true;
                     }
                 } else if (change.type == UPDATE) {
-                    if (backlog || (!change.backlogStartState && !change.backlogEndState)) {
+                    if (backlog ||
+                            (!change.backlogStartState && change.backlogEndState != null && !change.backlogEndState)) {
                         updatedIssues.add(change);
-                    } else if (change.backlogStartState && !change.backlogEndState) {
+                        rank = change.reranked;
+                    } else if (change.backlogStartState && change.backlogEndState != null && !change.backlogEndState) {
                         //This is being moved from the backlog to the non-backlog with the backlog hidden. Treat this
                         //as an add for the client. We need to create a new IssueChange containing all the relevant data
                         //since an update only contains the changed data
                         IssueChange createWithAllData = board.createCreateIssueChange(BoardChangeRegistry.this, change.issueKey);
                         newIssues.add(createWithAllData);
-                    } else if (!change.backlogStartState && change.backlogEndState) {
+                        rank = true;
+                    } else if (!backlog && !change.backlogStartState && change.backlogEndState != null && change.backlogEndState) {
                         //This is being moved from the non-backlog to the backlog with the backlog hidden. Treat this
                         //as a delete for the client.
                         IssueChange delete = new IssueChange(change.projectCode, change.issueKey, null);
                         delete.type = DELETE;
-                        delete.type = DELETE;
                         deletedIssues.add(delete);
+                    } else {
+                        rank = change.reranked;
                     }
                 } else if (change.type == DELETE) {
                     deletedIssues.add(change);
+                }
+
+                if (rank) {
+                    Set<String> rerankedIssues =
+                            rerankedIssuesByProject.computeIfAbsent(change.projectCode, k -> new HashSet<String>());
+                    rerankedIssues.add(change.issueKey);
                 }
             }
         }
@@ -438,7 +426,9 @@ public class BoardChangeRegistry {
         private final String issueKey;
         private int view;
         private Type type;
+        private boolean reranked;
 
+        //Will be null if the issue was both created and updated
         private String issueType;
         private String priority;
         private String summary;
@@ -451,12 +441,6 @@ public class BoardChangeRegistry {
         private Boolean backlogEndState;
 
         private Map<String, CustomFieldValue> customFieldValues;
-
-        //We are interested in the latest state for the issue if it was moved or re-ranked
-        //This information will then be used by the board change collector to figure out which states
-        //should be shipped to the client. If several issues are moved to the same state, the one with the highest
-        //view should be sent to the client.
-        private String changedState;
 
         private IssueChange(String projectCode, String issueKey, Boolean backlogState) {
             this.projectCode = projectCode;
@@ -485,11 +469,12 @@ public class BoardChangeRegistry {
             }
             switch (type) {
                 case CREATE:
+                    reranked = true;
                 case UPDATE:
-                    mergeFields(boardChange, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
-                    if (boardChange.getChangedState() != null) {
-                        changedState = boardChange.getChangedState();
+                    if (!reranked) {
+                        reranked = boardChange.getEvent().getDetails().isReranked();
                     }
+                    mergeFields(boardChange, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
                     if (boardChange.getBacklogState() != null) {
                         backlogEndState = boardChange.getBacklogState();
                     }
@@ -497,7 +482,6 @@ public class BoardChangeRegistry {
                 case DELETE:
                     //No need to do anything, we will not serialize this issue's details
                     //Clear the state change details
-                    changedState = null;
                     break;
                 default:
             }

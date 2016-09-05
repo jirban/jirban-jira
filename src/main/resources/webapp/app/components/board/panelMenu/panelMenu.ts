@@ -1,4 +1,4 @@
-import {Component} from "@angular/core";
+import {Component, EventEmitter} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
 import {ControlPanelComponent} from "../controlPanel/controlPanel";
 import {HealthPanelComponent} from "../healthPanel/healthPanel";
@@ -6,6 +6,8 @@ import {Hideable} from "../../../common/hide";
 
 @Component({
     selector: 'panel-menu',
+    inputs: ['view'],
+    outputs: ['toggleView'],
     templateUrl: 'app/components/board/panelMenu/panelMenu.html',
     styleUrls: ['app/components/board/panelMenu/panelMenu.css'],
     directives: [ControlPanelComponent, HealthPanelComponent]
@@ -14,6 +16,8 @@ import {Hideable} from "../../../common/hide";
 export class PanelMenuComponent implements Hideable {
     private controlPanel:boolean = false;
     private healthPanel:boolean = false;
+    private toggleView:EventEmitter<any> = new EventEmitter<any>();
+    private view:boolean;
 
     constructor(private boardData:BoardData) {
         this.boardData.registerHideable(this);
@@ -27,6 +31,12 @@ export class PanelMenuComponent implements Hideable {
     private toggleHealthPanel() {
         this.controlPanel = false;
         this.healthPanel = !this.healthPanel;
+    }
+
+    private toggleViewEvent():void{
+        this.controlPanel = false;
+        this.healthPanel = false;
+        this.toggleView.emit({});
     }
 
     hide():void {

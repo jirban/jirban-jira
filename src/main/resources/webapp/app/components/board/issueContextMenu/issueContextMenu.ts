@@ -5,11 +5,13 @@ import {IssueData} from "../../../data/board/issueData";
 import {IssuesService} from "../../../services/issuesService";
 import {IssueComponent} from "../issue/issue";
 import {ProgressErrorService} from "../../../services/progressErrorService";
-import {State} from "../../../data/board/header";
 import {Hideable} from "../../../common/hide";
+import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
+import {VIEW_RANK} from "../../../common/constants";
+import {BoardProject} from "../../../data/board/project";
 
 @Component({
-    inputs: ['data'],
+    inputs: ['data', 'view'],
     outputs: ['closeContextMenu'],
     selector: 'issue-context-menu',
     templateUrl: 'app/components/board/issueContextMenu/issueContextMenu.html',
@@ -18,28 +20,32 @@ import {Hideable} from "../../../common/hide";
 })
 export class IssueContextMenuComponent implements Hideable {
     private _data:IssueContextMenuData;
+    private _view:string;
     private showContext:boolean = false;
     private issue:IssueData;
-    private endIssue:boolean;
     private toState:string;
-    private issuesForState:IssueData[];
     private canRank:boolean;
+
+    //The name of the panel to show (they are 'move', 'comment', 'rank')
+    private showPanel:string;
 
     //Calculated dimensions
     private movePanelTop:number;
     private movePanelHeight:number;
     private movePanelLeft:number;
-    private movePanelWidth:number;
     private statesColumnHeight:number;
 
-    private insertBeforeIssueKey:string;
 
-    private move:boolean;
-
-    private comment:boolean;
     private commentForm:ControlGroup;
     private commentPanelLeft:number;
-    
+
+    private rankPanelTop:number;
+    private rankPanelLeft:number;
+    private rankPanelHeight:number;
+    private rankedIssuesColumnHeight:number
+    private rankedIssues:IssueData[];
+    private rankBeforeKey:string;
+
     private closeContextMenu:EventEmitter<any> = new EventEmitter();
 
     constructor(private _boardData:BoardData, private _issuesService:IssuesService,
@@ -49,23 +55,23 @@ export class IssueContextMenuComponent implements Hideable {
 
     private set data(data:IssueContextMenuData) {
         this.showContext = !!data;
-        this.move = false;
+        this.showPanel = null;
         this.toState = null;
         this.issue = null;
-        this.endIssue = false;
-        this.issuesForState = null;
-        this.insertBeforeIssueKey = null;
         this._data = data;
         this.issue = null;
+        this.rankedIssues = null;
         if (data) {
             this.issue = this._boardData.getIssue(data.issueKey);
             this.toState = this.issue.boardStatus;
-            this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, this.toState);
             this.canRank = this._boardData.canRank(this.issue.projectCode);
         }
         this.setWindowSize();
     }
 
+    set view(value: string) {
+        this._view = value;
+    }
 
     hide():void {
         this.hideAllMenus();
@@ -73,14 +79,17 @@ export class IssueContextMenuComponent implements Hideable {
 
     private hideAllMenus() {
         this.showContext = false;
-        this.move = false;
-
-        this.comment = false;
+        this.showPanel = null;
         this.commentForm = null;
+        this.rankedIssues = null;
     }
 
     private get data() {
         return this._data;
+    }
+
+    private showRankMenuEntry() {
+        return this.canRank && this._view === VIEW_RANK;
     }
 
     private get displayContextMenu() : boolean {
@@ -96,73 +105,24 @@ export class IssueContextMenuComponent implements Hideable {
         return this._boardData.isValidStateForProject(this.issue.projectCode, state) && state != this.issue.boardStatus;
     }
 
-    private isValidRankState(stateName:string) : boolean {
-        if (!this._boardData.isValidStateForProject(this.issue.projectCode, stateName)) {
-            return false;
-        }
-        let state:State = this._boardData.indexedBoardStates.forKey(stateName);
-        if (state.done) {
-            return false;
-        }
-        if (state.backlog && !this._boardData.showBacklog) {
-            return false;
-        }
-        if (state.unordered) {
-            return false;
-        }
-        return true;
-    }
-
     private onShowMovePanel(event:MouseEvent) {
+        console.log("on show move panel");
         event.preventDefault();
         this.hideAllMenus();
-        this.move = true;
+        this.showPanel = "move";
     }
 
     private onSelectMoveState(event:MouseEvent, toState:string) {
         //The user has selected to move to a state accepting the default ranking
         event.preventDefault();
-        this.issuesForState = null;
         this.toState = toState;
 
-        this.moveIssue(false, null);
-    }
-
-    private onSelectRankState(event:MouseEvent, toState:string) {
-        //The user has selected the rank for state button, pull up the list of issues
-        event.preventDefault();
-        this.issuesForState = this._boardData.getValidMoveBeforeIssues(this.issue.key, toState);
-        this.toState = toState;
-    }
-
-    private onSelectRankIssue(event:MouseEvent, beforeIssueKey:string) {
-        console.log("onSelectMoveIssue - " + beforeIssueKey)
-        event.preventDefault();
-        this.insertBeforeIssueKey = beforeIssueKey;
-
-        if (this.issue.key == beforeIssueKey) {
-            //If we are moving to ourself just abort
-            console.log("onSelectMoveIssue - key is self, returning")
-            this.hideAllMenus();
-            return;
-        }
-        this.moveIssue(true, beforeIssueKey);
-    }
-
-    private moveIssue(rank:boolean, beforeIssueKey:string) {
         let beforeKey:string;;
         let afterKey:string;
 
-        if (rank) {
-            beforeKey = beforeIssueKey === "" ? null : beforeIssueKey;
-            if (!beforeKey && this.issuesForState.length > 0) {
-                afterKey = this.issuesForState[this.issuesForState.length - 1].key;
-            }
-            console.log("onSelectMoveIssue key - afterKey " + afterKey);
-        }
         //Tell the server to move the issue. The actual move will come in via the board's polling mechanism.
         this._progressError.startProgress(true);
-        this._issuesService.moveIssue(this._boardData, this.issue, this.toState, beforeKey, afterKey)
+        this._issuesService.moveIssue(this._boardData, this.issue, this.toState)
             .subscribe(
                 data => {},
                 error => {
@@ -172,13 +132,7 @@ export class IssueContextMenuComponent implements Hideable {
                 () => {
                     let status:string = "<a " +
                     "class='toolbar-message' href='" + this._boardData.jiraUrl + "/browse/" + this.issue.key + "'>" +
-                        this.issue.key + "</a>";
-                    let moved = this.toState != this.issue.boardStatus;
-                    if (rank && !moved) {
-                        status += " ranked";
-                    } else {
-                        status += " moved to '" + this.toState + "'";
-                    }
+                        this.issue.key + "</a> moved to '" + this.toState + "'";
                     this._progressError.finishProgress(status);
                     this.hideAllMenus();
                 }
@@ -189,7 +143,7 @@ export class IssueContextMenuComponent implements Hideable {
     private onShowCommentPanel(event:MouseEvent) {
         event.preventDefault();
         this.hideAllMenus();
-        this.comment = true;
+        this.showPanel = "comment";
         this.commentForm = this._formBuilder.group({
             "comment": ["", Validators.required]
         });
@@ -201,6 +155,7 @@ export class IssueContextMenuComponent implements Hideable {
         this._issuesService.commentOnIssue(this._boardData, this.issue, comment)
             .subscribe(
                 data => {
+                    //No data is returned, issuesService refreshes boardData for us
                     this.hideAllMenus();
                 },
                 err => {
@@ -216,41 +171,101 @@ export class IssueContextMenuComponent implements Hideable {
 
     }
 
+    private onShowRankPanel(event:MouseEvent) {
+        event.preventDefault();
+        this.hideAllMenus();
+        this.showPanel = "rank";
+        this.rankBeforeKey = this.issue.key;
+    }
+
+    get rankedIssuesForIssueProject():IssueData[] {
+        if (!this.rankedIssues) {
+            let project:BoardProject = this._boardData.boardProjects.forKey(this.issue.projectCode);
+            this.rankedIssues = [];
+            for (let key of project.rankedIssueKeys) {
+                this.rankedIssues.push(this._boardData.getIssue(key));
+            }
+        }
+        return this.rankedIssues;
+    }
+
+    isIssueBeingRanked(issue:IssueData) {
+        return this.issue.key === issue.key;
+    }
+
+    onClickRankBefore(event:MouseEvent, index:number) {
+        event.preventDefault();
+        let before:IssueData;
+        let beforeKey:string;
+        let afterKey:string;
+        if (index >= 0) {
+            before = this.rankedIssuesForIssueProject[index];
+            this.rankBeforeKey = before.key;
+            beforeKey = before.key;
+            if (index > 0) {
+                afterKey = this.rankedIssuesForIssueProject[index - 1].key;
+            }
+
+        } else {
+            this.rankBeforeKey = null;
+            afterKey = this.rankedIssuesForIssueProject[this.rankedIssuesForIssueProject.length - 1].key;
+        }
+        console.log("onClickRankBefore " + index + "; before: " + beforeKey + " ; after: " + afterKey);
+
+        this._issuesService.performRerank(this.issue, beforeKey, afterKey)
+            .subscribe(
+                data => {
+                    //No data is returned, issuesService refreshes boardData for us
+                    this.hideAllMenus();
+                },
+                err => {
+                    this._progressError.setError(err);
+                },
+                () => {
+                    let msg = "Ranked <a " +
+                        "class='toolbar-message' href='" + this._boardData.jiraUrl + "/browse/" + this.issue.key + "'>" +
+                        this.issue.key + "</a> ";
+                    if (index < 0) {
+                        msg += " to the end";
+                    } else {
+                        msg += " before " + beforeKey;
+                    }
+                    this._progressError.finishProgress(msg);
+                }
+            );
+    }
+
+
     private onResize(event : any) {
         this.setWindowSize();
     }
 
     private setWindowSize() {
         let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number;
-        let movePanelWidth:number = this.canRank ? 720 : 405;
+        let movePanelWidth:number = 410;
 
         //40px top and bottom padding if window is high enough, 5px otherwise
         let yPad = window.innerHeight > 350 ? 40 : 5;
         movePanelHeight = window.innerHeight - 2 * yPad;
         movePanelTop = window.innerHeight/2 - movePanelHeight/2;
-
         statesColumnHeight = movePanelHeight - 55;
 
-        //css hardcodes the width as 720px;
+        //css hardcodes the width as 410px;
         if (window.innerWidth > movePanelWidth) {
             movePanelLeft = window.innerWidth/2 - movePanelWidth/2;
         }
         this.movePanelTop = movePanelTop;
         this.movePanelHeight = movePanelHeight;
         this.movePanelLeft = movePanelLeft;
-        this.movePanelWidth = movePanelWidth;
         this.statesColumnHeight = statesColumnHeight;
 
         this.commentPanelLeft = (window.innerWidth - 600)/2;
-    }
 
-    private isIssueSelected(issue:IssueData) : boolean {
-        if (this.insertBeforeIssueKey) {
-            return issue.key === this.insertBeforeIssueKey;
-        }
-        return this.issue.key == issue.key;
+        this.rankPanelTop = movePanelTop;
+        this.rankPanelHeight = movePanelHeight;
+        this.rankPanelLeft = (window.innerWidth - 500)/2;
+        this.rankedIssuesColumnHeight = statesColumnHeight;
     }
-
 
     private onClickClose(event:MouseEvent) {
         this.hideAllMenus();
@@ -260,25 +275,6 @@ export class IssueContextMenuComponent implements Hideable {
 
     get boardData():BoardData {
         return this._boardData;
-    }
-}
-
-export class IssueContextMenuData {
-    constructor(private _issueKey:string,
-                private _x:number,
-                private _y:number) {
-    }
-
-    get issueKey():string {
-        return this._issueKey;
-    }
-
-    get x():number {
-        return this._x;
-    }
-
-    get y():number {
-        return this._y;
     }
 }
 

@@ -33,6 +33,7 @@ import javax.inject.Named;
 
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.ofbiz.core.entity.GenericEntityException;
 import org.ofbiz.core.entity.GenericValue;
@@ -113,6 +114,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
     private final BoardManager boardManager;
 
+    private final NextRankedIssueUtil nextRankedIssueUtil;
+
     private final WrappedThreadLocal<JirbanEventWrapper> delayedEvents = new WrappedThreadLocal<>();
 
 
@@ -123,10 +126,12 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      * @param boardManager injected {@code BoardManager} implementation.
      */
     @Autowired
-    public JirbanIssueEventListener(EventPublisher eventPublisher, ProjectManager projectManager, BoardManager boardManager) {
+    public JirbanIssueEventListener(EventPublisher eventPublisher,
+                                    ProjectManager projectManager, BoardManager boardManager, NextRankedIssueUtil nextRankedIssueUtil) {
         this.eventPublisher = eventPublisher;
         this.projectManager = projectManager;
         this.boardManager = boardManager;
+        this.nextRankedIssueUtil = nextRankedIssueUtil;
     }
 
     /**
@@ -179,7 +184,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             if (delayedEvent.isComplete()) {
                 try {
                     JirbanLogger.LOGGER.debug("Handle delayed event {}", delayedEvent.issueEvent.getIssueKey());
-                    boardManager.handleEvent(delayedEvent.issueEvent);
+                    boardManager.handleEvent(delayedEvent.issueEvent, nextRankedIssueUtil);
                 } finally {
                     delayedEvents.remove();
                 }
@@ -296,7 +301,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         Collection<ProjectComponent> components = null;
         String oldState = null;
         String state = null;
-        boolean rankOrStateChanged = false;
+        boolean reranked = false;
         Map<Long, String> customFieldValues = null;
 
         List<GenericValue> changeItems = getWorkLog(issueEvent);
@@ -314,11 +319,10 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                     assignee = JirbanIssueEvent.UNASSIGNED;
                 }
             } else if (field.equals(CHANGE_LOG_STATUS)) {
-                rankOrStateChanged = true;
                 state = issue.getStatusObject().getName();
                 oldState = change.getString(CHANGE_LOG_OLD_STRING);
             } else if (field.equals(CHANGE_LOG_RANK)) {
-                rankOrStateChanged = true;
+                reranked = true;
             } else if (field.equals(CHANGE_LOG_COMPONENT)) {
                 components = issue.getComponentObjects();
             } else if (change.get(CHANGE_LOG_FIELDTYPE).equals(CHANGE_LOG_CUSTOM)) {
@@ -340,7 +344,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 summary, assignee, components,
                 //Always pass in the existing/old state of the issue
                 oldState != null ? oldState : issue.getStatusObject().getName(),
-                state, rankOrStateChanged, customFieldValues);
+                state, reranked, customFieldValues);
         passEventToBoardManagerOrDelay(event);
     }
 
@@ -424,14 +428,14 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 if (wrapper.isComplete()) {
                     //It is complete
                     JirbanLogger.LOGGER.debug("Handle delayed event {}", event.getIssueKey());
-                    boardManager.handleEvent(event);
+                    boardManager.handleEvent(event, nextRankedIssueUtil);
                     delayedEvents.remove();
                 }
             }
         } else {
             //We can handle the event right away
             JirbanLogger.LOGGER.debug("Handling immediate event {}", event.getIssueKey());
-            boardManager.handleEvent(event);
+            boardManager.handleEvent(event, nextRankedIssueUtil);
         }
     }
 

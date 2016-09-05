@@ -4,6 +4,8 @@ import {IssueComponent} from "../issue/issue";
 import {SwimlaneData} from "../../../data/board/issueTable";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
 import {CharArrayRegistry} from "../../../common/charArrayRegistry";
+import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
+
 
 /**
  * This is here to be able to add a header and the contents for a swimlane
@@ -11,10 +13,10 @@ import {CharArrayRegistry} from "../../../common/charArrayRegistry";
  */
 @Component({
     inputs: ['swimlaneIndex', 'boardData', 'swimlane', 'boardLeftOffset'],
-    outputs: ['issueContextMenu', 'toggleBacklogVisibility'],
+    outputs: ['showIssueContextMenu', 'toggleBacklogVisibility'],
     selector: 'swimlane-entry',
     templateUrl: 'app/components/board/swimlaneEntry/swimlaneEntry.html',
-    styleUrls: ['app/components/board//board.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
+    styleUrls: ['app/components/board/view/kanban/kanbanview.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css'],
     directives: [IssueComponent]
 })
 export class SwimlaneEntryComponent {
@@ -22,7 +24,7 @@ export class SwimlaneEntryComponent {
     public boardData : BoardData;
     public swimlaneIndex : number;
     private _boardLeftOffset:number;
-    private issueContextMenu:EventEmitter<any> = new EventEmitter();
+    private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
     private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
@@ -58,8 +60,8 @@ export class SwimlaneEntryComponent {
         this.boardData.toggleSwimlaneVisibility(index);
     }
 
-    private showIssueContextMenu(event:any) {
-        this.issueContextMenu.emit(event);
+    private onShowIssueContextMenu(event:IssueContextMenuData) {
+        this.showIssueContextMenu.emit(event);
     }
 
     private get visibleColumns() : boolean[] {

@@ -18,8 +18,8 @@ export class ChangeSet {
     private _blacklistChange:BlacklistData;
     private _blacklistClearedIssues:string[];
 
-    private _stateChanges:Indexed<Indexed<string[]>>;
-
+    private _rankChanges:IMap<RankChange[]>;
+    private _rankedIssues:IMap<boolean>;
 
     constructor(input:any) {
         let changes:any = input.changes;
@@ -65,15 +65,24 @@ export class ChangeSet {
             }
         }
 
-        let stateChanges:any = changes.states;
-        this._stateChanges = new Indexed<Indexed<string[]>>();
-        this._stateChanges.indexMap(stateChanges, (projectCode:string, projectEntry:any) => {
-           let projStates:Indexed<string[]> = new Indexed<string[]>();
-            projStates.indexMap(projectEntry, (stateName:string, stateEntry:any) => {
-                return stateEntry;
-            });
-            return projStates;
-        });
+        let ranked:any = changes.rank;
+        if (ranked) {
+            this._rankChanges = {};
+            this._rankedIssues = {};
+            for (let project in ranked) {
+                let projectRankChanges:RankChange[] = this._rankChanges[project];
+                if (!projectRankChanges) {
+                    projectRankChanges = [];
+                    this._rankChanges[project] = projectRankChanges;
+                }
+                let projectRanked:any[] = ranked[project];
+                for (let rank of projectRanked) {
+                    let rankChange:RankChange = new RankChange(rank.key, rank.index);
+                    projectRankChanges.push(rankChange);
+                    this._rankedIssues[rankChange.key] = true;
+                }
+            }
+        }
     }
 
 
@@ -129,8 +138,12 @@ export class ChangeSet {
         blacklist.addChanges(this._blacklistChange);
     }
 
-    get stateChanges():Indexed<Indexed<string[]>> {
-        return this._stateChanges;
+    get rankChanges(): IMap<RankChange[]> {
+        return this._rankChanges;
+    }
+
+    get rankedIssues():IMap<boolean> {
+        return this._rankedIssues;
     }
 }
 
@@ -230,5 +243,23 @@ export class IssueChange {
             change._clearedComponents = true;
         }
         return change;
+    }
+}
+
+export class RankChange {
+    private _key:string;
+    private _index:number;
+
+    constructor(key: string, index: number) {
+        this._key = key;
+        this._index = index;
+    }
+
+    get key(): string {
+        return this._key;
+    }
+
+    get index(): number {
+        return this._index;
     }
 }

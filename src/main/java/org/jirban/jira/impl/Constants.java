@@ -51,6 +51,7 @@ public class Constants {
     public static final String HELP = "help";
     public static final String ICON = "icon";
     public static final String ID = "id";
+    public static final String INDEX = "index";
     public static final String ISSUE_TYPES = "issue-types";
     public static final String ISSUES = "issues";
     public static final String JIRBAN_VERSION = "jirban-version";
@@ -68,6 +69,7 @@ public class Constants {
     public static final String PROJECTS = "projects";
     public static final String QUERY_FILTER = "query-filter";
     public static final String RANK = "rank";
+    public static final String RANKED = "ranked";
     public static final String RANK_CUSTOM_FIELD = "rank-custom-field";
     public static final String RANK_CUSTOM_FIELD_ID = "rank-custom-field-id";
     public static final String REMOVED_ISSUES = "removed-issues";
@@ -76,7 +78,6 @@ public class Constants {
     public static final String STATES = "states";
     public static final String SUMMARY = "summary";
     public static final String TYPE = "type";
-    public static final String UNORDERED = "unordered";
     public static final String UPDATE = "update";
     public static final String UPDATES = "updates";
     public static final String UNASSIGNED = "unassigned";

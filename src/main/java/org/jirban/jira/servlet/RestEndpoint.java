@@ -66,7 +66,7 @@ public class RestEndpoint {
      * If we change anything in the payloads etc. we should bump this so that the client can take action.
      * The corresponding location on the client is in app.ts
      */
-    private static final int API_VERSION = 1;
+    private static final int API_VERSION = 2;
 
     private final JiraFacade jiraFacade;
 

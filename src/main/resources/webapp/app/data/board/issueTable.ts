@@ -5,7 +5,7 @@ import {IMap} from "../../common/map";
 import {BoardFilters} from "./boardFilters";
 import {SwimlaneIndexer, SwimlaneIndexerFactory} from "./swimlaneIndexer";
 import {Indexed} from "../../common/indexed";
-import {ChangeSet} from "./change";
+import {ChangeSet, RankChange} from "./change";
 import {Subject, Observable} from "rxjs/Rx";
 
 export class IssueTable {
@@ -13,6 +13,7 @@ export class IssueTable {
     private _issueTable:IssueData[][];
     private _swimlaneTable:SwimlaneData[];
     private _totalIssuesByState:number[];
+    private _rankedIssues:IssueData[] = [];
 
     private _swimlaneVisibitilySubject:Subject<void> = new Subject<void>();
 
@@ -77,6 +78,10 @@ export class IssueTable {
         return this._swimlaneVisibitilySubject;
     }
 
+    get rankedIssues(): IssueData[] {
+        return this._rankedIssues;
+    }
+
     toggleSwimlaneVisibility(swimlaneIndex:number) {
         if (this._swimlaneTable) {
             this._swimlaneTable[swimlaneIndex].toggleVisibility();
@@ -100,10 +105,6 @@ export class IssueTable {
                 if (!issue) {
                     console.log("Could not find issue to update " + update.key);
                     continue;
-                }
-                if (update.state) {
-                    //The issue has moved its state, so we need to delete it from the old state column
-                    deletedIssues.push(issue);
                 }
             }
         }
@@ -133,19 +134,15 @@ export class IssueTable {
             }
         }
 
-        //Now update the changed states
-        if (changeSet.stateChanges) {
+        //Now update the issue ranks
+        if (changeSet.rankChanges) {
             //let ownerProject:BoardProject = this._projects.ownerProject;
-            for (let projectCode in changeSet.stateChanges.indices) {
+            for (let projectCode in changeSet.rankChanges) {
 
-                let projectStates:Indexed<string[]> = changeSet.stateChanges.forKey(projectCode);
-                let project:BoardProject = this._projects.boardProjects.forKey(projectCode);
-
-                for (let stateName in projectStates.indices) {
-
-                    let boardState:string = project.mapStateStringToBoard(stateName);
-                    let boardIndex:number = boardData.indexedBoardStateNames.indices[boardState];
-                    project.updateStateIssues(boardIndex, projectStates.forKey(stateName));
+                let projectRankChanges:RankChange[] = changeSet.rankChanges[projectCode];
+                if (projectRankChanges && projectRankChanges.length > 0) {
+                    let project: BoardProject = this._projects.boardProjects.forKey(projectCode);
+                    project.updateIssueRanks(changeSet.rankedIssues, changeSet.rankChanges[projectCode]);
                 }
             }
         }
@@ -197,75 +194,94 @@ export class IssueTable {
             this._issueTable = this.createIssueTable();
             this._swimlaneTable = null;
         }
+
     }
+
 
     private createIssueTable() : IssueData[][] {
         let numStates = this._boardData.boardStateNames.length;
-        this._totalIssuesByState = [numStates];
+
+        this._totalIssuesByState = new Array<number>(numStates);
+        this._rankedIssues = [];
+
+        let issueCounters = new Array<StateIssueCounter>(numStates);
         let issueTable:IssueData[][] = new Array<IssueData[]>(numStates);
 
-        //Now copy across the issues for each project for each state
-        for (let stateIndex:number = 0 ; stateIndex < issueTable.length ; stateIndex++) {
-            let counter:StateIssueCounter = new StateIssueCounter();
-            let stateColumn = this.createIssueTableStateColumn(stateIndex, counter);
-            this._totalIssuesByState[stateIndex] = counter.count;
-            issueTable[stateIndex] = stateColumn;
+        //Initialise the states
+        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+            issueTable[stateIndex] = [];
+            issueCounters[stateIndex] = new StateIssueCounter();
         }
-        return issueTable;
-    }
 
-    private createIssueTableStateColumn(stateIndex:number, counter:StateIssueCounter) : IssueData[] {
-        let stateColumn:IssueData[] = [];
-        for (let project of this._boardData.boardProjects.array) {
-            let projectIssues:string[][] = project.issueKeys;
-            let issueKeysForState:string[] = projectIssues[stateIndex];
+        for (let boardProject of this._boardData.boardProjects.array) {
+            for (let issueKey of boardProject.rankedIssueKeys) {
+                let issue:IssueData = this._allIssues.forKey(issueKey);
+                let boardStateIndex:number = boardProject.mapStateIndexToBoardIndex(issue.statusIndex);
 
-            for (let index:number = 0; index < issueKeysForState.length; index++) {
-                let issue:IssueData = this._allIssues.forKey(issueKeysForState[index]);
-                stateColumn.push(issue);
-                counter.increment();
+                let issuesForState:IssueData[] = issueTable[boardStateIndex];
+                issuesForState.push(issue);
+
+                let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
+                issueCounter.increment();
                 issue.filtered = this._filters.filterIssue(issue);
+
+                this._rankedIssues.push(issue);
             }
         }
-        return stateColumn;
+
+        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].count;
+        }
+
+        return issueTable;
     }
 
     private createSwimlaneTable() : SwimlaneData[] {
         let numStates = this._boardData.boardStateNames.length;
-        this._totalIssuesByState = [numStates];
+
+        this._totalIssuesByState = new Array<number>(numStates);
+        this._rankedIssues = [];
+
         let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
+        let issueCounters = new Array<StateIssueCounter>(numStates);
         let swimlaneTable:SwimlaneData[] = indexer.swimlaneTable;
 
-        //Now copy across the issues for each project for each state
-        for (let stateIndex:number = 0 ; stateIndex < this._boardData.boardStateNames.length ; stateIndex++) {
-            let counter:StateIssueCounter = new StateIssueCounter();
-            this.createSwimlaneTableStateColumn(indexer, swimlaneTable, stateIndex, counter);
-            this._totalIssuesByState[stateIndex] = counter.count;
+        //Initialise the states
+        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+            //The swimlane indexer will take care of initialising its own issue tables
+            issueCounters[stateIndex] = new StateIssueCounter();
         }
+
+        for (let boardProject of this._boardData.boardProjects.array) {
+            for (let issueKey of boardProject.rankedIssueKeys) {
+                let issue:IssueData = this._allIssues.forKey(issueKey);
+                let boardStateIndex:number = boardProject.mapStateIndexToBoardIndex(issue.statusIndex);
+
+                let swimlaneIndices:number[] = indexer.swimlaneIndex(issue);
+                for (let swimlaneIndex of swimlaneIndices) {
+                    let targetSwimlane:SwimlaneData = swimlaneTable[swimlaneIndex];
+                    targetSwimlane.issueTable[boardStateIndex].push(issue);
+
+                }
+
+                let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
+                issueCounter.increment();
+                issue.filtered = this._filters.filterIssue(issue);
+
+                this._rankedIssues.push(issue);
+            }
+        }
+
+        for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
+            this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].count;
+        }
+
         //Apply the filters to the swimlanes
         for (let swimlaneData of swimlaneTable) {
             swimlaneData.filtered = indexer.filter(swimlaneData);
         }
+
         return swimlaneTable;
-    }
-
-    private createSwimlaneTableStateColumn(indexer:SwimlaneIndexer, swimlaneTable:SwimlaneData[], stateIndex:number, counter:StateIssueCounter) {
-
-        for (let project of this._boardData.boardProjects.array) {
-            let projectIssues:string[][] = project.issueKeys;
-            let issueKeysForState:string[] = projectIssues[stateIndex];
-
-            for (let index:number = 0; index < issueKeysForState.length; index++) {
-                let issue:IssueData = this._allIssues.forKey(issueKeysForState[index]);
-                let swimlaneIndices:number[] = indexer.swimlaneIndex(issue);
-                issue.filtered = this._filters.filterIssue(issue);
-                for (let swimlaneIndex of swimlaneIndices) {
-                    let targetSwimlane:SwimlaneData = swimlaneTable[swimlaneIndex];
-                    targetSwimlane.issueTable[stateIndex].push(issue);
-                }
-                counter.increment();
-            }
-        }
     }
 
     private createSwimlaneIndexer():SwimlaneIndexer {

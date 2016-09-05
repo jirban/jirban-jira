@@ -1,7 +1,11 @@
 <div *ngIf="displayContextMenu" class="issue-context-menu"
      [ngStyle]="{'top': data.y, 'left' : data.x}">
+    <div *ngIf="showRankMenuEntry()">
+        <a href="comment" (click)="onShowRankPanel($event)"><img src="images/resize-height-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="comment" (click)="onShowRankPanel($event)" class="context">Rank...</a>
+    </div>
     <div>
-        <a href="move" (click)="onShowMovePanel($event)"><img src="images/move-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="move" (click)="onShowMovePanel($event)"><img src="images/resize-width-2x.png" width="12px" height="12px" align="center"/></a>
         <a href="move" (click)="onShowMovePanel($event)" class="context">Move...</a>
     </div>
     <div>
@@ -10,10 +14,10 @@
     </div>
 </div>
 
-<div *ngIf="move" id="issue-move-panel" (window:resize)="onResize($event)"
-        [style.top]="movePanelTop" [style.left]="movePanelLeft" [style.height]="movePanelHeight" [style.width]="movePanelWidth">
+<div *ngIf="showPanel === 'move'" class="panel" id="issue-move-panel" (window:resize)="onResize($event)"
+        [style.top]="movePanelTop" [style.left]="movePanelLeft" [style.height]="movePanelHeight" >
     <div class="header">
-        <div [ngClass]="canRank ? 'move-rank-header-text' : 'move-no-rank-header-text'">Move {{issue.key}}</div>
+        <div class="move-header-text">Move {{issue.key}}</div>
         <div class="header-close-button">
             <a href="close" class="close" (click)="onClickClose($event)">X</a>
         </div>
@@ -27,14 +31,7 @@
             <div class="column-header">Select state:</div>
             <div class="states" [style.height]="statesColumnHeight">
                 <div *ngFor="let state of moveStates" [ngClass]="state === toState ? 'entry-selected' : 'entry'">
-                    <div class="rank" *ngIf="canRank">
-                        <a href="rank" (click)="onSelectRankState($event, state)"
-                           *ngIf="isValidRankState(state)"
-                           title="Move to {{state}} and rank the issue">
-                            <img src="images/resize-height-2x.png" width="12px" height="12px" align="center"/></a>
-                        <span *ngIf="!isValidRankState(state)">&nbsp;</span>
-                    </div>
-                    <div *ngIf="isValidMoveState(state)" class="state-link">
+                    <div *ngIf="isValidMoveState(state)" class="list-link">
                         <a href="{{state}}" (click)="onSelectMoveState($event, state)"
                            [ngClass]="state === toState ? 'entry-selected' : 'entry'"
                            title="Move to {{state}}"><b>{{state}}</b></a>
@@ -43,25 +40,10 @@
                 </div>
             </div>
         </div>
-        <div class="column" [hidden]="!issuesForState" *ngIf="canRank">
-            <div class="column-header">Insert before:</div>
-            <div class="issues" [style.height]="statesColumnHeight">
-                <div *ngIf="toState"  class="entry end-entry">
-                    <a href="move" (click)="onSelectRankIssue($event, '')"
-                       [ngClass]="'' === insertBeforeIssueKey ? 'entry-selected' : 'entry'"><b>- END -</b></a>
-                </div>
-                <div>&nbsp;</div>
-                <div *ngFor="let issue of issuesForState"
-                     [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'">
-                    <a href="move" (click)="onSelectRankIssue($event, issue.key)" title="{{issue.key}} - {{issue.summary}}"
-                       [ngClass]="isIssueSelected(issue) ? 'entry-selected' : 'entry'"><b>{{issue.key}}</b> - {{issue.summary}}</a>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
-<div *ngIf="comment" id="issue-comment-panel" (window:resize)="onResize($event)"
+<div *ngIf="showPanel === 'comment'" class="panel" id="issue-comment-panel" (window:resize)="onResize($event)"
      [style.left]="commentPanelLeft">
     <div class="header">
         <div class="comment-header-text">Comment on {{issue.key}}</div>
@@ -81,5 +63,40 @@
                 <button type="submit" class="comment-button" [disabled]="!f.form.valid">Save</button>
             </div>
         </form>
+    </div>
+</div>
+
+<div *ngIf="showPanel === 'rank'" class="panel" id="issue-rank-panel" (window:resize)="onResize($event)"
+     [style.top]="rankPanelTop" [style.left]="rankPanelLeft" [style.height]="rankPanelHeight" >
+    <div class="header">
+        <div class="rank-header-text">Rank {{issue.key}}</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="issue-column">
+            <issue [issue]="issue"></issue>
+        </div>
+        <div class="column">
+            <div class="column-header">Select issue to insert before:</div>
+            <div class="ranked-issues"[style.height]="rankedIssuesColumnHeight"> <!-- TODO height -->
+                <div *ngFor="let issue of rankedIssuesForIssueProject ; let i = index"
+                     title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}&#013;{{issue.priority.name}}&#013;{{issue.type.name}}"
+                     [ngClass]="issue.key === rankBeforeKey ? 'entry-selected' : 'entry'">
+                    <a *ngIf="!isIssueBeingRanked(issue)"
+                        href="rank"
+                        [ngClass]="issue.key === rankBeforeKey ? 'entry-selected' : 'entry'"
+                        (click)="onClickRankBefore($event, i)"><b>{{issue.key}} </b>- {{issue.summary}}</a>
+                    <span *ngIf="isIssueBeingRanked(issue)"><i><b>{{issue.key}} </b>- {{issue.summary}}</i></span>
+                </div>
+                <div [ngClass]="0 > rankBeforeKey ? 'entry-selected' : 'entry'">
+                    <a href="rank"
+                       [ngClass]="0 > rankBeforeKey ? 'entry-selected' : 'entry'"
+                       (click)="onClickRankBefore($event, -1)"><b>-- END --</b></a>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

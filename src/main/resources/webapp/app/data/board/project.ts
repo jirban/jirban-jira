@@ -2,7 +2,7 @@ import {Indexed} from "../../common/indexed";
 import {IMap} from "../../common/map";
 import {IssueData} from "./issueData";
 import {IssueTable} from "./issueTable";
-import {SwimlaneMatcher, SwimlaneIndexerFactory} from "./swimlaneIndexer";
+import {RankChange} from "./change";
 import ownKeys = Reflect.ownKeys;
 
 /**
@@ -53,24 +53,18 @@ export class Projects {
     }
 
     deleteIssues(deletedIssues:IssueData[]) {
-        let issuesByProjectAndBoardState:IMap<IMap<IMap<IssueData>>> = {};
+        let issuesByProject:IMap<IMap<IssueData>> = {};
         for (let issue of deletedIssues) {
-            let issuesByBoardState:IMap<IMap<IssueData>> = issuesByProjectAndBoardState[issue.projectCode];
-            if (!issuesByBoardState) {
-                issuesByBoardState = {};
-                issuesByProjectAndBoardState[issue.projectCode] = issuesByBoardState;
-            }
-
-            let issues:IMap<IssueData> = issuesByBoardState[issue.boardStatus];
+            let issues:IMap<IssueData> = issuesByProject[issue.projectCode];
             if (!issues) {
                 issues = {};
-                issuesByBoardState[issue.boardStatus] = issues;
+                issuesByProject[issue.projectCode] = issues;
             }
             issues[issue.key] = issue;
         }
 
-        for (let projectCode in issuesByProjectAndBoardState) {
-            this._boardProjects.forKey(projectCode).deleteIssues(issuesByProjectAndBoardState[projectCode]);
+        for (let projectCode in issuesByProject) {
+            this._boardProjects.forKey(projectCode).deleteIssues(issuesByProject[projectCode]);
         }
     }
 
@@ -123,20 +117,20 @@ export class BoardProject extends Project {
     private _boardStates:Indexed<string>;
     private _colour:string;
     private _canRank:boolean;
-    //The table of issue keys uses the board states. This means that for non-owner projects there may be some empty
-    //columns where the states are not mapped. It is simpler this way :)
-    private _issueKeys:string[][];
+    //The list of issue keys in ranked order.
+    private _rankedIssueKeys:string[];
 
     _boardStatesToProjectState:IMap<string> = {};
     _projectStatesToBoardState:IMap<string> = {};
 
-    constructor(boardStates:Indexed<string>, code:string, canRank:boolean, colour:string, states:Indexed<string>, issueKeys:string[][],
+    constructor(boardStates:Indexed<string>, code:string, canRank:boolean, colour:string, states:Indexed<string>,
+                rankedIssueKeys:string[],
                 boardStatesToProjectState:IMap<string>, projectStatesToBoardState:IMap<string>) {
         super(code, states);
         this._boardStates = boardStates;
         this._colour = colour;
         this._canRank = canRank;
-        this._issueKeys = issueKeys;
+        this._rankedIssueKeys = rankedIssueKeys;
         this._boardStatesToProjectState = boardStatesToProjectState;
         this._projectStatesToBoardState = projectStatesToBoardState;
     }
@@ -149,11 +143,14 @@ export class BoardProject extends Project {
         return this._canRank;
     }
 
-    get issueKeys():string[][] {
-        return this._issueKeys;
+    get rankedIssueKeys():string[] {
+        return this._rankedIssueKeys;
     }
 
     getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toStateIndex:number) : IssueData[] {
+        //TODO - reintroduce this
+        return [];
+        /*
         let issueKeys:string[] = this._issueKeys[toStateIndex];
         let validIssues:IssueData[] = [];
         let swimlaneMatcher:SwimlaneMatcher = new SwimlaneIndexerFactory().createSwimlaneMatcher(swimlane, moveIssue);
@@ -164,23 +161,19 @@ export class BoardProject extends Project {
             }
         }
         return validIssues;
+        */
     }
 
     getOwnStateIndex(state:string) : number {
         return this._states.indices[state];
     }
 
-    deleteIssues(deletedIssuesByBoardState:IMap<IMap<IssueData>>) {
-        for (let boardState in deletedIssuesByBoardState) {
-            let issueTableIndex:number = this._boardStates.indices[boardState];
-            let deletedIssues:IMap<IssueData> = deletedIssuesByBoardState[boardState];
-            let issueKeysForState:string[] = this._issueKeys[issueTableIndex];
-            for (let i:number = 0 ; i < issueKeysForState.length ; ) {
-                if (deletedIssues[issueKeysForState[i]]) {
-                    issueKeysForState.splice(i, 1);
-                } else {
-                    i++;
-                }
+    deleteIssues(deletedIssues:IMap<IssueData>) {
+        for (let i:number = 0 ; i < this._rankedIssueKeys.length ; ) {
+            if (deletedIssues[this._rankedIssueKeys[i]]) {
+                this._rankedIssueKeys.splice(i, 1);
+            } else {
+                i++;
             }
         }
     }
@@ -204,10 +197,38 @@ export class BoardProject extends Project {
         return this._boardStates.indices[boardState];
     }
 
-    updateStateIssues(stateIndex:number, issueKeys:string[]) {
-        this._issueKeys[stateIndex] = issueKeys;
+    mapStateIndexToBoardIndex(ownStateIndex:number):number {
+        let ownState:string = this.states.forIndex(ownStateIndex);
+        return this.mapStateStringToBoardIndex(ownState);
     }
 
+
+    updateIssueRanks(rankedIssues:IMap<boolean>, rankChanges:RankChange[]) {
+        let changeIndex:number = 0;
+        let change:RankChange = rankChanges[changeIndex];
+        let copy:string[] = [];
+        for (let i:number = 0 ; i < this._rankedIssueKeys.length ; ) {
+            let current:string = this._rankedIssueKeys[i];
+            let insertIndex = copy.length;
+            if (change && insertIndex == change.index) {
+                copy.push(change.key);
+                changeIndex++;
+                change = changeIndex < rankChanges.length ? rankChanges[changeIndex] : null;
+            } else {
+                if (!rankedIssues[current]) {
+                    copy.push(current)
+                }
+                i++;
+            }
+        }
+
+        while (change) {
+            copy[change.index] = change.key;
+            changeIndex++;
+            change = rankChanges[changeIndex];
+        }
+        this._rankedIssueKeys = copy;
+    }
 }
 
 
@@ -256,7 +277,10 @@ export class ProjectDeserializer {
             (key, projectInput) => {
                 let colour:string = projectInput.colour;
                 let canRank:boolean = projectInput.rank;
-                let issues:string[][] = projectInput.issues;
+                let ranked:string[] = projectInput.ranked;
+                if (!ranked) {
+                    ranked = [];
+                }
 
                 let boardStatesToProjectState:IMap<string> = {};
                 let projectStatesToBoardState:IMap<string> = {};
@@ -276,7 +300,9 @@ export class ProjectDeserializer {
                         states.add(ownState, ownState);
                     }
                 }
-                return new BoardProject(this._boardStates, key, canRank, colour, states, issues, boardStatesToProjectState, projectStatesToBoardState);
+
+                return new BoardProject(this._boardStates, key, canRank, colour, states, ranked,
+                    boardStatesToProjectState, projectStatesToBoardState);
             }
         );
         return boardProjects;

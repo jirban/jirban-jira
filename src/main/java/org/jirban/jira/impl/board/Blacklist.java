@@ -98,6 +98,8 @@ public class Blacklist {
         abstract void addMissingPriority(String issueKey, String priority);
         abstract boolean isUpdated();
         public abstract void deleteIssue(String issueKey);
+
+        public abstract boolean isBlackListed(String issueKey);
     }
 
     static class Builder extends Accessor {
@@ -134,6 +136,13 @@ public class Blacklist {
             blacklistIssue(issueKey);
         }
 
+        @Override
+        public boolean isBlackListed(String issueKey) {
+            if (issues == null) {
+                return false;
+            }
+            return issues.contains(issueKey);
+        }
 
         @Override
         boolean isUpdated() {
@@ -203,6 +212,14 @@ public class Blacklist {
             missingPriorities.add(priority);
             blacklistIssue(issueKey);
             updated = true;
+        }
+
+        @Override
+        public boolean isBlackListed(String issueKey) {
+            if (issues == null) {
+                return original.isBlacklisted(issueKey);
+            }
+            return issues.contains(issueKey);
         }
 
         @Override

@@ -8,6 +8,8 @@ import {IssueData} from "./../issueData";
 import {JiraComponent} from "../component";
 import {SwimlaneData} from "../issueTable";
 import {CustomFieldValues, CustomFieldValue} from "../customField";
+import {IMap} from "../../../common/map";
+import {BoardProject} from "../project";
 
 /**
  * This tests application of the expected json onto the BoardData component on the client which is so central to the display of the board.
@@ -24,7 +26,7 @@ describe('BoardData tests', ()=> {
             //Delete from the standard config to simulate a project with absolutely no issues
             delete data.components;
             delete data.assignees;
-            data.projects.main.TDP.issues=[[], [], [], []];
+            data.projects.main.TDP.ranked=[];
 
             let boardData:BoardData = new BoardData();
             boardData.deserialize("tst", data);
@@ -534,7 +536,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-1");
             checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
 
@@ -559,7 +563,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-2");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-2");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-2");
             checkBoardIssue(updatedIssue, "TDP-2", "bug", "low", "kabir", ["Second"], "Two");
         });
@@ -583,7 +589,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["First"], "Uno");
         });
@@ -607,7 +615,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", null, ["First"], "One");
         });
@@ -631,7 +641,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "kabir", ["First"], "One");
         });
@@ -667,7 +679,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", ["First"], "One");
         });
@@ -692,7 +706,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", null, "One");
             checkComponents(boardData, "First", "Second");
@@ -718,7 +734,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["Second"], "One");
             checkComponents(boardData, "First", "Second");
@@ -749,7 +767,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["Third", "Fourth"], "One");
         });
@@ -783,7 +803,9 @@ describe('BoardData tests', ()=> {
             checkStandardCustomFields(boardData);
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
             checkNoCustomField(updatedIssue, updatedIssue.key, "Tester");
             checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "kabir", "Kabir Khan");
@@ -819,7 +841,9 @@ describe('BoardData tests', ()=> {
             checkStandardCustomFields(boardData);
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
             checkNoCustomField(updatedIssue, updatedIssue.key, "Tester");
             checkNoCustomField(updatedIssue, updatedIssue.key, "Documenter");
@@ -855,7 +879,9 @@ describe('BoardData tests', ()=> {
             checkStandardCustomFields(boardData);
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
             checkCustomField(updatedIssue, updatedIssue.key, "Tester", "kabir", "Kabir Khan");
             checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "stuart", "Stuart Douglas");
@@ -895,7 +921,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
             checkCustomField(updatedIssue, updatedIssue.key, "Tester", "stuart", "Stuart Douglas");
             checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "brian", "Brian Stansberry");
@@ -921,11 +949,6 @@ describe('BoardData tests', ()=> {
                             type: "bug",
                             state: "TDP-B"
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-B" : ["TDP-1", "TDP-2"]
-                        }
                     }
                 }
             };
@@ -936,7 +959,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [[], ["TDP-1", "TDP-2", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-1");
             checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
         });
@@ -951,11 +976,6 @@ describe('BoardData tests', ()=> {
                             type: "bug",
                             state: "TDP-C"
                         }]
-                    },
-                    states: {
-                        TDP : {
-                            "TDP-C" : ["TDP-1"]
-                        }
                     }
                 }
             };
@@ -966,7 +986,9 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-1"], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-1");
             checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
         });
@@ -981,11 +1003,6 @@ describe('BoardData tests', ()=> {
                             type: "bug",
                             state: "TBG-Y"
                         }]
-                    },
-                    states: {
-                        TBG : {
-                            "TBG-Y" : ["TBG-1"]
-                        }
                     }
                 }
             };
@@ -996,12 +1013,273 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2"], ["TBG-1"], []];
             checkBoardLayout(boardData, layout);
-            let updatedIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-1");
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            expect(updatedIssues.array.length).toBe(1);
+            let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
             checkBoardIssue(updatedIssue, "TBG-1", "bug", "highest", "brian", ["First"], "One");
         });
     });
 
+    describe("Update issue rank", () => {
+        let boardData:BoardData;
+        beforeEach(() => {
+            boardData = new BoardData();
+            boardData.deserialize("tst",
+                TestBoardData.create(TestBoardData.PRE_RERANK_BOARD_PROJECTS, TestBoardData.PRE_RERANK_BOARD_ISSUES));
+        });
+
+
+        it("Move end issue to start", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [{index: 0, key: "TDP-4"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-4", "TDP-1", "TDP-2", "TDP-3"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+        });
+
+        it("Move one middle issue to start", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [{index: 0, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-1", "TDP-2", "TDP-4"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+        });
+
+        it("Move start issue to end", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [{index: 3, key: "TDP-1"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-2", "TDP-3", "TDP-4", "TDP-1"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+        });
+
+        it("Move one middle issue to end", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [{index: 3, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-2", "TDP-4", "TDP-3"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Swap middle issues", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [{index: 1, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+
+            checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-3", "TDP-2", "TDP-4"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Rank two issues", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [
+                            {index: 1, key: "TDP-3"},
+                            {index: 3, key: "TDP-2"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-3", "TDP-4", "TDP-2"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Rank all issues", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: null,
+                    rank: {
+                        TDP: [
+                            {index: 0, key: "TDP-3"},
+                            {index: 1, key: "TDP-4"},
+                            {index: 2, key: "TDP-1"},
+                            {index: 3, key: "TDP-2"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-4", "TDP-1", "TDP-2"]})
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it("Combine issue delete with rank", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-1"]
+                    },
+                    rank: {
+                        TDP: [{index: 0, key: "TDP-3"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-2", "TDP-4"]})
+            let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+        });
+
+        it ("State updates, deletes and adds", () => {
+            checkAssignees(boardData, "brian", "kabir");
+            checkComponents(boardData, "First", "Second");
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "delete" : ["TDP-3"],
+                        "update" : [{
+                            key: "TDP-2",
+                            type: "issue",
+                            state: "TDP-D"
+                        }],
+                        "new": [{
+                            key: "TDP-5",
+                            state : "TDP-D",
+                            summary : "Five",
+                            priority : "high",
+                            type : "bug",
+                            assignee : "kabir"
+
+                        }]
+                    },
+
+                    rank: {
+                        TDP: [
+                            {index: 0, key: "TDP-5"},
+                            {index: 1, key: "TDP-2"}]
+                    }
+                }
+            }
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+            checkAssignees(boardData, "brian", "kabir");
+
+            checkBoardRank(boardData, {TDP: ["TDP-5", "TDP-2", "TDP-1", "TDP-4"]})
+            let layout:any = [["TDP-1"], ["TBG-1"], [], ["TDP-5", "TDP-2", "TDP-4"]];
+            checkBoardLayout(boardData, layout);
+
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-2", "TDP-5");
+            expect(updatedIssues.array.length).toBe(2);
+            let updatedIssue:IssueData = updatedIssues.forKey("TDP-2");
+            checkBoardIssue(updatedIssue, "TDP-2", "issue", "high", "kabir", ["Second"], "Two");
+            updatedIssue = updatedIssues.forKey("TDP-5");
+            checkBoardIssue(updatedIssue, "TDP-5", "bug", "high", "kabir", null, "Five");
+
+        });
+    });
 
     describe("Create issue", () => {
         let boardData:BoardData;
@@ -1028,10 +1306,8 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    states: {
-                        TDP : {
-                            "TDP-B" : ["TDP-2", "TDP-3"]
-                        }
+                    rank: {
+                        TDP: [{index: 2, key: "TDP-3"}]
                     }
                 }
             };
@@ -1039,13 +1315,14 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-
             checkAssignees(boardData, "brian", "kabir");
 
 
             let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-3");
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            expect(createdIssues.array.length).toBe(1);
+            let createdIssue:IssueData = createdIssues.forIndex(0);
             expect(createdIssue.key).toBe("TDP-3");
             checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", null, "Three");
         });
@@ -1067,17 +1344,15 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    states: {
-                        TDP : {
-                            "TDP-C" : ["TDP-3"]
-                        }
-                    },
                     assignees : [{
                         key : "jason",
                         email : "jason@example.com",
                         avatar : "/avatars/jason.png",
                         name : "Jason Greene"
-                    }]
+                    }],
+                    rank: {
+                        TDP: [{index: 2, key: "TDP-3"}]
+                    }
                 }
             };
 
@@ -1091,7 +1366,10 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], []];
             checkBoardLayout(boardData, layout);
-            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-3");
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            expect(createdIssues.array.length).toBe(1);
+            let createdIssue:IssueData = createdIssues.forIndex(0);
+
             expect(createdIssue.key).toBe("TDP-3");
             checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "jason", null, "Three");
         });
@@ -1113,10 +1391,8 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    states: {
-                        TBG : {
-                            "TBG-X" : ["TBG-2", "TBG-1"]
-                        }
+                    rank: {
+                        TBG: [{index: 1, key: "TBG-2"}]
                     }
                 }
             };
@@ -1129,9 +1405,11 @@ describe('BoardData tests', ()=> {
             checkComponents(boardData, "First", "Second");
 
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-2", "TBG-1"], [], []];
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1", "TBG-2"], [], []];
             checkBoardLayout(boardData, layout);
-            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-2");
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-2");
+            expect(createdIssues.array.length).toBe(1);
+            let createdIssue:IssueData = createdIssues.forIndex(0);
             expect(createdIssue.key).toBe("TBG-2");
             checkBoardIssue(createdIssue, "TBG-2", "bug", "high", "kabir", null, "Two");
         });
@@ -1153,10 +1431,8 @@ describe('BoardData tests', ()=> {
 
                         }]
                     },
-                    states: {
-                        TBG : {
-                            "TBG-Y" : ["TBG-2"]
-                        }
+                    rank: {
+                        TBG: [{index: 1, key: "TBG-2"}]
                     }
                 }
             };
@@ -1171,15 +1447,16 @@ describe('BoardData tests', ()=> {
 
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TBG-2"], []];
             checkBoardLayout(boardData, layout);
-            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TBG-2");
-            expect(createdIssue.key).toBe("TBG-2");
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-2");
+            expect(createdIssues.array.length).toBe(1);
+            let createdIssue:IssueData = createdIssues.forIndex(0);
             checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", null, "Two");
         });
 
         it('Main project to populated state - existing custom fields', () => {
             let bd:TestBoardData = new TestBoardData();
             bd.projects = TestBoardData.PRE_CHANGE_BOARD_PROJECTS;
-            bd.issues = TestBoardData.getPreChangeCustomFieldIssues();;
+            bd.issues = TestBoardData.getPreChangeCustomFieldIssues();
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
 
@@ -1201,10 +1478,8 @@ describe('BoardData tests', ()=> {
                                 Documenter: "stuart"}
                         }]
                     },
-                    states: {
-                        TDP : {
-                            "TDP-B" : ["TDP-2", "TDP-3"]
-                        }
+                    rank: {
+                        TDP: [{index: 2, key: "TDP-3"}]
                     }
                 }
             };
@@ -1217,10 +1492,65 @@ describe('BoardData tests', ()=> {
             checkStandardCustomFields(boardData);
             let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
             checkBoardLayout(boardData, layout);
-            let createdIssue:IssueData = checkIssueDatas(boardData, layout, "TDP-3");
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            expect(createdIssues.array.length).toBe(1);
+            let createdIssue:IssueData = createdIssues.forIndex(0);
             checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", ["First"], "Three");
             checkCustomField(createdIssue, createdIssue.key, "Tester", "kabir", "Kabir Khan");
             checkCustomField(createdIssue, createdIssue.key, "Documenter", "stuart", "Stuart Douglas");
+        });
+
+        it ("Several issues", () => {
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "new" : [{
+                                key: "TDP-3",
+                                state : "TDP-C",
+                                summary : "Three",
+                                priority : "high",
+                                type : "bug",
+                                assignee : "brian"
+                            },
+                            {
+                                key: "TDP-4",
+                                state : "TDP-D",
+                                summary : "Four",
+                                priority : "low",
+                                type : "issue",
+                                assignee : "kabir"
+                            },
+                            {
+                                key: "TBG-2",
+                                state : "TBG-Y",
+                                summary : "Two",
+                                priority : "highest",
+                                type : "feature",
+                                assignee : "brian"
+
+                        }]
+                    },
+                    rank: {
+                        TDP: [{index: 2, key: "TDP-3"}, {index: 3, key: "TDP-4"}],
+                        TBG: [{index: 1, key: "TBG-2"}]
+                    }
+                }
+            };
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3", "TBG-2"], ["TDP-4"]];
+            checkBoardLayout(boardData, layout);
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3", "TDP-4", "TBG-2");
+            expect(createdIssues.array.length).toBe(3);
+            let createdIssue:IssueData = createdIssues.forKey("TDP-3");
+            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "brian", null, "Three");
+            createdIssue = createdIssues.forKey("TDP-4");
+            checkBoardIssue(createdIssue, "TDP-4", "issue", "low", "kabir", null, "Four");
+            createdIssue = createdIssues.forKey("TBG-2");
+            checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", null, "Two");
         });
     });
 
@@ -1933,17 +2263,23 @@ describe('BoardData tests', ()=> {
      *
      * @param boardData the current board data
      * @param layout the board layout
-     * @param skipKey the issue key to skip
-     * @returns {IssueData} the issue that was skipped
+     * @param skipKey the issue keys to skip
+     * @returns the issues that were skipped
      */
-    function checkIssueDatas(boardData:BoardData, layout:string[][], skipKey?:string) : IssueData {
-        //If 'skipKey' is set, we return the matching issue for manual checks
-        let skippedIssue:IssueData;
+    function checkIssueDatas(boardData:BoardData, layout:string[][], ...skipKeys:string[]) : Indexed<IssueData> {
+        let skippedKeys:IMap<boolean> = {};
+        for (let key of skipKeys) {
+            skippedKeys[key] = true;
+        }
+
+        let skippedIssues: Indexed<IssueData> = new Indexed<IssueData>();
+
         for (let i:number = 0; i < layout.length; i++) {
             for (let j:number = 0; j < layout[i].length; j++) {
                 let issue:IssueData = boardData.getIssue(layout[i][j]);
-                if (skipKey && skipKey == issue.key) {
-                    skippedIssue = issue;
+                if (skippedKeys[issue.key]) {
+                    //If the issue was skipped, we return the issues for manual checks
+                    skippedIssues.add(issue.key, issue);
                     continue;
                 }
                 let id:number = getIdFromKey(issue.key);
@@ -1965,7 +2301,7 @@ describe('BoardData tests', ()=> {
                 checkIssueConvenienceMethods(issue);
             }
         }
-        return skippedIssue;
+        return skippedIssues;
     }
 
     function checkIssueCustomFields(boardData:BoardData, layout:string[][]):void {
@@ -2080,6 +2416,19 @@ describe('BoardData tests', ()=> {
                 } else {
                     fail("Bad project " + issue.projectCode);
                 }
+            }
+        }
+    }
+
+    function checkBoardRank(boardData:BoardData, ranks:any) {
+        for (let projectCode in ranks) {
+            let expectedOrder:string[] = ranks[projectCode];
+
+            let project:BoardProject = boardData.boardProjects.forKey(projectCode);
+            let order:string[] = project.rankedIssueKeys;
+            expect(order.length).toBe(expectedOrder.length);
+            for (let i = 0 ; i < order.length ; i++) {
+                expect(order[i]).toBe(expectedOrder[i]);
             }
         }
     }

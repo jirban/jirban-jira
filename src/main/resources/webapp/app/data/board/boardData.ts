@@ -13,7 +13,7 @@ import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
-import {Observable} from "rxjs/Rx";
+import {Observable, Subject} from "rxjs/Rx";
 import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
 
 
@@ -34,6 +34,7 @@ export class BoardData {
     public blacklist:BlacklistData;
 
     public initialized = false;
+    private _initializedSubjects:Subject<void>[] = [];
 
     /** All the assignees */
     private _assignees:Indexed<Assignee>;
@@ -63,6 +64,8 @@ export class BoardData {
     /** Flag to only recalculate the assignees in the control panel when they have been changed */
     private _customFieldsWithNewEntries:string[] = [];
 
+    private _helpTexts:IMap<string> = {};
+
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -73,7 +76,24 @@ export class BoardData {
         this.internalDeserialize(input, true);
 
         this.initialized = true;
+        for (let subject of this._initializedSubjects) {
+            subject.next(null);
+        }
         return this;
+    }
+
+    registerInitializedCallback(callback:()=>void):void {
+        if (!this.initialized) {
+            let subject:Subject<void> = new Subject<void>();
+            this._initializedSubjects.push(subject);
+            subject.asObservable().subscribe(
+                done => {
+                    callback();
+                }
+            );
+        } else {
+            callback();
+        }
     }
 
     /**
@@ -294,7 +314,7 @@ export class BoardData {
 
     get showBacklog():boolean {
         if (!this._headers) {
-            return false;
+            return this._showBacklog;
         }
         return this._headers.showBacklog;
     }
@@ -310,6 +330,10 @@ export class BoardData {
 
     get customFields():Indexed<CustomFieldValues> {
         return this._customFields;
+    }
+
+    get rankedIssues():IssueData[] {
+        return this._issueTable.rankedIssues;
     }
 
     getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
@@ -371,6 +395,14 @@ export class BoardData {
         return this._boardFilters;
     }
 
+    get helpTexts():IMap<string> {
+        return this._helpTexts;
+    }
+
+    set helpTexts(value:IMap<string>) {
+        this._helpTexts = value;
+    }
+
     hideHideables() {
         for (let hideable of this.hideables) {
             hideable.hide();
@@ -406,8 +438,10 @@ export class BoardData {
     }
 
     setBacklogFromQueryParams(queryParams:IMap<string>):void {
-        if (queryParams["bl"]) {
-            this._showBacklog = queryParams["bl"] === "true";
+        if (!!queryParams["bl"]) {
+            //Sometimes this is parsed as a boolean and sometimes as a string
+            let bl:any = queryParams["bl"];
+            this._showBacklog = bl === "true" || bl === true;
         }
     }
 
@@ -476,7 +510,6 @@ export class BoardData {
     canRank(projectCode:string):boolean {
         return this._projects.canRank(projectCode);
     }
-
 }
 
 

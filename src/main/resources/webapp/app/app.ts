@@ -1,6 +1,6 @@
 //our root app component
 import {Component} from "@angular/core";
-import {RouteConfig, ROUTER_DIRECTIVES, Route, Router, ComponentInstruction} from "@angular/router-deprecated";
+import {RouteConfig, ROUTER_DIRECTIVES, Route, Router} from "@angular/router-deprecated";
 import {BoardComponent} from "./components/board/board";
 import {BoardsComponent} from "./components/boards/boards";
 import {ConfigComponent} from "./components/config/config";
@@ -9,9 +9,10 @@ import {RestUrlUtil} from "./common/RestUrlUtil";
 import {VersionService} from "./services/versionService";
 import {DbExplorerComponent} from "./components/dbexplorer/dbexplorer";
 import {AccessLogViewComponent} from "./components/access/accessLogView";
+import {AppHeaderService} from "./services/appHeaderService";
 
 /** The current API version. It should match what is set in RestEndpoint.API_VERSION */
-const VERSION:number = 1;
+const VERSION:number = 2;
 
 @Component({
     selector: 'my-app',
@@ -55,29 +56,16 @@ export class App {
     _progressError:ProgressErrorService;
     loginUrl:string;
 
-    constructor(router:Router, progressError:ProgressErrorService, versionService:VersionService) {
+    constructor(router:Router, progressError:ProgressErrorService, versionService:VersionService, appHeaderService:AppHeaderService) {
         this._router = router;
         this._progressError = progressError;
         this.loginUrl = RestUrlUtil.caclulateRestUrl("login.jsp");
 
-        router.subscribe((route:Route) => {
+        appHeaderService.disableBodyScrollbarsObservable.subscribe((disable:boolean) => {
             //Hack to hide the body scroll bars on the board page.
             //This is only really necessary on FireFox on linux, where the board's table
             //seems have extra width added to allow for the scrollbars on the board's divs
-            let showBodyScrollbars:boolean = true;
-
-            let instruction:ComponentInstruction = route["instruction"];
-            if (!instruction) {
-                throw new Error("No route name found");
-            }
-            let routeName:string = instruction["routeName"];
-            if (!routeName) {
-                throw new Error("No route name found");
-            }
-            if (routeName === "Board") {
-                showBodyScrollbars = false;
-            }
-            document.getElementsByTagName("body")[0].className = showBodyScrollbars ? "" : "no-scrollbars";
+            document.getElementsByTagName("body")[0].className = disable ? "no-scrollbars" : "";
         });
 
         versionService.initialise(VERSION, progressError);

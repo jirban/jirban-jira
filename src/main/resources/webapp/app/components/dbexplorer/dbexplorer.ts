@@ -1,7 +1,7 @@
 import {Component} from "@angular/core";
 import {ROUTER_DIRECTIVES} from "@angular/router-deprecated";
 import {BoardsService} from "../../services/boardsService";
-import {TitleFormatService} from "../../services/TitleFormatService";
+import {AppHeaderService} from "../../services/appHeaderService";
 import {FormBuilder, ControlGroup, Validators} from "@angular/common";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {Http, Headers} from "@angular/http";
@@ -22,8 +22,8 @@ export class DbExplorerComponent {
     private error:string;
     private result:any;
 
-    constructor(formBuilder:FormBuilder, title:TitleFormatService, private _http:Http) {
-        title.setTitle("DB Explorer");
+    constructor(formBuilder:FormBuilder, appHeaderService:AppHeaderService, private _http:Http) {
+        appHeaderService.setTitle("DB Explorer");
         this.sqlForm = formBuilder.group({
             "sql": ["", Validators.required]
         });

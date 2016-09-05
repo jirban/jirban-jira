@@ -1,122 +1,22 @@
-<div id="board-outer" *ngIf="boardData.initialized" (window:resize)="onResize($event)"
-     (window:focus)="onFocus($event)" (window:blur)="onBlur($event)"
-     (click)="hideMenus()">
-    <div id="board-inner">
-        <div id="table-header" [ngStyle]="{'left':-1 * boardLeftOffset}">
-            <table id="header-table">
-                <thead>
-                    <!--
-                        We will have a colour coded banner and two levels of headers. The top level will
-                        typically be the category, and the bottom level the states.
+<div (window:focus)="onFocus($event)" (window:blur)="onBlur($event)" (click)="hideMenus()">
 
-                        Note that states which do not belong to a category will appear in the top
-                        row, with a rowspan of 2. Only these states will have a class in the top header since this class
-                        sets the width of the columns depending on if it is visible or collapsed
-                     -->
-                    <tr>
-                        <!-- The backlog header -->
-                        <th *ngIf="backlogTopHeader"
-                            [attr.colspan]="backlogTopHeader.visible ? backlogTopHeader.cols : 1"
-                            [attr.rowspan]="backlogTopHeader.visible ? backlogTopHeader.rows : 2"
-                            [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': 'grey'}"
-                            [ngClass]="backlogTopHeader.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
-                            (click)="toggleHeaderVisibility(backlogTopHeader)">
-                            <div *ngIf="!backlogTopHeader.visible">&nbsp;</div>
-                            <div *ngIf="backlogTopHeader.visible">{{backlogTopHeader.name}}</div>
-                        </th>
-                        <!-- The non-backlog headers -->
-                        <!-- Some of these may be states with a rowspan of two, these may have help text -->
-                        <th *ngFor="let header of topHeaders ; let headerIndex=index"
-                            title="{{getPossibleStateHelp(header)}}"
-                            [attr.colspan]="header.cols"
-                            [attr.rowspan]="header.rows"
-                            [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
-                            [ngClass]="header.stateAndCategory ? header.visible ? 'visible' : 'collapsed' : ''"
-                            (click)="toggleHeaderVisibility(header)">
-                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
-                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
-                        </th>
-                    </tr>
-
-                    <tr>
-                        <!-- Only show the following bottom headers if the backlog is actually expanded -->
-                        <th *ngFor="let header of backlogBottomHeadersIfVisible"
-                            title="{{getStateHelp(header)}}"
-                            [ngClass]="header.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
-                            (click)="toggleHeaderVisibility(header)">
-                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
-                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
-                        </th>
-                        <!-- The non-backlog headers -->
-                        <th *ngFor="let header of bottomHeaders"
-                            title="{{getStateHelp(header)}}"
-                            [ngClass]="header.visible ? 'visible' : 'collapsed'"
-                            (click)="toggleHeaderVisibility(header)">
-                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
-                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
-                        </th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
-        <div id="table-body"
-             [style.height]="boardBodyHeight"
-             (scroll)="scrollTableBodyX($event)">
-            <table id="body-table">
-                <tbody *ngIf="!boardData.swimlane">
-                    <tr>
-                        <!-- Backlog header exists, but is collapsed. just show a single backlog column -->
-                        <td *ngIf="backlogAndIsCollapsed"
-                            (click)="toggleHeaderVisibility(backlogTopHeader)"
-                            class="collapsed backlog-state-summary backlog-cell">
-                            <div class="collapsed backlog-state-summary"
-                                 *ngFor="let character of getCharArray('Backlog')">{{character}}</div>
-                        </td>
-                        <!-- Backlog visible, show all the possible backlog states -->
-                        <td *ngFor="let state of backlogStatesIfVisible"
-                            [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
-                            title="State: {{state.name}}">
-                            <div *ngIf="visibleColumns[state.index]">
-                                <ul class="issues-list">
-                                    <issue *ngFor="let issue of boardData.issueTable[state.index]"
-                                           [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
-                                </ul>
-                            </div>
-                            <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-                                <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
-                            </div>
-                        </td>
-
-                        <!-- Normal states -->
-                        <td *ngFor="let state of mainStates"
-                            [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
-                            title="State: {{state.name}}">
-                            <div *ngIf="visibleColumns[state.index]">
-                                <ul class="issues-list">
-                                    <issue *ngFor="let issue of boardData.issueTable[state.index]"
-                                           [issue]="issue" (issueContextMenu)="showIssueContextMenu($event)"></issue>
-                                </ul>
-                            </div>
-                            <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-                                <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-                <tbody *ngIf="boardData.swimlane"  [style.height]="boardBodyHeight">
-                    <swimlane-entry *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index"
-                                [boardData]="boardData"
-                                [swimlaneIndex]="swimlaneIndex"
-                                [swimlane]="swimlane"
-                                [boardLeftOffset]="boardLeftOffset"
-                                [hidden]="swimlane.filtered"
-                                (issueContextMenu)="showIssueContextMenu($event)"
-                                (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <kanban-view *ngIf="view === 'kbv'"
+            [boardCode]="boardCode"
+            [issuesService]="issuesService"
+            [boardData]="boardData"
+            (showIssueContextMenu)="onShowIssueContextMenu($event)">
+    </kanban-view>
+    <rank-view *ngIf="view === 'rv'"
+            [boardCode]="boardCode"
+            [issuesService]="issuesService"
+            [boardData]="boardData"
+            (showIssueContextMenu)="onShowIssueContextMenu($event)">
+    </rank-view>
 </div>
 <!-- The panel with links to the control and health panels -->
-<panel-menu></panel-menu>
-<issue-context-menu [data]="issueContextMenuData" (closeContextMenu)="onCloseIssueContextMenu($event)"></issue-context-menu>
+<panel-menu
+        (toggleView)="onToggleView($event)"
+        [view]="view"></panel-menu>
+<!-- The issue context menu -->
+<issue-context-menu [data]="issueContextMenuData" [view]="view" (closeContextMenu)="onCloseIssueContextMenu($event)"></issue-context-menu>
+

@@ -67,7 +67,7 @@ public class JirbanIssueEvent {
             sb.append(";summary=" + detail.summary);
             sb.append(";assignee=" + (detail.assignee != null ? detail.assignee.getName() : "null"));
             sb.append(";state=" + detail.state);
-            sb.append(";reorder=" + detail.rankOrStateChanged);
+            sb.append(";reorder=" + detail.reranked);
             sb.append("}}");
         } else {
             sb.append("}");
@@ -100,9 +100,9 @@ public class JirbanIssueEvent {
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
                                                      String summary, User assignee, Collection<ProjectComponent> components,
-                                                     String currentState, String state, boolean rankOrStateChanged,
+                                                     String currentState, String state, boolean reranked,
                                                      Map<Long, String> customFieldValues) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, rankOrStateChanged, customFieldValues);
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, reranked, customFieldValues);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
@@ -112,14 +112,14 @@ public class JirbanIssueEvent {
         } else if (type == Type.CREATE) {
             return true;
         } else if (type == Type.UPDATE) {
-            return detail.isRankOrStateChanged();
+            return detail.isReranked();
         }
         return false;
     }
 
     public boolean isRerankOnly() {
         if (type == Type.UPDATE) {
-            if (detail.isRankOrStateChanged()) {
+            if (detail.isReranked()) {
                 return detail.getComponents() == null && detail.getIssueType() == null && detail.getAssignee() == null &&
                         detail.getPriority() == null && detail.getState() == null && detail.getSummary() == null;
 
@@ -136,11 +136,11 @@ public class JirbanIssueEvent {
         private final Collection<ProjectComponent> components;
         private final String oldState;
         private final String state;
-        private final boolean rankOrStateChanged;
+        private final boolean reranked;
         private final Map<Long, String> customFieldValues;
 
         private Detail(String issueType, String priority, String summary, User assignee, Collection<ProjectComponent> components,
-                       String oldState, String state, boolean rankOrStateChanged, Map<Long, String> customFieldValues) {
+                       String oldState, String state, boolean reranked, Map<Long, String> customFieldValues) {
             this.summary = summary;
             this.assignee = assignee;
             this.components = components;
@@ -148,7 +148,7 @@ public class JirbanIssueEvent {
             this.priority = priority;
             this.oldState = oldState;
             this.state = state;
-            this.rankOrStateChanged = rankOrStateChanged;
+            this.reranked = reranked;
             this.customFieldValues = customFieldValues != null ? customFieldValues : Collections.emptyMap();
         }
 
@@ -180,8 +180,8 @@ public class JirbanIssueEvent {
             return state;
         }
 
-        public boolean isRankOrStateChanged() {
-            return rankOrStateChanged;
+        public boolean isReranked() {
+            return reranked;
         }
 
         public Map<Long, String> getCustomFieldValues() {

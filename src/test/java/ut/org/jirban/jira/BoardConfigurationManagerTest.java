@@ -27,7 +27,6 @@ import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.HEADER;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 import static org.jirban.jira.impl.Constants.STATES;
-import static org.jirban.jira.impl.Constants.UNORDERED;
 
 import java.io.IOException;
 import java.util.List;
@@ -153,23 +152,11 @@ public class BoardConfigurationManagerTest {
     }
 
     @Test
-    public void testLoadConfigurationWithUnordered() throws IOException {
-        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
-        original.protect();
-
-        //Any state can be unordered, and we don't care about gaps
-        loadAndValidateConfiguration(original, new UnorderedModifier(true, true, true, true));
-        loadAndValidateConfiguration(original, new UnorderedModifier(true, false, false, true));
-        loadAndValidateConfiguration(original, new UnorderedModifier(false, false, true, true));
-        loadAndValidateConfiguration(original, new UnorderedModifier(false, false, true, false));
-    }
-
-    @Test
     public void testLoadConfigurationWithBacklogAndHeaders() throws IOException {
         ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-tdp.json");
         original.protect();
 
-        //A state can have at the most of one of [header, backlog, done], also an 'unordered' cannot be 'backlog' or 'done' but may have a header
+        //A state can have at the most of one of [header, backlog, done]
         //ok
         loadAndValidateConfiguration(original,
                 new BacklogModifier(true, true, false, false),
@@ -182,7 +169,6 @@ public class BoardConfigurationManagerTest {
         loadAndValidateConfiguration(original,
                 new BacklogModifier(true, true, false, false),
                 new StateHeaderModifier(null, null, "A", null),
-                new UnorderedModifier(false, false, true, false),
                 new DoneModifier(false, false, false, true));
 
 
@@ -197,14 +183,8 @@ public class BoardConfigurationManagerTest {
                 new DoneModifier(false, false, true, true),
                 new StateHeaderModifier("A", "A", "A", "B"));
         loadBadConfiguration(original,
-                new BacklogModifier(true, false, false, false),
-                new UnorderedModifier(true, false, false, false));
-        loadBadConfiguration(original,
                 new BacklogModifier(true, true, true, false),
                 new DoneModifier(false, false, true, true));
-        loadBadConfiguration(original,
-                new DoneModifier(false, false, false, true),
-                new UnorderedModifier(false, false, false, true));
     }
 
     @Test
@@ -302,21 +282,4 @@ public class BoardConfigurationManagerTest {
             }
         }
     }
-
-    private static class UnorderedModifier implements StateModifier {
-        private final boolean[] unordered;
-
-        public UnorderedModifier(boolean... unordered) {
-            this.unordered = unordered;
-        }
-
-        @Override
-        public void modify(int index, ModelNode state) {
-            if (unordered[index]) {
-                state.get(UNORDERED).set(unordered[index]);
-            }
-        }
-    }
-
-
 }

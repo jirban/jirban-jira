@@ -4,7 +4,7 @@ import {BoardsService} from "../../services/boardsService";
 import {ControlGroup, FormBuilder, Validators, Control} from "@angular/common";
 import {Indexed} from "../../common/indexed";
 import {ProgressErrorService} from "../../services/progressErrorService";
-import {TitleFormatService} from "../../services/TitleFormatService";
+import {AppHeaderService} from "../../services/appHeaderService";
 import {VersionService} from "../../services/versionService";
 
 @Component({
@@ -34,9 +34,9 @@ export class ConfigComponent {
 
     constructor(private _boardsService:BoardsService, private _progressError:ProgressErrorService,
                 private _formBuilder:FormBuilder, private _versionService:VersionService,
-                title:TitleFormatService) {
+                appHeaderService:AppHeaderService) {
         this.loadBoards();
-        title.setTitle("Configuration of boards");
+        appHeaderService.setTitle("Configuration of boards");
 
     }
 

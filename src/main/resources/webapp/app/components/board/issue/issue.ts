@@ -1,9 +1,10 @@
 import {Component, EventEmitter} from "@angular/core";
 import {IssueData} from "../../../data/board/issueData";
+import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 
 @Component({
     inputs: ['issue'],
-    outputs: ['issueContextMenu'],
+    outputs: ['showIssueContextMenu'],
     selector: 'issue',
     templateUrl: 'app/components/board/issue/issue.html',
     styleUrls: ['app/components/board/issue/issue.css'],
@@ -11,7 +12,7 @@ import {IssueData} from "../../../data/board/issueData";
 })
 export class IssueComponent {
     private issue : IssueData;
-    private issueContextMenu:EventEmitter<any> = new EventEmitter();
+    private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
     constructor() {
     }
 
@@ -54,14 +55,13 @@ export class IssueComponent {
         return "orange";
     }
 
-    private showIssueContextMenuEvent(event : MouseEvent, issueId:string) {
+    private triggerShowIssueContextMenu(event : MouseEvent, issueId:string) {
         event.preventDefault();
         event.stopPropagation();
-        this.issueContextMenu.emit({
-            x: event.clientX,
-            y: event.clientY,
-            issueId: issueId
-        })
+        console.log("Issue: Triggering show context menu event")
+        this.showIssueContextMenu.emit(
+            new IssueContextMenuData(issueId, event.clientX, event.clientY));
+
     }
 
     private defaultContextMenu(event:MouseEvent) {

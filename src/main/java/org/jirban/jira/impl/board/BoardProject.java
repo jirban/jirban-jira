@@ -21,8 +21,8 @@
  */
 package org.jirban.jira.impl.board;
 
-import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.RANK;
+import static org.jirban.jira.impl.Constants.RANKED;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +34,7 @@ import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
@@ -52,6 +53,7 @@ import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
+import com.atlassian.jira.util.Consumer;
 import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.query.Query;
 import com.atlassian.query.clause.Clause;
@@ -66,12 +68,11 @@ public class BoardProject {
 
     private volatile Board board;
     private final BoardProjectConfig projectConfig;
-    //TODO linkedhashset for the issues list?
-    private final List<List<String>> issueKeysByState;
+    private final List<String> rankedIssueKeys;
 
-    private BoardProject(BoardProjectConfig projectConfig, List<List<String>> issueKeysByState) {
+    private BoardProject(BoardProjectConfig projectConfig, List<String> rankedIssueKeys) {
         this.projectConfig = projectConfig;
-        this.issueKeysByState = issueKeysByState;
+        this.rankedIssueKeys = rankedIssueKeys;
     }
 
     void setBoard(Board board) {
@@ -90,30 +91,24 @@ public class BoardProject {
         return board.getCustomFieldIndex(customFieldValue);
     }
 
-
-    void serialize(JiraInjectables jiraInjectables, ModelNode parent, ApplicationUser user, boolean backlog) {
-        parent.get(RANK).set(hasRankPermission(user, jiraInjectables.getProjectManager(), jiraInjectables.getPermissionManager()));
-        ModelNode projectIssues = parent.get(ISSUES);
-
-        for (int i = 0 ; i < issueKeysByState.size() ; i++) {
-
-            ModelNode issuesForStateNode = new ModelNode();
-            issuesForStateNode.setEmptyList();
-
-            if (backlog || !board.getConfig().isBacklogState(i)) {
-                List<String> issuesForState = issueKeysByState.get(i);
-                for (String key: issuesForState) {
-                    issuesForStateNode.add(key);
-                }
-            }
-
-            projectIssues.add(issuesForStateNode);
-        }
+    public List<String> getRankedIssueKeys() {
+        return rankedIssueKeys;
     }
 
-    public List<String> getIssuesForOwnState(String ownState) {
-        int stateIndex = projectConfig.mapOwnStateOntoBoardStateIndex(ownState);
-        return issueKeysByState.get(stateIndex);
+    void serialize(JiraInjectables jiraInjectables, Board board, ModelNode parent, ApplicationUser user, boolean backlog) {
+        //Whether the user can rank issues or not
+        parent.get(RANK).set(hasRankPermission(user, jiraInjectables.getProjectManager(), jiraInjectables.getPermissionManager()));
+
+        ModelNode ranked = new ModelNode();
+        ranked.setEmptyList();
+        for (String key : rankedIssueKeys) {
+            if (backlog) {
+                ranked.add(key);
+            } else if (!board.isBacklogIssue(projectConfig, key)) {
+                ranked.add(key);
+            }
+        }
+        parent.get(RANKED).set(ranked);
     }
 
     boolean isOwner() {
@@ -130,14 +125,14 @@ public class BoardProject {
     }
 
     public BoardProject copyAndDeleteIssue(Issue deleteIssue) throws SearchException {
-        Updater updater = new Updater(null, null, this, null);
+        Updater updater = new Updater(null, null, null, this, null);
         updater.deleteIssue(deleteIssue);
         return updater.build();
     }
 
-    public Updater updater(JiraInjectables jiraInjectables, Board.Updater boardUpdater,
+    public Updater updater(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, Board.Updater boardUpdater,
                            ApplicationUser boardOwner) {
-        return new Updater(jiraInjectables, boardUpdater, this, boardOwner);
+        return new Updater(jiraInjectables, nextRankedIssueUtil, boardUpdater, this, boardOwner);
     }
 
     public boolean isBacklogState(String state) {
@@ -160,6 +155,34 @@ public class BoardProject {
         }
         return true;
     }
+
+    public static Query initialiseQuery(BoardProjectConfig projectConfig, ApplicationUser boardOwner,
+                                        SearchService searchService, Consumer<JqlQueryBuilder> queryAddition) {
+        JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
+        queryBuilder.where().project(projectConfig.getCode());
+        if (projectConfig.getOwnDoneStateNames().size() > 0) {
+            queryBuilder.where().and().not().addStringCondition("status", projectConfig.getOwnDoneStateNames());
+        }
+        queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
+        if (projectConfig.getQueryFilter() != null) {
+            final SearchService.ParseResult parseResult = searchService.parseQuery(
+                    boardOwner.getDirectoryUser(),
+                    "(" + projectConfig.getQueryFilter() + ")");
+            if (!parseResult.isValid()) {
+                throw new RuntimeException("The query-filter for " + projectConfig.getCode() + ": '" + projectConfig.getQueryFilter() + "' could not be parsed");
+            }
+            queryBuilder = JqlQueryBuilder.newBuilder(queryBuilder.buildQuery());
+            final Clause clause =  JqlQueryBuilder.newClauseBuilder(parseResult.getQuery()).buildClause();
+            queryBuilder.where().and().addClause(clause);
+        }
+
+        if (queryAddition != null) {
+            queryAddition.consume(queryBuilder);
+        }
+
+        return queryBuilder.buildQuery();
+    }
+
 
     public static class Accessor {
         protected final JiraInjectables jiraInjectables;
@@ -254,6 +277,7 @@ public class BoardProject {
      * Used to load a project when creating a new board
      */
     public static class Builder extends Accessor {
+        private final List<String> rankedIssueKeys = new ArrayList<>();
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
 
 
@@ -270,26 +294,8 @@ public class BoardProject {
         }
 
         void load() throws SearchException {
-            final JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
-            queryBuilder.where().project(projectConfig.getCode());
-            if (projectConfig.getOwnDoneStateNames().size() > 0) {
-                queryBuilder.where().and().not().addStringCondition("status", projectConfig.getOwnDoneStateNames());
-            }
-            queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
-            Query query = queryBuilder.buildQuery();
-
             final SearchService searchService = jiraInjectables.getSearchService();
-            if (projectConfig.getQueryFilter() != null) {
-                final SearchService.ParseResult parseResult = searchService.parseQuery(
-                        boardOwner.getDirectoryUser(),
-                        "(" + projectConfig.getQueryFilter() + ")");
-                if (!parseResult.isValid()) {
-                    throw new RuntimeException("The query-filter for " + projectConfig.getCode() + ": '" + projectConfig.getQueryFilter() + "' could not be parsed");
-                }
-                final JqlQueryBuilder queryWithFilterBuilder = JqlQueryBuilder.newBuilder(query);
-                final Clause clause =  JqlQueryBuilder.newClauseBuilder(parseResult.getQuery()).buildClause();
-                query = queryWithFilterBuilder.where().and().addClause(clause).buildQuery();
-            }
+            final Query query = initialiseQuery(projectConfig, boardOwner, searchService, null);
 
             SearchResults searchResults =
                         searchService.search(boardOwner.getDirectoryUser(), query, PagerFilter.getUnlimitedFilter());
@@ -300,6 +306,9 @@ public class BoardProject {
                 Issue.Builder issueBuilder = Issue.builder(this, issueLoadStrategy);
                 issueBuilder.load(jiraIssue);
                 issueBuilders.add(issueBuilder);
+                if (!board.getBlacklist().isBlackListed(jiraIssue.getKey())) {
+                    rankedIssueKeys.add(jiraIssue.getKey());
+                }
             }
 
             for (Issue.Builder issueBuilder : issueBuilders) {
@@ -312,16 +321,9 @@ public class BoardProject {
         }
 
         BoardProject build() {
-            final List<List<String>> resultIssues = new ArrayList<>();
-            for (String state : board.getStateNames()) {
-                List<String> issues = issueKeysByState.get(projectConfig.mapBoardStateOntoOwnState(state));
-                if (issues == null) {
-                    issues = new ArrayList<>();
-                }
-                resultIssues.add(Collections.synchronizedList(issues));
-            }
-
-            return new BoardProject(projectConfig, Collections.unmodifiableList(resultIssues));
+            return new BoardProject(
+                    projectConfig,
+                    Collections.unmodifiableList(rankedIssueKeys));
         }
 
         public void addBulkLoadedCustomFieldValue(CustomFieldConfig customFieldConfig, CustomFieldValue value) {
@@ -334,49 +336,81 @@ public class BoardProject {
      */
     static class Updater extends Accessor {
         private final BoardProject project;
-        private Issue existing;
+        private final NextRankedIssueUtil nextRankedIssueUtil;
         private Issue newIssue;
-        private boolean updatedState;
+        private List<String> rankedIssueKeys;
 
 
-        Updater(JiraInjectables jiraInjectables, Board.Accessor board, BoardProject project,
+        Updater(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, Board.Accessor board, BoardProject project,
                        ApplicationUser boardOwner) {
             super(jiraInjectables, board, project.projectConfig, boardOwner);
+            this.nextRankedIssueUtil = nextRankedIssueUtil;
             JirbanLogger.LOGGER.debug("BoardProject.Updater - init {}", project.projectConfig.getCode());
             this.project = project;
         }
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
                           Assignee assignee, Set<Component> issueComponents, String state,
-                          Map<String, CustomFieldValue> customFieldValues) {
+                          Map<String, CustomFieldValue> customFieldValues) throws SearchException {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
             newIssue = Issue.createForCreateEvent(
                     this, issueKey, state, summary, issueType, priority, assignee, issueComponents, customFieldValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
-            updatedState = newIssue != null;
+
+            if (newIssue != null) {
+                rankedIssueKeys = rankIssues(issueKey);
+            }
             return newIssue;
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
-                          Assignee issueAssignee, Set<Component> issueComponents, boolean rankOrStateChanged,
-                          String state, Map<String, CustomFieldValue> customFieldValues) {
-            JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), rankOrStateChanged);
-            this.existing = existing;
+                          Assignee issueAssignee, Set<Component> issueComponents, boolean reranked,
+                          String state, Map<String, CustomFieldValue> customFieldValues) throws SearchException {
+            JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), reranked);
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
                     summary, issueAssignee, issueComponents, state, customFieldValues);
-            if (newIssue == null && rankOrStateChanged) {
-                newIssue = existing;
+            JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}. Reranked: {}", existing, newIssue, reranked);
+            if (reranked) {
+                rankedIssueKeys = rankIssues(existing.getKey());
             }
-            JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}", existing, newIssue);
-            this.updatedState = rankOrStateChanged && newIssue != null;
             return newIssue;
         }
 
         void deleteIssue(Issue issue) {
-            this.existing = issue;
-
+            rankedIssueKeys = new ArrayList<>(project.rankedIssueKeys);
+            rankedIssueKeys.remove(issue.getKey());
         }
 
+        List<String> rankIssues(String issueKey) throws SearchException {
+            String nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, issueKey);
+            //If the next issue is blacklisted, keep searching until we find the next valid one
+            while (nextIssueKey != null && board.getBlacklist().isBlackListed(nextIssueKey)) {
+                nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, nextIssueKey);
+            }
+            final List<String> newRankedKeys = new ArrayList<>();
+            if (nextIssueKey == null) {
+                //Add it at the end
+                project.rankedIssueKeys.forEach(key -> {
+                    if (!key.equals(issueKey)) {
+                        //Don't copy the one we are moving to the end
+                        newRankedKeys.add(key);
+                    }
+                });
+                newRankedKeys.add(issueKey);
+            } else {
+                final String nextKey = nextIssueKey;
+                //Remove it from the middle and add it at the end
+                project.rankedIssueKeys.forEach(key -> {
+                    if (key.equals(nextKey)) {
+                        newRankedKeys.add(issueKey);
+                    }
+                    if (!key.equals(issueKey)) {
+                        newRankedKeys.add(key);
+                    }
+                });
+            }
+            return new ArrayList<>(newRankedKeys);
+        }
 
         Issue loadSingleIssue(String issueKey) throws SearchException {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - {}", issueKey);
@@ -397,95 +431,18 @@ public class BoardProject {
             issueBuilder.load(issues.get(0));
             newIssue = issueBuilder.build();
             JirbanLogger.LOGGER.debug("BoardProject.Updater.loadSingleIssue - found {}", newIssue);
-            this.updatedState = true;
+            rankedIssueKeys = rankIssues(issueKey);
             return newIssue;
         }
 
         BoardProject build() throws SearchException {
 
-            final int deleteIndex = getStateIndexToDeleteFrom();
-            final List<String> deletedStateIssues = deleteIndex >= 0 ?
-                    deleteFromState(deleteIndex, existing.getKey()) : null;
+            //Update the ranked issue list if a rerank was done
+            List<String> rankedIssueKeys =
+                    this.rankedIssueKeys != null ?
+                            Collections.unmodifiableList(this.rankedIssueKeys) : project.rankedIssueKeys;
 
-            final List<String> toStateIssues;
-            final int toIndex;
-            if (!updatedState || newIssue == null) {
-                toIndex = -1;
-                toStateIssues = null;
-            } else {
-                toIndex = project.projectConfig.mapOwnStateOntoBoardStateIndex(newIssue.getState());
-                if (project.projectConfig.isUnorderedState(toIndex)) {
-                    //Copy the old issues, and add this new one on the end
-                    toStateIssues = new ArrayList<>(project.issueKeysByState.get(toIndex));
-                    toStateIssues.add(newIssue.getKey());
-                } else {
-                    toStateIssues = rankIssuesForState();
-                }
-            }
-
-            final List<List<String>> issuesKeysByStateCopy = new ArrayList<>();
-
-            for (int i = 0; i < project.issueKeysByState.size() ; i++) {
-                if (deleteIndex == i) {
-                    issuesKeysByStateCopy.add(Collections.unmodifiableList(deletedStateIssues));
-                } else if (toIndex == i) {
-                    issuesKeysByStateCopy.add(Collections.unmodifiableList(toStateIssues));
-                } else {
-                    issuesKeysByStateCopy.add(project.issueKeysByState.get(i));
-                }
-            }
-            return new BoardProject(projectConfig, Collections.unmodifiableList(issuesKeysByStateCopy));
-        }
-
-        private List<String> deleteFromState(int stateIndex, String issueKey) {
-            List<String> issueKeys = project.issueKeysByState.get(stateIndex);
-            List<String> copy = new ArrayList<>();
-            for (String key : issueKeys) {
-                if (!key.equals(issueKey)) {
-                    copy.add(key);
-                }
-            }
-            return copy;
-        }
-
-        private int getStateIndexToDeleteFrom() {
-            if (existing != null) {
-                if (newIssue == null) {
-                    //It was a plain delete
-                    return project.projectConfig.mapOwnStateOntoBoardStateIndex(existing.getState());
-                } else if (!existing.getState().equals(newIssue.getState())) {
-                    //It was a move which affected states
-                    return project.projectConfig.mapOwnStateOntoBoardStateIndex(existing.getState());
-                }
-            }
-            return -1;
-        }
-
-        private List<String> rankIssuesForState() throws SearchException {
-            JqlQueryBuilder queryBuilder = JqlQueryBuilder.newBuilder();
-            queryBuilder.where().project(projectConfig.getCode()).and().status(newIssue.getState());
-            if (projectConfig.getQueryFilter() != null) {
-                queryBuilder.where().addCondition(projectConfig.getQueryFilter());
-            }
-            //TODO if it is possible to narrow this down to only get the product keys that would be better than loading everything
-            queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
-
-            final SearchService searchService = jiraInjectables.getSearchService();
-
-            SearchResults searchResults =
-                    searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
-
-            List<String> issues = new ArrayList<>();
-            for (com.atlassian.jira.issue.Issue jiraIssue : searchResults.getIssues()) {
-                String issueKey = jiraIssue.getKey();
-                Issue issue = board.getIssue(issueKey);
-                if (issue == null) {
-                    JirbanLogger.LOGGER.warn("BoardProject.Updater.rankIssuesForState - No existing issue found for {}", issueKey);
-                    continue;
-                }
-                issues.add(issue.getKey());
-            }
-            return Collections.unmodifiableList(issues);
+            return new BoardProject(projectConfig, rankedIssueKeys);
         }
     }
 

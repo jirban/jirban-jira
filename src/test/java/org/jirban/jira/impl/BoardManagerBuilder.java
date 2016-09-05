@@ -23,6 +23,7 @@ package org.jirban.jira.impl;
 
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.api.NextRankedIssueUtil;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.avatar.AvatarService;
@@ -56,6 +57,7 @@ public class BoardManagerBuilder {
     private BoardConfigurationManager boardConfigurationManager;
     private ProjectManager projectManager = ProjectManagerBuilder.getAnyProjectManager();
     private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
+    private NextRankedIssueUtil nextRankedIssueUtil;
 
     public BoardManagerBuilder() {
     }
@@ -92,6 +94,11 @@ public class BoardManagerBuilder {
 
     public BoardManagerBuilder setPermissionManager(PermissionManager permissionManager) {
         this.permissionManager = permissionManager;
+        return this;
+    }
+
+    public BoardManagerBuilder setNextRankedIssueUtil(NextRankedIssueUtil nextRankedIssueUtil) {
+        this.nextRankedIssueUtil = nextRankedIssueUtil;
         return this;
     }
 

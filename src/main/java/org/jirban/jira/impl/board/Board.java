@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
@@ -116,10 +117,10 @@ public class Board {
         return new Builder(jiraInjectables, boardConfig, boardOwner);
     }
 
-    public Board handleEvent(JiraInjectables jiraInjectables, ApplicationUser boardOwner, JirbanIssueEvent event,
+    public Board handleEvent(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, ApplicationUser boardOwner, JirbanIssueEvent event,
                              BoardChangeRegistry changeRegistry) throws SearchException {
         Updater boardUpdater = new Updater(jiraInjectables, this, boardOwner, changeRegistry);
-        return boardUpdater.handleEvent(event);
+        return boardUpdater.handleEvent(event, nextRankedIssueUtil);
     }
 
     public ModelNode serialize(JiraInjectables jiraInjectables, boolean backlog, ApplicationUser user) {
@@ -165,7 +166,7 @@ public class Board {
         for (Map.Entry<String, BoardProject> projectEntry : projects.entrySet()) {
             final String projectCode = projectEntry.getKey();
             ModelNode project = mainProjectsParent.get(projectCode);
-            projectEntry.getValue().serialize(jiraInjectables, project, user, backlog);
+            projectEntry.getValue().serialize(jiraInjectables, this, project, user, backlog);
         }
 
         blacklist.serialize(outputNode);
@@ -221,6 +222,15 @@ public class Board {
     BoardChangeRegistry.IssueChange createCreateIssueChange(BoardChangeRegistry registry, String issueKey) {
         Issue issue = allIssues.get(issueKey);
         return issue.convertToCreateIssueChange(registry, getConfig());
+    }
+
+    public boolean isBacklogIssue(BoardProjectConfig projectConfig, String issueKey) {
+        Issue issue = allIssues.get(issueKey);
+        int boardIndex = projectConfig.mapOwnStateOntoBoardStateIndex(issue.getState());
+        if (boardConfig.isBacklogState(boardIndex)) {
+            return true;
+        }
+        return false;
     }
 
     static abstract class Accessor {
@@ -467,14 +477,14 @@ public class Board {
 
         }
 
-        Board handleEvent(JirbanIssueEvent event) throws SearchException {
+        Board handleEvent(JirbanIssueEvent event, NextRankedIssueUtil nextRankedIssueUtil) throws SearchException {
             switch (event.getType()) {
                 case DELETE:
                     return handleDeleteEvent(event);
                 case CREATE:
-                    return handleCreateOrUpdateIssue(event, true);
+                    return handleCreateOrUpdateIssue(event, nextRankedIssueUtil, true);
                 case UPDATE:
-                    return handleCreateOrUpdateIssue(event, false);
+                    return handleCreateOrUpdateIssue(event, nextRankedIssueUtil, false);
                 default:
                     throw new IllegalArgumentException("Unknown event type " + event.getType());
             }
@@ -533,7 +543,7 @@ public class Board {
             return boardCopy;
         }
 
-        Board handleCreateOrUpdateIssue(JirbanIssueEvent event, boolean create) throws SearchException {
+        Board handleCreateOrUpdateIssue(JirbanIssueEvent event, NextRankedIssueUtil nextRankedIssueUtil, boolean create) throws SearchException {
 
             JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Handling create or update event for {}; create: {}", event.getIssueKey(), create);
             if (!create && board.blacklist.isBlacklisted(event.getIssueKey())) {
@@ -591,7 +601,7 @@ public class Board {
             final Assignee issueAssignee = getOrCreateIssueAssignee(evtDetail);
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
 
-            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, this, boardOwner);
+            final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, nextRankedIssueUtil, this, boardOwner);
             final Map<String, CustomFieldValue> customFieldValues
                     = CustomFieldValue.loadCustomFieldValues(projectUpdater, evtDetail.getCustomFieldValues());
 
@@ -623,7 +633,7 @@ public class Board {
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
-                            evtDetail.isRankOrStateChanged(), evtDetail.getState(), customFieldValues);
+                            evtDetail.isReranked(), evtDetail.getState(), customFieldValues);
                 }
             }
 
@@ -634,9 +644,9 @@ public class Board {
                     board.allIssues;
 
             JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - newIssue {}; updatedBlacklist {}; changedRankOrState {}",
-                    newIssue, blacklist.isUpdated(), evtDetail.isRankOrStateChanged());
+                    newIssue, blacklist.isUpdated(), evtDetail.isReranked());
 
-            if (newIssue != null || blacklist.isUpdated() || evtDetail.isRankOrStateChanged()) {
+            if (newIssue != null || blacklist.isUpdated() || evtDetail.isReranked()) {
                 //The project's issue tables will be updated if needed
                 JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Copying project {}", project.getCode());
                 final BoardProject projectCopy = projectUpdater.build();
@@ -683,15 +693,6 @@ public class Board {
                     }
                     if (customFieldValues.size() > 0) {
                         changeBuilder.addCustomFieldValues(board.sortedCustomFieldValues, customFieldValues);
-                    }
-
-                    //Propagate the new state somehow
-                    if (evtDetail.isRankOrStateChanged()) {
-                        Issue issue = boardCopy.getIssue(event.getIssueKey());
-                        if (issue != null) {
-                            final String state = issue.getState();
-                            changeBuilder.addStateRecalculation(state);
-                        }
                     }
 
                     if (existingIssue != null) {

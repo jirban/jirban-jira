@@ -31,6 +31,7 @@ import java.util.Map;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
+import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.BoardConfigurationManagerBuilder;
 import org.jirban.jira.impl.BoardManagerBuilder;
 import org.jirban.jira.impl.JirbanIssueEvent;
@@ -67,6 +68,7 @@ public abstract class AbstractBoardTest {
     protected BoardManager boardManager;
     protected UserManager userManager;
     protected IssueRegistry issueRegistry;
+    protected NextRankedIssueUtil nextRankedIssueUtil;
     protected SearchCallback searchCallback = new SearchCallback();
 
     @Before
@@ -90,7 +92,10 @@ public abstract class AbstractBoardTest {
                 .addDefaultUsers()
                 .build(worker);
 
-        issueRegistry = new IssueRegistry(userManager);
+        IssueRegistry issueRegistry = new IssueRegistry(userManager);
+        this.issueRegistry = issueRegistry;
+        this.nextRankedIssueUtil = issueRegistry;
+
         SearchService searchService = new SearchServiceBuilder(worker)
                 .setIssueRegistry(issueRegistry)
                 .setSearchCallback(searchCallback)
@@ -102,7 +107,8 @@ public abstract class AbstractBoardTest {
                 .setBoardConfigurationManager(cfgManager)
                 .setUserManager(userManager)
                 .setSearchService(searchService)
-                .setIssueLinkManager(issueLinkManager);
+                .setIssueLinkManager(issueLinkManager)
+                .setNextRankedIssueUtil(nextRankedIssueUtil);
 
         if (init != null) {
             init.initialise(boardManagerBuilder);
@@ -199,12 +205,12 @@ public abstract class AbstractBoardTest {
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         Collection<ProjectComponent> projectComponents = clearComponents ? Collections.emptySet() : MockProjectComponent.createProjectComponents(components);
-        Issue issue = issueRegistry.getIssue(projectCode, issueKey);
+        Issue issue = issueRegistry.getIssue(issueKey);
         JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
                 priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
-                state, state != null || rank, customFieldValues);
+                state, rank, customFieldValues);
 
-        issueRegistry.updateIssue(issueKey, projectCode, issueTypeName, priorityName, summary, username, components, state);
+        issueRegistry.updateIssue(issueKey, issueTypeName, priorityName, summary, username, components, state);
         if (customFieldValues != null) {
             for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
                 issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());

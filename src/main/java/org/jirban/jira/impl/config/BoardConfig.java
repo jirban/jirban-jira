@@ -72,7 +72,7 @@ public class BoardConfig {
     private final String owningUserKey;
     private final String ownerProjectCode;
     /** The 'Rank' custom field as output by  */
-    private final int rankCustomFieldId;
+    private final long rankCustomFieldId;
     private final BoardStates boardStates;
     private final Map<String, BoardProjectConfig> boardProjects;
     private final Map<String, LinkedProjectConfig> linkedProjects;
@@ -91,7 +91,7 @@ public class BoardConfig {
     final Map<String, CustomFieldConfig> customFieldConfigsByJiraName;
 
     private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
-                        int rankCustomFieldId,
+                        long rankCustomFieldId,
                         BoardStates boardStates,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes,
@@ -134,7 +134,7 @@ public class BoardConfig {
     }
 
     public static BoardConfig load(JiraInjectables jiraInjectables, int id,
-                                   String owningUserKey, String configJson, int rankCustomFieldId) {
+                                   String owningUserKey, String configJson, long rankCustomFieldId) {
         ModelNode boardNode = ModelNode.fromJSONString(configJson);
         return load(jiraInjectables, id, owningUserKey, boardNode, rankCustomFieldId);
     }
@@ -146,7 +146,7 @@ public class BoardConfig {
     }
 
     public static BoardConfig load(JiraInjectables jiraInjectables,
-                                    int id, String owningUserKey, ModelNode boardNode, int rankCustomFieldId) {
+                                    int id, String owningUserKey, ModelNode boardNode, long rankCustomFieldId) {
         String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
         String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
         String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
@@ -379,10 +379,6 @@ public class BoardConfig {
 
     public boolean isBacklogState(int stateIndex) {
         return boardStates.isBacklogState(stateIndex);
-    }
-
-    public boolean isUnorderedState(int boardStateIndex) {
-        return boardStates.isUnorderedState(boardStateIndex);
     }
 
     public boolean isDoneState(int boardStateIndex) {
