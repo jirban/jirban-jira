@@ -4,7 +4,7 @@ import {BoardData} from "../../data/board/boardData";
 import {IMap} from "../../common/map";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
-import {ActivatedRoute, Params} from "@angular/router";
+import {ActivatedRoute} from "@angular/router";
 import Timer = NodeJS.Timer;
 
 
@@ -29,31 +29,29 @@ export class BoardComponent implements OnDestroy {
                 private _boardData:BoardData,
                 route:ActivatedRoute) {
         console.log("Create board");
-        route.queryParams.subscribe((params:Params) => {
-            let queryParams:IMap<string> = params;
-            let code:string = queryParams['board'];
-            if (!code) {
-                return;
+        let queryParams:IMap<string> = route.snapshot.queryParams;
+        let code:string = queryParams['board'];
+        if (!code) {
+            return;
+        }
+        this.boardCode = code;
+
+        let view = queryParams['view'];
+        if (view) {
+            this.view = view;
+            if (view === VIEW_RANK) {
+                this._wasBacklogForced = true;
             }
-            this.boardCode = code;
+        }
 
-            let view = queryParams['view'];
-            if (view) {
-                this.view = view;
-                if (view === VIEW_RANK) {
-                    this._wasBacklogForced = true;
-                }
-            }
+        this._boardData.setBacklogFromQueryParams(queryParams);
 
-            this._boardData.setBacklogFromQueryParams(queryParams);
+        this._issuesService.populateIssues(this.boardCode, () => {
+            //Loading filters does not work until the issue data is loaded
+            _boardData.setFiltersFromQueryParams(queryParams);
+        })
 
-            this._issuesService.populateIssues(this.boardCode, () => {
-                //Loading filters does not work until the issue data is loaded
-                _boardData.setFiltersFromQueryParams(queryParams);
-            })
-
-            this._issuesService.loadHelpTexts(this.boardCode, this._boardData);
-        });
+        this._issuesService.loadHelpTexts(this.boardCode, this._boardData);
     }
 
     ngOnDestroy():any {
