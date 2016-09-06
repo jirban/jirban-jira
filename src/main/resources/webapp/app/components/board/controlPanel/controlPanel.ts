@@ -110,6 +110,8 @@ export class ControlPanelComponent {
         form.valueChanges
             .debounceTime(150) //A delay for when people clear the filters so that we only get one event sent since filters are costly to recalculate
             .subscribe((value) => {
+                let lastValues:any = dirtyChecker.lastValues;
+
                 let dirty:IMap<boolean> = dirtyChecker.checkDirty(value);
                 //Swimlane is necessary to update if dirty
                 if (dirty["swimlane"]) {
@@ -117,7 +119,7 @@ export class ControlPanelComponent {
                 }
                 //Detail is cheap to update if dirty
                 if (dirty["detail"]) {
-                    this.updateIssueDetail(value["detail"]);
+                    this.updateIssueDetail(detailForm, lastValues["detail"], value["detail"]);
                 }
                 //Updating the filters is costly so do it all in one go
                 let dirtyCustom:boolean = false;
@@ -254,7 +256,18 @@ export class ControlPanelComponent {
         this.boardData.swimlane = value.swimlane;
     }
 
-    private updateIssueDetail(value:any) {
+    private updateIssueDetail(detailForm:FormGroup, lastValue:any, value:any) {
+        if (lastValue["description"] && !value["description"] && value["assignee"]) {
+            //Description was deselected, but assignee is still set. Deselect assignee
+            detailForm.controls["assignee"].setValue(false);
+            //NB - this updates the value in dirty checker's lastValues, which is what we want
+            value["assignee"] = false;
+        } else if (!lastValue["assignee"] && value["assignee"] && !value["description"]) {
+            //Assignee was selected, but description was not set. Select description
+            detailForm.controls["description"].setValue(true);
+            //NB - this updates the value in dirty checker's lastValues, which is what we want
+            value["description"] = true;
+        }
         this.boardData.updateIssueDetail(value.assignee, value.description, value.info, value.linked);
     }
 
@@ -492,6 +505,10 @@ class DirtyChecker {
             }
         }
         return false;
+    }
+
+    get lastValues():any {
+        return this._lastValues;
     }
 }
 
