@@ -8,7 +8,6 @@ import {JiraComponent} from "./component";
 import {Indexed} from "../../common/indexed";
 import {CustomFieldValue} from "./customField";
 import {IMap} from "../../common/map";
-import {isNumber} from "@angular/common/src/facade/lang";
 
 
 export class IssueData {
@@ -209,7 +208,7 @@ export class IssueData {
     }
 
     get boardStatusIndex():number {
-        if (!isNumber(this._boardStatusIndex)) {
+        if (isNaN(this._boardStatusIndex)) {
             let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
             this._boardStatusIndex = project.mapStateIndexToBoardIndex(this._statusIndex);
         }

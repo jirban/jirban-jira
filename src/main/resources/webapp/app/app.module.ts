@@ -1,4 +1,4 @@
-import {NgModule, provide} from "@angular/core";
+import {NgModule} from "@angular/core";
 import {BrowserModule, Title} from "@angular/platform-browser";
 import {App} from "./app";
 import {ReactiveFormsModule, FormsModule} from "@angular/forms";
@@ -19,16 +19,20 @@ import {BoardComponent} from "./components/board/board";
 import {ProgressErrorService} from "./services/progressErrorService";
 import {AppHeaderService} from "./services/appHeaderService";
 import {LocationStrategy, APP_BASE_HREF, HashLocationStrategy} from "@angular/common";
+import {ConfigComponent} from "./components/config/config";
 
 @NgModule({
     // module dependencies
     imports: [ BrowserModule, ReactiveFormsModule, ROUTING, FormsModule, HttpModule],
     // components and directives
     declarations:
-        [   AccessLogViewComponent,
+        [
+            App,
+            AccessLogViewComponent,
             BoardComponent,
             BoardsComponent,
             ControlPanelComponent,
+            ConfigComponent,
             DbExplorerComponent,
             HealthPanelComponent,
             IssueComponent,
@@ -44,7 +48,7 @@ import {LocationStrategy, APP_BASE_HREF, HashLocationStrategy} from "@angular/co
         AppHeaderService,
         ProgressErrorService,
         Title,
-        provide(LocationStrategy, {useClass: HashLocationStrategy}),
-        provide(APP_BASE_HREF, {useValue: '../../app/'})]
+        {provide: LocationStrategy, useClass: HashLocationStrategy},
+        {provide: APP_BASE_HREF, useValue: '../../app/'}]
 })
 export class AppModule { }

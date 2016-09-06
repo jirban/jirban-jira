@@ -187,14 +187,14 @@ export class ControlPanelComponent {
         let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
         for (let key in filter.controls) {
             let control:FormControl = <FormControl>filter.controls[key];
-            control.updateValue(false);
+            control.setValue(false);
         }
     }
 
     private clearSwimlane(event:MouseEvent) {
         event.preventDefault();
         let swimlane:FormControl = <FormControl>this._controlForm.controls['swimlane'];
-        swimlane.updateValue(null);
+        swimlane.setValue(null);
     }
 
     private clearDetail(event:MouseEvent) {
@@ -202,16 +202,16 @@ export class ControlPanelComponent {
         let group:FormGroup = <FormGroup>this._controlForm.controls['detail'];
 
         let control:FormControl = <FormControl>group.controls['assignee'];
-        control.updateValue(true);
+        control.setValue(true);
 
         control = <FormControl>group.controls['description'];
-        control.updateValue(true);
+        control.setValue(true);
 
         control = <FormControl>group.controls['info'];
-        control.updateValue(true);
+        control.setValue(true);
 
         control = <FormControl>group.controls['linked'];
-        control.updateValue(true);
+        control.setValue(true);
     }
 
     private get assignees():Assignee[] {
