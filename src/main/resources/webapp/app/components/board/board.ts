@@ -44,7 +44,7 @@ export class BoardComponent implements OnDestroy {
             }
         }
 
-        this._boardData.setBacklogFromQueryParams(queryParams);
+        this._boardData.setBacklogFromQueryParams(queryParams, this._wasBacklogForced);
 
         this._issuesService.populateIssues(this.boardCode, () => {
             //Loading filters does not work until the issue data is loaded

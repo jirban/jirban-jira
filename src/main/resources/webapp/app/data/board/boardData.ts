@@ -437,7 +437,12 @@ export class BoardData {
         return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
     }
 
-    setBacklogFromQueryParams(queryParams:IMap<string>):void {
+    setBacklogFromQueryParams(queryParams:IMap<string>, forceBacklog:boolean):void {
+        if (forceBacklog) {
+            this._showBacklog = true;
+            return;
+        }
+
         if (!!queryParams["bl"]) {
             //Sometimes this is parsed as a boolean and sometimes as a string
             let bl:any = queryParams["bl"];
