@@ -22,14 +22,19 @@
 package org.jirban.jira.servlet;
 
 import static org.jirban.jira.impl.Constants.BOARDS;
+import static org.jirban.jira.impl.Constants.CURRENT_BOARD;
+import static org.jirban.jira.impl.Constants.CURRENT_BOARD_LAST_LOGGED_ACCESS;
 import static org.jirban.jira.impl.Constants.HELP;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.JIRBAN_VERSION;
 import static org.jirban.jira.impl.Constants.UPDATES;
 import static org.jirban.jira.impl.Constants.VERSION;
 
+import java.util.concurrent.TimeUnit;
+
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -106,10 +111,24 @@ public class RestEndpoint {
     @GET
     @Path(ISSUES + "/{boardCode}")
     public Response getBoard(
+            @Context HttpServletRequest req,
             @PathParam("boardCode") String boardCode,
             @QueryParam("backlog") Boolean backlog) throws SearchException {
 
-        jiraFacade.logUserAccess(getUser(), boardCode);
+        //Only log the access if we:
+        // * Changed the board, or
+        // * An hour has gone since the last access
+        HttpSession session = req.getSession();
+        String lastBoard = (String)session.getAttribute(CURRENT_BOARD);
+        boolean changedBoard = !boardCode.equals(lastBoard);
+        Long lastAccess =
+                session.getAttribute(CURRENT_BOARD_LAST_LOGGED_ACCESS) == null ? 0 : (Long)session.getAttribute(CURRENT_BOARD_LAST_LOGGED_ACCESS);
+        boolean timeout = System.currentTimeMillis() > TimeUnit.HOURS.toMillis(1) + lastAccess;
+        if (changedBoard || timeout) {
+            jiraFacade.logUserAccess(getUser(), boardCode);
+            session.setAttribute(CURRENT_BOARD, boardCode);
+            session.setAttribute(CURRENT_BOARD_LAST_LOGGED_ACCESS, System.currentTimeMillis());
+        }
 
         //TODO figure out if a permission violation becomes a search exception
         return createResponse(
