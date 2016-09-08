@@ -8,7 +8,8 @@
     "experimentalDecorators": true,
     "removeComments": false,
     "noImplicitAny": true,
-    "suppressImplicitAnyIndexErrors":true
+    "suppressImplicitAnyIndexErrors":true,
+    "outDir": "_tsout"
   },
   "exclude": [
     "node_modules",
