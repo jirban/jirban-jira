@@ -1,0 +1,9 @@
+<html>
+<head>
+    <title>Jirban - A nicer view on Jira Agile</title>
+    <script>
+        window.location = "$webappRoot/index.html";
+    </script>
+</head>
+</html>
+

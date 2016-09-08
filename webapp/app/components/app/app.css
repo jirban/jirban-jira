@@ -1,0 +1,108 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2016, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+
+/* Toolbar settings */
+.toolbar {
+    background-color: #4667CA;
+    color: white;
+    width: 100%;
+    height: 30px;
+    font-size:10pt;
+
+}
+.toolbar-left {
+    float: left;
+    padding: 4px;
+}
+.toolbar-right {
+    float: right;
+    padding: 4px;
+    padding-right: 10px;
+}
+a.toolbar-link {
+    color: white;
+}
+a.toolbar-message {
+    color:white;
+    font-weight: bold;
+}
+
+
+/* Wait screen */
+.wait-screen {
+    background-image: url("../../../images/wait.gif");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: black;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+    opacity: .5;
+    z-index: 1000;
+}
+
+#error-panel {
+    background-color: #fca600;
+    border: none;
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    width: 100%;
+    min-height: 20px;
+    z-index: 1000;
+    padding: 0px;
+    overflow: hidden;
+}
+#error-panel .header {
+    width: 100%;
+    font-size: 13px;
+    height: 15px;
+    background-color: #777777;
+    color: white;
+}
+#error-panel .header-text {
+    width: 90%;
+    text-align: center;
+    float: left;
+}
+#error-panel .header-close-button {
+    width: 18px;
+    text-align: left;
+    float: right;
+    font-weight: bold;
+}
+#error-panel .error-message {
+    padding: 3px;
+}
+.error-message {
+    color: black;
+}
+a.error-message {
+    font-weight: bold;
+}
+a.close {
+    color: #FFFFFF;
+}

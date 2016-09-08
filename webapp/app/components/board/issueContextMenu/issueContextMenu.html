@@ -1,0 +1,124 @@
+<!--
+  ~ JBoss, Home of Professional Open Source.
+  ~ Copyright 2016, Red Hat, Inc., and individual contributors
+  ~ as indicated by the @author tags. See the copyright.txt file in the
+  ~ distribution for a full listing of individual contributors.
+  ~
+  ~ This is free software; you can redistribute it and/or modify it
+  ~ under the terms of the GNU Lesser General Public License as
+  ~ published by the Free Software Foundation; either version 2.1 of
+  ~ the License, or (at your option) any later version.
+  ~
+  ~ This software is distributed in the hope that it will be useful,
+  ~ but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  ~ Lesser General Public License for more details.
+  ~
+  ~ You should have received a copy of the GNU Lesser General Public
+  ~ License along with this software; if not, write to the Free
+  ~ Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  ~ 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+  -->
+
+<div *ngIf="displayContextMenu" class="issue-context-menu"
+     [ngStyle]="{'top': data.y, 'left' : data.x}">
+    <div *ngIf="showRankMenuEntry()">
+        <a href="comment" (click)="onShowRankPanel($event)"><img src="../../../../images/resize-height-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="comment" (click)="onShowRankPanel($event)" class="context">Rank...</a>
+    </div>
+    <div>
+        <a href="move" (click)="onShowMovePanel($event)"><img src="../../../../images/resize-width-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="move" (click)="onShowMovePanel($event)" class="context">Move...</a>
+    </div>
+    <div>
+        <a href="comment" (click)="onShowCommentPanel($event)"><img src="../../../../images/comment-square-2x.png" width="12px" height="12px" align="center"/></a>
+        <a href="comment" (click)="onShowCommentPanel($event)" class="context">Comment...</a>
+    </div>
+</div>
+
+<div *ngIf="showPanel === 'move'" class="panel" id="issue-move-panel" (window:resize)="onResize($event)"
+        [style.top]="movePanelTop" [style.left]="movePanelLeft" [style.height]="movePanelHeight" >
+    <div class="header">
+        <div class="move-header-text">Move {{issue.key}}</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="issue-column">
+            <issue [issue]="issue"></issue>
+        </div>
+        <div class="column">
+            <div class="column-header">Select state:</div>
+            <div class="states" [style.height]="statesColumnHeight">
+                <div *ngFor="let state of moveStates" [ngClass]="state === toState ? 'entry-selected' : 'entry'">
+                    <div *ngIf="isValidMoveState(state)" class="list-link">
+                        <a href="{{state}}" (click)="onSelectMoveState($event, state)"
+                           [ngClass]="state === toState ? 'entry-selected' : 'entry'"
+                           title="Move to {{state}}"><b>{{state}}</b></a>
+                    </div>
+                    <span *ngIf="!isValidMoveState(state)" title="'{{state}}' is not a valid state for {{issue.projectCode}}"><i>{{state}}</i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div *ngIf="showPanel === 'comment'" class="panel" id="issue-comment-panel" (window:resize)="onResize($event)"
+     [style.left]="commentPanelLeft">
+    <div class="header">
+        <div class="comment-header-text">Comment on {{issue.key}}</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a>
+        </div>
+    </div>
+    <div class="centered-form-container">
+        <form class="centered-form" (ngSubmit)="saveComment()" [formGroup]="commentForm" #f="ngForm">
+            <div class="comment-label">
+                <label for="comment">Please note that all comments will be <b>public</b>! To make private comments, visit the Jira issue.</label>
+            </div>
+            <div class="comment-box-container">
+                <textarea id="comment" formControlName="comment" class="comment-box"></textarea>
+            </div>
+            <div class="comment-button-container">
+                <button type="submit" class="comment-button" [disabled]="!f.form.valid">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div *ngIf="showPanel === 'rank'" class="panel" id="issue-rank-panel" (window:resize)="onResize($event)"
+     [style.top]="rankPanelTop" [style.left]="rankPanelLeft" [style.height]="rankPanelHeight" >
+    <div class="header">
+        <div class="rank-header-text">Rank {{issue.key}}</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="issue-column">
+            <issue [issue]="issue"></issue>
+        </div>
+        <div class="column">
+            <div class="column-header">Select issue to insert before:</div>
+            <div class="ranked-issues"[style.height]="rankedIssuesColumnHeight"> <!-- TODO height -->
+                <div *ngFor="let issue of rankedIssuesForIssueProject ; let i = index"
+                     title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}&#013;{{issue.priority.name}}&#013;{{issue.type.name}}"
+                     [ngClass]="issue.key === rankBeforeKey ? 'entry-selected' : 'entry'">
+                    <a *ngIf="!isIssueBeingRanked(issue)"
+                        href="rank"
+                        [ngClass]="issue.key === rankBeforeKey ? 'entry-selected' : 'entry'"
+                        (click)="onClickRankBefore($event, i)"><b>{{issue.key}} </b>- {{issue.summary}}</a>
+                    <span *ngIf="isIssueBeingRanked(issue)"><i><b>{{issue.key}} </b>- {{issue.summary}}</i></span>
+                </div>
+                <div [ngClass]="0 > rankBeforeKey ? 'entry-selected' : 'entry'">
+                    <a href="rank"
+                       [ngClass]="0 > rankBeforeKey ? 'entry-selected' : 'entry'"
+                       (click)="onClickRankBefore($event, -1)"><b>-- END --</b></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
