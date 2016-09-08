@@ -5,7 +5,6 @@ import {IMap} from "../../common/map";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
 import {ActivatedRoute} from "@angular/router";
-import Timer = NodeJS.Timer;
 
 
 /**
@@ -15,7 +14,7 @@ import Timer = NodeJS.Timer;
 @Component({
     selector: 'board',
     providers: [IssuesService, BoardData],
-    templateUrl: 'app/components/board/board.html'
+    templateUrl: './board.html'
 })
 export class BoardComponent implements OnDestroy {
 

@@ -13,8 +13,8 @@ import {FixedHeaderView} from "../fixedHeaderView";
     selector: 'rank-view',
     inputs: ["boardCode", "issuesService", "boardData"],
     outputs: ["showIssueContextMenu"],
-    templateUrl: 'app/components/board/view/rank/rankview.html',
-    styleUrls: ['app/components/board/view/rank/rankview.css']
+    templateUrl: './rankview.html',
+    styleUrls: ['./rankview.css']
 })
 export class RankViewComponent extends FixedHeaderView {
 

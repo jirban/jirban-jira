@@ -10,7 +10,7 @@ import {Validators, FormControl, FormGroup} from "@angular/forms";
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    templateUrl: 'app/components/config/config.html'
+    templateUrl: './config.html'
 })
 export class ConfigComponent {
     private _boards:Indexed<any>;

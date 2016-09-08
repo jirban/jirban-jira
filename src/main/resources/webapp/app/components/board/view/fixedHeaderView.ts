@@ -18,7 +18,7 @@ export abstract class FixedHeaderView implements OnInit {
     protected _boardData: BoardData;
 
     /** The calculate height of the board body */
-    private boardBodyHeight:number;
+    private _boardBodyHeight:number;
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
     private boardLeftOffset:number = 0;
 
@@ -72,6 +72,11 @@ export abstract class FixedHeaderView implements OnInit {
         return this._boardData.headers.backlogTopHeader;
     }
 
+    get boardBodyHeight(): number {
+        console.log("Returning board height " + this._boardBodyHeight);
+        return this._boardBodyHeight;
+    }
+
     getColourForIndex(index:number) : string {
         let mod:number = index % 5;
         switch (mod) {
@@ -89,14 +94,17 @@ export abstract class FixedHeaderView implements OnInit {
     }
 
     private onResize(event : any) {
+        console.log("FixedHeaderView onResize()");
         this.setWindowSize();
     }
 
     private setWindowSize() {
+        console.log("FixedHeaderView setWindowSize()");
 
         //If we have one row of headers the height is 32px, for two rows the height is 62px
         let headersHeight = (this.bottomHeaders && this.bottomHeaders.length > 0) ? 62 : 32;
-        this.boardBodyHeight = window.innerHeight - TOOLBAR_HEIGHT - headersHeight;
+        this._boardBodyHeight = window.innerHeight - TOOLBAR_HEIGHT - headersHeight;
+        console.log("Height: " + this._boardBodyHeight);
     }
 
     scrollTableBodyX(event:Event) {

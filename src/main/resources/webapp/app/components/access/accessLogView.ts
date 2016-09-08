@@ -7,7 +7,7 @@ import {AccessLogData} from "../../data/access/accessLogData";
 @Component({
     providers: [AccessLogService],
     selector: 'access-log',
-    templateUrl: 'app/components/access/accessLogView.html'
+    templateUrl: './accessLogView.html'
 })
 export class AccessLogViewComponent {
 

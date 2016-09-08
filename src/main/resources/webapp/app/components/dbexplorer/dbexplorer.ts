@@ -13,7 +13,7 @@ import {FormControl, FormGroup, Validators} from "@angular/forms";
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    templateUrl: 'app/components/dbexplorer/dbexplorer.html'
+    templateUrl: './dbexplorer.html'
 })
 export class DbExplorerComponent {
     private sqlForm:FormGroup;

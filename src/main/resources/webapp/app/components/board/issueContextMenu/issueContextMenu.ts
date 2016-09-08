@@ -13,8 +13,8 @@ import {FormGroup, FormControl, Validators} from "@angular/forms";
     inputs: ['data', 'view'],
     outputs: ['closeContextMenu'],
     selector: 'issue-context-menu',
-    templateUrl: 'app/components/board/issueContextMenu/issueContextMenu.html',
-    styleUrls: ['app/components/board/issueContextMenu/issueContextMenu.css']
+    templateUrl: './issueContextMenu.html',
+    styleUrls: ['./issueContextMenu.css']
 })
 export class IssueContextMenuComponent implements Hideable {
     private _data:IssueContextMenuData;
@@ -235,10 +235,13 @@ export class IssueContextMenuComponent implements Hideable {
 
 
     private onResize(event : any) {
+        console.log("IssueContextMenu onResize()");
         this.setWindowSize();
     }
 
     private setWindowSize() {
+        console.log("IssueContextMenu setWindowSize()");
+
         let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number;
         let movePanelWidth:number = 410;
 

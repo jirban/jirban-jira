@@ -4,8 +4,8 @@ import {BoardData} from "../../../data/board/boardData";
 @Component({
     selector: 'health-panel',
     outputs: ['closeHealthPanel'],
-    templateUrl: 'app/components/board/healthPanel/healthPanel.html',
-    styleUrls: ['app/components/board/healthPanel/healthPanel.css'],
+    templateUrl: './healthPanel.html',
+    styleUrls: ['./healthPanel.css'],
 })
 export class HealthPanelComponent {
     private closeHealthPanel:EventEmitter<any> = new EventEmitter();

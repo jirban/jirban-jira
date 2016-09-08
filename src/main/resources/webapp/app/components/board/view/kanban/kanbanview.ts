@@ -12,8 +12,8 @@ import {IssuesService} from "../../../../services/issuesService";
     selector: 'kanban-view',
     inputs: ["boardCode", "issuesService", "boardData"],
     outputs: ["showIssueContextMenu"],
-    templateUrl: 'app/components/board/view/kanban/kanbanview.html',
-    styleUrls: ['app/components/board/view/kanban/kanbanview.css']
+    templateUrl: './kanbanview.html',
+    styleUrls: ['./kanbanview.css']
 })
 export class KanbanViewComponent extends FixedHeaderView {
 

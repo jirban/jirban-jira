@@ -6,8 +6,8 @@ import {Hideable} from "../../../common/hide";
     selector: 'panel-menu',
     inputs: ['view'],
     outputs: ['toggleView'],
-    templateUrl: 'app/components/board/panelMenu/panelMenu.html',
-    styleUrls: ['app/components/board/panelMenu/panelMenu.css']
+    templateUrl: './panelMenu.html',
+    styleUrls: ['./panelMenu.css']
 })
 export class PanelMenuComponent implements Hideable {
     private controlPanel:boolean = false;

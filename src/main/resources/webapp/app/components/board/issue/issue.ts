@@ -6,8 +6,8 @@ import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
     inputs: ['issue'],
     outputs: ['showIssueContextMenu'],
     selector: 'issue',
-    templateUrl: 'app/components/board/issue/issue.html',
-    styleUrls: ['app/components/board/issue/issue.css'],
+    templateUrl: './issue.html',
+    styleUrls: ['./issue.css'],
 
 })
 export class IssueComponent {

@@ -14,8 +14,8 @@ import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
     inputs: ['swimlaneIndex', 'boardData', 'swimlane', 'boardLeftOffset'],
     outputs: ['showIssueContextMenu', 'toggleBacklogVisibility'],
     selector: 'swimlane-entry',
-    templateUrl: 'app/components/board/swimlaneEntry/swimlaneEntry.html',
-    styleUrls: ['app/components/board/view/kanban/kanbanview.css', 'app/components/board/swimlaneEntry/swimlaneEntry.css']
+    templateUrl: './swimlaneEntry.html',
+    styleUrls: ['../view/kanban/kanbanview.css', './swimlaneEntry.css']
 })
 export class SwimlaneEntryComponent {
     public swimlane : SwimlaneData;

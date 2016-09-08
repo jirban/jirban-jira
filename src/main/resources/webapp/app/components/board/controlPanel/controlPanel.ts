@@ -15,8 +15,8 @@ import {FormGroup, FormControl, AbstractControl} from "@angular/forms";
     selector: 'control-panel',
     inputs: ['view'],
     outputs: ['closeControlPanel'],
-    templateUrl: 'app/components/board/controlPanel/controlPanel.html',
-    styleUrls: ['app/components/board/controlPanel/controlPanel.css']
+    templateUrl: './controlPanel.html',
+    styleUrls: ['./controlPanel.css']
 })
 export class ControlPanelComponent {
 

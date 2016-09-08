@@ -9,7 +9,7 @@ import {VIEW_RANK} from "../../common/constants";
     selector: 'boards',
     inputs: ['boards'],
     providers: [BoardsService],
-    templateUrl: 'app/components/boards/boards.html'
+    templateUrl: './boards.html'
 })
 export class BoardsComponent {
     private boards:any[];

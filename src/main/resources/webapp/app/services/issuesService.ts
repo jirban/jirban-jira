@@ -22,8 +22,6 @@ export class IssuesService {
     private _pollFailureCount:number = 0;
     private _maxPollFailureCount = 3;
 
-    private _currentTimeout:Timer;
-
     private _destroyed:boolean = false;
 
     private _defaultPollInterval:number = 30000;
@@ -51,7 +49,6 @@ export class IssuesService {
     }
 
     destroy():void {
-        this.clearPollTimeout();
         this._destroyed = true;
     }
 
@@ -176,15 +173,8 @@ export class IssuesService {
             .map(res => (<Response>res).json());
     }
 
-    private clearPollTimeout() {
-        let timeout:Timer = this._currentTimeout;
-        if (timeout) {
-            clearTimeout(timeout);
-        }
-    }
-
     private pollIssues() {
-        this._currentTimeout = setTimeout(()=>{this.doPoll()}, this._defaultPollInterval);
+        setTimeout(()=>{this.doPoll()}, this._defaultPollInterval);
     }
 
     private doPoll() {
@@ -212,7 +202,9 @@ export class IssuesService {
                 data => {
                     console.log("----> Received changes: " + JSON.stringify(data));
                     this._boardData.processChanges(data);
-                    this.pollIssues();
+                    if (!this._destroyed) {
+                        this.pollIssues();
+                    }
                 },
                 err => {
                     console.log("FC" + this._pollFailureCount);
