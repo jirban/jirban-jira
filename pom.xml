@@ -36,6 +36,8 @@
         <!-- TestKit version 6.x for JIRA 6.x -->
         <version.testkit>6.3.11</version.testkit>
 
+        <version.frontend-maven-plugin>1.0</version.frontend-maven-plugin>
+
         <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
 
@@ -247,6 +249,51 @@
                     </scannedDependencies>
                     <verbose>false</verbose>
                 </configuration>
+            </plugin>
+            <!-- Used to run the webpack build -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <!-- Use the latest released version:
+                https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
+                <version>${version.frontend-maven-plugin}</version>
+                <configuration>
+                    <workingDirectory>webapp</workingDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <!--
+                            Install node and npm for the pluging to have a copy.
+                        -->
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <configuration>
+                            <nodeVersion>v5.3.0</nodeVersion>
+                            <npmVersion>3.3.12</npmVersion>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <!-- Optional configuration which provides for running any npm command -->
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm run build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
