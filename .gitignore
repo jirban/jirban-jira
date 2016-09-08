@@ -6,5 +6,5 @@ node_modules
 src/main/resources/webapp/app/**/*.js
 src/main/resources/webapp/app/**/*.js.map
 npm-debug.log
-src/main/resources/webapp/_tsout
-src/main/resources/webapp/dist
+webapp/_tsout
+webapp/dist
