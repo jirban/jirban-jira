@@ -36,17 +36,14 @@ export abstract class FixedHeaderView implements OnInit {
     }
 
     protected setIssuesService(value:IssuesService) {
-        console.log("Setting issuesService");
         this._issuesService = value;
     }
 
     protected setBoardCode(value:string) {
-        console.log("Setting board code")
         this._boardCode = value;
     }
 
     protected setBoardData(value:BoardData) {
-        console.log("Setting boardData " + value);
         this._boardData = value;
         this._boardData.registerInitializedCallback(() => {
             this.setWindowSize();
@@ -93,18 +90,14 @@ export abstract class FixedHeaderView implements OnInit {
     }
 
     private onResize(event : any) {
-        console.log("FixedHeaderView onResize()");
         this.setWindowSize();
     }
 
     private setWindowSize() {
-        console.log("FixedHeaderView setWindowSize()");
-
         //If we have one row of headers the height is 32px, for two rows the height is 62px
         let headersHeight = (this.bottomHeaders && this.bottomHeaders.length > 0) ? 62 : 32;
         let boardBodyHeight:number = window.innerHeight - TOOLBAR_HEIGHT - headersHeight;
         this._boardBodyHeight = boardBodyHeight + "px";
-        console.log("Height: " + this._boardBodyHeight);
     }
 
     scrollTableBodyX(event:Event) {

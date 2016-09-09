@@ -235,13 +235,10 @@ export class IssueContextMenuComponent implements Hideable {
 
 
     private onResize(event : any) {
-        console.log("IssueContextMenu onResize()");
         this.setWindowSize();
     }
 
     private setWindowSize() {
-        console.log("IssueContextMenu setWindowSize()");
-
         let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number;
         let movePanelWidth:number = 410;
 
