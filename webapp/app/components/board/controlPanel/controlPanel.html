@@ -1,4 +1,4 @@
-<div id="control-panel" *ngIf="boardData.initialized" [ngStyle]="{'right': 75 + rightOffset}">
+<div id="control-panel" *ngIf="boardData.initialized" [style.right]="rightOffset">
     <form [formGroup]="controlForm" #f="ngForm" class="form">
         <div class="header">
             <div class="header-text">Board Settings</div>

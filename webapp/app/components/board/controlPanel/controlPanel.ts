@@ -430,8 +430,14 @@ export class ControlPanelComponent {
     }
 
 
-    private get rightOffset() : number {
-        return this.boardData.blacklist ? 30 : 0;
+    private get rightOffset() : string {
+        //The offset if there is no health panel
+        let offset:number = 75;
+        if (this.boardData.blacklist) {
+            //Make room for the health panel icon
+            offset += 30;
+        }
+        return offset + "px";
     }
 
     private get customFields():CustomFieldValues[] {
