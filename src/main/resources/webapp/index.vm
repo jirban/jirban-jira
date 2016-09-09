@@ -2,6 +2,7 @@
 <head>
     <title>Jirban - A nicer view on Jira Agile</title>
     <script>
+        console.log("index.vm: redirecting to $webappRoot/index.html");
         window.location = "$webappRoot/index.html";
     </script>
 </head>
