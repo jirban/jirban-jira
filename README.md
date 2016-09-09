@@ -5,29 +5,36 @@ Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plug
  
 This file contains instructions for you to get up and running as a developer of Jirban. We also have a [User Guide](userguide).
 
+## Set up of development environment
 To develop Jirban locally you need to set up your development environment. You will need:
 * the Atlassian SDK to build the plugin, and also to debug the Java server side classes
 * NodeJS/Npm to download the Javascript libraries, and other tooling for working on the UI in isolation.
 
 Since Angular 2 is used for the display logic, it is worth looking at the quickstart at https://angular.io.
 
- 
-## Set up of development environment
 ### Atlassian SDK
 The Atlassian SDK provides the APIs used for developing the plugin. It has tools for packaging the plugin to be deployed in the server, and also provides a development Jira instance where you can run/debug the plugin in a local Jira instance.
 
 1. Download the Atlassian SDK and install it as outlined in https://developer.atlassian.com/docs/getting-started/set-up-the-atlassian-plugin-sdk-and-build-a-project.
+
+You can use tgz based version from https://marketplace.atlassian.com/download/plugins/atlassian-plugin-sdk-tgz if you hit a problem on your platform.
+Do not forget to adjust your PATH environment variable to include `${ATLASSIAN_SDK}/bin`. You can check proper setup by invoking `atlas-version` command.
+Optionally you can modify `.m2/settings.xml` to include local repository `${ATLASSIAN_SDK}/repository` and online repository https://maven.atlassian.com/content/groups/public.
+
 ### NodeJS/npm
 1. Install NodeJS as outlined at https://nodejs.org/en/download/package-manager
 2. Make sure the output of `node --version` shows a 5 or 6 version.
 3. Install the Node Package Manager (npm) by running `sudo npm install npm -g`)
 4. Run the command `npm install lite-server -g`. This installs the lite-server as a global dependency. This server is quite big, and we don't want it to be part of our plugin jar since it is only used during development as we will see further below.
 5. Go to the `jirban-jira/src/main/resources/webapp` folder, and run `npm install`. This is a one time step for freshly cloned projects, and will download all the javascript libraries needed for Angular 2 etc. It also needs to be performed if you add more libraries to the project.
+6. Run `npm start` in the same folder to compile the Typescript to Javascript..
 
 ## Building/running/debugging the project
 The UI can be developed separately from the plugin itself, since it is a fat client interacting with the server via a REST API. So when modifying the UI files, you don't need to build, package and deploy in the server. The client logic is written in Typescript, and the UI steps are responsible for compiling the Typescript to Javascript. So depending on the focus of your current task, you can either do 
 * just the UI steps (if working on purely display logic)
 * or both the UI steps and the SDK steps if you are working on something involving the server. The SDK steps will package the jar containing the plugin, and the UI steps are needed to compile the Javascript as mentioned.
+
+When JIRA is started for the first time (e.g. running `atlas-run`) you should enable Agile feature by acquiring evaluation license or buying the license. You will need account on https://my.atlassian.com
 
 ### UI
 Each of the following UI steps happen from the `jirban-jira/src/main/resources/webapp` folder, and a separate terminal window is needed for each one. 
@@ -38,7 +45,7 @@ Each of the following UI steps happen from the `jirban-jira/src/main/resources/w
 2. Run `npm test` which runs the client-side test suite. We don't have a huge amount of tests, but have attempted to at least test the most important/tricky areas. This step is only really necessary if you are modifying the UI, and not if your main purpose is to build the plugin for deployment in Jira.
 
 ### SDK
-These commands happen from the root folder of the project (i.e where `pom.xml` is located). I normally use one window for running the server instance and another to package the project.
+These commands happen from the root folder of the project (i.e where `pom.xml` is located). I normally use one window for running the server instance and another to package the project. Stopping and starting the server takes a lot of time.
 
 1. Run `atlas-debug`. This builds the plugin, starts up the Jira instance, and deploys the plugin into it.
 2. Once you change something, and want to deploy it into Jira, run `atlas-package`. This builds the plugin again, and deploys it into the running Jira instance we started in the previous step.
@@ -59,7 +66,7 @@ To be able to debug the Jirban plugin, you need to set up your SDK's Jira instan
 1. Log in to your local Jira instance
 2. From the 'Agile' menu, select 'Jirban Boards'
 3. Click 'Config' in the top banner
-4. Open http://localhost:2990/jira/rest/api/2/field in a browser and look for the field called 'Rank'. Enter its id into the field on the bottom of the page and click the associated 'Save' button.
+4. Open http://localhost:2990/jira/rest/api/2/field in a browser and look for the field called 'Rank'. Enter its id (probably 10005) into the field on the bottom of the page and click the associated 'Save' button. Anothet option to get Rank field is invoking http://localhost:2990/jira/plugins/servlet/restbrowser#/resource/api-2-field.
 5. Copy the text from `src/setup/board.json` into the text area on the page, and press 'Save'.
 
 The following discusses the settings used for the board.
