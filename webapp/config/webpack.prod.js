@@ -11,7 +11,7 @@ module.exports = webpackMerge(commonConfig, {
 
   output: {
     path: helpers.root('..', 'target', 'classes', 'webapp'),
-    publicPath: '/',
+    publicPath: '/jira/download/resources/org.jirban.jirban-jira/webapp/',
     filename: '[name].[hash].js',
     chunkFilename: '[id].[hash].chunk.js'
   },

@@ -19,7 +19,7 @@ import {KanbanViewComponent} from "./components/board/view/kanban/kanbanview";
 import {IssueContextMenuComponent} from "./components/board/issueContextMenu/issueContextMenu";
 import {IssueComponent} from "./components/board/issue/issue";
 import {HealthPanelComponent} from "./components/board/healthPanel/healthPanel";
-import {LocationStrategy, HashLocationStrategy} from "@angular/common";
+import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/common";
 @NgModule({
     imports: [
         BrowserModule,
@@ -49,6 +49,7 @@ import {LocationStrategy, HashLocationStrategy} from "@angular/common";
         AppHeaderService,
         ProgressErrorService,
         Title,
+        {provide: APP_BASE_HREF, useValue: "/"},
         {provide: LocationStrategy, useClass: HashLocationStrategy}
     ]
 })
