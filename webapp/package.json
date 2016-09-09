@@ -6,7 +6,7 @@
     "start": "webpack-dev-server --inline --progress --port 3000",
     "test": "karma start  --browsers PhantomJS",
     "_build-doc" : "To build it do 'npm run build'",
-    "build": "rimraf dist && webpack --config config/webpack.prod.js --progress --profile --bail",
+    "build": "rimraf ../target/classes/webapp && webpack --config config/webpack.prod.js --progress --profile --bail",
     "postinstall": "typings install"
   },
   "license": "MIT",
