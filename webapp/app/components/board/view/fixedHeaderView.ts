@@ -18,9 +18,9 @@ export abstract class FixedHeaderView implements OnInit {
     protected _boardData: BoardData;
 
     /** The calculate height of the board body */
-    private _boardBodyHeight:number;
+    private _boardBodyHeight:string;
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
-    private boardLeftOffset:number = 0;
+    private boardLeftOffset:string = "";
 
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
 
@@ -72,8 +72,7 @@ export abstract class FixedHeaderView implements OnInit {
         return this._boardData.headers.backlogTopHeader;
     }
 
-    get boardBodyHeight(): number {
-        console.log("Returning board height " + this._boardBodyHeight);
+    get boardBodyHeight(): string {
         return this._boardBodyHeight;
     }
 
@@ -103,12 +102,14 @@ export abstract class FixedHeaderView implements OnInit {
 
         //If we have one row of headers the height is 32px, for two rows the height is 62px
         let headersHeight = (this.bottomHeaders && this.bottomHeaders.length > 0) ? 62 : 32;
-        this._boardBodyHeight = window.innerHeight - TOOLBAR_HEIGHT - headersHeight;
+        let boardBodyHeight:number = window.innerHeight - TOOLBAR_HEIGHT - headersHeight;
+        this._boardBodyHeight = boardBodyHeight + "px";
         console.log("Height: " + this._boardBodyHeight);
     }
 
     scrollTableBodyX(event:Event) {
-        this.boardLeftOffset = event.target["scrollLeft"];
+        let boardLeftOffset:number = event.target["scrollLeft"] * -1;
+        this.boardLeftOffset = boardLeftOffset + "px";
     }
 
     protected onShowIssueContextMenu(event:IssueContextMenuData) {

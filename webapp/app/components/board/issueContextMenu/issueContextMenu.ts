@@ -28,19 +28,19 @@ export class IssueContextMenuComponent implements Hideable {
     private showPanel:string;
 
     //Calculated dimensions
-    private movePanelTop:number;
-    private movePanelHeight:number;
-    private movePanelLeft:number;
-    private statesColumnHeight:number;
+    private movePanelTop:string;
+    private movePanelHeight:string;
+    private movePanelLeft:string;
+    private statesColumnHeight:string;
 
 
     private commentForm:FormGroup;
-    private commentPanelLeft:number;
+    private commentPanelLeft:string;
 
-    private rankPanelTop:number;
-    private rankPanelLeft:number;
-    private rankPanelHeight:number;
-    private rankedIssuesColumnHeight:number
+    private rankPanelTop:string;
+    private rankPanelLeft:string;
+    private rankPanelHeight:string;
+    private rankedIssuesColumnHeight:string;
     private rankedIssues:IssueData[];
     private rankBeforeKey:string;
 
@@ -255,17 +255,19 @@ export class IssueContextMenuComponent implements Hideable {
         if (window.innerWidth > movePanelWidth) {
             movePanelLeft = window.innerWidth/2 - movePanelWidth/2;
         }
-        this.movePanelTop = movePanelTop;
-        this.movePanelHeight = movePanelHeight;
-        this.movePanelLeft = movePanelLeft;
-        this.statesColumnHeight = statesColumnHeight;
+        this.movePanelTop = movePanelTop + "px";
+        this.movePanelHeight = movePanelHeight + "px";
+        this.movePanelLeft = movePanelLeft + "px";
+        this.statesColumnHeight = statesColumnHeight + "px";
 
-        this.commentPanelLeft = (window.innerWidth - 600)/2;
+        let commentPanelLeft:number = (window.innerWidth - 600)/2;
+        this.commentPanelLeft = commentPanelLeft + "px";
 
-        this.rankPanelTop = movePanelTop;
-        this.rankPanelHeight = movePanelHeight;
-        this.rankPanelLeft = (window.innerWidth - 500)/2;
-        this.rankedIssuesColumnHeight = statesColumnHeight;
+        this.rankPanelTop = movePanelTop + "px";
+        this.rankPanelHeight = movePanelHeight + "px";
+        let rankPanelLeft:number = (window.innerWidth - 500)/2;
+        this.rankPanelLeft = rankPanelLeft + "px";
+        this.rankedIssuesColumnHeight = statesColumnHeight + "px";
     }
 
     private onClickClose(event:MouseEvent) {
