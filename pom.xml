@@ -260,41 +260,92 @@
                 <configuration>
                     <workingDirectory>webapp</workingDirectory>
                 </configuration>
-                <executions>
-                    <execution>
-                        <!--
-                            Install node and npm for the pluging to have a copy.
-                        -->
-                        <id>install node and npm</id>
-                        <goals>
-                            <goal>install-node-and-npm</goal>
-                        </goals>
-                        <configuration>
-                            <nodeVersion>v5.3.0</nodeVersion>
-                            <npmVersion>3.3.12</npmVersion>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>npm install</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <!-- Optional configuration which provides for running any npm command -->
-                        <configuration>
-                            <arguments>install</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>npm run build</id>
-                        <goals>
-                            <goal>npm</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>run build</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <!--
+                Installs node and npm in the webapp/node and webapp/node_modules folders respectively.
+                Run 'atlas-package -Djirban.npm':
+                    * the first time you have checked out the source.
+                    * whenever the dependencies have been changed in package.json (delete the webapp/node_modules
+                      folder first!)
+            -->
+            <id>Install node and npm</id>
+            <activation>
+                <property><name>jirban.npm</name></property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!--
+                                    Install node and npm for the plugin to have a copy.
+                                -->
+                                <id>install node and npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>v5.3.0</nodeVersion>
+                                    <npmVersion>3.3.12</npmVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--
+                                    Run npm install when having updated dependencies
+                                -->
+                                <id>npm install</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <!-- Optional configuration which provides for running any npm command -->
+                                <configuration>
+                                    <arguments>install</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!--
+                Since building the ui is slightly time-consuming, and not all changes necessarily affect the ui, turn on
+                building the ui explicitly by running 'atlas-package -Djirban.ui'
+            -->
+            <id>Build the UI</id>
+            <activation>
+                <property>
+                    <name>jirban.ui</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!--
+                                    Uses webpack to bundle the application
+                                -->
+                                <id>npm run build</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
