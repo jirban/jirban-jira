@@ -31,20 +31,22 @@ public class CacheHeaderFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest)request;
         HttpServletResponse resp = (HttpServletResponse)response;
-        String ifNoneMatch = req.getHeader("if-none-match");
-        if (ifNoneMatch != null) {
-            //If this header is there, it means the browser has it cached. Webpack gives all the js and other files
-            //a unique hash
-            if (!etagHex.equals(ifNoneMatch)) {
-                //The etag is different so update it for the client (not really necessary).
-                resp.addHeader("ETag", etagHex);
+        if (!req.getRequestURI().contains("index.html")) {
+            String ifNoneMatch = req.getHeader("if-none-match");
+            if (ifNoneMatch != null) {
+                //If this header is there, it means the browser has it cached. Webpack gives all the js and other files
+                //a unique hash
+                if (!etagHex.equals(ifNoneMatch)) {
+                    //The etag is different so update it for the client (not really necessary).
+                    resp.addHeader("ETag", etagHex);
+                }
+                resp.setStatus(304);
+                return;
             }
-            resp.setStatus(304);
-            return;
+            resp.addHeader("ETag", etagHex);
+            resp.addHeader("Cache-Control", "max-age=" + MAX_AGE);
         }
 
-        resp.addHeader("ETag", etagHex);
-        resp.addHeader("Cache-Control", "max-age=" + MAX_AGE);
         chain.doFilter(request, resp);
     }
 
