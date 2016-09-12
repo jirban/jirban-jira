@@ -6,15 +6,25 @@ var helpers = require('./helpers');
 
 const ENV = process.env.NODE_ENV = process.env.ENV = 'production';
 
-var prefix = "";//"/jira";
-var publicUrl = prefix + '/download/resources/org.jirban.jirban-jira/webapp/'
-
 module.exports = webpackMerge(commonConfig, {
   devtool: 'source-map',
 
+  /**
+   * Note that publicPath is not set here at build time since we don't know exactly where the war will be deployed. e.g. in the
+   * SDK environment it will be prefixed by '/jira' so that the public path is:
+   *
+   *    /jira/download/resources/org.jirban.jirban-jira/webapp/
+   *
+   * On the jboss production server there is no '/jira' prefix so the public path is:
+   *
+   *    /download/resources/org.jirban.jirban-jira/webapp/
+   *
+   * boot.js sets the global __webpack_public_path__ which then calculates the path dynamically.
+   *
+   * Other people might deploy jira in other places.
+   */
   output: {
     path: helpers.root('..', 'target', 'classes', 'webapp'),
-    publicPath: publicUrl,
     filename: '[name].[hash].js',
     chunkFilename: '[id].[hash].chunk.js'
   },
