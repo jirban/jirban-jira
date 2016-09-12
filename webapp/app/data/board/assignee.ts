@@ -1,4 +1,5 @@
 import {Indexed} from "../../common/indexed";
+import {StringUtils} from "../../common/stringUtils";
 
 export class Assignee {
     private _key:string;
@@ -66,7 +67,8 @@ export class AssigneeDeserializer {
         assignees.indexArray(
             input.assignees,
             (entry)=> {
-                return new Assignee(entry.key, entry.email, entry.avatar, entry.name);
+                let key:string = StringUtils.makeValidKey(entry.key);
+                return new Assignee(key, entry.email, entry.avatar, entry.name);
             },
             (assignee) => {
                 return assignee.key;

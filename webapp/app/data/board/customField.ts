@@ -1,4 +1,5 @@
 import {Indexed} from "../../common/indexed";
+import {StringUtils} from "../../common/stringUtils";
 export class CustomFieldValues {
     private _name:string;
     private _values:Indexed<CustomFieldValue>;
@@ -27,7 +28,8 @@ export class CustomFieldDeserializer {
                 values.indexArray(
                     custom[name],
                     (entry) => {
-                        return new CustomFieldValue(entry["key"], entry["value"])
+                        let key:string = StringUtils.makeValidKey(entry.key);
+                        return new CustomFieldValue(key, entry["value"])
                     },
                     (value) => {
                         return value.key;

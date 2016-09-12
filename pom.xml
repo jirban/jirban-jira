@@ -332,7 +332,7 @@
                         <executions>
                             <execution>
                                 <!--
-                                    Uses webpack to bundle the application
+                                    Uses webpack to bundle the application as set up in package.json
                                 -->
                                 <id>npm run build</id>
                                 <goals>
