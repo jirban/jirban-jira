@@ -49,11 +49,11 @@ export class ControlPanelComponent {
         form.addControl("swimlane", new FormControl(this.boardData.swimlane));
 
         let detailForm:FormGroup = new FormGroup({});
-        form.addControl("detail", detailForm);
         detailForm.addControl("assignee", new FormControl(this.boardData.issueDisplayDetails.assignee));
         detailForm.addControl("description", new FormControl(this.boardData.issueDisplayDetails.summary));
         detailForm.addControl("info", new FormControl(this.boardData.issueDisplayDetails.info));
         detailForm.addControl("linked", new FormControl(this.boardData.issueDisplayDetails.linkedIssues));
+        form.addControl("detail", detailForm);
 
         let filters:BoardFilters = this.boardData.filters;
 

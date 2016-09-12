@@ -6,12 +6,15 @@ var helpers = require('./helpers');
 
 const ENV = process.env.NODE_ENV = process.env.ENV = 'production';
 
+var prefix = "";//"/jira";
+var publicUrl = prefix + '/download/resources/org.jirban.jirban-jira/webapp/'
+
 module.exports = webpackMerge(commonConfig, {
   devtool: 'source-map',
 
   output: {
     path: helpers.root('..', 'target', 'classes', 'webapp'),
-    publicPath: '/jira/download/resources/org.jirban.jirban-jira/webapp/',
+    publicPath: publicUrl,
     filename: '[name].[hash].js',
     chunkFilename: '[id].[hash].chunk.js'
   },
