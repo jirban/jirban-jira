@@ -29,7 +29,7 @@ export class IssueData {
 
     //Cached status fields
     private _boardStatus:string;
-    private _boardStatusIndex:number;
+    private _boardStatusIndex:number = null;
     private _ownStatus:string;
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
@@ -208,11 +208,25 @@ export class IssueData {
     }
 
     get boardStatusIndex():number {
-        if (isNaN(this._boardStatusIndex)) {
+        // if (this._key === 'EAPDS-1') {
+        //     console.log("------> get");
+        //     let num:number;
+        //     this.testNumber("undefined ", num);
+        //     this.testNumber("null", null);
+        //     this.testNumber("zero", 0);
+        //     this.testNumber("bsi", this._boardStatusIndex);
+        // }
+        if (this._boardStatusIndex == null) {
             let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
             this._boardStatusIndex = project.mapStateIndexToBoardIndex(this._statusIndex);
         }
         return this._boardStatusIndex;
+    }
+
+    testNumber(s:string, i:number) {
+        console.log("=====> " + s + ": " + i);
+        let nan:boolean = isNaN(i);
+        console.log("bsi: " + i + "; isNan: " + nan + "; !: " + !i);
     }
 
     get ownStatus():string {
