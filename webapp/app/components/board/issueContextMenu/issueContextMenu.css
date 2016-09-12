@@ -128,17 +128,19 @@ a.entry-selected {
     line-height: 20px;
     height: 20px;
 }
-.comment-box-container {
-    width: 600px;
-    height: 200px;
-}
 .comment-header-text {
     width: 570px;
     text-align: center;
     float: left;
 }
+.comment-box-container {
+    width: 600px;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+}
 .comment-box {
-    width: 100%;
+    width: 98%;
     height: 100%;
 }
 .comment-button-container {
