@@ -45,20 +45,10 @@ a.toolbar-link {
 
 
 /* Wait screen */
-.wait-screen {
-    background-image: url("../../../images/wait.gif");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-color: black;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-    height: 100%;
-    width: 100%;
-    opacity: .5;
-    z-index: 1000;
-}
+/*.wait-screen {
+    Although it really belongs in this component, it is defined in global.css since I can't get the background image
+    to be picked up by webpack in this file.
+}*/
 
 #error-panel {
     background-color: #fca600;
