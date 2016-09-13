@@ -1,0 +1,20 @@
+<div class="toolbar">
+    <div class="toolbar-left">
+        <span> <a [routerLink]="['/boards']" class="toolbar-link">Boards</a></span>
+        <!-- TODO Only display this if it is an admin -->
+        <span> <a [routerLink]="['/config']" class="toolbar-link">Config</a></span>
+    </div>
+    <div class="toolbar-right" [innerHTML]="completedMessage"></div>
+</div>
+<router-outlet></router-outlet>
+<div class="wait-screen" [hidden]="hideProgress"> </div>
+<div id="error-panel" [hidden]="!error" (click)="onClickErrorClose($event)">
+    <div class="header">
+        <div class="header-text">Error</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickErrorClose($event)">X</a>
+        </div>
+    </div>
+    <div *ngIf="!notLoggedIn" class="error-message" [innerHTML]="error"></div>
+    <div *ngIf="notLoggedIn" class="error-message"><a href="{{loginUrl}}" class="error-message" (click)="onClickMessageLoginLink($event)">Log in</a> to Jira again.</div>
+</div>

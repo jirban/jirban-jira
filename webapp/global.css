@@ -1,0 +1,75 @@
+/*
+ * JBoss, Home of Professional Open Source.
+ * Copyright 2016, Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags. See the copyright.txt file in the
+ * distribution for a full listing of individual contributors.
+ *
+ * This is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation; either version 2.1 of
+ * the License, or (at your option) any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this software; if not, write to the Free
+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
+ */
+
+body {
+    margin:0;
+    padding:0;
+    font-family: 'Open Sans', Verdana, Arial, sans-serif;
+}
+
+/** See comment in app.ts's constructor */
+.no-scrollbars {
+    overflow: hidden;
+}
+
+/* Global link settings */
+a:link {
+    text-decoration: none;
+}
+a:visited {
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+a:active {
+    text-decoration: underline;
+}
+a.toolbar-message {
+    color:white;
+    font-weight: bold;
+}
+
+p.version {
+    font-style: italic;
+    font-size: 10px;
+
+}
+
+/*
+    Although .wait-screen really belongs in app/components/app/app.css, it is defined in global.css since I can't get the background image
+    to be picked up by webpack in this file.
+*/
+.wait-screen {
+    background-image: url("./images/wait.gif");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-color: black;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    height: 100%;
+    width: 100%;
+    opacity: .5;
+    z-index: 1000;
+}

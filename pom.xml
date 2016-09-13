@@ -36,6 +36,8 @@
         <!-- TestKit version 6.x for JIRA 6.x -->
         <version.testkit>6.3.11</version.testkit>
 
+        <version.frontend-maven-plugin>1.0</version.frontend-maven-plugin>
+
         <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
 
@@ -248,6 +250,102 @@
                     <verbose>false</verbose>
                 </configuration>
             </plugin>
+            <!-- Used to run the webpack build -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <!-- Use the latest released version:
+                https://repo1.maven.org/maven2/com/github/eirslett/frontend-maven-plugin/ -->
+                <version>${version.frontend-maven-plugin}</version>
+                <configuration>
+                    <workingDirectory>webapp</workingDirectory>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <!--
+                Installs node and npm in the webapp/node and webapp/node_modules folders respectively.
+                Run 'atlas-package -Djirban.npm':
+                    * the first time you have checked out the source.
+                    * whenever the dependencies have been changed in package.json (delete the webapp/node_modules
+                      folder first!)
+            -->
+            <id>Install node and npm</id>
+            <activation>
+                <property><name>jirban.npm</name></property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!--
+                                    Install node and npm for the plugin to have a copy.
+                                -->
+                                <id>install node and npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <configuration>
+                                    <nodeVersion>v5.3.0</nodeVersion>
+                                    <npmVersion>3.3.12</npmVersion>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <!--
+                                    Run npm install when having updated dependencies
+                                -->
+                                <id>npm install</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <!-- Optional configuration which provides for running any npm command -->
+                                <configuration>
+                                    <arguments>install</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!--
+                Since building the ui is slightly time-consuming, and not all changes necessarily affect the ui, turn on
+                building the ui explicitly by running 'atlas-package -Djirban.ui'
+            -->
+            <id>Build the UI</id>
+            <activation>
+                <property>
+                    <name>jirban.ui</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <!--
+                                    Uses webpack to bundle the application as set up in package.json
+                                -->
+                                <id>npm run build</id>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>run build</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
