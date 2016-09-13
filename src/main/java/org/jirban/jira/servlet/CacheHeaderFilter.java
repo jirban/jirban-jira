@@ -1,6 +1,7 @@
 package org.jirban.jira.servlet;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -17,7 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 public class CacheHeaderFilter implements Filter {
 
     private final String etagHex = Long.toHexString(System.currentTimeMillis());
-    private static final int MAX_AGE = 60 * 60 * 6; //6 hours max age
+    private static final long MAX_AGE = TimeUnit.DAYS.toSeconds(30); //6 hours max age
 
     public CacheHeaderFilter() {
     }
@@ -28,18 +29,24 @@ public class CacheHeaderFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-
         HttpServletRequest req = (HttpServletRequest)request;
-        String ifNoneMatch = req.getHeader("if-none-match");
-
-        if (etagHex.equals(ifNoneMatch)) {
-            ((HttpServletResponse) response).setStatus(304);
-            return;
+        HttpServletResponse resp = (HttpServletResponse)response;
+        if (!req.getRequestURI().contains("index.html")) {
+            String ifNoneMatch = req.getHeader("if-none-match");
+            if (ifNoneMatch != null) {
+                //If this header is there, it means the browser has it cached. Webpack gives all the js and other files
+                //a unique hash
+                if (!etagHex.equals(ifNoneMatch)) {
+                    //The etag is different so update it for the client (not really necessary).
+                    resp.addHeader("ETag", etagHex);
+                }
+                resp.setStatus(304);
+                return;
+            }
+            resp.addHeader("ETag", etagHex);
+            resp.addHeader("Cache-Control", "max-age=" + MAX_AGE);
         }
 
-        HttpServletResponse resp = (HttpServletResponse)response;
-        resp.addHeader("ETag", etagHex);
-        resp.addHeader("Cache-Control", "max-age=" + MAX_AGE);
         chain.doFilter(request, resp);
     }
 

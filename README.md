@@ -1,5 +1,5 @@
 # Jirban
-Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plugin with an Angular 2 client running in the browser. Its main purposes are: 
+Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plugin with an Angular 2 client running in the browser. Webpack is used to bundle and minify the UI files. Its main purposes are:
 * to address some of Jira Agile's short-comings when it comes to how it displays the boards. Effectively this means horizontally scrollable boards, with collapsible colums.
 * to make setup of filters and swimlanes less static, minimising the need for configuration. Since we are using a 'fat' browser client, all changes to the view purely happen on the client side with no need for extra round trips to the server.
  
@@ -25,30 +25,31 @@ Optionally you can modify `.m2/settings.xml` to include local repository `${ATLA
 1. Install NodeJS as outlined at https://nodejs.org/en/download/package-manager
 2. Make sure the output of `node --version` shows a 5 or 6 version.
 3. Install the Node Package Manager (npm) by running `sudo npm install npm -g`)
-4. Run the command `npm install lite-server -g`. This installs the lite-server as a global dependency. This server is quite big, and we don't want it to be part of our plugin jar since it is only used during development as we will see further below.
-5. Go to the `jirban-jira/src/main/resources/webapp` folder, and run `npm install`. This is a one time step for freshly cloned projects, and will download all the javascript libraries needed for Angular 2 etc. It also needs to be performed if you add more libraries to the project.
-6. Run `npm start` in the same folder to compile the Typescript to Javascript..
+4. Go to the `jirban-jira/webapp` folder, and run `npm install`. This is a one time step for freshly cloned projects, and will download all the javascript libraries needed for Angular 2 etc. It also needs to be performed if you add more libraries to the project. As we will see later, the maven plugin used to bundle the jar can also be used to update the packages.
 
 ## Building/running/debugging the project
-The UI can be developed separately from the plugin itself, since it is a fat client interacting with the server via a REST API. So when modifying the UI files, you don't need to build, package and deploy in the server. The client logic is written in Typescript, and the UI steps are responsible for compiling the Typescript to Javascript. So depending on the focus of your current task, you can either do 
+The UI can be developed separately from the plugin itself, since it is a fat client interacting with the server via a REST API. So when modifying the UI files, you don't need to build, package and deploy in the server. The client logic is written in Typescript, and the UI steps are responsible for compiling the Typescript to Javascript. So depending on the focus of your current task, you can either do:
 * just the UI steps (if working on purely display logic)
-* or both the UI steps and the SDK steps if you are working on something involving the server. The SDK steps will package the jar containing the plugin, and the UI steps are needed to compile the Javascript as mentioned.
+* or both the UI steps and the SDK steps if you are working on something involving the server. The SDK steps will package the jar containing the plugin.
 
-When JIRA is started for the first time (e.g. running `atlas-run`) you should enable Agile feature by acquiring evaluation license or buying the license. You will need account on https://my.atlassian.com
+When JIRA is started for the first time (e.g. running `atlas-run`) you should enable the Agile feature by acquiring evaluation license (it is valid for at least a month, and you can extend it), or buying the license (it is $10). You will need account on https://my.atlassian.com
 
 ### UI
-Each of the following UI steps happen from the `jirban-jira/src/main/resources/webapp` folder, and a separate terminal window is needed for each one. 
+Each of the following UI steps happen from the `jirban-jira/webapp` folder, and a separate terminal window is needed for each one.
 
 1. Run `npm start`. This:
- * compiles the Typescript files to Javascript. Any errors from compileing will show up in this terminal window.
- * starts a web server (the lite-server we installed as a global dependency) on port 3000, and launches a browser window where you can view your changes. The `rest/jirban/1.0` sub-folder contains some mock data files for running without a real jira instance so you can see how your changes affect the layout. As you make changes and they compile, the browser window refreshes automatically.
+ * does an in-memory bundle using the webpack config files. The Typescript files to Javascript. Any errors from compiling will show up in this terminal window. Your files will be 'watched' so you can leave this running, and any changes will be recompiled (if you start seeing strange behaviour, restart this job).
+ * starts the webpack dev server on port 3000, and launches a browser window where you can view your changes. The `rest/jirban/1.0` sub-folder contains some mock data files for running without a real jira instance so you can see how your changes affect the layout. As you make changes and they compile, the browser window refreshes automatically.
 2. Run `npm test` which runs the client-side test suite. We don't have a huge amount of tests, but have attempted to at least test the most important/tricky areas. This step is only really necessary if you are modifying the UI, and not if your main purpose is to build the plugin for deployment in Jira.
 
 ### SDK
 These commands happen from the root folder of the project (i.e where `pom.xml` is located). I normally use one window for running the server instance and another to package the project. Stopping and starting the server takes a lot of time.
 
 1. Run `atlas-debug`. This builds the plugin, starts up the Jira instance, and deploys the plugin into it.
-2. Once you change something, and want to deploy it into Jira, run `atlas-package`. This builds the plugin again, and deploys it into the running Jira instance we started in the previous step.
+2. Once you change something, and want to deploy it into Jira, run `atlas-package` from another terminal window. This builds the plugin again, and deploys it into the running Jira instance we started in the previous step.
+3. Raw `atlas-debug` or `atlas-package` just bundles any built web application files into the resulting Jirban plugin jar. We have two system properties to do more work.
+3.1 `-Djirban.npm` - this installs a copy of npm and node so that they are usable from the maven plugin used to bundle the UI. If when pulling changes from git, any of the dependencies in `package.json` have changed, you should delete the `jirban-jira/webapp/node-modules` folder, and run `atlas-package -Djirban.npm` to get the fresh dependencies.
+ 3.2 `-Djirban.ui` - this runs the webpack bundler and refreshes the web application files to be used in the Jirban plugin jar. Since the webpack bundler takes some time to do its work, by default `atlas-package` does not bundle and refresh the web application files. This means that you can work on server-side code without the delay. If you are working on the web application files, and want to see the changes in your local Jira instance, run `atlas-package -Djirban.ui` to trigger the bundling and refreshing of the web application files on the Jirban plugin jar.
 
 ## Setting up projects in Jira
 To be able to debug the Jirban plugin, you need to set up your SDK's Jira instance to contain some projects. I originally wanted to share a backup of my local Jira system, but that includes licence keys and things like that which are not a good idea to share. So you will need to do this manually. Use the exact project codes shown below, since we will be referencing those from the Jirban 

@@ -1,0 +1,43 @@
+<div id="health-panel" *ngIf="boardData.initialized">
+    <div class="header">
+        <div class="header-text">Health</div>
+        <div class="header-close-button">
+            <a href="close" class="close" (click)="onClickClose($event)">X</a></div>
+    </div>
+    <div class="content">
+        <div>Some items have not been configured on the server and the affected issues are
+            not shown on the board since they cannot be mapped.
+            Please contact your system administrator.
+        </div>
+        <div *ngIf="issues.length">
+            <div class="h1">Blacklisted Issues</div>
+            <div>Due to the below problems, the following issues are not shown on the board:</div>
+            <span *ngFor="let issue of issues"><a href="{{formatUrl(issue)}}">{{issue}}</a> </span>
+        </div>
+        <div *ngIf="states.length">
+            <div class="h1">States</div>
+            <span>The following states from the Jira project are missing in the board's configuration, which affects
+                the Jira issues which can be shown.</span>
+            <ul>
+                <li *ngFor="let entry of states">{{entry}}</li>
+            </ul>
+        </div>
+        <div *ngIf="issueTypes.length">
+            <div class="h1">Issue Types</div>
+            <span>The following issue types from the Jira project are missing in the board's configuration, which affects
+                the Jira issues which can be shown.</span>
+            <ul>
+                <li *ngFor="let entry of issueTypes">{{entry}}</li>
+            </ul>
+        </div>
+        <div *ngIf="priorities.length">
+            <div class="h1">Priorities</div>
+            <span>The following priorities from the Jira project are missing in the board's configuration, which affects
+                the Jira issues which can be shown.</span>
+            <ul>
+                <li *ngFor="let entry of priorities">{{entry}}</li>
+            </ul>
+        </div>
+    </div>
+
+</div>

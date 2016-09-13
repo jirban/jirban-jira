@@ -1,0 +1,35 @@
+<div *ngIf="accessData">
+    <h2>Summary</h2>
+    <p>There were {{accessData.entries.length}} accesses
+        <span *ngIf="accessData.entries.length > 0">between {{accessData.firstTime}} and {{accessData.lastTime}}</span>.
+    </p>
+    <div>
+        These are the number of accesses per user:
+        <table>
+            <tr>
+                <td><b>User</b></td>
+                <td><b>Accesses</b></td>
+            </tr>
+            <tr *ngFor="let entry of accessData.userAccessSummaries">
+                <td>{{entry.userName}} ({{entry.userKey}})</td>
+                <td>{{entry.count}}</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Details</h2>
+    <table>
+        <tr>
+            <td><b>#</b></td>
+            <td><b>User</b></td>
+            <td><b>Board</b></td>
+            <td><b>Date</b></td>
+        </tr>
+        <tr *ngFor="let entry of accessData.entries; let i = index">
+            <td>{{i + 1}}</td>
+            <td>{{entry.userName}} ({{entry.userKey}})</td>
+            <td>{{entry.board}}</td>
+            <td>{{entry.time}}</td>
+        </tr>
+    </table>
+</div>

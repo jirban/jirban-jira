@@ -3,6 +3,10 @@ jirban-jira.iml
 .idea
 target
 node_modules
+webapp/node
 src/main/resources/webapp/app/**/*.js
 src/main/resources/webapp/app/**/*.js.map
 npm-debug.log
+webapp/_tsout
+webapp/dist
+webapp/typings

@@ -1,0 +1,35 @@
+<li class="issue" (contextmenu)="triggerShowIssueContextMenu($event, issue.key)" title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}&#013;{{issue.priority.name}}&#013;{{issue.type.name}}"
+    *ngIf="!issue.filtered">
+    <div class="header" [style.background-color]="issue.colour">
+        <div class="summary">
+            <span><a href="{{jiraUrl}}/browse/{{issue.key}}" target="_blank"
+                     (contextmenu)="defaultContextMenu($event)" class="header">{{issue.key}}</a></span>
+        </div>
+        <div class="assignee">
+            <span title="{{issue.assigneeName}}">{{issue.assigneeInitials}}</span>
+            <span><a href="" class="header" (click)="triggerShowIssueContextMenu($event, issue.key)">...</a></span>
+        </div>
+    </div>
+    <div [ngClass]="showAssignee ? 'detail-full' : 'detail-short'" *ngIf="showSummary || showAssignee">
+        <img class="avatar" *ngIf="showAssignee"
+             title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"/>
+        <div [ngClass]="showAssignee ? 'summary-full' : 'summary-short'">{{issue.summary}}</div>
+    </div>
+    <div class="info" *ngIf="showInfo">
+        <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
+        <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
+    </div>
+    <div class="linked-issues" *ngFor="let linked of issue.linkedIssues"
+         title="{{linked.key}}&#013;{{linked.ownStatus}}&#013;{{linked.summary}}"
+         [hidden]="!showLinkedIssues">
+        <div class="linked-issue">
+            <div class="linked-issue-summary">
+                <a href="{{jiraUrl}}/browse/{{linked.key}}" target="_blank"
+                   (contextmenu)="defaultContextMenu($event)" class="linked-issue-summary">{{linked.key}}</a>
+            </div>
+            <div class="linked-issue-status">
+                <span [style.color]="getStatusColour(linked)">{{getStatusFraction(linked)}}</span>
+            </div>
+        </div>
+    </div>
+</li>

@@ -1,0 +1,76 @@
+<h2>Configuration</h2>
+<h3>Boards</h3>
+<div>
+    Select a board to update its config. For boards where you have the 'administer project' permission for the
+    main projects, you can edit and delete boards.
+</div>
+<div *ngIf="!hasBoards()">No boards configured</div>
+<div *ngIf="hasBoards()">
+    <ul>
+        <li *ngFor="let board of boards">
+            <a href="view" (click)="toggleBoard($event, board.id)">{{board.name}}</a>
+            <div [hidden]="!isSelected(board.id)">
+                <div *ngIf="!edit">
+                    <!-- board.edit is whether the user has the edit permission -->
+                    <a  *ngIf="!deleting && board.edit" href="edit" (click)="toggleEdit($event, board)">Edit</a>
+                    <a *ngIf="!deleting && board.edit" href="delete" (click)="toggleDelete($event, board.id)">Delete</a>
+                    <div *ngIf="deleting">
+                        <form (ngSubmit)="deleteBoard()" [formGroup]="deleteForm" #f="ngForm">
+                            <label>Type in the 'name' field of the board to delete it <b>permanently</b>:</label>
+                            <input type="text" formControlName="boardName"/>
+                            <a href="cancel" (click)="toggleDelete($event, board.id)">Cancel</a>
+                            <button type="submit" [disabled]="!f.form.valid">Delete</button>
+                        </form>
+                    </div>
+                    <pre>{{configJson}}</pre>
+                </div>
+                <div *ngIf="edit">
+                    <form (ngSubmit)="editBoard()" [formGroup]="editForm" #f="ngForm">
+                        <textarea cols="100" rows="15" name="editJson" formControlName="editJson" (keyup)="clearJsonErrors()"></textarea>
+                        <div *ngIf="jsonErrorEdit">{{jsonErrorEdit}}</div>
+                        <div>
+                            <a href="cancel" (click)="toggleEdit($event, board)">Cancel</a>
+                            <button type="submit" [disabled]="!f.form.valid">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </li>
+    </ul>
+<hr/>
+</div>
+<div>
+    <div>
+        Create a new board. When saving it will be checked that you have the 'administer project' permission for
+        the main projects in the board.
+    </div>
+    <div>
+        <form (ngSubmit)="newBoard()" [formGroup]="newForm" #f="ngForm">
+            <textarea cols="100" rows="15" name="newJson" formControlName="newJson" (keyup)="clearJsonErrors()"></textarea>
+            <div *ngIf="jsonErrorCreate">{{jsonErrorCreate}}</div>
+            <div>
+                <button type="submit" [disabled]="!f.form.valid">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+<div *ngIf="canEditCustomFieldId">
+    <hr/>
+    <div>Enter the custom field id for Jira Agile's 'Rank' attribute:</div>
+    <div>
+        <form (ngSubmit)="saveCustomFieldId()" [formGroup]="customFieldIdForm" #f="ngForm">
+            <div>
+            <input type="customFieldId" required="required" type="number"
+                   formControlName="customFieldId"/>
+            </div>
+            <div>
+                <button type="submit" [disabled]="!f.form.valid">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
+<hr>
+<p class="version">
+    Jirban Version: {{jirbanVersion}}
+</p>
+
