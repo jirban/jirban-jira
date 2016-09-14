@@ -2,6 +2,9 @@
 Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plugin with an Angular 2 client running in the browser. Webpack is used to bundle and minify the UI files. Its main purposes are:
 * to address some of Jira Agile's short-comings when it comes to how it displays the boards. Effectively this means horizontally scrollable boards, with collapsible colums.
 * to make setup of filters and swimlanes less static, minimising the need for configuration. Since we are using a 'fat' browser client, all changes to the view purely happen on the client side with no need for extra round trips to the server.
+
+It is currently built for and used on Jira 6.4.x. 
+
  
 This file contains instructions for you to get up and running as a developer of Jirban. We also have a [User Guide](userguide).
 
@@ -45,11 +48,11 @@ Each of the following UI steps happen from the `jirban-jira/webapp` folder, and 
 ### SDK
 These commands happen from the root folder of the project (i.e where `pom.xml` is located). I normally use one window for running the server instance and another to package the project. Stopping and starting the server takes a lot of time.
 
-1. Run `atlas-debug`. This builds the plugin, starts up the Jira instance, and deploys the plugin into it.
+1. Run `atlas-debug`. This builds the plugin, starts up the Jira instance, and deploys the plugin into it. The very first time you run the application you can run `atlas-debug -Djirban.npm -Djirban.ui` (the system properties are explained further down).
 2. Once you change something, and want to deploy it into Jira, run `atlas-package` from another terminal window. This builds the plugin again, and deploys it into the running Jira instance we started in the previous step.
 3. Raw `atlas-debug` or `atlas-package` just bundles any built web application files into the resulting Jirban plugin jar. We have two system properties to do more work.
-3.1 `-Djirban.npm` - this installs a copy of npm and node so that they are usable from the maven plugin used to bundle the UI. If when pulling changes from git, any of the dependencies in `package.json` have changed, you should delete the `jirban-jira/webapp/node-modules` folder, and run `atlas-package -Djirban.npm` to get the fresh dependencies.
- 3.2 `-Djirban.ui` - this runs the webpack bundler and refreshes the web application files to be used in the Jirban plugin jar. Since the webpack bundler takes some time to do its work, by default `atlas-package` does not bundle and refresh the web application files. This means that you can work on server-side code without the delay. If you are working on the web application files, and want to see the changes in your local Jira instance, run `atlas-package -Djirban.ui` to trigger the bundling and refreshing of the web application files on the Jirban plugin jar.
+  * `-Djirban.npm` - this installs a copy of npm and node so that they are usable from the maven plugin used to bundle the UI. If when pulling changes from git, any of the dependencies in `package.json` have changed, you should delete the `jirban-jira/webapp/node-modules` folder, and run `atlas-package -Djirban.npm` to get the fresh dependencies.
+  * `-Djirban.ui` - this runs the webpack bundler and refreshes the web application files to be used in the Jirban plugin jar. Since the webpack bundler takes some time to do its work, by default `atlas-package` does not bundle and refresh the web application files. This means that you can work on server-side code without the delay. If you are working on the web application files, and want to see the changes in your local Jira instance, run `atlas-package -Djirban.ui` to trigger the bundling and refreshing of the web application files on the Jirban plugin jar.
 
 ## Setting up projects in Jira
 To be able to debug the Jirban plugin, you need to set up your SDK's Jira instance to contain some projects. I originally wanted to share a backup of my local Jira system, but that includes licence keys and things like that which are not a good idea to share. So you will need to do this manually. Use the exact project codes shown below, since we will be referencing those from the Jirban 
