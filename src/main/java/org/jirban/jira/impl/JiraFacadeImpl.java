@@ -30,14 +30,12 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     private static final String jirbanVersion;
 
     static {
-        InputStream stream = JiraFacadeImpl.class.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF");
-        Manifest manifest = null;
-        String version;
-        try {
+        String version = "N/A";
+        try (InputStream stream = JiraFacadeImpl.class.getClassLoader().getResourceAsStream("META-INF/MANIFEST.MF")) {
             if (stream != null) {
-                manifest = new Manifest(stream);
+                Manifest manifest = new Manifest(stream);
+                version = manifest.getMainAttributes().getValue("Bundle-Version");
             }
-            version = manifest.getMainAttributes().getValue("Bundle-Version");
         } catch (Exception e) {
             // ignored
             version = "Error";
