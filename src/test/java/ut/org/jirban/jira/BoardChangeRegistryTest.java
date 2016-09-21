@@ -2136,11 +2136,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
-    private void checkRankChanges(int fromView, int expectedView, RankChange...rankChanges) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkRankChanges(changesNode, rankChanges);
-    }
-
     private void checkRankChanges(ModelNode changesNode, RankChange...rankChanges) {
         Map<String, List<RankChange>> rankChangesMap = new HashMap<>();
         for (RankChange rankChange : rankChanges) {
@@ -2217,11 +2212,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
-    private void checkAssignees(int fromView, int expectedView, String...expectedAssignees) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkAssignees(changesNode, expectedAssignees);
-    }
-
     private void checkAssignees(ModelNode changesNode, String...expectedAssignees) throws SearchException {
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedAssignees.length == 0) {
@@ -2240,12 +2230,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 Assert.assertTrue(displayName.contains(key));
             }
         }
-    }
-
-
-    private void checkNoCustomFields(int fromView, int expectedView) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkNoCustomFields(changesNode);
     }
 
     private void checkNoCustomFields(ModelNode changesNode) throws SearchException {
@@ -2282,13 +2266,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             Assert.assertTrue(expected.remove(key));
             Assert.assertTrue(user.get(VALUE).asString().toLowerCase().startsWith(key));
         }
-    }
-
-
-
-    private void checkComponents(int fromView, int expectedView, String...expectedComponents) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkComponents(changesNode, expectedComponents);
     }
 
     private void checkComponents(ModelNode changesNode, String...expectedComponents) throws SearchException {
@@ -2420,19 +2397,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             this.customFieldCheckers = customFieldCheckers;
         }
     }
-
-    private static class StateChangeData {
-        private final String projectCode;
-        private final String state;
-        private final String[] issues;
-
-        public StateChangeData(String projectCode, String state, String...issues) {
-            this.projectCode = projectCode;
-            this.state = state;
-            this.issues = issues;
-        }
-    }
-
     static class DefaultIssueCustomFieldChecker implements IssueCustomFieldChecker {
         private final String fieldName;
         private final String key;
@@ -2463,15 +2427,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     static class DocumenterChecker extends DefaultIssueCustomFieldChecker {
         public DocumenterChecker(String key) {
             super("Documenter", key);
-        }
-    }
-
-    static class ClearedCustomFieldsChecker implements IssueCustomFieldChecker {
-        static final ClearedCustomFieldsChecker INSTANCE = new ClearedCustomFieldsChecker();
-
-        @Override
-        public void check(ModelNode issue) {
-            Assert.assertFalse(issue.hasDefined(CUSTOM));
         }
     }
 
