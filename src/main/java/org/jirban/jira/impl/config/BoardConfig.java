@@ -399,8 +399,9 @@ public class BoardConfig {
 
     public Set<CustomFieldConfig> getCustomFieldConfigs() {
         if (customFieldConfigsByJiraName.size() == 0) {
-            Collections.emptySet();
+            return Collections.emptySet();
+        } else {
+            return new HashSet<>(customFieldConfigsByJiraName.values());
         }
-        return new HashSet<>(customFieldConfigsByJiraName.values());
     }
 }
