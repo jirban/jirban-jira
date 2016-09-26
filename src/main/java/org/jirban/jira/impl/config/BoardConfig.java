@@ -22,6 +22,7 @@ package org.jirban.jira.impl.config;
 
 import static org.jirban.jira.impl.Constants.CODE;
 import static org.jirban.jira.impl.Constants.CUSTOM;
+import static org.jirban.jira.impl.Constants.FIELDS;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.LINKED;
 import static org.jirban.jira.impl.Constants.LINKED_PROJECTS;
@@ -29,6 +30,7 @@ import static org.jirban.jira.impl.Constants.MAIN;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.OWNER;
 import static org.jirban.jira.impl.Constants.OWNING_PROJECT;
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PROJECTS;
 import static org.jirban.jira.impl.Constants.STATES;
@@ -52,7 +54,6 @@ import org.jirban.jira.impl.JiraInjectables;
 
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
-import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.priority.Priority;
 
@@ -83,19 +84,16 @@ public class BoardConfig {
     private final Map<String, Integer> issueTypeIndex;
     private final List<String> issueTypeNames;
 
-    /** Custom field configs by the display name used in the Jirban config */
-    final Map<String, CustomFieldConfig> customFieldConfigsByJirbanName;
-    /** Custom field configs by the id used by Jira internally */
-    final Map<Long, CustomFieldConfig> customFieldConfigsByJiraId;
-    /** Custom field configs by the name used by Jira internally */
-    final Map<String, CustomFieldConfig> customFieldConfigsByJiraName;
+    private final CustomFieldRegistry<CustomFieldConfig> customFields;
+    private final ParallelTaskConfig parallelTaskConfig;
 
     private BoardConfig(int id, String code, String name, String owningUserKey, String ownerProjectCode,
                         long rankCustomFieldId,
                         BoardStates boardStates,
                         Map<String, BoardProjectConfig> boardProjects, Map<String, LinkedProjectConfig> linkedProjects,
                         Map<String, NameAndUrl> priorities, Map<String, NameAndUrl> issueTypes,
-                        Map<String, CustomFieldConfig> customFieldConfigsByJirbanName) {
+                        CustomFieldRegistry<CustomFieldConfig> customFields,
+                        ParallelTaskConfig parallelTaskConfig) {
 
         this.id = id;
         this.code = code;
@@ -121,16 +119,8 @@ public class BoardConfig {
         this.issueTypeIndex = Collections.unmodifiableMap(issueTypeIndex);
         this.issueTypeNames = Collections.unmodifiableList(issueTypeNames);
 
-        this.customFieldConfigsByJirbanName = customFieldConfigsByJirbanName;
-
-        Map<Long, CustomFieldConfig> customFieldConfigsByJiraId = new HashMap<>();
-        Map<String, CustomFieldConfig> customFieldConfigsByJiraName = new HashMap<>();
-        for (CustomFieldConfig cfg : customFieldConfigsByJirbanName.values()) {
-            customFieldConfigsByJiraId.put(cfg.getId(), cfg);
-            customFieldConfigsByJiraName.put(cfg.getName(), cfg);
-        }
-        this.customFieldConfigsByJiraId = Collections.unmodifiableMap(customFieldConfigsByJiraId);
-        this.customFieldConfigsByJiraName = Collections.unmodifiableMap(customFieldConfigsByJiraName);
+        this.customFields = customFields;
+        this.parallelTaskConfig = parallelTaskConfig;
     }
 
     public static BoardConfig load(JiraInjectables jiraInjectables, int id,
@@ -147,29 +137,32 @@ public class BoardConfig {
 
     public static BoardConfig load(JiraInjectables jiraInjectables,
                                     int id, String owningUserKey, ModelNode boardNode, long rankCustomFieldId) {
-        String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
-        String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
-        String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
+        final String code = getRequiredChild(boardNode, "Group", null, CODE).asString();
+        final String boardName = getRequiredChild(boardNode, "Group", null, NAME).asString();
+        final String owningProjectName = getRequiredChild(boardNode, "Group", boardName, OWNING_PROJECT).asString();
 
         final BoardStates boardStates = BoardStates.loadBoardStates(boardNode.get(STATES));
-        final Map<String, CustomFieldConfig> customFields = Collections.unmodifiableMap(loadCustomFields(jiraInjectables.getCustomFieldManager(), boardNode));
+        final CustomFieldRegistry<CustomFieldConfig> customFields =
+                new CustomFieldRegistry<>(Collections.unmodifiableMap(loadCustomFields(jiraInjectables, boardNode)));
+        final ParallelTaskConfig parallelTaskConfig = loadParallelTasks(jiraInjectables, customFields, boardNode);
 
-        ModelNode projects = getRequiredChild(boardNode, "Group", boardName, PROJECTS);
-        ModelNode mainProject = projects.remove(owningProjectName);
+        final ModelNode projects = getRequiredChild(boardNode, "Group", boardName, PROJECTS);
+        final ModelNode mainProject = projects.remove(owningProjectName);
         if (mainProject == null || !mainProject.isDefined()) {
             throw new IllegalStateException("Project group '" + boardName + "' specifies '" + owningProjectName + "' as its main project but it does not exist");
         }
-        Map<String, BoardProjectConfig> mainProjects = new LinkedHashMap<>();
-        BoardProjectConfig mainProjectConfig = BoardProjectConfig.load(boardStates, owningProjectName, mainProject, customFields);
+        final Map<String, BoardProjectConfig> mainProjects = new LinkedHashMap<>();
+        final BoardProjectConfig mainProjectConfig =
+                BoardProjectConfig.load(boardStates, owningProjectName, mainProject, customFields, parallelTaskConfig);
         mainProjects.put(owningProjectName, mainProjectConfig);
 
         for (String projectName : projects.keys()) {
             ModelNode project = projects.get(projectName);
-            mainProjects.put(projectName, BoardProjectConfig.load(boardStates, projectName, project, customFields));
+            mainProjects.put(projectName, BoardProjectConfig.load(boardStates, projectName, project, customFields, parallelTaskConfig));
         }
 
-        ModelNode linked = boardNode.get(LINKED_PROJECTS);
-        Map<String, LinkedProjectConfig> linkedProjects = new LinkedHashMap<>();
+        final ModelNode linked = boardNode.get(LINKED_PROJECTS);
+        final Map<String, LinkedProjectConfig> linkedProjects = new LinkedHashMap<>();
         if (linked.isDefined()) {
             for (String projectName : linked.keys()) {
                 ModelNode project = linked.get(projectName);
@@ -177,19 +170,20 @@ public class BoardConfig {
             }
         }
 
-        BoardConfig boardConfig = new BoardConfig(id, code, boardName, owningUserKey, owningProjectName,
+        final BoardConfig boardConfig = new BoardConfig(id, code, boardName, owningUserKey, owningProjectName,
                 rankCustomFieldId,
                 boardStates,
                 Collections.unmodifiableMap(mainProjects),
                 Collections.unmodifiableMap(linkedProjects),
                 Collections.unmodifiableMap(loadPriorities(jiraInjectables.getPriorityManager(), boardNode.get(PRIORITIES).asList())),
                 Collections.unmodifiableMap(loadIssueTypes(jiraInjectables.getIssueTypeManager(), boardNode.get(ISSUE_TYPES).asList())),
-                customFields);
+                customFields,
+                parallelTaskConfig);
         return boardConfig;
     }
 
-    private static Map<String, CustomFieldConfig> loadCustomFields(final CustomFieldManager customFieldMgr, final ModelNode boardNode) {
-        if (boardNode.hasDefined("custom")) {
+    private static Map<String, CustomFieldConfig> loadCustomFields(final JiraInjectables jiraInjectables, final ModelNode boardNode) {
+        if (boardNode.hasDefined(CUSTOM)) {
             ModelNode custom = boardNode.get(CUSTOM);
             if (custom.getType() != ModelType.LIST) {
                 throw new JirbanValidationException("The \"custom\" element must be an array");
@@ -198,12 +192,23 @@ public class BoardConfig {
             Map<String, CustomFieldConfig> configs = new LinkedHashMap<>();
             final List<ModelNode> customConfigs = custom.asList();
             for (ModelNode customConfig : customConfigs) {
-                final CustomFieldConfig customFieldConfig = CustomFieldConfig.load(customFieldMgr, customConfig);
+                final CustomFieldConfig customFieldConfig = CustomFieldConfigImpl.loadCustomFieldConfig(jiraInjectables, customConfig);
                 configs.put(customFieldConfig.getName(), customFieldConfig);
             }
             return configs;
         }
         return Collections.emptyMap();
+    }
+
+    private static ParallelTaskConfig loadParallelTasks(JiraInjectables jiraInjectables, CustomFieldRegistry<CustomFieldConfig> customFields, ModelNode boardNode) {
+        if (boardNode.hasDefined(PARALLEL_TASKS, FIELDS)) {
+            ModelNode parallelTasks = boardNode.get(PARALLEL_TASKS, FIELDS);
+            ParallelTaskConfig config = ParallelTaskConfig.load(jiraInjectables, customFields, parallelTasks);
+            if (config.getConfigs().size() > 0) {
+                return config;
+            }
+        }
+        return null;
     }
 
     private static Map<String, NameAndUrl> loadIssueTypes(IssueTypeManager issueTypeManager, List<ModelNode> typeNodes) {
@@ -268,16 +273,18 @@ public class BoardConfig {
     }
 
     public CustomFieldConfig getCustomFieldObjectForJiraName(String jiraCustomFieldName) {
-        return customFieldConfigsByJiraName.get(jiraCustomFieldName);
+        return customFields.getForJiraName(jiraCustomFieldName);
     }
 
     public CustomFieldConfig getCustomFieldConfigForJirbanName(String jirbanName) {
-        return customFieldConfigsByJirbanName.get(jirbanName);
+        return customFields.getForJirbanName(jirbanName);
     }
 
-    public CustomFieldConfig getCustomFieldConfigForJirbanName(Long jiraId) {
-        return customFieldConfigsByJiraId.get(jiraId);
+    public CustomFieldConfig getCustomFieldConfigForJiraId(Long jiraId) {
+        return customFields.getForJiraId(jiraId);
     }
+
+
     /**
      * Used to serialize the board for the view board view
      *
@@ -333,11 +340,16 @@ public class BoardConfig {
             issueTypesNode.add(issueType.getName());
         }
 
-        if (customFieldConfigsByJirbanName.size() > 0) {
+        if (customFields.hasConfigs()) {
             ModelNode customNode = boardNode.get(CUSTOM);
-            for (CustomFieldConfig cfg : customFieldConfigsByJirbanName.values()) {
+            for (CustomFieldConfig cfg : customFields.values()) {
                 customNode.add(cfg.serializeForConfig());
             }
+        }
+
+        if (parallelTaskConfig != null) {
+            ModelNode parallelTaskFieldsNode = boardNode.get(PARALLEL_TASKS, FIELDS);
+            parallelTaskFieldsNode.set(parallelTaskConfig.serializeForConfig());
         }
 
         final ModelNode projectsNode = boardNode.get(PROJECTS);
@@ -398,10 +410,10 @@ public class BoardConfig {
     }
 
     public Set<CustomFieldConfig> getCustomFieldConfigs() {
-        if (customFieldConfigsByJiraName.size() == 0) {
+        if (customFields.size() == 0) {
             return Collections.emptySet();
         } else {
-            return new HashSet<>(customFieldConfigsByJiraName.values());
+            return new HashSet<>(customFields.values());
         }
     }
 }

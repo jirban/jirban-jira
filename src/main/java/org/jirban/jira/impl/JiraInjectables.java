@@ -12,7 +12,9 @@ import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.CustomFieldManager;
+import com.atlassian.jira.issue.customfields.manager.OptionsManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
+import com.atlassian.jira.issue.search.SearchContextFactory;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.project.version.VersionManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
@@ -51,14 +53,19 @@ public class JiraInjectables {
     private final IssueTypeManager issueTypeManager;
 
     @ComponentImport
+    private final OptionsManager optionsManager;
+
+    @ComponentImport
     private final PermissionManager permissionManager;
 
     @ComponentImport
     private final ProjectManager projectManager;
 
-
     @ComponentImport
     private final PriorityManager priorityManager;
+
+    @ComponentImport
+    private final SearchContextFactory searchContextFactory;
 
     @ComponentImport
     private final SearchService searchService;
@@ -79,8 +86,11 @@ public class JiraInjectables {
                            final AvatarService avatarService, final CustomFieldManager customFieldManager,
                            final GlobalPermissionManager globalPermissionManager, final IssueService issueService,
                            final IssueLinkManager issueLinkManager, final IssueTypeManager issueTypeManager,
+                           final OptionsManager optionsManager,
                            final PermissionManager permissionManager, final ProjectManager projectManager,
-                           final PriorityManager priorityManager, final SearchService searchService,
+                           final PriorityManager priorityManager,
+                           final SearchContextFactory searchContextFactory,
+                           final SearchService searchService,
                            final UserService userService, final VersionManager versionManager) {
         this.activeObjects = activeObjects;
         this.applicationProperties = applicationProperties;
@@ -90,9 +100,11 @@ public class JiraInjectables {
         this.issueService = issueService;
         this.issueLinkManager = issueLinkManager;
         this.issueTypeManager = issueTypeManager;
+        this.optionsManager = optionsManager;
         this.permissionManager = permissionManager;
         this.projectManager = projectManager;
         this.priorityManager = priorityManager;
+        this.searchContextFactory = searchContextFactory;
         this.searchService = searchService;
         this.userService = userService;
         this.versionManager = versionManager;
@@ -130,6 +142,10 @@ public class JiraInjectables {
         return issueTypeManager;
     }
 
+    public OptionsManager getOptionsManager() {
+        return optionsManager;
+    }
+
     public PermissionManager getPermissionManager() {
         return permissionManager;
     }
@@ -140,6 +156,10 @@ public class JiraInjectables {
 
     public PriorityManager getPriorityManager() {
         return priorityManager;
+    }
+
+    public SearchContextFactory getSearchContextFactory() {
+        return searchContextFactory;
     }
 
     public SearchService getSearchService() {

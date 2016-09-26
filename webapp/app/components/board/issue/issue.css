@@ -59,9 +59,31 @@
 }
 .info {
     border-top: inherit;
+    white-space: nowrap;
+    min-height: 17px;
     max-height: 17px;
+}
+.info-icons {
     padding-left: 3px;
+    float: left;
+    width: 25%;
+    vertical-align: middle;
+}
+.info-parallel {
     padding-right: 3px;
+    text-align: right;
+    float: right;
+    width: 70%;
+    vertical-align: middle;
+}
+.parallel-task {
+    margin: 1px;
+    padding: 1px;
+    font-weight: bold;
+    color: #555555;
+}
+.clear-float {
+    clear: both;
 }
 .linked-issues {
     white-space: nowrap;

@@ -8,6 +8,9 @@ import java.util.Map;
 
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.impl.config.CustomFieldConfig;
+import org.jirban.jira.impl.config.CustomFieldRegistry;
+import org.jirban.jira.impl.config.ParallelTaskConfig;
+import org.jirban.jira.impl.config.ParallelTaskCustomFieldConfig;
 import org.ofbiz.core.entity.jdbc.SQLProcessor;
 import org.osgi.framework.BundleReference;
 
@@ -31,6 +34,7 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
     private final String dataSourceName = "defaultDS";
     private final BoardProject.Builder project;
     private final Map<Long, BulkLoadContext<?>> customFieldContexts = new HashMap<>();
+    private final Map<Long, ParallelTaskCustomFieldConfig> parallelTaskFields = new HashMap();
     private final List<Long> ids = new ArrayList<>();
     private final Map<Long, String> issues = new HashMap<>();
     private final Map<Long, Issue.Builder> builders = new HashMap<>();
@@ -39,17 +43,31 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
     public BulkIssueLoadStrategy(BoardProject.Builder project) {
         this.project = project;
         for (String cfName : project.getConfig().getCustomFieldNames()) {
+            //These do not have the values loaded on project load. Rather values referenced by issues are what is used to
+            // populate the 'lookup table'. To avoid repeatedly querying Jira for what the ids represent, use the caching
+            // BulkLoadContext..
             CustomFieldConfig customFieldConfig =
                     project.getBoard().getConfig().getCustomFieldConfigForJirbanName(cfName);
+            CustomFieldUtil customFieldUtil = CustomFieldUtil.getUtil(customFieldConfig);
             BulkLoadContext<?> ctx =
-                    customFieldConfig.getUtil().createBulkLoadContext(project.getJiraInjectables(), customFieldConfig);
+                    customFieldUtil.createBulkLoadContext(project, customFieldConfig);
             customFieldContexts.put(customFieldConfig.getId(), ctx);
+        }
+
+        if (project.getConfig().getParallelTaskConfig() != null) {
+            //These have the options loaded already on project load, so there is no need for the context which does the caching
+            final ParallelTaskConfig parallelTaskConfig = project.getConfig().getParallelTaskConfig();
+            CustomFieldRegistry<ParallelTaskCustomFieldConfig> registry = parallelTaskConfig.getConfigs();
+
+            for (ParallelTaskCustomFieldConfig customFieldConfig : registry.values()) {
+                parallelTaskFields.put(customFieldConfig.getId(), customFieldConfig);
+            }
         }
     }
 
     static BulkIssueLoadStrategy create(BoardProject.Builder project) {
-        if (project.getConfig().getCustomFieldNames().size() == 0) {
-            //There are no custom fields so we are not needed
+        if (project.getConfig().getCustomFieldNames().size() == 0 || project.getConfig().getParallelTaskConfig() == null) {
+            //There are no custom fields or parallel tasks so we are not needed
             return null;
         }
         final ClassLoader cl = RawSqlLoader.class.getClassLoader();
@@ -124,16 +142,34 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
         JirbanLogger.LOGGER.trace("Processing bulk issue {}. customFieldId:{}, stringValue:{}, numValue:{}",
                 issueId, customFieldId, stringValue, numValue);
         Issue.Builder builder = builders.get(issueId);
-        BulkLoadContext<?> bulkLoadContext = customFieldContexts.get(customFieldId);
 
-        CustomFieldValue value = bulkLoadContext.getCachedCustomFieldValue(stringValue, numValue);
-        if (value == null) {
-            value = bulkLoadContext.loadAndCacheCustomFieldValue(stringValue, numValue);
-            //Add the loaded custom field value to board
-            project.addBulkLoadedCustomFieldValue(bulkLoadContext.getConfig(), value);
+        //The configuration validation ensures that a custom field id cannot be used for both custom fields and progress fields
+        BulkLoadContext<?> bulkLoadContext = customFieldContexts.get(customFieldId);
+        ParallelTaskCustomFieldConfig parallelTaskFieldConfig = bulkLoadContext == null ? parallelTaskFields.get(customFieldId) : null;
+
+        if (bulkLoadContext != null) {
+            CustomFieldValue value = bulkLoadContext.getCachedCustomFieldValue(stringValue, numValue);
+            if (value == null) {
+                value = bulkLoadContext.loadAndCacheCustomFieldValue(stringValue, numValue);
+                //Add the loaded custom field value to board
+                project.addBulkLoadedCustomFieldValue(bulkLoadContext.getConfig(), value);
+            }
+            //Add the custom field to the issue
+            builder.addCustomFieldValue(value);
+        } else if (parallelTaskFieldConfig != null) {
+
+            Map<String, SortedParallelTaskFieldOptions> parallelTaskValues = project.getParallelTaskValues();
+            SortedParallelTaskFieldOptions options = parallelTaskValues.get(parallelTaskFieldConfig.getName());
+            ParallelTaskConfig parallelTaskConfig = project.getConfig().getParallelTaskConfig();
+
+            Integer optionIndex = options.getIndex(stringValue);
+            if (optionIndex == null) {
+                optionIndex = 0;
+            }
+
+            final int taskFieldIndex = parallelTaskConfig.getIndex(parallelTaskFieldConfig.getName());
+            builder.setParallelTaskFieldValue(taskFieldIndex, optionIndex);
         }
-        //Add the custom field to the issue
-        builder.addCustomFieldValue(value);
     }
 
     private String createSql(List<Long> idBatch) {
@@ -153,6 +189,16 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
                 sb.append(", ");
             }
             sb.append(cfId.toString());
+        }
+        if (parallelTaskFields.size() > 0) {
+            for (Long cfId : parallelTaskFields.keySet()) {
+                if (first) {
+                    first = false;
+                } else {
+                    sb.append(", ");
+                }
+                sb.append(cfId.toString());
+            }
         }
         sb.append(") and ");
         sb.append("j.id in (");

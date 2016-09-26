@@ -13,8 +13,9 @@ import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
 import {JiraComponent, ComponentDeserializer} from "./component";
 import {BoardHeaders, State} from "./header";
-import {Observable, Subject} from "rxjs/Rx";
+import {Observable, Subject, Subscription} from "rxjs/Rx";
 import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
+import {ParallelTask, ParallelTaskDeserializer} from "./parallelTask";
 
 
 export class BoardData {
@@ -66,6 +67,7 @@ export class BoardData {
 
     private _helpTexts:IMap<string> = {};
 
+    private _parallelTasks: Indexed<ParallelTask>;
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -86,9 +88,10 @@ export class BoardData {
         if (!this.initialized) {
             let subject:Subject<void> = new Subject<void>();
             this._initializedSubjects.push(subject);
-            subject.asObservable().subscribe(
+            let subscription:Subscription = subject.asObservable().subscribe(
                 done => {
                     callback();
+                    subscription.unsubscribe();
                 }
             );
         } else {
@@ -204,6 +207,7 @@ export class BoardData {
         this._priorities = new PriorityDeserializer().deserialize(input);
         this._issueTypes = new IssueTypeDeserializer().deserialize(input);
         this._customFields = new CustomFieldDeserializer().deserialize(input);
+        this._parallelTasks = new ParallelTaskDeserializer().deserialize(input, this._projects);
 
         if (first) {
             this._issueTable = new IssueTable(this, this._projects, this._boardFilters, this._swimlane, input);
@@ -336,6 +340,10 @@ export class BoardData {
         return this._issueTable.rankedIssues;
     }
 
+    get parallelTasks(): Indexed<ParallelTask> {
+        return this._parallelTasks;
+    }
+
     getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
         let values:CustomFieldValues = this._customFields.forKey(name);
         if (values) {
@@ -381,13 +389,15 @@ export class BoardData {
         this._issueTable.filters = this._boardFilters;
     }
 
-    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any, customFieldValueFilters:IMap<any>) {
+    updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any,
+                  customFieldValueFilters:IMap<any>, parallelTaskFilters:IMap<any>) {
         this._boardFilters.setProjectFilter(projectFilter, this._projects.boardProjectCodes);
         this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
         this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
         this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
         this._boardFilters.setComponentFilter(componentFilter, this._components);
         this._boardFilters.setCustomFieldValueFilters(customFieldValueFilters, this._customFields);
+        this._boardFilters.setParallelTaskFilters(parallelTaskFilters, this._parallelTasks);
         this._issueTable.filters = this._boardFilters;
     }
 
@@ -454,12 +464,14 @@ export class BoardData {
 
         this._boardFilters.createFromQueryParams(this, queryParams,
             (projectFilter:any,
-            priorityFilter:any,
-            issueTypeFilter:any,
-            assigneeFilter:any,
-            componentFilter:any,
-            customFieldFilters:IMap<any>) => {
-                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
+             priorityFilter:any,
+             issueTypeFilter:any,
+             assigneeFilter:any,
+             componentFilter:any,
+             customFieldFilters:IMap<any>,
+             parallelTaskFilters:IMap<any>) => {
+                this.updateFilters(projectFilter, priorityFilter, issueTypeFilter,
+                    assigneeFilter, componentFilter, customFieldFilters, parallelTaskFilters);
         });
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));

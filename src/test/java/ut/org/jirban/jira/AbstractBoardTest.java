@@ -260,11 +260,11 @@ public abstract class AbstractBoardTest {
         void initialise(BoardManagerBuilder boardManagerBuilder);
     }
 
-    interface IssueCustomFieldChecker {
+    interface IssueChecker {
         void check(ModelNode issue);
     }
 
-    static class NoIssueCustomFieldChecker implements IssueCustomFieldChecker {
+    static class NoIssueCustomFieldChecker implements IssueChecker {
         static final NoIssueCustomFieldChecker TESTER = new NoIssueCustomFieldChecker("Tester");
         static final NoIssueCustomFieldChecker DOCUMENTER = new NoIssueCustomFieldChecker("Documenter");
 

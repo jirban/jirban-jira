@@ -99,6 +99,9 @@ public class IssueRegistry implements NextRankedIssueUtil {
         issue.setCustomField(customFieldId, value);
     }
 
+    public void setParallelTaskField(String issueKey, Long upstreamId, String optionKey) {
+        setCustomField(issueKey, upstreamId, optionKey);
+    }
 
     List<Issue> getIssueList(String searchIssueKey, String project, String searchStatus, Collection<String> doneStatesFilter) {
         if (searchIssueKey != null) {
@@ -176,4 +179,5 @@ public class IssueRegistry implements NextRankedIssueUtil {
         int index = issueKey.indexOf("-");
         return issueKey.substring(0, index);
     }
+
 }

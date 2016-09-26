@@ -1,0 +1,200 @@
+{
+  "view" : 0,
+  "rank-custom-field-id" : 12311940,
+  "states" : [
+    {"name": "Backlog Pool"},
+    {"name": "Analysis Doing"},
+    {"name": "Analysis PM Input"},
+    {"name": "Analysis Rejected"},
+    {"name": "Dev TODO"},
+    {"name": "Failed QA"},
+    {"name": "In Progress"},
+    {"name": "Awaiting Build"},
+    {"name": "QA TODO"},
+    {"name": "QA"},
+    {"name": "Verified"},
+    {"name": "Done"}
+
+  ],
+  "headers" : [],
+  "backlog":0,
+  "done":1,
+  "assignees" : [
+    {
+      "key" : "emuckenhuber",
+      "email" : "emanuel.muckenhuber@gmail.com",
+      "avatar" : "https://static.jboss.org/developer/gravatar/ddb8426eafc8e3628d263af28aa13086?d=mm&s=32",
+      "name" : "Emanuel Muckenhuber"
+    },
+    {
+      "key" : "kabirkhan",
+      "email" : "kabir.khan@jboss.com",
+      "avatar" : "https://static.jboss.org/developer/gravatar/00aa85cb5ea8fd5882bab9765f40655e?d=mm&s=32",
+      "name" : "Kabir Khan"
+    }
+  ],
+  "components": ["One", "Two", "Three"],
+  "priorities" : [
+    {
+      "name" : "Blocker",
+      "icon" : "/images/icons/priorities/blocker.png"
+    },
+    {
+      "name" : "Major",
+      "icon" : "/images/icons/priorities/major.png"
+    },
+    {
+      "name" : "Minor",
+      "icon" : "/images/icons/priorities/minor.png"
+    },
+    {
+      "name" : "Optional",
+      "icon" : "/images/icons/priorities/minor.png"
+    },
+    {
+      "name" : "Trivial",
+      "icon" : "/images/icons/priorities/trivial.png"
+    }
+  ],
+  "issue-types" : [
+    {
+      "name" : "Task",
+      "icon" : "/images/icons/issuetypes/task.png"
+    },
+    {
+      "name" : "Story",
+      "icon" : "/images/icons/issuetypes/story.png"
+    },
+    {
+      "name" : "Bug",
+      "icon" : "/images/icons/issuetypes/bug.png"
+    },
+    {
+      "name" : "Epic",
+      "icon" : "/images/icons/issuetypes/epic.png"
+    }
+  ],
+  "projects" : {
+    "owner" : "EAPDS",
+    "main" : {
+      "EAPDS" : {
+        "colour" : "#4667CA",
+        "rank" : true,
+        "state-links" : {
+          "Backlog Pool" : "Backlog Pool",
+          "Analysis Doing" : "Analysis Doing",
+          "Analysis PM Input" : "Analysis PM Input",
+          "Analysis Rejected" : "Analysis Rejected",
+          "Dev TODO" : "Dev TODO",
+          "Failed QA" : "Failed QA",
+          "In Progress" : "In Progress",
+          "Awaiting Build" : "Awaiting Build",
+          "QA TODO" : "QA TODO",
+          "QA" : "QA",
+          "Verified" : "Verified",
+          "Done" : "Done"
+        },
+        "parallel-tasks" : [
+          {
+            "name" : "Upstream",
+            "display" : "US",
+            "options" : [
+              "TODO",
+              "In Progress",
+              "Review",
+              "Merged"]
+          },
+          {
+            "name" : "Community Docs",
+            "display" : "CD",
+            "options" : [
+              "TODO",
+              "Done"]
+          },
+          {
+            "name" : "Test Development",
+            "display" : "TD",
+            "options" : [
+              "TODO",
+              "In Progress",
+              "Review",
+              "Merged"]
+          },
+          {
+            "name" : "Downstream",
+            "display" : "DS",
+            "options" : [
+              "TODO",
+              "In Progress",
+              "Review",
+              "Merged"]
+          }
+        ],
+        "ranked" : [
+          "EAPDS-1",
+          "EAPDS-2",
+          "EAPDS-3",
+          "EAPDS-4",
+          "EAPDS-5",
+          "EAPDS-6"
+        ]
+      }
+    }
+  },
+  "issues" : {
+    "EAPDS-1" : {
+      "key" : "EAPDS-1",
+      "state" : 0,
+      "summary" : "First things first",
+      "priority" : 1,
+      "type" : 1,
+      "components": [0, 1],
+      "parallel-tasks" : [0, 0, 0, 0]
+    },
+    "EAPDS-2" : {
+      "key" : "EAPDS-2",
+      "state" : 6,
+      "summary" : "Issue with a pretty long description and a lot of details which will need to be truncated",
+      "priority" : 1,
+      "type" : 1,
+      "components": [0],
+      "parallel-tasks" : [1, 1, 2, 3]
+    },
+    "EAPDS-3" : {
+      "key" : "EAPDS-3",
+      "state" : 6,
+      "summary" : "Dependency injection is broken in jsf",
+      "priority" : 0,
+      "type" : 2,
+      "components": [2],
+      "parallel-tasks" : [0, 0, 2, 2]
+    },
+    "EAPDS-4" : {
+      "key" : "EAPDS-4",
+      "state" : 6,
+      "summary" : "New welcome page",
+      "priority" : 1,
+      "type" : 2,
+      "components": [1],
+      "parallel-tasks" : [3, 1, 2, 1]
+    },
+    "EAPDS-5" : {
+      "key" : "EAPDS-5",
+      "state" : 6,
+      "summary" : "Improve the subsystem test schema test coverage",
+      "assignee" : 1,
+      "priority" : 2,
+      "type" : 2,
+      "parallel-tasks" : [1, 1, 1, 1]
+    },
+    "EAPDS-6" : {
+      "key" : "EAPDS-6",
+      "state" : 6,
+      "summary" : "Delegating SaslServerFactory supporting properties",
+      "assignee" : 1,
+      "priority" : 1,
+      "type" : 2,
+      "parallel-tasks" : [3, 1, 2, 3]
+    }
+  }
+}

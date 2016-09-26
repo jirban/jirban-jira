@@ -34,7 +34,10 @@ import javax.inject.Named;
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.NextRankedIssueUtil;
+import org.jirban.jira.impl.board.CustomFieldUtil;
+import org.jirban.jira.impl.board.CustomFieldValue;
 import org.jirban.jira.impl.config.CustomFieldConfig;
+import org.jirban.jira.impl.config.ParallelTaskCustomFieldConfig;
 import org.ofbiz.core.entity.GenericEntityException;
 import org.ofbiz.core.entity.GenericValue;
 import org.slf4j.Logger;
@@ -252,16 +255,31 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
 
         final Set<CustomFieldConfig> customFields = boardManager.getCustomFieldsForCreateEvent(issue.getProjectObject().getKey());
-        final Map<Long, String> values;
-        if (customFields.size() == 0) {
-            values = Collections.emptyMap();
-        } else {
+        Map<Long, String> values = null;
+        if (customFields.size() > 0) {
             values = new HashMap<>();
             for (CustomFieldConfig cfg : customFields) {
                 if (!values.containsKey(cfg.getId())) {
                     final Object value = issue.getCustomFieldValue(cfg.getJiraCustomField());
-                    String stringValue = value == null ? null : cfg.getUtil().getCreateEventValue(value);
+                    CustomFieldUtil customFieldUtil = CustomFieldUtil.getUtil(cfg);
+                    String stringValue = value == null ? null : customFieldUtil.getCreateEventValue(value);
                     values.put(cfg.getId(), stringValue);
+                }
+            }
+        }
+
+        final Set<ParallelTaskCustomFieldConfig> parallelFields = boardManager.getParallelTaskFieldsForCreateEvent(issue.getProjectObject().getKey());
+        if (parallelFields.size() > 0) {
+            if (values == null) {
+                values = new HashMap<>();
+            }
+            for (ParallelTaskCustomFieldConfig cfg : parallelFields) {
+                if (!values.containsKey(cfg.getId())) {
+                    //A field cannot be both a custom field and a parallel task field
+                    String value = CustomFieldValue.getParallelTaskCustomFieldValue(issue, cfg.getJiraCustomField(), cfg.getId().toString());
+                    if (value != null) {
+                        values.put(cfg.getId(), value);
+                    }
                 }
             }
         }
@@ -326,15 +344,27 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
             } else if (field.equals(CHANGE_LOG_COMPONENT)) {
                 components = issue.getComponentObjects();
             } else if (change.get(CHANGE_LOG_FIELDTYPE).equals(CHANGE_LOG_CUSTOM)) {
-                Set<CustomFieldConfig> configs = boardManager.getCustomFieldsForUpdateEvent(issue.getProjectObject().getKey(), field);
-                if (configs.size() > 0) {
+                Set<CustomFieldConfig> customFieldConfigs = boardManager.getCustomFieldsForUpdateEvent(issue.getProjectObject().getKey(), field);
+                if (customFieldConfigs.size() > 0) {
                     if (customFieldValues == null) {
                         customFieldValues = new HashMap<>();
                     }
-                    for (CustomFieldConfig cfg : configs) {
-                        String key = cfg.getUtil().getUpdateEventValue(
+                    for (CustomFieldConfig cfg : customFieldConfigs) {
+                        CustomFieldUtil customFieldUtil = CustomFieldUtil.getUtil(cfg);
+                        String key = customFieldUtil.getUpdateEventValue(
                                 (String) change.get(CHANGE_LOG_NEW_VALUE), (String) change.get(CHANGE_LOG_NEW_STRING));
                         customFieldValues.put(cfg.getId(), key);
+                    }
+                }
+
+                Set<ParallelTaskCustomFieldConfig> parallelTaskConfigs
+                        = boardManager.getParallelTaskFieldsForUpdateEvent(issue.getProjectObject().getKey(), field);
+                if (parallelTaskConfigs.size() > 0) {
+                    if (customFieldValues == null) {
+                        customFieldValues = new HashMap<>();
+                    }
+                    for (ParallelTaskCustomFieldConfig cfg : parallelTaskConfigs) {
+                        customFieldValues.put(cfg.getId(), (String) change.get(CHANGE_LOG_NEW_VALUE));
                     }
                 }
             }

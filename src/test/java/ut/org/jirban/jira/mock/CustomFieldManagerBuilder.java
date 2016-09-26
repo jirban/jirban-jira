@@ -3,6 +3,7 @@ package ut.org.jirban.jira.mock;
 import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.FIELD_ID;
 import static org.jirban.jira.impl.Constants.NAME;
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -32,8 +33,8 @@ public class CustomFieldManagerBuilder {
 
     public static CustomFieldManager loadFromResource(String resource) throws IOException {
         ModelNode config = BoardConfigurationManagerBuilder.loadConfig(resource);
+        CustomFieldManagerBuilder builder = new CustomFieldManagerBuilder();
         if (config.get(CUSTOM).isDefined()) {
-            CustomFieldManagerBuilder builder = new CustomFieldManagerBuilder();
             List<ModelNode> list = config.get(CUSTOM).asList();
             for (ModelNode custom : list) {
                 long id = custom.get(FIELD_ID).asLong();
@@ -41,9 +42,20 @@ public class CustomFieldManagerBuilder {
                 MockCustomField customField = new MockCustomField(id, name);
                 builder.addCustomField(customField);
             }
-            return builder.build();
         }
-        return CustomFieldManagerBuilder.getDefaultCustomFieldManager();
+        if (config.get(PARALLEL_TASKS).isDefined()) {
+            for (String stKey : config.get(PARALLEL_TASKS).keys()) {
+                List<ModelNode> list = config.get(PARALLEL_TASKS, stKey).asList();
+                for (ModelNode custom : list) {
+                    long id = custom.get(FIELD_ID).asLong();
+                    String name = custom.get(NAME).asString();
+                    MockCustomField customField = new MockCustomField(id, name);
+                    builder.addCustomField(customField);
+
+                }
+            }
+        }
+        return builder.build();
     }
 
     public CustomFieldManagerBuilder addCustomField(CustomField customField) {

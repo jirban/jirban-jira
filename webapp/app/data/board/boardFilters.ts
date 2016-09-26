@@ -7,6 +7,7 @@ import {JiraComponent} from "./component";
 import {IMap} from "../../common/map";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
 import {BoardData} from "./boardData";
+import {ParallelTask} from "./parallelTask";
 import filter = require("core-js/fn/array/filter");
 
 export const NONE:string = "$n$o$n$e$";
@@ -19,18 +20,21 @@ export class BoardFilters {
     private _componentFilter:any;
     private _componentFilterLength:number;
     private _customFieldValueFilters:IMap<any>;
+    private _parallelTaskFilters:IMap<any>;
     private _projects:boolean = false;
     private _assignees:boolean = false;
     private _priorities:boolean = false;
     private _issueTypes:boolean = false;
     private _components:boolean = false;
     private _customFields:IMap<boolean> = {};
+    private _parallelTasks:IMap<boolean> = {};
     private _selectedProjectNames:string[] = [];
     private _selectedPriorityNames:string[] = [];
     private _selectedIssueTypes:string[] = [];
     private _selectedAssignees:string[] = [];
     private _selectedComponents:string[] = [];
     private _selectedCustomFields:IMap<string[]>;
+    private _selectedParallelTasks:IMap<string[]>;
 
     setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
@@ -126,7 +130,6 @@ export class BoardFilters {
             let filter = customFieldValueFilters[cfvs.name];
             let hasFilters = false;
             let selected:string[] = [];
-            console.log(JSON.stringify(filter));
             if (!filter) {
                 filter = {};
             } else {
@@ -145,6 +148,33 @@ export class BoardFilters {
             this._customFields[cfvs.name] = hasFilters;
             this._selectedCustomFields[cfvs.name] = selected;
 
+        }
+    }
+
+    setParallelTaskFilters(parallelTaskFormFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
+        if (!parallelTasks) {
+            return;
+        }
+        this._parallelTaskFilters = {};
+        this._parallelTasks = {};
+        this._selectedParallelTasks = {};
+        for (let pt of parallelTasks.array) {
+            let filter = parallelTaskFormFilters[pt.code];
+            let hasFilters = false;
+            let selected:string[] = [];
+            if (!filter) {
+                filter = {};
+            } else {
+                for (let option of pt.options.array) {
+                    if (filter[option]) {
+                        hasFilters = true;
+                        selected.push(option);
+                    }
+                }
+            }
+            this._parallelTaskFilters[pt.code] = filter;
+            this._parallelTasks[pt.code] = hasFilters;
+            this._selectedParallelTasks[pt.code] = selected;
         }
     }
 
@@ -176,6 +206,10 @@ export class BoardFilters {
         if (this.filterCustomFields(issue.customFields)) {
             return true;
         }
+        if (this.filterParallelTasks(issue.parallelTaskOptions)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -251,6 +285,17 @@ export class BoardFilters {
             return false;
         }
         return customField[customFieldKey];
+    }
+
+    initialParallelTaskValueForForm(parallelTaskCode:string, optionName:string):boolean {
+        if (!this._parallelTasks[parallelTaskCode]) {
+            return false;
+        }
+        let paralellTask:any = this._parallelTaskFilters[parallelTaskCode];
+        if (!paralellTask) {
+            return false;
+        }
+        return paralellTask[optionName];
     }
 
     private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
@@ -329,6 +374,36 @@ export class BoardFilters {
         return false;
     }
 
+    filterParallelTasks(parallelTaskOptions:Indexed<string>) {
+        for (let parallelTaskCode in this._parallelTasks) {
+            if (this._parallelTasks[parallelTaskCode]) {
+                if (!parallelTaskOptions) {
+                    //Issue belongs to a project which does not have parallel task fields set up, so filter it since
+                    //we have selected filtering on parallel task fields
+                    return true;
+                }
+                let hadFilters:boolean = false;
+                let match:boolean = false;
+                let filter: any = this._parallelTaskFilters[parallelTaskCode];
+                for (let option in filter) {
+                    if (!filter[option]) {
+                        continue;
+                    }
+                    hadFilters = true;
+                    let selectedOption = parallelTaskOptions.forKey(parallelTaskCode);
+                    if (selectedOption && filter[selectedOption]) {
+                        match = true;
+                        break;
+                    }
+                }
+                if (hadFilters && !match) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     createFromQueryParams(boardData:BoardData, queryParams:IMap<string>,
                                  callback:(
                                      projectFilter:any,
@@ -336,7 +411,8 @@ export class BoardFilters {
                                      issueTypeFilter:any,
                                      assigneeFilter:any,
                                      componentFilter:any,
-                                     customFieldFilters:IMap<any>
+                                     customFieldFilters:IMap<any>,
+                                     parallelTaskFilters:IMap<any>
                                  )=>void):void {
         let projectFilter:any = this.parseBooleanFilter(queryParams, "project");
         let priorityFilter:any = this.parseBooleanFilter(queryParams, "priority");
@@ -349,8 +425,13 @@ export class BoardFilters {
             let customFilter:any = this.parseBooleanFilter(queryParams, "cf." + customFieldValues.name);
             customFieldFilters[customFieldValues.name] = customFilter;
         }
+        let parallelTaskFilters:IMap<any> = {};
+        for (let parallelTask of boardData.parallelTasks.array) {
+            let parallelTaskFilter: any = this.parseBooleanFilter(queryParams, "pt." + parallelTask.code);
+            parallelTaskFilters[parallelTask.code] = parallelTaskFilter;
+        }
 
-        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters);
+        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters, parallelTaskFilters);
     }
 
     parseBooleanFilter(queryParams:IMap<string>, name:string):any{
@@ -378,6 +459,11 @@ export class BoardFilters {
             let customField:boolean = this._customFields[key];
             let customFieldFilter:any = this._customFieldValueFilters[key];
             query += this.createQueryStringParticle("cf." + key, customField, customFieldFilter);
+        }
+        for (let key in this._parallelTaskFilters) {
+            let parallelTask:boolean = this._parallelTasks[key];
+            let parallelTaskFilter:any = this._parallelTaskFilters[key];
+            query += this.createQueryStringParticle("pt." + key, parallelTask, parallelTaskFilter);
         }
         return query;
     }
@@ -423,6 +509,10 @@ export class BoardFilters {
 
     get selectedCustomFields():IMap<string[]> {
         return this._selectedCustomFields;
+    }
+
+    get selectedParallelTasks(): IMap<string[]> {
+        return this._selectedParallelTasks;
     }
 }
 

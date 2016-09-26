@@ -615,6 +615,61 @@ export class TestBoardData {
         issues[issue]["custom"][name] = index;
     }
 
+    static getPreChangeParallelTasksProjects():any {
+        let data:any = TestBoardData.clone(TestBoardData.PRE_CHANGE_BOARD_PROJECTS);
+
+        data["main"]["TDP"]["parallel-tasks"] = [{
+            name: "Upstream",
+            display: "US",
+            options: ["us-TODO", "us-In Progress", "us-Review", "us-Done"]
+        }, {
+            name: "Downstream",
+            display: "DS",
+            options: ["ds-TODO", "ds-In Progress", "ds-Review", "ds-Done"]
+        }];
+
+        return data;
+    }
+
+    static getPrechangeParallelTaskIssues():any {
+        let data:any = TestBoardData.clone(TestBoardData.PRE_CHANGE_BOARD_ISSUES);
+
+        data["TDP-1"]["parallel-tasks"] = [0, 0];
+        data["TDP-2"]["parallel-tasks"] = [1, 1];
+
+        return data;
+    }
+
+
+    static getFullBoardParallelTaskProjects():any{
+        let data:any = TestBoardData.clone(TestBoardData.FULL_BOARD_PROJECTS);
+
+        data["main"]["TDP"]["parallel-tasks"] = [{
+            name: "Upstream",
+            display: "US",
+            options: ["us-TODO", "us-In Progress", "us-Review", "us-Done"]
+        }, {
+            name: "Downstream",
+            display: "DS",
+            options: ["ds-TODO", "ds-In Progress", "ds-Review", "ds-Done"]
+        }];
+
+        return data;
+    }
+
+    static getFullBoardParallelTaskIssues():any {
+        let data:any = TestBoardData.clone(TestBoardData.FULL_BOARD_ISSUES);
+
+        data["TDP-1"]["parallel-tasks"] = [0, 1];
+        data["TDP-2"]["parallel-tasks"] = [1, 2];
+        data["TDP-3"]["parallel-tasks"] = [2, 3];
+        data["TDP-4"]["parallel-tasks"] = [3, 0];
+        data["TDP-5"]["parallel-tasks"] = [0, 1];
+        data["TDP-6"]["parallel-tasks"] = [1, 2];
+        data["TDP-7"]["parallel-tasks"] = [2, 3];
+
+        return data;
+    }
 }
 
 

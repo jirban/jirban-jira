@@ -10,7 +10,7 @@ import com.atlassian.jira.project.version.Version;
 /**
  * @author Kabir Khan
  */
-public class VersionCustomFieldValue extends CustomFieldValue {
+class VersionCustomFieldValue extends CustomFieldValue {
     private VersionCustomFieldValue(String customFieldName, String key, String value) {
         super(customFieldName, key, value);
     }

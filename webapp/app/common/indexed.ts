@@ -56,6 +56,10 @@ export class Indexed<T> {
         return this._array[index];
     }
 
+    indexOf(key:string) : number {
+        return this._indices[key];
+    }
+    
     /**
      * Deletes the entries with the selected keys
      * @param keys the keys to remove

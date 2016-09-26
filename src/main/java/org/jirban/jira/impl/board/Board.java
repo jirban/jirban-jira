@@ -45,12 +45,14 @@ import java.util.function.Supplier;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.NextRankedIssueUtil;
+import org.jirban.jira.api.ProjectParallelTaskOptionsLoader;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
+import org.jirban.jira.impl.util.IndexedMap;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
@@ -72,10 +74,8 @@ public class Board {
     private final BoardConfig boardConfig;
 
     //Map of assignees sorted by their display name
-    private final Map<String, Assignee> sortedAssignees;
-    private final Map<String, Integer> assigneeIndices;
-    private final Map<String, Component> sortedComponents;
-    private final Map<String, Integer> componentIndices;
+    private final IndexedMap<String, Assignee> sortedAssignees;
+    private final IndexedMap<String, Component> sortedComponents;
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
     private final Map<String, SortedCustomFieldValues> sortedCustomFieldValues;
@@ -83,8 +83,8 @@ public class Board {
     private final Blacklist blacklist;
 
     private Board(Board old, BoardConfig boardConfig,
-                    Map<String, Assignee> sortedAssignees,
-                    Map<String, Component> sortedComponents,
+                    IndexedMap<String, Assignee> sortedAssignees,
+                    IndexedMap<String, Component> sortedComponents,
                     Map<String, Issue> allIssues,
                     Map<String, BoardProject> projects,
                     Map<String, SortedCustomFieldValues> sortedCustomFieldValues,
@@ -93,10 +93,8 @@ public class Board {
         this.boardConfig = boardConfig;
 
         this.sortedAssignees = sortedAssignees;
-        this.assigneeIndices = Collections.unmodifiableMap(getIndices(sortedAssignees));
 
         this.sortedComponents = sortedComponents;
-        this.componentIndices = Collections.unmodifiableMap(getIndices(sortedComponents));
 
         this.allIssues = allIssues;
         this.projects = projects;
@@ -104,17 +102,11 @@ public class Board {
         this.blacklist = blacklist;
     }
 
-    static Map<String, Integer> getIndices(Map<String, ?> map) {
-        Map<String, Integer> indices = new HashMap<>();
-        int i = 0;
-        for (String key : map.keySet()) {
-            indices.put(key, i++);
-        }
-        return indices;
-    }
-
-    public static Builder builder(JiraInjectables jiraInjectables, BoardConfig boardConfig, ApplicationUser boardOwner) {
-        return new Builder(jiraInjectables, boardConfig, boardOwner);
+    public static Builder builder(JiraInjectables jiraInjectables,
+                                  ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader,
+                                  BoardConfig boardConfig,
+                                  ApplicationUser boardOwner) {
+        return new Builder(jiraInjectables, projectParallelTaskOptionsLoader, boardConfig, boardOwner);
     }
 
     public Board handleEvent(JiraInjectables jiraInjectables, NextRankedIssueUtil nextRankedIssueUtil, ApplicationUser boardOwner, JirbanIssueEvent event,
@@ -191,11 +183,11 @@ public class Board {
     }
 
     public int getAssigneeIndex(Assignee assignee) {
-        return assigneeIndices.get(assignee.getKey());
+        return sortedAssignees.getIndex(assignee.getKey());
     }
 
     public int getComponentIndex(Component component) {
-        return componentIndices.get(component.getName());
+        return sortedComponents.getIndex(component.getName());
     }
 
     public int getCustomFieldIndex(CustomFieldValue customFieldValue) {
@@ -324,6 +316,7 @@ public class Board {
      * Used to create a new board
      */
     public static class Builder extends Accessor {
+        private final ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader;
         private final Map<String, Assignee> assignees = new HashMap<>();
         private final Map<String, Component> components = new HashMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
@@ -332,14 +325,16 @@ public class Board {
         private final Map<Long, SortedCustomFieldValues.Builder> customFieldBuilders = new HashMap();
 
         public Builder(JiraInjectables jiraInjectables,
+                       ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader,
                        BoardConfig boardConfig, ApplicationUser boardOwner) {
             super(jiraInjectables, boardConfig, boardOwner);
+            this.projectParallelTaskOptionsLoader = projectParallelTaskOptionsLoader;
         }
 
         public Builder load() throws SearchException {
             for (BoardProjectConfig boardProjectConfig : boardConfig.getBoardProjects()) {
                 BoardProjectConfig project = boardConfig.getBoardProject(boardProjectConfig.getCode());
-                BoardProject.Builder projectBuilder = BoardProject.builder(jiraInjectables, this, project, boardOwner);
+                BoardProject.Builder projectBuilder = BoardProject.builder(jiraInjectables, projectParallelTaskOptionsLoader, this, project, boardOwner);
                 projectBuilder.load();
                 projects.put(projectBuilder.getCode(), projectBuilder);
             }
@@ -437,8 +432,8 @@ public class Board {
 
             Board board = new Board(
                     null, boardConfig,
-                    Collections.unmodifiableMap(sortAssignees(assignees)),
-                    Collections.unmodifiableMap(sortComponents(components)),
+                    new IndexedMap<>(sortAssignees(assignees)),
+                    new IndexedMap<>(sortComponents(components)),
                     Collections.unmodifiableMap(allIssues),
                     Collections.unmodifiableMap(projects),
                     Collections.unmodifiableMap(sortedCustomFieldValues),
@@ -604,6 +599,8 @@ public class Board {
             final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, nextRankedIssueUtil, this, boardOwner);
             final Map<String, CustomFieldValue> customFieldValues
                     = CustomFieldValue.loadCustomFieldValues(projectUpdater, evtDetail.getCustomFieldValues());
+            final Map<Integer, Integer> parallelTaskValues
+                    = CustomFieldValue.loadParallelTaskValues(create, projectUpdater, evtDetail.getCustomFieldValues());
 
             final Issue existingIssue;
             final Issue newIssue;
@@ -612,7 +609,7 @@ public class Board {
                 existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
                         evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents,
-                        evtDetail.getState(), customFieldValues);
+                        evtDetail.getState(), customFieldValues, parallelTaskValues);
             } else {
                 existingIssue = board.allIssues.get(event.getIssueKey());
                 if (existingIssue == null) {
@@ -633,7 +630,7 @@ public class Board {
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
                             issueComponents,
-                            evtDetail.isReranked(), evtDetail.getState(), customFieldValues);
+                            evtDetail.isReranked(), evtDetail.getState(), customFieldValues, parallelTaskValues);
                 }
             }
 
@@ -654,8 +651,8 @@ public class Board {
                 projectsCopy.put(event.getProjectCode(), projectCopy);
 
                 final Board boardCopy = new Board(board, board.boardConfig,
-                        assigneesCopy == null ? board.sortedAssignees : Collections.unmodifiableMap(sortAssignees(assigneesCopy)),
-                        componentsCopy == null ? board.sortedComponents : Collections.unmodifiableMap(sortComponents(componentsCopy)),
+                        assigneesCopy == null ? board.sortedAssignees : new IndexedMap<>(sortAssignees(assigneesCopy)),
+                        componentsCopy == null ? board.sortedComponents : new IndexedMap<>(sortComponents(componentsCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
                         SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
@@ -701,7 +698,9 @@ public class Board {
                     if (newIssue != null) {
                         changeBuilder.setBacklogState(project.isBacklogState(newIssue.getState()));
                     }
-
+                    if (parallelTaskValues.size() > 0) {
+                        changeBuilder.setParallelTaskValues(parallelTaskValues);
+                    }
                     JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue - Registering change");
                     changeBuilder.buildAndRegister();
                 }
@@ -783,7 +782,7 @@ public class Board {
                 if (assignee == null) {
                     assignee = Board.createAssignee(jiraInjectables, boardOwner, evtAssignee);
                     newAssignee = assignee;
-                    assigneesCopy = copyAndPut(board.sortedAssignees, evtAssignee.getName(), assignee, HashMap::new);
+                    assigneesCopy = copyAndPut(board.sortedAssignees.map(), evtAssignee.getName(), assignee, HashMap::new);
                 }
                 return assignee;
             }
@@ -801,13 +800,13 @@ public class Board {
             } else {
                 Set<Component> components = new HashSet<>();
                 for (ProjectComponent evtComponent : evtComponents) {
-                    Map<String, Component> componentMap = componentsCopy == null ? board.sortedComponents : componentsCopy;
+                    Map<String, Component> componentMap = componentsCopy == null ? board.sortedComponents.map() : componentsCopy;
 
                     Component component = componentMap.get(evtComponent.getName());
                     if (component == null) {
                         component = new Component(evtComponent.getName());
                         if (componentsCopy == null) {
-                            componentsCopy = new HashMap<>(board.sortedComponents);
+                            componentsCopy = new HashMap<>(board.sortedComponents.map());
                         }
                         componentsCopy.put(component.getName(), component);
                         if (newComponents == null) {

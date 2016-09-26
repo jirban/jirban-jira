@@ -16,9 +16,15 @@
         <div [ngClass]="showAssignee ? 'summary-full' : 'summary-short'">{{issue.summary}}</div>
     </div>
     <div class="info" *ngIf="showInfo">
-        <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
-        <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
+        <div class="info-icons">
+            <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
+            <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
+        </div>
+        <div class="info-parallel" *ngIf="parallelTasks" title="{{parallelTasksTitle}}">
+            <span *ngFor="let task of parallelTasks" class="parallel-task" [ngStyle]="parallelTaskStyle(task.code)">{{task.code}}</span>
+        </div>
     </div>
+    <div class="clear-float"></div>
     <div class="linked-issues" *ngFor="let linked of issue.linkedIssues"
          title="{{linked.key}}&#013;{{linked.ownStatus}}&#013;{{linked.summary}}"
          [hidden]="!showLinkedIssues">
@@ -28,7 +34,7 @@
                    (contextmenu)="defaultContextMenu($event)" class="linked-issue-summary">{{linked.key}}</a>
             </div>
             <div class="linked-issue-status">
-                <span [style.color]="getStatusColour(linked)">{{getStatusFraction(linked)}}</span>
+                <span [style.color]="getLinkedIssueStatusColour(linked)">{{getLinkedIssueStatusFraction(linked)}}</span>
             </div>
         </div>
     </div>
