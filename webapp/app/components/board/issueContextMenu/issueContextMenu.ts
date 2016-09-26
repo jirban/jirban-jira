@@ -10,14 +10,14 @@ import {BoardProject} from "../../../data/board/project";
 import {FormGroup, FormControl, Validators} from "@angular/forms";
 
 @Component({
-    inputs: ['data', 'view'],
+    inputs: ['issueContextMenuData', 'view'],
     outputs: ['closeContextMenu'],
     selector: 'issue-context-menu',
     templateUrl: './issueContextMenu.html',
     styleUrls: ['./issueContextMenu.css']
 })
 export class IssueContextMenuComponent implements Hideable {
-    private _data:IssueContextMenuData;
+    private _issueContextMenuData:IssueContextMenuData;
     private _view:string;
     private showContext:boolean = false;
     private issue:IssueData;
@@ -26,6 +26,8 @@ export class IssueContextMenuComponent implements Hideable {
 
     //The name of the panel to show (they are 'move', 'comment', 'rank')
     private showPanel:string;
+
+    private contextMenuPosition:Object;
 
     //Calculated dimensions
     private movePanelTop:string;
@@ -51,19 +53,17 @@ export class IssueContextMenuComponent implements Hideable {
         _boardData.registerHideable(this);
     }
 
-    private set data(data:IssueContextMenuData) {
+    private set issueContextMenuData(data:IssueContextMenuData) {
         this.showContext = !!data;
         this.showPanel = null;
         this.toState = null;
         this.issue = null;
-        this._data = data;
+        this._issueContextMenuData = data;
         this.issue = null;
         this.rankedIssues = null;
-        if (data) {
-            this.issue = this._boardData.getIssue(data.issueKey);
-            this.toState = this.issue.boardStatus;
-            this.canRank = this._boardData.canRank(this.issue.projectCode);
-        }
+        this.issue = this._boardData.getIssue(data.issueKey);
+        this.toState = this.issue.boardStatus;
+        this.canRank = this._boardData.canRank(this.issue.projectCode);
         this.setWindowSize();
     }
 
@@ -82,8 +82,8 @@ export class IssueContextMenuComponent implements Hideable {
         this.rankedIssues = null;
     }
 
-    private get data() {
-        return this._data;
+    private get issueContextMenuData() {
+        return this._issueContextMenuData;
     }
 
     private showRankMenuEntry() {
@@ -91,7 +91,7 @@ export class IssueContextMenuComponent implements Hideable {
     }
 
     private get displayContextMenu() : boolean {
-        return !!this._data && !!this.issue && this.showContext;
+        return !!this._issueContextMenuData && !!this.issue && this.showContext;
     }
 
     private get moveStates() : string[] {
@@ -239,6 +239,20 @@ export class IssueContextMenuComponent implements Hideable {
     }
 
     private setWindowSize() {
+
+        this.contextMenuPosition = new Object();
+        if (this._issueContextMenuData.x > 100) {
+            this.contextMenuPosition["right"] = (window.innerWidth - this._issueContextMenuData.x).toString() + "px";
+        } else {
+            this.contextMenuPosition["left"] = this.issueContextMenuData.x.toString() + "px";
+        }
+        if (this._issueContextMenuData.y < window.innerHeight - 100) {
+            this.contextMenuPosition["top"] = this._issueContextMenuData.y.toString() + "px";
+        } else {
+            this.contextMenuPosition["bottom"] = (window.innerHeight - this._issueContextMenuData.y).toString() + "px";
+        }
+        console.log(JSON.stringify(this.contextMenuPosition));
+
         let movePanelTop:number, movePanelHeight:number, movePanelLeft:number, statesColumnHeight:number;
         let movePanelWidth:number = 410;
 

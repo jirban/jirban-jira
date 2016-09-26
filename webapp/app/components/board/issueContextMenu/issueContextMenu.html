@@ -21,7 +21,7 @@
   -->
 
 <div *ngIf="displayContextMenu" class="issue-context-menu"
-     [ngStyle]="{'top': data.y, 'left' : data.x}">
+     [ngStyle]="contextMenuPosition">
     <div *ngIf="showRankMenuEntry()">
         <a href="comment" (click)="onShowRankPanel($event)"><img src="../../../../images/resize-height-2x.png" width="12px" height="12px" align="center"/></a>
         <a href="comment" (click)="onShowRankPanel($event)" class="context">Rank...</a>

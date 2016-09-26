@@ -3,24 +3,20 @@
  *
  */
 export class IssueContextMenuData {
-    private _x:string;
-    private _y:string;
     constructor(private _issueKey:string,
-                x:number,
-                y:number) {
-        this._x = x + "px";
-        this._y = y + "px";
+                private _x:number,
+                private _y:number) {
     }
 
     get issueKey():string {
         return this._issueKey;
     }
 
-    get x():string {
+    get x():number {
         return this._x;
     }
 
-    get y():string {
+    get y():number {
         return this._y;
     }
 }

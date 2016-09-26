@@ -103,6 +103,9 @@ export class IssueComponent {
         event.preventDefault();
         event.stopPropagation();
         console.log("Issue: Triggering show context menu event")
+
+        console.log("(" + event.clientX + ", " + event.clientY + ")");
+
         this.showIssueContextMenu.emit(
             new IssueContextMenuData(issueId, event.clientX, event.clientY));
 
