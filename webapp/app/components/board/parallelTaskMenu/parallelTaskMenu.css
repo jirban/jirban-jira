@@ -1,0 +1,29 @@
+.parallel-task-menu {
+    font-size: 11px;
+    position: absolute;
+    z-index: 10;
+    padding: 3px;
+    background-color: white;
+    border-radius: 5px;
+    border: solid black 1px;
+    text-align: center;
+}
+.header {
+    min-height: 20px;
+    max-height: 20px;
+}
+.parallel-task {
+    margin: 1px;
+    min-height: 15px;
+    font-weight: bold;
+}
+.unselected {
+    padding: 1px;
+}
+.selected {
+    border: solid black 1px;
+}
+.original {
+    border: solid grey 1px;
+}
+

@@ -12,7 +12,7 @@ import {FixedHeaderView} from "../fixedHeaderView";
 @Component({
     selector: 'rank-view',
     inputs: ["boardCode", "issuesService", "boardData"],
-    outputs: ["showIssueContextMenu"],
+    outputs: ["showIssueContextMenu", "showParallelTaskMenu"],
     templateUrl: './rankview.html',
     styleUrls: ['./rankview.css']
 })

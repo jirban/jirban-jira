@@ -77,7 +77,9 @@
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
-                                           [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
+                                           [issue]="issue"
+                                           (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                                           (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
@@ -92,7 +94,9 @@
                             <div *ngIf="visibleColumns[state.index]">
                                 <ul class="issues-list">
                                     <issue *ngFor="let issue of boardData.issueTable[state.index]"
-                                           [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
+                                           [issue]="issue"
+                                           (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                                           (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
@@ -109,6 +113,7 @@
                                 [boardLeftOffset]="boardLeftOffset"
                                 [hidden]="swimlane.filtered"
                                 (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                                (showParallelTaskMenu)="onShowParallelTaskMenu($event)"
                                 (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
                 </tbody>
             </table>

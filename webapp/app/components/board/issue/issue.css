@@ -81,6 +81,7 @@
     padding: 1px;
     font-weight: bold;
     color: #555555;
+    cursor: pointer;
 }
 .clear-float {
     clear: both;

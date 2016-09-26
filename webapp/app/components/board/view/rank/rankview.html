@@ -47,7 +47,9 @@
                         title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}&#013;{{issue.priority.name}}&#013;{{issue.type.name}}">
                         <td class="issue">
                             <ul class="issues-list">
-                                <issue [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
+                                <issue [issue]="issue"
+                                       (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                                       (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
                             </ul>
                         </td>
                         <td *ngFor="let state of boardStates ; let i = index"

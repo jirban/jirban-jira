@@ -5,10 +5,11 @@ import {ParallelTask} from "../../../data/board/parallelTask";
 import {Indexed} from "../../../common/indexed";
 import {ProgressColourService} from "../../../services/progressColourService";
 import {Subscription} from "rxjs/Rx";
+import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 
 @Component({
     inputs: ['issue'],
-    outputs: ['showIssueContextMenu'],
+    outputs: ['showIssueContextMenu', 'showParallelTaskMenu'],
     selector: 'issue',
     templateUrl: './issue.html',
     styleUrls: ['./issue.css'],
@@ -17,6 +18,7 @@ import {Subscription} from "rxjs/Rx";
 export class IssueComponent {
     private issue : IssueData;
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
+    private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
 
     private _parallelTasks:Indexed<ParallelTask>;
     private _parallelTasksTitle:string;
@@ -102,13 +104,20 @@ export class IssueComponent {
     private triggerShowIssueContextMenu(event : MouseEvent, issueId:string) {
         event.preventDefault();
         event.stopPropagation();
-        console.log("Issue: Triggering show context menu event")
-
-        console.log("(" + event.clientX + ", " + event.clientY + ")");
+        console.log("Issue: Triggering show context menu event");
 
         this.showIssueContextMenu.emit(
             new IssueContextMenuData(issueId, event.clientX, event.clientY));
 
+    }
+
+    private triggerShowParallelTaskMenu(event:MouseEvent, taskCode:string) {
+        event.preventDefault();
+        event.stopPropagation();
+        console.log("Issue: Triggering show parallel task menu event");
+
+        this.showParallelTaskMenu.emit(
+            new ParallelTaskMenuData(this.issue, taskCode, event.clientX, event.clientY));
     }
 
     private defaultContextMenu(event:MouseEvent) {

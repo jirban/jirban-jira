@@ -4,6 +4,7 @@ import {SwimlaneData} from "../../../data/board/issueTable";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
 import {CharArrayRegistry} from "../../../common/charArrayRegistry";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
+import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 
 
 /**
@@ -22,7 +23,9 @@ export class SwimlaneEntryComponent {
     public boardData : BoardData;
     public swimlaneIndex : number;
     private _boardLeftOffset:number;
+
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
+    private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
     private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
@@ -60,6 +63,10 @@ export class SwimlaneEntryComponent {
 
     private onShowIssueContextMenu(event:IssueContextMenuData) {
         this.showIssueContextMenu.emit(event);
+    }
+
+    protected onShowParallelTaskMenu(event:ParallelTaskMenuData) {
+        this.showParallelTaskMenu.emit(event);
     }
 
     private get visibleColumns() : boolean[] {

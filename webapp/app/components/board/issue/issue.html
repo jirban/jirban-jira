@@ -21,7 +21,9 @@
             <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
         </div>
         <div class="info-parallel" *ngIf="parallelTasks" title="{{parallelTasksTitle}}">
-            <span *ngFor="let task of parallelTasks" class="parallel-task" [ngStyle]="parallelTaskStyle(task.code)">{{task.code}}</span>
+            <span *ngFor="let task of parallelTasks"
+                  class="parallel-task" [ngStyle]="parallelTaskStyle(task.code)"
+                  (click)="triggerShowParallelTaskMenu($event, task.code)">{{task.code}}</span>
         </div>
     </div>
     <div class="clear-float"></div>
