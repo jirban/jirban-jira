@@ -209,7 +209,7 @@ export class IssueContextMenuComponent implements Hideable {
             afterKey = this.rankedIssuesForIssueProject[this.rankedIssuesForIssueProject.length - 1].key;
         }
         console.log("onClickRankBefore " + index + "; before: " + beforeKey + " ; after: " + afterKey);
-
+        this._progressError.startProgress(true);
         this._issuesService.performRerank(this.issue, beforeKey, afterKey)
             .subscribe(
                 data => {

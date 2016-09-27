@@ -1,12 +1,15 @@
-import {Component} from "@angular/core";
+import {Component, EventEmitter} from "@angular/core";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 import {ParallelTask} from "../../../data/board/parallelTask";
 import {BoardProject} from "../../../data/board/project";
 import {IssueData} from "../../../data/board/issueData";
 import {ProgressColourService} from "../../../services/progressColourService";
+import {IssuesService} from "../../../services/issuesService";
+import {ProgressErrorService} from "../../../services/progressErrorService";
 
 @Component({
     inputs: ['parallelTaskMenuData'],
+    outputs: ['closeParallelTaskMenu'],
     selector: 'parallel-task-menu',
     templateUrl: './parallelTaskMenu.html',
     styleUrls: ['./parallelTaskMenu.css']
@@ -18,6 +21,7 @@ export class ParallelTaskMenuComponent {
 
     private _issue:IssueData;
     private _task:ParallelTask;
+    private _taskIndex:number;
     private _originalOptionIndex:number;
     private _originalOptionName:string;
 
@@ -25,7 +29,12 @@ export class ParallelTaskMenuComponent {
     private _selectedOptionIndex:number;
     private _selectedOptionName:string;
 
-    constructor(private _progressColourService:ProgressColourService) {
+    private closeParallelTaskMenu:EventEmitter<any> = new EventEmitter<any>();
+
+    constructor(
+        private _progressColourService:ProgressColourService,
+        private _issuesService:IssuesService,
+        private _progressError:ProgressErrorService) {
     }
 
     set parallelTaskMenuData(parallelTaskMenuData:ParallelTaskMenuData) {
@@ -35,8 +44,8 @@ export class ParallelTaskMenuComponent {
         this._issue = parallelTaskMenuData.issue;
         let project:BoardProject = this._issue.boardData.boardProjects.forKey(this._issue.projectCode);
         this._task = project.parallelTasks.forKey(parallelTaskMenuData.taskCode);
-        let taskIndex:number = project.parallelTasks.indexOf(parallelTaskMenuData.taskCode);
-        let option:string = this._issue.parallelTaskOptions.forIndex(taskIndex);
+        this._taskIndex = project.parallelTasks.indexOf(parallelTaskMenuData.taskCode);
+        let option:string = this._issue.parallelTaskOptions.forIndex(this._taskIndex);
         this._originalOptionIndex = this._task.options.indexOf(option);
         this._originalOptionName = option;
         console.log("---> " + this._originalOptionIndex);
@@ -91,6 +100,25 @@ export class ParallelTaskMenuComponent {
         event.preventDefault();
         this._selectedOptionIndex = optionIndex;
         this._selectedOptionName = this._task.options.forIndex(optionIndex);
+
+        this._progressError.startProgress(true);
+        this._issuesService.setParallelTaskOption(this._issue.key, this._taskIndex, this._selectedOptionIndex)
+            .subscribe(
+                data => {
+                    //No data is returned, issuesService refreshes boardData for us
+                    //TODO close this thing
+                    this.closeParallelTaskMenu.emit({});
+                },
+                err => {
+                    this._progressError.setError(err);
+                },
+                () => {
+                    let msg = "Set " + this._task.name + " <a " +
+                        "class='toolbar-message' href='" + this._issue.boardData.jiraUrl + "/browse/" + this._issue.key + "'>" +
+                        this._issue.key + "</a> to " + this._selectedOptionName;
+                    this._progressError.finishProgress(msg);
+                }
+            );
     }
 
     private setWindowSize() {

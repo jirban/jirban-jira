@@ -160,7 +160,21 @@ public class RestEndpoint {
                 jiraFacade.getStateHelpTexts(getUser(), boardCode));
     }
 
+    //issues/' + boardName + "/parallel/" + issueKey ;
 
+    @PUT
+    @Path(ISSUES + "/{boardCode}/parallel/{issueKey}")
+    public Response updateParallelTask(
+            @PathParam("boardCode") String boardCode,
+            @PathParam("issueKey") String issueKey, String body) throws SearchException {
+
+        ModelNode bodyNode = ModelNode.fromJSONString(body);
+        int taskIndex = bodyNode.get("task-index").asInt();
+        int optionIndex = bodyNode.get("option-index").asInt();
+
+        jiraFacade.updateParallelTaskForIssue(getUser(), boardCode, issueKey, taskIndex, optionIndex);
+        return createResponse("{}");
+    }
 
     @GET
     @Path(BOARDS + "/{boardId}")

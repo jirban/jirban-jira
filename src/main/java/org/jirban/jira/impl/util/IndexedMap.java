@@ -1,8 +1,10 @@
 package org.jirban.jira.impl.util;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -11,19 +13,20 @@ import java.util.Map;
 public class IndexedMap<K, V> {
     private final Map<K, V> map;
     private final Map<K, Integer> indices;
+    private final List<V> byIndex;
 
     public IndexedMap(Map<K, V> map) {
         this.map = Collections.unmodifiableMap(map);
-        this.indices = getIndices(map);
-    }
-
-    public static <K,V> Map<K, Integer> getIndices(Map<K, V> map) {
         Map<K, Integer> indices = new HashMap<>();
+        List<V> byIndex = new ArrayList<V>();
         int i = 0;
-        for (K key : map.keySet()) {
-            indices.put(key, i++);
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            indices.put(entry.getKey(), i++);
+            byIndex.add(entry.getValue());
         }
-        return indices;
+        this.indices = Collections.unmodifiableMap(indices);
+        this.byIndex = Collections.unmodifiableList(byIndex);
+
     }
 
     public Collection<V> values() {
@@ -40,6 +43,10 @@ public class IndexedMap<K, V> {
 
     public Map<K, V> map() {
         return map;
+    }
+
+    public V forIndex(int i) {
+        return byIndex.get(i);
     }
 
     public int size() {

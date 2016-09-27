@@ -35,6 +35,10 @@ public class ParallelTaskConfig {
         return indexedConfigs.getIndex(key);
     }
 
+    public ParallelTaskCustomFieldConfig forIndex(int index) {
+        return indexedConfigs.forIndex(index);
+    }
+
     public ParallelTaskCustomFieldConfig getCustomFieldObjectForJiraName(String jiraCustomFieldName) {
         return configs.getForJiraName(jiraCustomFieldName);
     }

@@ -114,4 +114,6 @@ public interface BoardManager {
      * @return the custom field configs on boards involving the issue.
      */
     Set<ParallelTaskCustomFieldConfig> getParallelTaskFieldsForCreateEvent(String projectCode);
+
+    void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex);
 }

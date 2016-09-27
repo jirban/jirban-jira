@@ -9,8 +9,7 @@
     text-align: center;
 }
 .header {
-    min-height: 20px;
-    max-height: 20px;
+    min-height: 35px;
 }
 .parallel-task {
     margin: 1px;

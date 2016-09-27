@@ -33,6 +33,10 @@ public class SortedParallelTaskFieldOptions {
         return sortedFields.getIndex(key);
     }
 
+    public CustomFieldValue forIndex(int index) {
+        return sortedFields.forIndex(index);
+    }
+
     public void serialize(ModelNode list) {
         ModelNode entry = new ModelNode();
         entry.get(NAME).set(config.getName());

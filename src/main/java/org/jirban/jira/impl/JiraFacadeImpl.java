@@ -129,6 +129,11 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
+    public void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) {
+        boardManager.updateParallelTaskForIssue(user, boardCode, issueKey, taskIndex, optionIndex);
+    }
+
+    @Override
     public void afterPropertiesSet() throws Exception {
 
     }

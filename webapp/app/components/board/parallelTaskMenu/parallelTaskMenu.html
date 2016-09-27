@@ -1,5 +1,8 @@
 <div [ngStyle]="parallelTaskMenuPosition" class="parallel-task-menu">
-    <div class="header">{{task.name}}</div>
+    <div class="header">
+        <div><b>{{task.name}}</b></div>
+        <div>{{selectedOptionName}}</div>
+    </div>
     <div>
         <!--
             The '00' is just there for padding, and will be invisible due to the colours. It keeps it
@@ -20,5 +23,4 @@
             <span *ngIf="isSelected(i)">00</span>
         </span>
     </div>
-    <div>{{selectedOptionName}}</div>
 </div>
