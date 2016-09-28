@@ -12,7 +12,14 @@ export class RestUrlUtil {
             let url:string = location.href.substr(0, index);
             url = url + "/" + path;
             return url;
-        } else if (RestUrlUtil.isLocalDebug(location)) {
+        }
+        index = location.href.indexOf("/jirban/");
+        if (index > 0) {
+            let url:string = location.href.substr(0, index);
+            url = url + "/" + path;
+            return url;
+        }
+        if (RestUrlUtil.isLocalDebug(location)) {
             //For the local debugging of the UI, which does not seem to like loading json without a .json suffix
             index = path.indexOf("?");
             if (index > 0) {
@@ -26,11 +33,16 @@ export class RestUrlUtil {
 
     static calculateJiraUrl() : string {
         let location:Location = window.location;
-        console.log("-----> " + location.href);
         let index:number = location.href.indexOf("/download/resources/");
         if (index > 0) {
             return location.href.substr(0, index);
-        } else if (RestUrlUtil.isLocalDebug(location)) {
+        }
+        index = location.href.indexOf("/jirban/");
+        if (index > 0) {
+            return location.href.substr(0, index);
+        }
+
+        if (RestUrlUtil.isLocalDebug(location)) {
             //Return the locally running Jira instance since this is still where the icons etc are loaded from
             return "http://localhost:2990/jira";
         }
