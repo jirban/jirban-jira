@@ -18,6 +18,7 @@ export class ProgressErrorService {
     startProgress(blocking:boolean):void {
         this._blocking = blocking;
         this._progress = true;
+        this._completedMessage = null;
     }
 
     /**
