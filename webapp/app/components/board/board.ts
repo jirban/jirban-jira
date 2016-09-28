@@ -26,6 +26,8 @@ export class BoardComponent implements OnDestroy {
 
     private _wasBacklogForced:boolean = false;
 
+    private linkUrl:string;
+
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
                 route:ActivatedRoute) {
@@ -45,11 +47,19 @@ export class BoardComponent implements OnDestroy {
             }
         }
 
+
         this._boardData.setBacklogFromQueryParams(queryParams, this._wasBacklogForced);
 
         this._issuesService.populateIssues(this.boardCode, () => {
             //Loading filters does not work until the issue data is loaded
             _boardData.setFiltersFromQueryParams(queryParams);
+            this.updateLinkUrl();
+            this.boardData.headers.stateVisibilitiesChangedObservable.subscribe((value:void) => {
+                this.updateLinkUrl();
+            });
+            this.boardData.swimlaneVisibilityObservable.subscribe((value:void) => {
+                this.updateLinkUrl();
+            });
         })
 
         this._issuesService.loadHelpTexts(this.boardCode, this._boardData);
@@ -115,6 +125,7 @@ export class BoardComponent implements OnDestroy {
             console.error("Unknown original view " + this.view);
         }
         console.log("View changed to " + this.view);
+        this.updateLinkUrl();
     }
 
     private forceBacklog() {
@@ -136,6 +147,26 @@ export class BoardComponent implements OnDestroy {
         console.log("Toggling backlog");
         this._boardData.headers.toggleHeaderVisibility(this._boardData.headers.backlogTopHeader);
         this._issuesService.toggleBacklog();
+    }
+
+    private onFiltersUpdated(event:any) {
+        this.updateLinkUrl();
+    }
+
+    private updateLinkUrl() {
+        console.log("---> update link url");
+        let url:string = window.location.href;
+        let index = url.lastIndexOf("?");
+        if (index >= 0) {
+            url = url.substr(0, index);
+        }
+        url = this.boardData.createQueryStringParticeles(url);
+        if (this.view != VIEW_KANBAN) {
+            url += "&view=" + this.view;
+        }
+
+        this.linkUrl = url;
+        history.replaceState(null, null, url);
     }
 }
 
