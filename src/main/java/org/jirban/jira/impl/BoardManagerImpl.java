@@ -105,17 +105,11 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
     }
 
     @Override
-    public void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) {
+    public void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) throws SearchException {
         //Don't do anything to any of the cached boards, the Jira event mechanism will trigger an event when we update
         // the issue, which in turn will end up in our event listener to update the caches for the active boards.
 
-        final Board board;
-        synchronized (this) {
-            board = boards.get(boardCode);
-            if (board == null) {
-                throw new JirbanValidationException("Could not find board with code: " + boardCode);
-            }
-        }
+        final Board board = getBoard(user, boardCode);
 
         final IssueService issueService = jiraInjectables.getIssueService();
         final IssueService.IssueResult issueResult = issueService.getIssue(user, issueKey);
@@ -197,6 +191,11 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Override
     public String getBoardJson(ApplicationUser user, boolean backlog, String code) throws SearchException {
+        Board board = getBoard(user, code);
+        return board.serialize(jiraInjectables, backlog, user).toJSONString(true);
+    }
+
+    private Board getBoard(ApplicationUser user, String code) throws SearchException {
         Board board = boards.get(code);
         if (board == null) {
             synchronized (this) {
@@ -216,7 +215,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
                     final ApplicationUser boardOwner = jiraInjectables.getJiraUserManager().getUserByKey(boardConfig.getOwningUserKey());
                     board = Board.builder(jiraInjectables, projectParallelTaskOptionsLoader, boardConfig, boardOwner).load().build();
-                    JirbanLogger.LOGGER.debug("Full refresh of board {}; backlog: {}", code, backlog);
+                    JirbanLogger.LOGGER.debug("Full refresh of board {}", code);
                     boards.put(code, board);
                     boardChangeRegistries.put(code, new BoardChangeRegistry(this, board));
                     final RefreshEntry refreshEntry = new RefreshEntry(code, REFRESH_TIMEOUT_SECONDS);
@@ -225,7 +224,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
             }
         }
-        return board.serialize(jiraInjectables, backlog, user).toJSONString(true);
+        return board;
     }
 
     @Override

@@ -115,5 +115,5 @@ public interface JiraFacade
      * @param taskIndex the index of the task within the issue's project's config
      * @param optionIndex the index of the option within the task
      */
-    void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex);
+    void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) throws SearchException;
 }

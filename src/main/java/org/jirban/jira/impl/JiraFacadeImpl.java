@@ -129,8 +129,17 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
     }
 
     @Override
-    public void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) {
-        boardManager.updateParallelTaskForIssue(user, boardCode, issueKey, taskIndex, optionIndex);
+    public void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) throws SearchException{
+        try {
+            boardManager.updateParallelTaskForIssue(user, boardCode, issueKey, taskIndex, optionIndex);
+        } catch (Exception e) {
+            //Last parameter is the exception (it does not match a {} entry)
+            JirbanLogger.LOGGER.debug("BoardManagerImpl.handleEvent - Error updating board {}", boardCode, e);
+            if (e instanceof SearchException || e instanceof RuntimeException) {
+                throw e;
+            }
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
