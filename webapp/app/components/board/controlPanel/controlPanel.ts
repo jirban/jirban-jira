@@ -15,8 +15,8 @@ import {ParallelTask} from "../../../data/board/parallelTask";
 
 @Component({
     selector: 'control-panel',
-    inputs: ['view'],
-    outputs: ['closeControlPanel'],
+    inputs: ['view', 'linkUrl'],
+    outputs: ['closeControlPanel', 'filtersUpdated'],
     templateUrl: './controlPanel.html',
     styleUrls: ['./controlPanel.css']
 })
@@ -27,10 +27,9 @@ export class ControlPanelComponent {
     private _componentFilterForm:FormGroup;
 
     private closeControlPanel:EventEmitter<any> = new EventEmitter();
+    private filtersUpdated:EventEmitter<any> = new EventEmitter<any>();
 
     private none:string = NONE;
-
-    private linkUrl:string;
 
     private filtersToDisplay:string = null;
 
@@ -38,6 +37,8 @@ export class ControlPanelComponent {
     private filterTooltips:IMap<string> = {};
 
     private view:string;
+
+    private linkUrl:string;
 
     constructor(private boardData:BoardData) {
     }
@@ -168,15 +169,7 @@ export class ControlPanelComponent {
         this._assigneeFilterForm = assigneeFilterForm;
         this._componentFilterForm = componentFilterForm;
         this._controlForm = form;
-        this.updateLinkUrl();
         this.updateTooltips();
-
-        this.boardData.headers.stateVisibilitiesChangedObservable.subscribe((value:void) => {
-            this.updateLinkUrl();
-        });
-        this.boardData.swimlaneVisibilityObservable.subscribe((value:void) => {
-            this.updateLinkUrl();
-        });
 
         return this._controlForm;
     }
@@ -512,17 +505,7 @@ export class ControlPanelComponent {
 
 
     private updateLinkUrl() {
-        let url:string = window.location.href;
-        let index = url.lastIndexOf("?");
-        if (index >= 0) {
-            url = url.substr(0, index);
-        }
-        url = this.boardData.createQueryStringParticeles(url);
-        if (this.view != VIEW_KANBAN) {
-            url += "&view=" + this.view;
-        }
-
-        this.linkUrl = url;
+        this.filtersUpdated.emit({});
     }
 
 

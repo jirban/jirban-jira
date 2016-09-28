@@ -18,7 +18,9 @@
 <!-- The panel with links to the control and health panels -->
 <panel-menu
         (toggleView)="onToggleView($event)"
-        [view]="view"></panel-menu>
+        [view]="view"
+        [linkUrl]="linkUrl"
+        (filtersUpdated)="onFiltersUpdated($event)"></panel-menu>
 <!-- The issue context menu -->
 <issue-context-menu *ngIf="issueContextMenuData" [issueContextMenuData]="issueContextMenuData" [view]="view" (closeContextMenu)="onCloseIssueContextMenu($event)"></issue-context-menu>
 <parallel-task-menu *ngIf="parallelTaskMenuData" [parallelTaskMenuData]="parallelTaskMenuData" (closeParallelTaskMenu)="onCloseParallelTaskMenu($event)"></parallel-task-menu>

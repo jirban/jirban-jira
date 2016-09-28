@@ -4,8 +4,8 @@ import {Hideable} from "../../../common/hide";
 
 @Component({
     selector: 'panel-menu',
-    inputs: ['view'],
-    outputs: ['toggleView'],
+    inputs: ['view', 'linkUrl'],
+    outputs: ['toggleView', 'filtersUpdated'],
     templateUrl: './panelMenu.html',
     styleUrls: ['./panelMenu.css']
 })
@@ -13,7 +13,9 @@ export class PanelMenuComponent implements Hideable {
     private controlPanel:boolean = false;
     private healthPanel:boolean = false;
     private toggleView:EventEmitter<any> = new EventEmitter<any>();
+    private filtersUpdated:EventEmitter<any> = new EventEmitter<any>();
     private view:boolean;
+    private linkUrl:string;
 
     constructor(private boardData:BoardData) {
         this.boardData.registerHideable(this);
@@ -46,5 +48,9 @@ export class PanelMenuComponent implements Hideable {
 
     onCloseControlPanel(event:Event) : void {
         this.controlPanel = false;
+    }
+
+    onFiltersUpdated(event:any) {
+        this.filtersUpdated.emit(event);
     }
 }
