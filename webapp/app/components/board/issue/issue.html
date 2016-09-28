@@ -11,8 +11,14 @@
         </div>
     </div>
     <div [ngClass]="showAssignee ? 'detail-full' : 'detail-short'" *ngIf="showSummary || showAssignee">
-        <img class="avatar" *ngIf="showAssignee"
-             title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"/>
+        <div *ngIf="showAssignee">
+            <!-- Work around the image url not getting replaced in issueData.ts -->
+            <img class="avatar" *ngIf="issue.assigneeAvatar"
+                 title="{{issue.assigneeName}}" src="{{issue.assigneeAvatar}}" width="22px" height="26px"/>
+            <img class="avatar" *ngIf="!issue.assigneeAvatar"
+                 title="{{issue.assigneeName}}" src="../../../../images/person-4x.png" width="22px" height="26px"/>
+
+        </div>
         <div [ngClass]="showAssignee ? 'summary-full' : 'summary-short'">{{issue.summary}}</div>
     </div>
     <div class="info" *ngIf="showInfo">

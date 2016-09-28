@@ -277,7 +277,8 @@ export class IssueData {
 
     get assigneeAvatar():string {
         if (!this._assignee) {
-            return "images/person-4x.png";
+            //Return null, the issue.html will provide the replacement
+            return null;
         }
         return this._assignee.avatar;
     }
