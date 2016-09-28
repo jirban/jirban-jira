@@ -17,6 +17,11 @@
     <url-pattern>/jirban</url-pattern>
   </servlet>
 
+  <servlet-filter name="Jirban Pretty URL Filter" i18n-name-key="pretty-url-filter.name" key="pretty-url-filter" class="org.jirban.jira.servlet.PrettyUrlFilter" location="after-encoding" weight="0">
+    <url-pattern>/jirban</url-pattern>
+    <url-pattern>/jirban/*</url-pattern>
+  </servlet-filter>
+
   <!-- Add a filter to load up the valid user -->
   <servlet-filter name="Jirban Auth Filter" i18n-name-key="auth-filter.name" key="auth-filter" class="org.jirban.jira.servlet.AuthFilter" location="before-dispatch" weight="100">
     <description>Filter authenticating requests.</description>
@@ -60,5 +65,6 @@
   <rest name="Jirban Rest" key="jirban-rest" path="/jirban" version="1.0">
     <description>The REST API handling the requests from the angular2 client.</description>
   </rest>
+
 
 </atlassian-plugin>

@@ -11,9 +11,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.config.properties.APKeys;
 import com.atlassian.jira.config.properties.ApplicationProperties;
@@ -45,7 +42,7 @@ public class IndexServlet extends HttpServlet {
         if (webappRoot.charAt(webappRoot.length() - 1) != '/') {
             webappRoot.append('/');
         }
-        webappRoot.append("download/resources/org.jirban.jirban-jira/webapp");
+        webappRoot.append("jirban");
 
         Map<String, Object> context = new HashMap<>();
         context.put("webappRoot", webappRoot.toString());
