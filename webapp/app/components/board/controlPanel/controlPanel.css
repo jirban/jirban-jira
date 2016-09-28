@@ -63,6 +63,11 @@ a.close {
     font-size: 12px;
     font-weight: bold;
 }
+.sub-header {
+    color: #7F7F7F;
+    font-style: italic;
+}
+
 .setting-content {
     color: #222222;
     overflow: auto;

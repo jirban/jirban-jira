@@ -1,0 +1,26 @@
+<div [ngStyle]="parallelTaskMenuPosition" class="parallel-task-menu">
+    <div class="header">
+        <div><b>{{task.name}}</b></div>
+        <div>{{selectedOptionName}}</div>
+    </div>
+    <div>
+        <!--
+            The '00' is just there for padding, and will be invisible due to the colours. It keeps it
+            the same size as the task boxes in the issue cards, which have a code of length 2 displayed
+        -->
+        <span *ngFor="let option of task.options.array ; let i = index"
+            class="parallel-task"
+            title="{{getOptionName(i)}}"
+            [ngClass]="getSelectedClass(i)"
+            [style.background-color]="getColour(i)"  [style.color]="getColour(i)"
+            (mouseover)="onMouseOverOption(i)"
+            (mouseout)="onMouseOutOption(i)">
+
+            <a *ngIf="!isSelected(i)"
+                href="{{option}}"
+                [style.color]="getColour(i)"
+                (click)="onSelectOption($event, i)">00</a>
+            <span *ngIf="isSelected(i)">00</span>
+        </span>
+    </div>
+</div>

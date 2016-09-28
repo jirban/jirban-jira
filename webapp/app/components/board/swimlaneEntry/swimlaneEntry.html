@@ -21,7 +21,9 @@
         <div *ngIf="visibleColumns[state.index]">
             <ul class="issues-list">
                 <issue *ngFor="let issue of swimlane.issueTable[state.index]"
-                       [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
+                       [issue]="issue"
+                       (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                       (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
             </ul>
         </div>
         <div class="collapsed" *ngIf="!visibleColumns[state.index]">
@@ -37,7 +39,9 @@
         <div *ngIf="visibleColumns[state.index]">
             <ul class="issues-list">
                 <issue *ngFor="let issue of swimlane.issueTable[state.index]"
-                       [issue]="issue" (showIssueContextMenu)="onShowIssueContextMenu($event)"></issue>
+                       [issue]="issue"
+                       (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                       (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
             </ul>
         </div>
         <div class="state-summary" *ngIf="!visibleColumns[state.index]">

@@ -24,6 +24,7 @@ import static org.jirban.jira.impl.Constants.ASSIGNEE;
 import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.LINKED_ISSUES;
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.PRIORITY;
 import static org.jirban.jira.impl.Constants.STATE;
 import static org.jirban.jira.impl.Constants.SUMMARY;
@@ -43,6 +44,7 @@ import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
+import org.jirban.jira.impl.config.ParallelTaskConfig;
 import org.jirban.jira.impl.config.ProjectConfig;
 
 import com.atlassian.jira.issue.link.IssueLink;
@@ -133,11 +135,13 @@ public abstract class Issue {
      * @param assignee the assignee
      * @param components the component
      * @param customFieldValues
+     * @param parallelTaskValues
      * @return the issue
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
                                       String summary, String issueType, String priority, Assignee assignee,
-                                      Set<Component> components, Map<String, CustomFieldValue> customFieldValues) {
+                                      Set<Component> components, Map<String, CustomFieldValue> customFieldValues,
+                                      Map<Integer, Integer> parallelTaskValues) {
         Builder builder = new Builder(project, issueKey);
         builder.setState(state);
         builder.setSummary(summary);
@@ -146,6 +150,9 @@ public abstract class Issue {
         builder.setAssignee(assignee);
         builder.setComponents(components);
         builder.setCustomFieldValues(customFieldValues);
+        builder.setParallelTaskFieldValues(parallelTaskValues);
+
+        //TODO parallel task values
 
         //TODO linked issues
         return builder.build();
@@ -158,7 +165,7 @@ public abstract class Issue {
      * for fields we are not interested in, in which case we don't care about the change, and return {@code null}.If
      * the issue is for a state, priority or issue type not configured, {@code null} will be returned, having
      * updated the 'missing' maps in Board.
-     *  @param project the project the issue belongs to
+     * @param project the project the issue belongs to
      * @param existing the issue to update
      * @param issueType the new issue type
      * @param priority the new issue priority
@@ -167,20 +174,23 @@ public abstract class Issue {
      * @param issueComponents the new issue components
      * @param state the state of the issue  @return the new issue
      * @param customFieldValues the custom field values
+     * @param parallelTaskValues
      */
     static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
                                     String summary, Assignee issueAssignee, Set<Component> issueComponents,
-                                    String state, Map<String, CustomFieldValue> customFieldValues) {
+                                    String state, Map<String, CustomFieldValue> customFieldValues,
+                                    Map<Integer, Integer> parallelTaskValues) {
         if (existing instanceof BoardIssue == false) {
             return null;
         }
         return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority,
-                summary, issueAssignee, issueComponents, state, customFieldValues);
+                summary, issueAssignee, issueComponents, state, customFieldValues, parallelTaskValues);
     }
 
     private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
                                             String summary, Assignee issueAssignee, Set<Component> issueComponents,
-                                            String state, Map<String, CustomFieldValue> customFieldValues) {
+                                            String state, Map<String, CustomFieldValue> customFieldValues,
+                                            Map<Integer, Integer> parallelTaskValues) {
         Builder builder = new Builder(project, existing);
         boolean changed = false;
         if (issueType != null) {
@@ -223,6 +233,10 @@ public abstract class Issue {
             changed = true;
             builder.setCustomFieldValues(customFieldValues);
         }
+        if (parallelTaskValues.size() > 0) {
+            changed = true;
+            builder.setParallelTaskFieldValues(parallelTaskValues);
+        }
         if (changed) {
             return builder.build();
         }
@@ -240,11 +254,12 @@ public abstract class Issue {
         private final Integer priorityIndex;
         private final List<LinkedIssue> linkedIssues;
         private final Map<String, CustomFieldValue> customFieldValues;
+        private final List<Integer> parallelTaskFieldValues;
 
         public BoardIssue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary,
                           Integer issueTypeIndex, Integer priorityIndex, Assignee assignee,
                           Set<Component> components, List<LinkedIssue> linkedIssues,
-                          Map<String, CustomFieldValue> customFieldValues) {
+                          Map<String, CustomFieldValue> customFieldValues, List<Integer> parallelTaskFieldValues) {
             super(project, key, state, stateIndex, summary);
             this.issueTypeIndex = issueTypeIndex;
             this.priorityIndex = priorityIndex;
@@ -252,6 +267,7 @@ public abstract class Issue {
             this.components = components;
             this.linkedIssues = linkedIssues;
             this.customFieldValues = customFieldValues;
+            this.parallelTaskFieldValues = parallelTaskFieldValues;
         }
 
         boolean hasLinkedIssues() {
@@ -284,6 +300,13 @@ public abstract class Issue {
                     custom.get(customFieldValue.getCustomFieldName()).set(boardProject.getCustomFieldValueIndex(customFieldValue));
                 }
             }
+            if (parallelTaskFieldValues != null) {
+                ModelNode parallel = issueNode.get(PARALLEL_TASKS).setEmptyList();
+                for (Integer value : parallelTaskFieldValues) {
+                    parallel.add(value);
+                }
+            }
+
             if (hasLinkedIssues()) {
                 ModelNode linkedIssuesNode = issueNode.get(LINKED_ISSUES);
                 for (Issue linkedIssue : linkedIssues) {
@@ -334,6 +357,10 @@ public abstract class Issue {
         private Map<String, CustomFieldValue> originalCustomFieldValues;
         private Map<String, CustomFieldValue> customFieldValues;
 
+        //Will only be set for an update
+        private List<Integer> originalParallelTaskValues;
+        private Integer[] parallelTaskValues;
+
         private Builder(BoardProject.Accessor project, IssueLoadStrategy issueLoadStrategy) {
             this.project = project;
             this.issueKey = null;
@@ -367,6 +394,7 @@ public abstract class Issue {
                 this.linkedIssues = Collections.emptySet();
             }
             this.originalCustomFieldValues = existing.customFieldValues;
+            this.originalParallelTaskValues = existing.parallelTaskFieldValues;
         }
 
         void load(com.atlassian.jira.issue.Issue issue) {
@@ -474,7 +502,7 @@ public abstract class Issue {
                 return new BoardIssue(
                         project.getConfig(), issueKey, state, stateIndex, summary,
                         issueTypeIndex, priorityIndex, assignee, components, linkedList,
-                        mergeCustomFieldValues());
+                        mergeCustomFieldValues(), mergeParallelTaskFieldValues());
             }
             return null;
         }
@@ -499,6 +527,39 @@ public abstract class Issue {
             }
         }
 
+        private List<Integer> mergeParallelTaskFieldValues() {
+            if (originalParallelTaskValues == null) {
+                //We are creating a new issue
+                initialiseParallelTaskValues();
+                if (parallelTaskValues == null) {
+                    return null;
+                }
+                List<Integer> values = new ArrayList<>();
+                for (int i = 0 ; i < parallelTaskValues.length ; i++) {
+                    Integer val = parallelTaskValues[i];
+                    if (val == null) {
+                        val = 0;
+                    }
+                    values.add(val);
+                }
+                return Collections.unmodifiableList(values);
+            } else {
+                if (parallelTaskValues == null) {
+                    return originalParallelTaskValues;
+                }
+                List<Integer> merged = new ArrayList<>();
+                for (int i = 0 ; i < originalParallelTaskValues.size() ; i++) {
+                    Integer newVal = parallelTaskValues[i];
+                    if (newVal != null) {
+                        merged.add(newVal);
+                    } else {
+                        merged.add(originalParallelTaskValues.get(i));
+                    }
+                }
+                return Collections.unmodifiableList(merged);
+            }
+        }
+
         Builder setCustomFieldValues(Map<String, CustomFieldValue> customFieldValues) {
             if (customFieldValues != null) {
                 this.customFieldValues = customFieldValues;
@@ -516,6 +577,28 @@ public abstract class Issue {
 
         String getIssueKey() {
             return issueKey;
+        }
+
+        public Builder setParallelTaskFieldValue(int taskFieldIndex, int optionIndex) {
+            initialiseParallelTaskValues();
+            parallelTaskValues[taskFieldIndex] = optionIndex;
+            return this;
+        }
+
+        private Builder setParallelTaskFieldValues(Map<Integer, Integer> parallelTaskValues) {
+            for (Map.Entry<Integer, Integer> value : parallelTaskValues.entrySet()) {
+                setParallelTaskFieldValue(value.getKey(), value.getValue());
+            }
+            return this;
+        }
+
+        private void initialiseParallelTaskValues() {
+            if (parallelTaskValues == null) {
+                ParallelTaskConfig parallelTaskConfig = project.getConfig().getParallelTaskConfig();
+                if (parallelTaskConfig != null) {
+                    parallelTaskValues = new Integer[parallelTaskConfig.getConfigs().size()];
+                }
+            }
         }
 
     }
@@ -536,9 +619,12 @@ public abstract class Issue {
             this.project = project;
         }
 
+
+
         @Override
         public void handle(com.atlassian.jira.issue.Issue issue, Builder builder) {
             builder.setCustomFieldValues(CustomFieldValue.loadCustomFieldValues(project, issue));
+            CustomFieldValue.loadParallelTaskValues(project, issue, builder);
         }
 
         @Override

@@ -7,8 +7,8 @@ import {IMap} from "../../common/map";
 export class ChangeSet {
     private _view:number;
 
-    private _issueAdds:IssueChange[];
-    private _issueUpdates:IssueChange[];
+    private _issueAdds:IssueAdd[];
+    private _issueUpdates:IssueUpdate[];
     private _issueDeletes:string[];
 
     private _addedAssignees:Assignee[];
@@ -31,15 +31,15 @@ export class ChangeSet {
             let updatedIssues:any[] = issues.update;
             let deletedIssues:any[] = issues.delete;
             if (newIssues) {
-                this._issueAdds = new Array<IssueChange>(newIssues.length);
+                this._issueAdds = new Array<IssueAdd>(newIssues.length);
                 for (let i:number = 0 ; i < newIssues.length ; i++) {
-                    this._issueAdds[i] = IssueChange.deserializeAdd(newIssues[i]);
+                    this._issueAdds[i] = IssueAdd.deserialize(newIssues[i]);
                 }
             }
             if (updatedIssues) {
-                this._issueUpdates = new Array<IssueChange>(updatedIssues.length);
+                this._issueUpdates = new Array<IssueUpdate>(updatedIssues.length);
                 for (let i:number = 0 ; i < updatedIssues.length ; i++) {
-                    this._issueUpdates[i] = IssueChange.deserializeUpdate(updatedIssues[i]);
+                    this._issueUpdates[i] = IssueUpdate.deserialize(updatedIssues[i]);
                 }
             }
             if (deletedIssues) {
@@ -90,11 +90,11 @@ export class ChangeSet {
         return this._view;
     }
 
-    get issueAdds():IssueChange[] {
+    get issueAdds():IssueAdd[] {
         return this._issueAdds;
     }
 
-    get issueUpdates():IssueChange[] {
+    get issueUpdates():IssueUpdate[] {
         return this._issueUpdates;
     }
 
@@ -157,10 +157,6 @@ export class IssueChange {
     private _components:string[];
     private _customFieldValues:IMap<string>;
 
-    //Only set on update
-    private _unassigned:boolean = false;
-    private _clearedComponents:boolean = false;
-
     constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string,
                 components:string[], customFieldValues:IMap<string>) {
         this._key = key;
@@ -201,6 +197,48 @@ export class IssueChange {
         return this._components;
     }
 
+    get customFieldValues():IMap<string> {
+        return this._customFieldValues;
+    }
+}
+
+export class IssueAdd extends IssueChange {
+
+    private _parallelTaskValues:number[];
+
+    constructor(key: string, type: string, priority: string, summary: string, state: string,
+                assignee: string, components: string[], customFieldValues: IMap<string>,
+                parallelTaskValues:number[]) {
+        super(key, type, priority, summary, state, assignee, components, customFieldValues);
+        this._parallelTaskValues = parallelTaskValues;
+    }
+
+    static deserialize(input:any) : IssueAdd {
+        return new IssueAdd(input.key, input.type, input.priority, input.summary,
+            input.state, input.assignee, input.components, input.custom, input["parallel-tasks"]);
+    }
+
+
+    get parallelTaskValues(): number[] {
+        return this._parallelTaskValues;
+    }
+}
+
+export class IssueUpdate extends IssueChange {
+    //Only set on update
+    private _unassigned:boolean = false;
+    private _clearedComponents:boolean = false;
+    private _parallelTaskValueUpdates:IMap<number>;
+
+
+    constructor(key: string, type: string, priority: string, summary: string, state: string, assignee: string, unassigned: boolean,
+                components: string[], clearedComponents: boolean, customFieldValues: IMap<string>, parallelTaskValueUpdates:IMap<number>) {
+        super(key, type, priority, summary, state, assignee, components, customFieldValues);
+        this._unassigned = unassigned;
+        this._clearedComponents = clearedComponents;
+        this._parallelTaskValueUpdates = parallelTaskValueUpdates;
+    }
+
     get unassigned():boolean {
         return this._unassigned;
     }
@@ -209,39 +247,21 @@ export class IssueChange {
         return this._clearedComponents;
     }
 
-    get customFieldValues():IMap<string> {
-        return this._customFieldValues;
+    get parallelTaskValueUpdates(): IMap<number> {
+        return this._parallelTaskValueUpdates;
     }
 
-    static deserializeAdd(input:any) : IssueChange {
-        return new IssueChange(input.key, input.type, input.priority, input.summary,
-            input.state, input.assignee, input.components, input.custom);
-    }
+    static deserialize(input:any) : IssueUpdate {
+        let unassigned:boolean = !!input["unassigned"];
+        let clearedComponents:boolean = !!input["clear-components"];
+        let parallelTasks:IMap<number> = input["parallel-tasks"];
 
-    static deserializeUpdate(input:any) : IssueChange {
-        // let clearedCustomFields:string[] = [];
-        // let custom:Indexed<CustomFieldValue> = new Indexed<CustomFieldValue>();
-        // if (input.custom) {
-        //     for (let key in input.custom) {
-        //         let customValue = input.custom[key];
-        //         if (!customValue) {
-        //             clearedCustomFields.push(key);
-        //         } else {
-        //             custom.add(key, new CustomFieldValue(key, customValue));
-        //         }
-        //     }
-        // }
-
-        let change:IssueChange =
-            new IssueChange(
+        let change:IssueUpdate =
+            new IssueUpdate(
                 input.key, input.type, input.priority, input.summary,
-                input.state, input.assignee, input.components, input.custom);
-        if (input.unassigned) {
-            change._unassigned = true;
-        }
-        if (input["clear-components"]) {
-            change._clearedComponents = true;
-        }
+                input.state, input.assignee, unassigned, input.components, clearedComponents,
+                input.custom, parallelTasks);
+
         return change;
     }
 }

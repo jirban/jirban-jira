@@ -23,6 +23,7 @@ package org.jirban.jira.impl.config;
 
 import static org.jirban.jira.impl.Constants.COLOUR;
 import static org.jirban.jira.impl.Constants.CUSTOM;
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.STATE_LINKS;
 import static org.jirban.jira.impl.config.Util.getRequiredChild;
 
@@ -56,20 +57,22 @@ public class BoardProjectConfig extends ProjectConfig {
     private final Set<String> ownDoneStateNames;
 
     private final List<String> customFieldNames;
-
+    private final ParallelTaskConfig parallelTaskConfig;
 
     private BoardProjectConfig(final BoardStates boardStates,
-                                final String code, final String queryFilter,
-                                final String colour, final Map<String, Integer> states,
-                                final Map<String, String> ownToBoardStates,
-                                final Map<String, String> boardToOwnStates,
-                                final List<String> customFieldNames) {
+                               final String code, final String queryFilter,
+                               final String colour, final Map<String, Integer> states,
+                               final Map<String, String> ownToBoardStates,
+                               final Map<String, String> boardToOwnStates,
+                               final List<String> customFieldNames,
+                               final ParallelTaskConfig parallelTaskConfig) {
         super(code, states);
         this.boardStates = boardStates;
         this.queryFilter = queryFilter;
         this.colour = colour;
         this.boardToOwnStates = boardToOwnStates;
         this.ownToBoardStates = ownToBoardStates;
+        this.parallelTaskConfig = parallelTaskConfig;
 
         Set<String> ownDoneStateNames = new HashSet<>();
         for (String boardDoneState : boardStates.getDoneStates()) {
@@ -82,7 +85,8 @@ public class BoardProjectConfig extends ProjectConfig {
         this.customFieldNames = customFieldNames;
     }
 
-    static BoardProjectConfig load(final BoardStates boardStates, final String projectCode, ModelNode project, Map<String, CustomFieldConfig> customFieldConfigs) {
+    static BoardProjectConfig load(final BoardStates boardStates, final String projectCode, ModelNode project,
+                                   CustomFieldRegistry<CustomFieldConfig> customFieldConfigs, ParallelTaskConfig parallelTaskConfig) {
         String colour = getRequiredChild(project, "Project", projectCode, COLOUR).asString();
         ModelNode statesLinks = getRequiredChild(project, "Project", projectCode, STATE_LINKS);
 
@@ -112,22 +116,43 @@ public class BoardProjectConfig extends ProjectConfig {
             customFieldNames = new ArrayList<>();
             final ModelNode customFieldNode = project.get(CUSTOM);
             if (customFieldNode.getType() != ModelType.LIST) {
-                throw new JirbanValidationException("The \"config\" element of project \"" + projectCode + "\" must be an array of strings");
+                throw new JirbanValidationException("The \"custom\" element of project \"" + projectCode + "\" must be an array of strings");
             }
             for (ModelNode field : customFieldNode.asList()) {
                 final String fieldName = field.asString();
-                if (!customFieldConfigs.containsKey(fieldName)) {
-                    throw new JirbanValidationException("The \"config\" element of project \"" + projectCode + "\" contains \"" + fieldName + "\", which does not exist in the board's \"config\" section.");
+                if (customFieldConfigs.getForJirbanName(fieldName) == null) {
+                    throw new JirbanValidationException("The \"custom\" element of project \"" + projectCode + "\" contains \"" + fieldName + "\", which does not exist in the board's \"custom\" section.");
                 }
                 customFieldNames.add(fieldName);
             }
+        }
+
+        final ParallelTaskConfig projectParallelTaskConfig;
+        if (project.hasDefined(PARALLEL_TASKS)) {
+            ModelNode parallelTasks = project.get(PARALLEL_TASKS);
+            if (parallelTasks.getType() != ModelType.LIST) {
+                throw new JirbanValidationException("The \"parallel-tasks\" element of project \"" + projectCode + "\" must be an array");
+            }
+            Map<String, ParallelTaskCustomFieldConfig> fieldConfigs = new LinkedHashMap<>();
+            for (ModelNode parallelTask : parallelTasks.asList()) {
+                ParallelTaskCustomFieldConfig fieldConfig = parallelTaskConfig.getConfigs().getForJirbanName(parallelTask.asString());
+                if (fieldConfig == null) {
+                    throw new JirbanValidationException("The \"parallel-tasks\" element of project \"" + projectCode + "\" " +
+                            "references a parallel task '" + parallelTask.asString() + "' which does not exist in the global parallel-tasks fields list");
+                }
+                fieldConfigs.put(fieldConfig.getName(), fieldConfig);
+            }
+            projectParallelTaskConfig = fieldConfigs.size() > 0 ? new ParallelTaskConfig(fieldConfigs) : null;
+        } else {
+            projectParallelTaskConfig = null;
         }
 
         return new BoardProjectConfig(boardStates, projectCode, loadQueryFilter(project), colour,
                 Collections.unmodifiableMap(states),
                 Collections.unmodifiableMap(ownToBoardStates),
                 Collections.unmodifiableMap(boardToOwnStates),
-                Collections.unmodifiableList(customFieldNames));
+                Collections.unmodifiableList(customFieldNames),
+                projectParallelTaskConfig);
     }
 
 
@@ -149,7 +174,6 @@ public class BoardProjectConfig extends ProjectConfig {
     public String getColour() {
         return colour;
     }
-
 
     public Integer mapOwnStateOntoBoardStateIndex(String state) {
         String boardState = mapOwnStateOntoBoardState(state);
@@ -188,6 +212,13 @@ public class BoardProjectConfig extends ProjectConfig {
             }
         }
 
+        if (parallelTaskConfig != null) {
+            ModelNode parallelTasksNode = projectNode.get(PARALLEL_TASKS).setEmptyList();
+            for (ParallelTaskCustomFieldConfig parallelTaskCustomFieldConfig : parallelTaskConfig.getConfigs().values()) {
+                parallelTasksNode.add(parallelTaskCustomFieldConfig.getName());
+            }
+        }
+
         final ModelNode stateLinksNode = projectNode.get(STATE_LINKS);
         stateLinksNode.setEmptyObject();
         for (Map.Entry<String, String> entry : ownToBoardStates.entrySet()) {
@@ -221,4 +252,9 @@ public class BoardProjectConfig extends ProjectConfig {
         JirbanLogger.LOGGER.trace("Custom fields for project {} are {}", getCode(), customFieldNames);
         return customFieldNames;
     }
+
+    public ParallelTaskConfig getParallelTaskConfig() {
+        return parallelTaskConfig;
+    }
+
 }

@@ -79,6 +79,11 @@
                             [ngClass]="filtersToDisplay === customField.name ? 'filter selected' : 'filter'" title="{{filterTooltips[customField.name]}}">
                         <a href="Filter {{customField.name}}" (click)="onSelectFiltersToDisplay($event, customField.name)"
                            [ngClass]="getFilterLinkClass(customField.name)">{{customField.name}}</a></div>
+                    <div *ngIf="hasParallelTasks()"
+                         [ngClass]="filtersToDisplay === 'parallel-tasks' ? 'filter selected' : 'filter'" title="{{filterTooltips['parallel-tasks']}}">
+                        <a href="Filter Parallel Tasks" (click)="onSelectFiltersToDisplay($event, 'parallel-tasks')"
+                           [ngClass]="getFilterLinkClass('parallel-tasks')">Parallel Tasks</a>
+                    </div>
 
                 </div>
             </div>
@@ -144,19 +149,36 @@
                     </div>
                 </div>
             </div>
-            <div *ngFor="let customFieldValues of customFields">
-                <div class="setting" *ngIf="filtersToDisplay === customFieldValues.name">
-                    <div class="setting-header clickable" (click)="clearFilter($event, customFieldValues.name)"
-                         title="Clear filter">{{customFieldValues.name}} Filter</div>
-                    <div class="setting-content" title="Scroll me!" formGroupName="{{customFieldValues.name}}">
-                        <div class="setting-entry">
-                            <input type="checkbox" formControlName="{{none}}" id="custom-{{customFieldValues.name}}-{{none}}"/>
-                            <label [attr.for]="'custom-' + customFieldValues.name + '-' + none">None</label>
+            <div *ngIf="hasCustomFields()" formGroupName="custom-fields">
+                <div *ngFor="let customFieldValues of customFields">
+                    <div class="setting" *ngIf="filtersToDisplay === customFieldValues.name">
+                        <div class="setting-header clickable" (click)="clearFilter($event, 'custom-fields-' + customFieldValues.name)"
+                             title="Clear filter">{{customFieldValues.name}} Filter</div>
+                        <div class="setting-content" title="Scroll me!" formGroupName="{{customFieldValues.name}}">
+                            <div class="setting-entry">
+                                <input type="checkbox" formControlName="{{none}}" id="custom-{{customFieldValues.name}}-{{none}}"/>
+                                <label [attr.for]="'custom-' + customFieldValues.name + '-' + none">None</label>
+                            </div>
+                            <div *ngFor="let customFieldValue of customFieldValues.values.array" class="setting-entry">
+                                <input type="checkbox" formControlName="{{customFieldValue.key}}"
+                                       id="custom-{{customFieldValues.name}}-{{customFieldValue.key}}"/>
+                                <label [attr.for]="'custom-' + customFieldValues.name + '-' + customFieldValue.key">{{customFieldValue.displayValue}}</label>
+                            </div>
                         </div>
-                        <div *ngFor="let customFieldValue of customFieldValues.values.array" class="setting-entry">
-                            <input type="checkbox" formControlName="{{customFieldValue.key}}"
-                                   id="custom-{{customFieldValues.name}}-{{customFieldValue.key}}"/>
-                            <label [attr.for]="'custom-' + customFieldValues.name + '-' + customFieldValue.key">{{customFieldValue.displayValue}}</label>
+                    </div>
+                </div>
+            </div>
+           <div class="setting" *ngIf="filtersToDisplay === 'parallel-tasks'">
+                <div class="setting-header clickable" (click)="clearFilter($event, 'parallel-tasks')" title="Clear filter">Parallel Tasks Filter</div>
+                <div class="setting-content" title="Scroll me!" formGroupName="parallel-tasks">
+                    <div *ngFor="let task of parallelTasks ; let i = index">
+                        <div class="sub-header setting-header clickable" (click)="clearFilter($event, 'parallel-tasks-' + task.code)" title="Clear filter">{{task.name}} ({{task.code}})</div>
+                        <div formGroupName="{{task.code}}">
+                            <div *ngFor="let option of task.options.array" >
+                                <input type="checkbox" formControlName="{{option}}"
+                                       id="parallel-task-{{code}}-{{option}}"/>
+                                <label [attr.for]="'parallel-task-' + code + '-' + option">{{option}}</label>
+                            </div>
                         </div>
                     </div>
                 </div>

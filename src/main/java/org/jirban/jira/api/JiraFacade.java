@@ -107,4 +107,13 @@ public interface JiraFacade
      */
     String getUserAccessJson(ApplicationUser user);
 
+    /**
+     * Updates an issue's parallel task value
+     * @param user the currently logged in used
+     * @param boardCode
+     * @param issueKey
+     * @param taskIndex the index of the task within the issue's project's config
+     * @param optionIndex the index of the option within the task
+     */
+    void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex);
 }

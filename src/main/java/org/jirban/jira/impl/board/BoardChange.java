@@ -63,6 +63,7 @@ public class BoardChange {
     private final Boolean backlogState;
     private final Map<String, CustomFieldValue> customFieldValues;
     private final Map<String, CustomFieldValue> newCustomFieldValues;
+    private final Map<Integer, Integer> parallelTaskValues;
     private final Boolean fromBacklogState;
 
 
@@ -71,7 +72,8 @@ public class BoardChange {
                         String addedBlacklistIssue, String deletedBlacklistIssue,
                         Boolean fromBacklogState, Boolean backlogState,
                         Map<String, CustomFieldValue> customFieldValues,
-                        Map<String, CustomFieldValue> newCustomFieldValues) {
+                        Map<String, CustomFieldValue> newCustomFieldValues,
+                        Map<Integer, Integer> parallelTaskValues) {
         this.view = view;
         this.event = event;
         this.newAssignee = newAssignee;
@@ -85,6 +87,7 @@ public class BoardChange {
         this.backlogState = backlogState;
         this.customFieldValues = customFieldValues;
         this.newCustomFieldValues = newCustomFieldValues;
+        this.parallelTaskValues = parallelTaskValues;
     }
 
     long getTime() {
@@ -147,6 +150,10 @@ public class BoardChange {
         return newCustomFieldValues;
     }
 
+    public Map<Integer, Integer> getParallelTaskValues() {
+        return parallelTaskValues;
+    }
+
     public static class Builder {
         private final BoardChangeRegistry registry;
         private final int view;
@@ -171,6 +178,7 @@ public class BoardChange {
         private Boolean fromBacklogState;
         private Boolean backlogState;
         private Map<String, CustomFieldValue> customFieldValues;
+        private Map<Integer, Integer> parallelTaskValues;
 
         Builder(BoardChangeRegistry registry, int view, JirbanIssueEvent event) {
             this.registry = registry;
@@ -233,12 +241,20 @@ public class BoardChange {
             return this;
         }
 
+        public Builder setParallelTaskValues(Map<Integer, Integer> parallelTaskValues) {
+            this.parallelTaskValues = Collections.unmodifiableMap(parallelTaskValues);
+            return this;
+        }
+
+
         public void buildAndRegister() {
             BoardChange change = new BoardChange(
                     view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
                     addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue,
-                    fromBacklogState, backlogState, customFieldValues, newCustomFieldValues);
+                    fromBacklogState, backlogState, customFieldValues, newCustomFieldValues,
+                    parallelTaskValues);
             registry.registerChange(change);
         }
+
     }
 }

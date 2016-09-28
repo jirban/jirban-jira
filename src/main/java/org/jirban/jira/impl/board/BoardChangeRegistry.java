@@ -33,6 +33,7 @@ import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.NEW;
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
 import static org.jirban.jira.impl.Constants.RANK;
@@ -441,6 +442,7 @@ public class BoardChangeRegistry {
         private Boolean backlogEndState;
 
         private Map<String, CustomFieldValue> customFieldValues;
+        private Map<Integer, Integer> parallelTaskValues;
 
         private IssueChange(String projectCode, String issueKey, Boolean backlogState) {
             this.projectCode = projectCode;
@@ -554,6 +556,13 @@ public class BoardChangeRegistry {
                     this.customFieldValues.put(entry.getKey(), entry.getValue());
                 }
             }
+            if (boardChange.getParallelTaskValues() != null) {
+                if (this.parallelTaskValues == null) {
+                    this.parallelTaskValues = new HashMap<>();
+                }
+
+                parallelTaskValues.putAll(boardChange.getParallelTaskValues());
+            }
         }
 
         void mergeType(JirbanIssueEvent event) {
@@ -596,6 +605,11 @@ public class BoardChangeRegistry {
                     if (customFieldValues != null) {
                         customFieldValues.forEach((key,value)-> output.get(CUSTOM, key).set(value.getKey()));
                     }
+                    if (parallelTaskValues != null) {
+                        for (int i = 0 ; i < parallelTaskValues.size() ; i++) {
+                            output.get(PARALLEL_TASKS).add(parallelTaskValues.get(i));
+                        }
+                    }
                     output.get(STATE).set(state);
                     break;
                 case UPDATE:
@@ -620,6 +634,9 @@ public class BoardChangeRegistry {
                             ModelNode fieldKey = value == null ? new ModelNode() : new ModelNode(value.getKey());
                             output.get(CUSTOM, key).set(fieldKey);
                         });
+                    }
+                    if (parallelTaskValues != null) {
+                        parallelTaskValues.forEach((key, value) -> output.get(PARALLEL_TASKS, key.toString()).set(value));
                     }
                     if (state != null) {
                         output.get(STATE).set(state);

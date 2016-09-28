@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl.board;
 
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.RANK;
 import static org.jirban.jira.impl.Constants.RANKED;
 
@@ -35,6 +36,7 @@ import java.util.Set;
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.NextRankedIssueUtil;
+import org.jirban.jira.api.ProjectParallelTaskOptionsLoader;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
@@ -69,10 +71,12 @@ public class BoardProject {
     private volatile Board board;
     private final BoardProjectConfig projectConfig;
     private final List<String> rankedIssueKeys;
+    private final Map<String, SortedParallelTaskFieldOptions> parallelTaskValues;
 
-    private BoardProject(BoardProjectConfig projectConfig, List<String> rankedIssueKeys) {
+    private BoardProject(BoardProjectConfig projectConfig, List<String> rankedIssueKeys, Map<String, SortedParallelTaskFieldOptions> parallelTaskValues) {
         this.projectConfig = projectConfig;
         this.rankedIssueKeys = rankedIssueKeys;
+        this.parallelTaskValues = parallelTaskValues;
     }
 
     void setBoard(Board board) {
@@ -109,15 +113,25 @@ public class BoardProject {
             }
         }
         parent.get(RANKED).set(ranked);
+
+        if (parallelTaskValues.size() > 0) {
+            ModelNode parallelTasks = parent.get(PARALLEL_TASKS).setEmptyList();
+            for (SortedParallelTaskFieldOptions sortedCustomFieldValues : parallelTaskValues.values()) {
+                sortedCustomFieldValues.serialize(parallelTasks);
+            }
+        }
+
     }
 
     boolean isOwner() {
         return board.getConfig().getOwnerProjectCode().equals(projectConfig.getCode());
     }
 
-    static Builder builder(JiraInjectables jiraInjectables, Board.Builder builder, BoardProjectConfig projectConfig,
+    static Builder builder(JiraInjectables jiraInjectables, ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader, Board.Builder builder, BoardProjectConfig projectConfig,
                            ApplicationUser boardOwner) {
-        return new Builder(jiraInjectables, builder, projectConfig, boardOwner);
+        Map<String, SortedParallelTaskFieldOptions> parallelTaskValues = projectParallelTaskOptionsLoader.loadValues(jiraInjectables, builder.getConfig(), projectConfig);
+        parallelTaskValues = Collections.unmodifiableMap(parallelTaskValues);
+        return new Builder(jiraInjectables, builder, projectConfig, boardOwner, parallelTaskValues);
     }
 
     static LinkedProjectContext linkedProjectContext(Board.Accessor board, LinkedProjectConfig linkedProjectConfig) {
@@ -147,6 +161,9 @@ public class BoardProject {
         return projectConfig.getCode();
     }
 
+    public Map<String, SortedParallelTaskFieldOptions> getParallelTaskValues() {
+        return parallelTaskValues;
+    }
 
     private boolean hasRankPermission(ApplicationUser user, ProjectManager projectManager, PermissionManager permissionManager) {
         Project project = projectManager.getProjectByCurrentKey(projectConfig.getCode());
@@ -183,8 +200,7 @@ public class BoardProject {
         return queryBuilder.buildQuery();
     }
 
-
-    public static class Accessor {
+    public static abstract class Accessor {
         protected final JiraInjectables jiraInjectables;
         protected final Board.Accessor board;
         protected final BoardProjectConfig projectConfig;
@@ -271,6 +287,8 @@ public class BoardProject {
         public JiraInjectables getJiraInjectables() {
             return jiraInjectables;
         }
+
+        abstract Map<String, SortedParallelTaskFieldOptions> getParallelTaskValues();
     }
 
     /**
@@ -279,11 +297,13 @@ public class BoardProject {
     public static class Builder extends Accessor {
         private final List<String> rankedIssueKeys = new ArrayList<>();
         private final Map<String, List<String>> issueKeysByState = new HashMap<>();
+        private final Map<String, SortedParallelTaskFieldOptions> parallelTaskValues;
 
 
         private Builder(JiraInjectables jiraInjectables, Board.Accessor board, BoardProjectConfig projectConfig,
-                        ApplicationUser boardOwner) {
+                        ApplicationUser boardOwner, Map<String, SortedParallelTaskFieldOptions> parallelTaskValues) {
             super(jiraInjectables, board, projectConfig, boardOwner);
+            this.parallelTaskValues = parallelTaskValues;
         }
 
         Builder addIssue(String state, Issue issue) {
@@ -291,6 +311,10 @@ public class BoardProject {
             issueKeys.add(issue.getKey());
             board.addIssue(issue);
             return this;
+        }
+
+        public Map<String, SortedParallelTaskFieldOptions> getParallelTaskValues() {
+            return parallelTaskValues;
         }
 
         void load() throws SearchException {
@@ -323,7 +347,8 @@ public class BoardProject {
         BoardProject build() {
             return new BoardProject(
                     projectConfig,
-                    Collections.unmodifiableList(rankedIssueKeys));
+                    Collections.unmodifiableList(rankedIssueKeys),
+                    Collections.unmodifiableMap(parallelTaskValues));
         }
 
         public void addBulkLoadedCustomFieldValue(CustomFieldConfig customFieldConfig, CustomFieldValue value) {
@@ -351,10 +376,11 @@ public class BoardProject {
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
                           Assignee assignee, Set<Component> issueComponents, String state,
-                          Map<String, CustomFieldValue> customFieldValues) throws SearchException {
+                          Map<String, CustomFieldValue> customFieldValues, Map<Integer, Integer> parallelTaskValues) throws SearchException {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
             newIssue = Issue.createForCreateEvent(
-                    this, issueKey, state, summary, issueType, priority, assignee, issueComponents, customFieldValues);
+                    this, issueKey, state, summary, issueType, priority,
+                    assignee, issueComponents, customFieldValues, parallelTaskValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
 
             if (newIssue != null) {
@@ -365,10 +391,11 @@ public class BoardProject {
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
                           Assignee issueAssignee, Set<Component> issueComponents, boolean reranked,
-                          String state, Map<String, CustomFieldValue> customFieldValues) throws SearchException {
+                          String state, Map<String, CustomFieldValue> customFieldValues,
+                          Map<Integer, Integer> parallelTaskValues) throws SearchException {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), reranked);
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
-                    summary, issueAssignee, issueComponents, state, customFieldValues);
+                    summary, issueAssignee, issueComponents, state, customFieldValues, parallelTaskValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}. Reranked: {}", existing, newIssue, reranked);
             if (reranked) {
                 rankedIssueKeys = rankIssues(existing.getKey());
@@ -380,6 +407,11 @@ public class BoardProject {
             rankedIssueKeys = new ArrayList<>(project.rankedIssueKeys);
             rankedIssueKeys.remove(issue.getKey());
         }
+
+        public Map<String, SortedParallelTaskFieldOptions> getParallelTaskValues() {
+            return project.getParallelTaskValues();
+        }
+
 
         List<String> rankIssues(String issueKey) throws SearchException {
             String nextIssueKey = nextRankedIssueUtil.findNextRankedIssue(this.projectConfig, boardOwner, issueKey);
@@ -442,7 +474,7 @@ public class BoardProject {
                     this.rankedIssueKeys != null ?
                             Collections.unmodifiableList(this.rankedIssueKeys) : project.rankedIssueKeys;
 
-            return new BoardProject(projectConfig, rankedIssueKeys);
+            return new BoardProject(projectConfig, rankedIssueKeys, project.parallelTaskValues);
         }
     }
 

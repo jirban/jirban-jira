@@ -3,17 +3,18 @@ package org.jirban.jira.impl.board;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 
 /**
+ * Caches values loaded up by a field
+ *
  * @author Kabir Khan
  */
 public abstract class BulkLoadContext<T> {
     private final CustomFieldConfig config;
     private final Map<T, CustomFieldValue> cachedValues = new HashMap<T, CustomFieldValue>();
 
-    public BulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig config) {
+    public BulkLoadContext(CustomFieldConfig config) {
         this.config = config;
     }
 

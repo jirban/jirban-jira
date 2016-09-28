@@ -38,6 +38,7 @@ import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.NEW;
+import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
 import static org.jirban.jira.impl.Constants.PRIORITY;
 import static org.jirban.jira.impl.Constants.PROJECTS;
@@ -60,7 +61,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.jboss.dmr.ModelNode;
+import org.jirban.jira.impl.BoardManagerBuilder;
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.board.ProjectParallelTaskOptionsLoaderBuilder;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,10 +83,9 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     private void setupInitialBoard(String cfgResource, AdditionalSetup additionalSetup) throws Exception {
-        initializeMocks(cfgResource);
+        initializeMocks(cfgResource, additionalSetup);
         setupIssues(additionalSetup);
     }
-
 
     @Before
     public void setupIssues() throws SearchException {
@@ -104,7 +106,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");    //3
 
         if (additionalSetup != null) {
-            additionalSetup.setup();
+            additionalSetup.setupIssues();
         }
 
         checkViewId(0);
@@ -817,7 +819,11 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         final Long documenterId = 121212121213L;
         setupInitialBoard("config/board-custom.json", new AdditionalSetup() {
             @Override
-            public void setup() {
+            public void initialise(BoardManagerBuilder boardManagerBuilder) {
+            }
+
+            @Override
+            public void setupIssues() {
                 //Make sure that 'kabir' is in the list of custom fields
                 issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("brian"));
                 issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("stuart"));
@@ -910,6 +916,243 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkUpdates(3, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
         checkUpdates(4, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
         checkNoBlacklistChanges(changes);
+        checkNoRankChanges(changes);
+    }
+
+
+    @Test
+    public void testCreateIssuesParallelTasks()throws Exception {
+        final Long upstreamId = 121212121212L;
+        final Long downstreamId = 121212121213L;
+        setupInitialBoard("config/board-parallel-tasks.json", new AdditionalSetup() {
+            @Override
+            public void setupIssues() {
+            }
+
+            @Override
+            public void initialise(BoardManagerBuilder boardManagerBuilder) {
+                boardManagerBuilder.setProjectParallelTaskOptionsLoader(
+                        new ProjectParallelTaskOptionsLoaderBuilder()
+                                .addCustomFieldOption("TDP", upstreamId, "NS", "Not Started")
+                                .addCustomFieldOption("TDP", upstreamId, "IP", "In Progress")
+                                .addCustomFieldOption("TDP", upstreamId, "M", "Merged")
+                                .addCustomFieldOption("TDP", downstreamId, "TD", "TODO")
+                                .addCustomFieldOption("TDP", downstreamId, "IP", "In Progress")
+                                .addCustomFieldOption("TDP", downstreamId, "D", "Done")
+                                .build()
+                );
+            }
+        });
+
+        //Create an issue with parallel tasks
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(upstreamId, "IP");
+        customFieldValues.put(downstreamId, "D");
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
+                new ParallelTaskFieldValueChecker(true, 1, 2)));
+        checkNoBlacklistChanges(changes);
+        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+
+        //Create another issue with no parallel tasks, we should default to the default value
+        customFieldValues = new HashMap<>();
+        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        changes = getChangesJson(1, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes, new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
+                new ParallelTaskFieldValueChecker(true, 0, 0)));
+        checkNoBlacklistChanges(changes);
+        checkRankChanges(changes, new RankChange(8, "TDP-9"));
+
+        //Create another issue with null parallel tasks, we should default to the default value
+        customFieldValues = null;
+        create = createCreateEventAndAddToRegistry("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        changes = getChangesJson(2, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes, new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
+                new ParallelTaskFieldValueChecker(true, 0, 0)));
+        checkNoBlacklistChanges(changes);
+        checkRankChanges(changes, new RankChange(9, "TDP-10"));
+
+        //Create an issue in a project with no parallel tasks set up
+        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", null, null, "TBG-X");
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        changes = getChangesJson(3, 4);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes, new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", null, null, "TBG-X",
+                new ParallelTaskFieldValueChecker(true, null)));
+        checkNoBlacklistChanges(changes);
+        checkRankChanges(changes, new RankChange(3, "TBG-4"));
+    }
+
+    @Test
+    public void testUpdateIssueParallelTasks() throws Exception {
+        final Long upstreamId = 121212121212L;
+        final Long downstreamId = 121212121213L;
+        setupInitialBoard("config/board-parallel-tasks.json", new AdditionalSetup() {
+            @Override
+            public void setupIssues() {
+            }
+
+            @Override
+            public void initialise(BoardManagerBuilder boardManagerBuilder) {
+                boardManagerBuilder.setProjectParallelTaskOptionsLoader(
+                        new ProjectParallelTaskOptionsLoaderBuilder()
+                                .addCustomFieldOption("TDP", upstreamId, "NS", "Not Started")
+                                .addCustomFieldOption("TDP", upstreamId, "IP", "In Progress")
+                                .addCustomFieldOption("TDP", upstreamId, "M", "Merged")
+                                .addCustomFieldOption("TDP", downstreamId, "TD", "TODO")
+                                .addCustomFieldOption("TDP", downstreamId, "IP", "In Progress")
+                                .addCustomFieldOption("TDP", downstreamId, "D", "Done")
+                                .build()
+                );
+            }
+        });
+
+        //Update an issue with parallel tasks
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(upstreamId, "M");
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        checkViewId(1);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkUpdates(changes, new IssueData("TDP-1", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, -1)));
+
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(upstreamId, "IP");
+        customFieldValues.put(downstreamId, "D");
+        update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        checkViewId(2);
+        changes = getChangesJson(0, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoRankChanges(changes);
+        checkUpdates(changes,
+                new IssueData("TDP-1", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, -1)),
+                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)));
+        changes = getChangesJson(1, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoRankChanges(changes);
+        checkUpdates(changes,
+                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)));
+
+
+        //Update an issue which does not have parallel task fields
+        update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
+                null, null, false, null, false, null, false);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        checkViewId(2);
+        update = createUpdateEventAndAddToRegistry("TBG-1", IssueType.BUG, null,
+                null, null, false, null, false, null, false);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        checkViewId(3);
+        changes = getChangesJson(0, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoRankChanges(changes);
+        checkUpdates(changes,
+                new IssueData("TDP-1", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, -1)),
+                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)),
+                new IssueData("TBG-1", IssueType.BUG, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, null)));
+        changes = getChangesJson(1, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoRankChanges(changes);
+        checkUpdates(changes,
+                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)),
+                new IssueData("TBG-1", IssueType.BUG, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, null)));
+        changes = getChangesJson(2, 3);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoRankChanges(changes);
+        checkUpdates(changes,
+                new IssueData("TBG-1", IssueType.BUG, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, null)));
+
+    }
+
+    @Test
+    public void testCreateAndUpdateIssuesParallelTasks()throws Exception {
+        final Long upstreamId = 121212121212L;
+        final Long downstreamId = 121212121213L;
+        setupInitialBoard("config/board-parallel-tasks.json", new AdditionalSetup() {
+            @Override
+            public void setupIssues() {
+            }
+
+            @Override
+            public void initialise(BoardManagerBuilder boardManagerBuilder) {
+                boardManagerBuilder.setProjectParallelTaskOptionsLoader(
+                        new ProjectParallelTaskOptionsLoaderBuilder()
+                                .addCustomFieldOption("TDP", upstreamId, "NS", "Not Started")
+                                .addCustomFieldOption("TDP", upstreamId, "IP", "In Progress")
+                                .addCustomFieldOption("TDP", upstreamId, "M", "Merged")
+                                .addCustomFieldOption("TDP", downstreamId, "TD", "TODO")
+                                .addCustomFieldOption("TDP", downstreamId, "IP", "In Progress")
+                                .addCustomFieldOption("TDP", downstreamId, "D", "Done")
+                                .build()
+                );
+            }
+        });
+
+        //Create an issue with parallel tasks
+        Map<Long, String> customFieldValues = new HashMap<>();
+        customFieldValues.put(upstreamId, "IP");
+        customFieldValues.put(downstreamId, "D");
+        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D", customFieldValues);
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        ModelNode changes = getChangesJson(0, 1);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkNoCustomFields(changes);
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
+                new ParallelTaskFieldValueChecker(true, 1, 2)));
+        checkNoBlacklistChanges(changes);
+        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+
+        customFieldValues = new HashMap<>();
+        customFieldValues.put(upstreamId, "M");
+        customFieldValues.put(downstreamId, "TD");
+        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-8", (IssueType)null, null,
+                null, null, false, null, false, null, false, customFieldValues);
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        checkViewId(2);
+        changes = getChangesJson(0, 2);
+        checkAssignees(changes);
+        checkComponents(changes);
+        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
+                new ParallelTaskFieldValueChecker(true, 2, 0)));
+        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+        changes = getChangesJson(1, 2);
+        checkUpdates(changes, new IssueData("TDP-8", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, 0)));
         checkNoRankChanges(changes);
     }
 
@@ -2129,7 +2372,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 if (expected.customFieldCheckers.length == 0) {
                     Assert.assertFalse(node.hasDefined(CUSTOM));
                 }
-                for (IssueCustomFieldChecker checker : expected.customFieldCheckers) {
+                for (IssueChecker checker : expected.customFieldCheckers) {
                     checker.check(node);
                 }
             }
@@ -2205,7 +2448,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 if (expected.customFieldCheckers.length == 0) {
                     Assert.assertFalse(node.hasDefined(CUSTOM));
                 }
-                for (IssueCustomFieldChecker checker : expected.customFieldCheckers) {
+                for (IssueChecker checker : expected.customFieldCheckers) {
                     checker.check(node);
                 }
             }
@@ -2375,16 +2618,16 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         private final boolean unassigned;
         private final String[] components;
         private final boolean clearedComponents;
-        private final IssueCustomFieldChecker[] customFieldCheckers;
+        private final IssueChecker[] customFieldCheckers;
 
         IssueData(String key, IssueType type, Priority priority, String summary, String assignee,
-                  String[] components, String state, IssueCustomFieldChecker...customFieldCheckers) {
+                  String[] components, String state, IssueChecker...customFieldCheckers) {
             this(key, type, priority, summary, assignee, false, components, false, state, customFieldCheckers);
         }
 
         IssueData(String key, IssueType type, Priority priority, String summary, String assignee,
                   boolean unassigned, String[] components, boolean clearedComponents, String state,
-                  IssueCustomFieldChecker...customFieldCheckers) {
+                  IssueChecker...customFieldCheckers) {
             this.key = key;
             this.type = type;
             this.priority = priority;
@@ -2397,7 +2640,20 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
             this.customFieldCheckers = customFieldCheckers;
         }
     }
-    static class DefaultIssueCustomFieldChecker implements IssueCustomFieldChecker {
+
+    private static class StateChangeData {
+        private final String projectCode;
+        private final String state;
+        private final String[] issues;
+
+        public StateChangeData(String projectCode, String state, String...issues) {
+            this.projectCode = projectCode;
+            this.state = state;
+            this.issues = issues;
+        }
+    }
+
+    static class DefaultIssueCustomFieldChecker implements IssueChecker {
         private final String fieldName;
         private final String key;
 
@@ -2430,8 +2686,57 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
-    interface AdditionalSetup {
-        void setup();
+    static class ClearedCustomFieldsChecker implements IssueChecker {
+        static final ClearedCustomFieldsChecker INSTANCE = new ClearedCustomFieldsChecker();
+
+        @Override
+        public void check(ModelNode issue) {
+            Assert.assertFalse(issue.hasDefined(CUSTOM));
+        }
+    }
+
+    static class ParallelTaskFieldValueChecker implements IssueChecker {
+        private final boolean add;
+        private final int[] values;
+
+        public ParallelTaskFieldValueChecker(boolean add, int...values) {
+            this.add = add;
+            this.values = values;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            if (values == null) {
+                Assert.assertFalse(issue.hasDefined(PARALLEL_TASKS));
+            } else {
+                Assert.assertTrue(issue.hasDefined(PARALLEL_TASKS));
+                ModelNode tasksNode = issue.get(PARALLEL_TASKS);
+                if (add) {
+                    List<ModelNode> tasks = tasksNode.asList();
+                    Assert.assertEquals(values.length, tasks.size());
+                    for (int i = 0 ; i < values.length ; i++) {
+                        Assert.assertEquals(values[i], tasks.get(i).asInt());
+                    }
+                } else {
+                    Map<Integer, Integer> map = new HashMap<>();
+                    for (int i = 0 ; i < values.length ; i++) {
+                        if (values[i] >= 0) {
+                            map.put(i, values[i]);
+                        }
+                    }
+                    Assert.assertEquals(map.size(), tasksNode.keys().size());
+                    for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+                        ModelNode node = tasksNode.get(entry.getKey().toString());
+                        Assert.assertTrue(node.isDefined());
+                        Assert.assertEquals(entry.getValue().intValue(), node.asInt());
+                    }
+                }
+            }
+        }
+    }
+
+    interface AdditionalSetup extends AdditionalBuilderInit {
+        void setupIssues();
     }
 
     private class RankChange {

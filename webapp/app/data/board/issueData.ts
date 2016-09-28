@@ -3,12 +3,13 @@ import {BoardData} from "./boardData";
 import {Priority} from "./priority";
 import {IssueType} from "./issueType";
 import {BoardProject, Project} from "./project";
-import {IssueChange} from "./change";
+import {IssueUpdate, IssueAdd} from "./change";
 import {JiraComponent} from "./component";
 import {Indexed} from "../../common/indexed";
 import {CustomFieldValue} from "./customField";
 import {IMap} from "../../common/map";
-
+import {Subject, Observable} from "rxjs/Rx";
+import {ParallelTask} from "./parallelTask";
 
 export class IssueData {
     private _boardData:BoardData;
@@ -32,9 +33,13 @@ export class IssueData {
     private _boardStatusIndex:number = null;
     private _ownStatus:string;
 
+    private _parallelTaskOptions:Indexed<string>;
+
+    private _issueChangedSubject:Subject<void> = new Subject<void>();
+
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
                 assignee:Assignee,  components:Indexed<JiraComponent>, priority:Priority, type:IssueType, statusIndex:number,
-                linked:IssueData[], customFields:IMap<CustomFieldValue>) {
+                linked:IssueData[], customFields:IMap<CustomFieldValue>, parallelTaskOptions:Indexed<string>) {
         this._boardData = boardData;
         this._key = key;
         this._projectCode = projectCode;
@@ -47,6 +52,7 @@ export class IssueData {
         this._colour = colour;
         this._linked = linked;
         this._customFields = customFields;
+        this._parallelTaskOptions = parallelTaskOptions;
     }
 
     static createFullRefresh(boardData:BoardData, input:any) : IssueData {
@@ -89,10 +95,19 @@ export class IssueData {
                 customFieldValues[name] = boardData.getCustomFieldValueForIndex(name, index);
             }
         }
-        return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority, type, statusIndex, linked, customFieldValues);
+
+        let parallelTaskOptions: Indexed<string>;
+        if (project) {
+            //Only board projects have this
+            let parallelTasksInput: number[] = input["parallel-tasks"];
+            parallelTaskOptions = IssueData.deserializeParallelTasksArray(project, parallelTasksInput);
+        }
+
+        return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority,
+            type, statusIndex, linked, customFieldValues, parallelTaskOptions);
     }
 
-    static createFromChangeSet(boardData:BoardData, add:IssueChange) {
+    static createFromChangeSet(boardData:BoardData, add:IssueAdd) {
         let projectCode:string = IssueData.productCodeFromKey(add.key);
         let assignee:Assignee = boardData.assignees.forKey(add.assignee);
         let priority:Priority = boardData.priorities.forKey(add.priority);
@@ -123,10 +138,27 @@ export class IssueData {
                 customFieldValues[name] = boardData.getCustomFieldValueForKey(name, fieldKey);
             }
         }
-        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee, components, priority, type, statusIndex, linked, customFieldValues);
 
+        let parallelTaskOptions:Indexed<string> = IssueData.deserializeParallelTasksArray(project, add.parallelTaskValues);
+
+        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee,
+            components, priority, type, statusIndex, linked, customFieldValues, parallelTaskOptions);
     }
 
+    private static deserializeParallelTasksArray(project:BoardProject, parallelTasksInput: number[]):Indexed<string> {
+        let parallelTaskOptions: Indexed<string>;
+        let projectParallelTasks = project.parallelTasks;
+
+        if (parallelTasksInput) {
+            parallelTaskOptions = new Indexed<string>();
+            for (let i: number = 0; i < parallelTasksInput.length; i++) {
+                let parallelTask: ParallelTask = projectParallelTasks.forIndex(i);
+                let option: string = parallelTask.getOptionForIndex(parallelTasksInput[i]);
+                parallelTaskOptions.add(parallelTask.code, option);
+            }
+        }
+        return parallelTaskOptions;
+    }
 
     private static productCodeFromKey(key:string) : string {
         let index:number = key.lastIndexOf("-");
@@ -134,6 +166,9 @@ export class IssueData {
     }
 
     //Plain getters
+    get changeObserver():Observable<void> {
+        return this._issueChangedSubject;
+    }
     get key():string {
         return this._key;
     }
@@ -195,6 +230,10 @@ export class IssueData {
         return this._customFields;
     }
 
+    get parallelTaskOptions(): Indexed<string> {
+        return this._parallelTaskOptions;
+    }
+
 //'Advanced'/'Nested' getters
 
     get boardStatus():string {
@@ -208,25 +247,11 @@ export class IssueData {
     }
 
     get boardStatusIndex():number {
-        // if (this._key === 'EAPDS-1') {
-        //     console.log("------> get");
-        //     let num:number;
-        //     this.testNumber("undefined ", num);
-        //     this.testNumber("null", null);
-        //     this.testNumber("zero", 0);
-        //     this.testNumber("bsi", this._boardStatusIndex);
-        // }
         if (this._boardStatusIndex == null) {
             let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
             this._boardStatusIndex = project.mapStateIndexToBoardIndex(this._statusIndex);
         }
         return this._boardStatusIndex;
-    }
-
-    testNumber(s:string, i:number) {
-        console.log("=====> " + s + ": " + i);
-        let nan:boolean = isNaN(i);
-        console.log("bsi: " + i + "; isNan: " + nan + "; !: " + !i);
     }
 
     get ownStatus():string {
@@ -299,7 +324,7 @@ export class IssueData {
     }
 
     //Update functions
-    applyUpdate(update:IssueChange) {
+    applyUpdate(update:IssueUpdate) {
         if (update.type) {
             this._type = this._boardData.issueTypes.forKey(update.type);
         }
@@ -341,6 +366,20 @@ export class IssueData {
                 }
             }
         }
+
+        if (update.parallelTaskValueUpdates) {
+            for (let indexString in update.parallelTaskValueUpdates) {
+                let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
+                if (project) {
+                    let taskIndex:number = parseInt(indexString);
+                    let parallelTask:ParallelTask = project.parallelTasks.forIndex(taskIndex);
+                    let option: string = parallelTask.getOptionForIndex(update.parallelTaskValueUpdates[indexString]);
+                    this._parallelTaskOptions.array[taskIndex] = option;
+                }
+            }
+        }
+
+        this._issueChangedSubject.next(null);
     }
 
     getCustomFieldValue(name:string):CustomFieldValue {

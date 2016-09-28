@@ -1,128 +1,60 @@
 package org.jirban.jira.impl.config;
 
-import static org.jirban.jira.impl.Constants.FIELD_ID;
-import static org.jirban.jira.impl.Constants.NAME;
-import static org.jirban.jira.impl.Constants.TYPE;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
-import org.jirban.jira.JirbanValidationException;
-import org.jirban.jira.impl.board.CustomFieldUtil;
 
-import com.atlassian.jira.issue.CustomFieldManager;
 import com.atlassian.jira.issue.fields.CustomField;
 
 /**
  * @author Kabir Khan
  */
-public abstract class CustomFieldConfig {
-    private final String name;
-    private final Type type;
-    private final CustomField customField;
-    private final CustomFieldUtil util;
+public interface CustomFieldConfig {
+    /**
+     * Get the name of the custom field set up in the configuration
+     * @return the name
+     */
+    String getName();
 
-    protected CustomFieldConfig(String name, Type type, CustomField customField, CustomFieldUtil util) {
-        this.name = name;
-        this.type = type;
-        this.customField = customField;
-        this.util = util;
-    }
+    /**
+     * Get the type of the custom field set up in the configuration
+     *
+     * @return the name
+     */
+    Type getType();
 
-    public String getName() {
-        return name;
-    }
+    /**
+     * Get the underlying Jira custom field
+     *
+     * @return the custom field
+     */
+    CustomField getJiraCustomField();
 
-    public Type getType() {
-        return type;
-    }
+    /**
+     * Get the Jira id of the custom
+     * @return the jira id
+     */
+    Long getId();
 
-    public CustomField getJiraCustomField() {
-        return customField;
-    }
+    /**
+     * Serialize the custom field for use in the configuration
+     *
+     * @return the serialized model node
+     */
+    ModelNode serializeForConfig();
 
-    public static CustomFieldConfig load(CustomFieldManager customFieldMgr, ModelNode customFieldCfgNode) {
-        if (!customFieldCfgNode.hasDefined(NAME)) {
-            throw new JirbanValidationException("All \"custom\" field definitions must have a 'name'");
-        }
-        final String name = customFieldCfgNode.get(NAME).asString();
-
-        if (!customFieldCfgNode.hasDefined(TYPE)) {
-            throw new JirbanValidationException("All \"custom\" field definitions must have a 'type'");
-        }
-        final String typeName = customFieldCfgNode.get(TYPE).asString();
-        final Type type = Type.parse(typeName);
-        if (type == null) {
-            throw new JirbanValidationException("Unknown 'type': " + typeName);
-        }
-
-        if (!customFieldCfgNode.hasDefined(FIELD_ID)) {
-            throw new JirbanValidationException("\"custom\" field config \"" + name + "\" does not have a \"field-name\"");
-        }
-        final long fieldId;
-        try {
-            fieldId = customFieldCfgNode.get(FIELD_ID).asLong();
-        } catch (Exception e) {
-            throw new JirbanValidationException("\"field-id\" must be a long, in custom field config \"" + name + "\"");
-        }
-
-        CustomField customField = customFieldMgr.getCustomFieldObject(fieldId);
-        if (customField == null) {
-            throw new JirbanValidationException("No custom field found with id \"" + fieldId + "\" (\"" + name + "\" ");
-        }
-
-        switch (type) {
-            case USER:
-                return new UserCustomFieldConfig(name, type, customField);
-            case VERSION:
-                return new VersionCustomFieldConfig(name, type, customField);
-            default:
-                throw new JirbanValidationException("Unknown 'type': " + typeName);
-        }
-    }
-
-    public ModelNode serializeForConfig() {
-        ModelNode modelNode = new ModelNode();
-        modelNode.get(NAME).set(name);
-        modelNode.get(TYPE).set(type.name);
-        modelNode.get(FIELD_ID).set(customField.getIdAsLong());
-        return modelNode;
-    }
-
-    public Long getId() {
-        return customField.getIdAsLong();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CustomFieldConfig)) return false;
-
-        CustomFieldConfig that = (CustomFieldConfig) o;
-
-        if (!name.equals(that.name)) return false;
-        if (type != that.type) return false;
-        return customField.getIdAsLong().equals(that.customField.getIdAsLong());
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name.hashCode();
-        result = 31 * result + type.hashCode();
-        result = 31 * result + customField.getIdAsLong().intValue();
-        return result;
-    }
-
-    public CustomFieldUtil getUtil() {
-        return util;
-    }
-
-    public enum Type {
+    enum Type {
+        //A Jira custom field of type 'User Picker'
         USER("user"),
-        VERSION("version");
+        //A Jira custom field of type 'Version'
+        VERSION("version"),
+        //A Jira custom field of type 'Select List (single choice)'. Make sure that the field configuration
+        //scheme for projects using this field for use as a parallel task in Jirban is set up to be Required
+        //(otherwise you get an additional 'None' entry)
+        //TODO Perhaps that doesn't matter? We can just map None to the first entry in the list
+        PARALLEL_TASK_PROGRESS("parallel-task-progress");
 
         private static final Map<String, Type> TYPES_BY_NAME;
         static {

@@ -24,6 +24,8 @@ package org.jirban.jira.impl;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.NextRankedIssueUtil;
+import org.jirban.jira.api.ProjectParallelTaskOptionsLoader;
+import org.jirban.jira.impl.board.ProjectParallelTaskOptionsLoaderBuilder;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.avatar.AvatarService;
@@ -33,7 +35,9 @@ import com.atlassian.jira.bc.user.UserService;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.CustomFieldManager;
+import com.atlassian.jira.issue.customfields.manager.OptionsManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
+import com.atlassian.jira.issue.search.SearchContextFactory;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.project.version.VersionManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
@@ -58,6 +62,7 @@ public class BoardManagerBuilder {
     private ProjectManager projectManager = ProjectManagerBuilder.getAnyProjectManager();
     private PermissionManager permissionManager = PermissionManagerBuilder.getAllowsAll();
     private NextRankedIssueUtil nextRankedIssueUtil;
+    private ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader = new ProjectParallelTaskOptionsLoaderBuilder().build();
 
     public BoardManagerBuilder() {
     }
@@ -102,6 +107,11 @@ public class BoardManagerBuilder {
         return this;
     }
 
+    public BoardManagerBuilder setProjectParallelTaskOptionsLoader(ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader) {
+        this.projectParallelTaskOptionsLoader = projectParallelTaskOptionsLoader;
+        return this;
+    }
+
     public BoardManager build() {
         //These are not needed for this code path at the moment
         final ActiveObjects activeObjects = null;
@@ -110,7 +120,9 @@ public class BoardManagerBuilder {
         final GlobalPermissionManager globalPermissionManager = null;
         final IssueService issueService = null;
         final IssueTypeManager issueTypeManager = null;
+        final OptionsManager optionsManager = null;
         final PriorityManager priorityManager = null;
+        final SearchContextFactory searchContextFactory = null;
         final UserService userService = null;
         final VersionManager versionManager = null;
 
@@ -123,13 +135,15 @@ public class BoardManagerBuilder {
                 issueService,
                 issueLinkManager,
                 issueTypeManager,
+                optionsManager,
                 permissionManager,
                 projectManager,
                 priorityManager,
+                searchContextFactory,
                 searchService,
                 userService,
                 versionManager);
 
-        return new BoardManagerImpl(jiraInjectables, boardConfigurationManager);
+        return new BoardManagerImpl(jiraInjectables, boardConfigurationManager, projectParallelTaskOptionsLoader);
     }
 }

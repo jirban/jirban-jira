@@ -51,7 +51,9 @@ import com.atlassian.jira.bc.user.UserService;
 import com.atlassian.jira.config.IssueTypeManager;
 import com.atlassian.jira.config.PriorityManager;
 import com.atlassian.jira.issue.CustomFieldManager;
+import com.atlassian.jira.issue.customfields.manager.OptionsManager;
 import com.atlassian.jira.issue.link.IssueLinkManager;
+import com.atlassian.jira.issue.search.SearchContextFactory;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.jira.project.version.VersionManager;
 import com.atlassian.jira.security.GlobalPermissionManager;
@@ -164,6 +166,8 @@ public class BoardConfigurationManagerBuilder {
         final AvatarService avatarService = null;
         final IssueLinkManager issueLinkManager = null;
         final IssueService issueService = null;
+        final OptionsManager optionsManager = null;
+        final SearchContextFactory searchContextFactory = null;
         final SearchService searchService = null;
         final UserService userService = null;
         final VersionManager versionManager = null;
@@ -177,9 +181,11 @@ public class BoardConfigurationManagerBuilder {
                 issueService,
                 issueLinkManager,
                 issueTypeManager,
+                optionsManager,
                 permissionManager,
                 projectManager,
                 priorityManager,
+                searchContextFactory,
                 searchService,
                 userService,
                 versionManager);

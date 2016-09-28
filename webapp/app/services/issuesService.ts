@@ -161,6 +161,32 @@ export class IssuesService {
         return observableWrapper.observable;
     }
 
+    setParallelTaskOption(issueKey: string, taskIndex: number, selectedOptionIndex: number) {
+        let observableWrapper:ObservableWrapper = new ObservableWrapper();
+        let url:string = this._boardData.jiraUrl + '/rest/jirban/1.0/issues/' + this._boardData.code + "/parallel/" + issueKey ;
+        let path:string = RestUrlUtil.caclulateRestUrl(url);
+
+        let payload = {
+            "task-index": taskIndex,
+            "option-index": selectedOptionIndex
+        }
+        let headers:Headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Accept", "application/json");
+
+        this._http.put(url, JSON.stringify(payload), {headers : headers})
+            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + url)
+            .map(res => (<Response>res).json())
+            .subscribe(
+                data => {
+                    this.refreshBoardFollowingIssueChange(observableWrapper);
+                },
+                error => observableWrapper.setError(error)
+            );
+        return observableWrapper.observable;
+
+    }
+
     private getIssuesData(board:string, backlog:boolean) : Observable<Response> {
         let url = 'rest/jirban/1.0/issues/' + board;
         if (backlog) {

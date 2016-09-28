@@ -10,6 +10,8 @@ import "rxjs/add/operator/debounceTime";
 import {CustomFieldValues} from "../../../data/board/customField";
 import {VIEW_KANBAN} from "../../../common/constants";
 import {FormGroup, FormControl, AbstractControl} from "@angular/forms";
+import {Indexed} from "../../../common/indexed";
+import {ParallelTask} from "../../../data/board/parallelTask";
 
 @Component({
     selector: 'control-panel',
@@ -95,49 +97,72 @@ export class ControlPanelComponent {
 
         //Add the custom fields form(s) to the main form
         if (this.customFields.length > 0) {
+            let customFieldsFilterForm:FormGroup = new FormGroup({});
             for (let customFieldValues of this.customFields) {
                 let customFieldForm:FormGroup = new FormGroup({});
                 customFieldForm.addControl(NONE, new FormControl(filters.initialCustomFieldValueForForm(customFieldValues.name, NONE)))
                 for (let customFieldValue of customFieldValues.values.array) {
                     customFieldForm.addControl(customFieldValue.key, new FormControl(filters.initialCustomFieldValueForForm(customFieldValues.name, customFieldValue.key)));
                 }
-                form.addControl(customFieldValues.name, customFieldForm);
+                customFieldsFilterForm.addControl(customFieldValues.name, customFieldForm);
             }
+            form.addControl("custom-fields", customFieldsFilterForm);
         }
 
-        let dirtyChecker:DirtyChecker = DirtyChecker.create(form);
+        //Add the parallel-tasks form to the main form
+        if (this.hasParallelTasks()) {
+            let parallelTasksFilterForm:FormGroup = new FormGroup({});
+            for (let task of this.parallelTasks) {
+                let options:Indexed<string> = task.options;
+                let optionsForm:FormGroup = new FormGroup({});
+                parallelTasksFilterForm.addControl(task.code, optionsForm);
+                for (let option of options.array) {
+                    optionsForm.addControl(
+                        option,
+                        new FormControl(filters.initialParallelTaskValueForForm(task.code, option)));
+                }
+            }
+            form.addControl("parallel-tasks", parallelTasksFilterForm);
+        }
+
+        let lastValues = form.value;
 
         form.valueChanges
             .debounceTime(150) //A delay for when people clear the filters so that we only get one event sent since filters are costly to recalculate
             .subscribe((value) => {
-                let lastValues:any = dirtyChecker.lastValues;
+                //console.log(JSON.stringify(value));
 
-                let dirty:IMap<boolean> = dirtyChecker.checkDirty(value);
                 //Swimlane is necessary to update if dirty
-                if (dirty["swimlane"]) {
+                if (this.isDirty("swimlane")) {
                     this.updateSwimlane(value);
                 }
                 //Detail is cheap to update if dirty
-                if (dirty["detail"]) {
+                if (this.isDirty("detail")) {
                     this.updateIssueDetail(detailForm, lastValues["detail"], value["detail"]);
                 }
-                //Updating the filters is costly so do it all in one go
-                let dirtyCustom:boolean = false;
-                for (let customFieldValues of this.customFields) {
-                    if (dirty[customFieldValues.name]) {
-                        dirtyCustom = true;
-                        break;
-                    }
-                }
-                if (dirtyCustom || dirty["project"] || dirty["priority"] || dirty["issue-type"] || dirty["assignee"] || dirty["component"]) {
+
+                if (this.isDirty("project") || this.isDirty("priority") || this.isDirty("issue-type")
+                    || this.isDirty("assignee") || this.isDirty("component") || this.isDirty("custom-fields")
+                    || this.isDirty("parallel-tasks")) {
+
                     let customFieldFormValues:IMap<any> = {};
+                    let customFieldValue:any = value["custom-fields"];
                     for (let customFieldValues of this.customFields) {
-                        customFieldFormValues[customFieldValues.name] = value[customFieldValues.name];
+                        customFieldFormValues[customFieldValues.name] = customFieldValue[customFieldValues.name];
                     }
-                    this.updateFilters(dirty,
-                        value["project"], value["priority"], value["issue-type"], value["assignee"], value["component"], customFieldFormValues);
+                    let parallelTaskFormValues:IMap<any> = {};
+                    let parallelTaskValue:any = value["parallel-tasks"];
+                    for (let task of this.parallelTasks) {
+                        parallelTaskFormValues[task.code] = parallelTaskValue[task.code];
+                    }
+                    this.updateFilters(
+                        value["project"], value["priority"], value["issue-type"], value["assignee"],
+                        value["component"], customFieldFormValues, parallelTaskFormValues);
                 }
                 this.updateLinkUrl();
+
+                form.reset(value);
+                lastValues = value;
             });
 
         this._assigneeFilterForm = assigneeFilterForm;
@@ -180,16 +205,48 @@ export class ControlPanelComponent {
         this.clearFilter(event, 'assignee');
         this.clearFilter(event, 'component');
         for (let customFieldValues of this.customFields) {
-            this.clearFilter(event, customFieldValues.name);
+            this.clearFilter(event, "custom-fields");
+        }
+        for (let task of this.parallelTasks) {
+            this.clearFilter(event, "parallel-tasks");
         }
     }
 
     private clearFilter(event:MouseEvent, name:string) {
         event.preventDefault();
-        let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
-        for (let key in filter.controls) {
-            let control:FormControl = <FormControl>filter.controls[key];
+        let complexForms:string[] = ["parallel-tasks", "custom-fields"];
+        let complexForm:string = null;
+
+        for (let test of complexForms) {
+            if (name.startsWith(test)) {
+                complexForm = test;
+                break;
+            }
+        }
+
+        if (!complexForm) {
+            let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
+            this.clearFilterForm(filter);
+        } else {
+            if (name === complexForm) {
+                let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
+                for (let key in filter.controls) {
+                    let form:FormGroup = <FormGroup>filter.controls[key];
+                    this.clearFilterForm(form);
+                }
+            } else {
+                let filter:FormGroup = <FormGroup>this._controlForm.controls[complexForm];
+                let formName:string = name.substr(complexForm.length + 1);
+                this.clearFilterForm(<FormGroup>filter.controls[formName]);
+            }
+        }
+    }
+
+    private clearFilterForm(filterForm:FormGroup) {
+        for (let key in filterForm.controls) {
+            let control:FormControl = <FormControl>filterForm.controls[key];
             control.setValue(false);
+            control.markAsDirty();
         }
     }
 
@@ -197,6 +254,7 @@ export class ControlPanelComponent {
         event.preventDefault();
         let swimlane:FormControl = <FormControl>this._controlForm.controls['swimlane'];
         swimlane.setValue(null);
+        swimlane.markAsDirty();
     }
 
     private clearDetail(event:MouseEvent) {
@@ -204,16 +262,28 @@ export class ControlPanelComponent {
         let group:FormGroup = <FormGroup>this._controlForm.controls['detail'];
 
         let control:FormControl = <FormControl>group.controls['assignee'];
-        control.setValue(true);
+        if (!control.value) {
+            control.setValue(true);
+            control.markAsDirty();
+        }
 
         control = <FormControl>group.controls['description'];
-        control.setValue(true);
+        if (!control.value) {
+            control.setValue(true);
+            control.markAsDirty();
+        }
 
         control = <FormControl>group.controls['info'];
-        control.setValue(true);
+        if (!control.value) {
+            control.setValue(true);
+            control.markAsDirty();
+        }
 
         control = <FormControl>group.controls['linked'];
-        control.setValue(true);
+        if (!control.value) {
+            control.setValue(true);
+            control.markAsDirty();
+        }
     }
 
     private get assignees():Assignee[] {
@@ -256,6 +326,14 @@ export class ControlPanelComponent {
         this.boardData.swimlane = value.swimlane;
     }
 
+    private hasParallelTasks():boolean {
+        return this.boardData.parallelTasks.array.length > 0;
+    }
+
+    private get parallelTasks():ParallelTask[] {
+        return this.boardData.parallelTasks.array;
+    }
+
     private updateIssueDetail(detailForm:FormGroup, lastValue:any, value:any) {
         if (lastValue["description"] && !value["description"] && value["assignee"]) {
             //Description was deselected, but assignee is still set. Deselect assignee
@@ -271,35 +349,58 @@ export class ControlPanelComponent {
         this.boardData.updateIssueDetail(value.assignee, value.description, value.info, value.linked);
     }
 
-    private updateFilters(dirty:IMap<boolean>, project:any, priority:any, issueType:any, assignee:any, component:any, customFieldValues:IMap<any>) {
-        this.boardData.updateFilters(project, priority, issueType, assignee, component, customFieldValues);
-        this.updateTooltips(dirty);
+    private updateFilters(project:any, priority:any, issueType:any, assignee:any, component:any,
+                          customFieldValues:IMap<any>, parallelTaskFormValues:IMap<any>) {
+        this.boardData.updateFilters(project, priority, issueType, assignee, component, customFieldValues, parallelTaskFormValues);
+        this.updateTooltips();
     }
 
-    private updateTooltips(dirty?:IMap<boolean>) {
+    private updateTooltips() {
+
+        //When initialising the form, this will be false.
+        let dirty = this.controlForm.dirty;
+
         let filters:BoardFilters = this.boardData.filters;
-        if (!dirty || dirty["project"]) {
+        if (!this._controlForm.dirty || this.isDirty("project")) {
             this.filterTooltips["project"] = this.createTooltipForFilter(filters.selectedProjectNames);
 
         }
-        if (!dirty || dirty['issue-type']) {
+        if (!dirty || this.isDirty('issue-type')) {
             this.filterTooltips["issue-type"] = this.createTooltipForFilter(filters.selectedIssueTypes);
         }
-        if (!dirty || dirty['priority']) {
+        if (!dirty || this.isDirty('priority')) {
             this.filterTooltips["priority"] = this.createTooltipForFilter(filters.selectedPriorityNames);
         }
-        if (!dirty || dirty['assignee']) {
+        if (!dirty || this.isDirty('assignee')) {
             this.filterTooltips["assignee"] = this.createTooltipForFilter(filters.selectedAssignees);
         }
-        if (!dirty || dirty['component']) {
+        if (!dirty || this.isDirty('component')) {
             this.filterTooltips["component"] = this.createTooltipForFilter(filters.selectedComponents);
         }
 
         for (let customFieldValues of this.customFields) {
-            if (!dirty || dirty[customFieldValues.name]) {
+            if (!dirty || this.isDirty("custom-fields", customFieldValues.name)) {
                 let selected:IMap<string[]> = filters.selectedCustomFields;
                 this.filterTooltips[customFieldValues.name] = this.createTooltipForFilter(selected[customFieldValues.name]);
             }
+        }
+
+        if (!dirty || this.isDirty("parallel-tasks")) {
+            let parallelTasksTip:string = "";
+            let selected:IMap<string[]> = filters.selectedParallelTasks;
+            for (let paralellTask of this.parallelTasks) {
+                let tip:string = this.createTooltipForFilter(selected[paralellTask.code]);
+                if (tip) {
+                    if (parallelTasksTip.length > 0) {
+                        parallelTasksTip += "\n";
+                    }
+                    parallelTasksTip += paralellTask.code + ": " + tip;
+                }
+            }
+            if (parallelTasksTip.length == 0) {
+                parallelTasksTip = null;
+            }
+            this.filterTooltips["parallel-tasks"] = parallelTasksTip;
         }
 
         let filtersToolTip:string = "";
@@ -350,6 +451,15 @@ export class ControlPanelComponent {
             }
         }
 
+        current = this.filterTooltips["parallel-tasks"];
+        if (current) {
+            if (filtersToolTip.length > 0) {
+                filtersToolTip += "\n\n";
+            }
+            filtersToolTip += "Parallel Tasks:\n" + current;
+        }
+
+
         if (filtersToolTip.length > 0) {
             filtersToolTip += "\n\nClick 'Filters' to clear all filters";
         }
@@ -357,6 +467,9 @@ export class ControlPanelComponent {
         this.filtersTooltip = filtersToolTip;
     }
 
+    private createTooltipForParallelTaskFilter() {
+
+    }
 
     private createTooltipForFilter(selectedNames:string[]):string {
         let tooltip:string = "";
@@ -399,7 +512,6 @@ export class ControlPanelComponent {
 
 
     private updateLinkUrl() {
-        console.log("Update link url");
         let url:string = window.location.href;
         let index = url.lastIndexOf("?");
         if (index >= 0) {
@@ -410,7 +522,6 @@ export class ControlPanelComponent {
             url += "&view=" + this.view;
         }
 
-        console.log(url);
         this.linkUrl = url;
     }
 
@@ -444,77 +555,23 @@ export class ControlPanelComponent {
         return this.boardData.customFields.array;
     }
 
+    private hasCustomFields():boolean {
+        return this.customFields.length > 0;
+    }
+
     private get showSwimlane():boolean {
         return this.view == VIEW_KANBAN;
     }
-}
 
-/**
- * Hack to work around the current lack of ability to reset the dirty status of a ControlGroup (or any control for that matter)
- */
-class DirtyChecker {
-
-    constructor(private _lastValues:any) {
-    }
-
-    static create(form:FormGroup):DirtyChecker {
-        let dirtyChecker:DirtyChecker = new DirtyChecker(DirtyChecker.initialize(form));
-        return dirtyChecker;
-    }
-
-    private static initialize(form:FormGroup):any {
-        let values:any = {};
-
-        for (let key in form.controls) {
-            let ac:AbstractControl = form.controls[key];
-            if (ac instanceof FormControl) {
-                values[key] = ac.value;
-            } else {
-                values[key] = DirtyChecker.initialize(<FormGroup>ac);
-            }
-        }
-        return values;
-    }
-
-    checkDirty(value:any):IMap<boolean> {
-        let dirty:IMap<boolean> = {};
-
-        for (let key in value) {
-            if (key === "swimlane") {
-                let sl:string = value[key];
-                if (sl == "") {
-                    sl = null;
-                }
-                if (sl != this._lastValues["swimlane"]) {
-                    dirty[key] = true;
-                }
-            } else {
-                dirty[key] = this.isDirty(value[key], this._lastValues[key]);
-            }
-        }
-
-        this._lastValues = value;
-        return dirty;
-    }
-
-    private isDirty(value:any, last:any):boolean {
-        let keys:string[] = [];
-        for (let key in value) {
-            keys.push(key);
-        }
-
-        keys = keys.sort();
-
+    private isDirty(...keys:string[]):boolean{
+        let formGroup:FormGroup = this._controlForm;
         for (let key of keys) {
-            if (value[key] != last[key]) {
-                return true;
+            formGroup = <FormGroup>formGroup.controls[key];
+            if (!formGroup) {
+                return false;
             }
         }
-        return false;
-    }
-
-    get lastValues():any {
-        return this._lastValues;
+        return formGroup.dirty;
     }
 }
 

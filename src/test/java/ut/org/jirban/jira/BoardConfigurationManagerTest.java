@@ -204,6 +204,24 @@ public class BoardConfigurationManagerTest {
         Assert.assertEquals(original, serialized);
     }
 
+    @Test
+    public void testLoadConfigurationWithParallelTasks() throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
+                .addConfigActiveObjectsFromFile("config/board-parallel-tasks.json")
+                .setCustomFieldManager(CustomFieldManagerBuilder.loadFromResource("config/board-parallel-tasks.json"))
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
+
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-parallel-tasks.json");
+        original.protect();
+
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
+        Assert.assertNotNull(boardConfig);
+        ModelNode serialized = boardConfig.serializeModelNodeForConfig();
+        Assert.assertEquals(original, serialized);
+
+    }
+
     private void loadBadConfiguration(ModelNode original, StateModifier... modifiers) throws IOException {
         try {
             loadAndValidateConfiguration(original, modifiers);

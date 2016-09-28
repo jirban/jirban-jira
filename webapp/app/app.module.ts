@@ -20,6 +20,9 @@ import {IssueContextMenuComponent} from "./components/board/issueContextMenu/iss
 import {IssueComponent} from "./components/board/issue/issue";
 import {HealthPanelComponent} from "./components/board/healthPanel/healthPanel";
 import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/common";
+import {ProgressColourService} from "./services/progressColourService";
+import {ParallelTaskMenuComponent} from "./components/board/parallelTaskMenu/parallelTaskMenu";
+
 @NgModule({
     imports: [
         BrowserModule,
@@ -41,12 +44,14 @@ import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/co
         IssueContextMenuComponent,
         KanbanViewComponent,
         PanelMenuComponent,
+        ParallelTaskMenuComponent,
         RankViewComponent,
         SwimlaneEntryComponent
     ],
     bootstrap: [ AppComponent ],
     providers: [
         AppHeaderService,
+        ProgressColourService,
         ProgressErrorService,
         Title,
         {provide: APP_BASE_HREF, useValue: "/"},

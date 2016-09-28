@@ -5,6 +5,7 @@ import {IMap} from "../../common/map";
 import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
 import {ActivatedRoute} from "@angular/router";
+import {ParallelTaskMenuData} from "../../data/board/parallelTaskMenuData";
 
 
 /**
@@ -21,6 +22,7 @@ export class BoardComponent implements OnDestroy {
     private boardCode:string;
     private view:string = VIEW_KANBAN;
     private issueContextMenuData:IssueContextMenuData;
+    private parallelTaskMenuData:ParallelTaskMenuData;
 
     private _wasBacklogForced:boolean = false;
 
@@ -78,6 +80,7 @@ export class BoardComponent implements OnDestroy {
     private hideMenus() {
         this._boardData.hideHideables();
         this.issueContextMenuData = null;
+        this.parallelTaskMenuData = null;
     }
 
     private onShowIssueContextMenu(issueContextMenuData:IssueContextMenuData) {
@@ -87,6 +90,15 @@ export class BoardComponent implements OnDestroy {
 
     onCloseIssueContextMenu(event:any) {
         this.issueContextMenuData = null;
+    }
+
+    onCloseParallelTaskMenu(event:any) {
+        this.parallelTaskMenuData = null;
+    }
+
+    private onShowParallelTaskMenu(parallelTaskMenuData:ParallelTaskMenuData) {
+        console.log("Got event");
+        this.parallelTaskMenuData = parallelTaskMenuData;
     }
 
 

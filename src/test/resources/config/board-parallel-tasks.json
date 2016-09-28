@@ -1,0 +1,60 @@
+{
+  "name": "Test Downstream Project",
+  "code": "TST",
+  "owning-project": "TDP",
+  "states": [
+    {"name": "S-A"},
+    {"name": "S-B"},
+    {"name": "S-C"},
+    {"name": "S-D"}
+  ],
+  "priorities": [
+    "highest",
+    "high",
+    "low",
+    "lowest"
+  ],
+  "issue-types": [
+    "task",
+    "bug",
+    "feature"
+  ],
+  "parallel-tasks": {
+      "fields": [
+        {
+          "name": "Upstream",
+          "type": "parallel-task-progress",
+          "field-id": 121212121212,
+          "display": "US"
+        },
+        {
+          "name": "Downstream",
+          "type": "parallel-task-progress",
+          "field-id": 121212121213,
+          "display": "DS"
+        }
+      ]
+  },
+  "projects": {
+    "TDP": {
+      "query-filter": null,
+      "colour": "#4667CA",
+      "parallel-tasks": ["Upstream", "Downstream"],
+      "state-links": {
+        "TDP-A" : "S-A",
+        "TDP-B" : "S-B",
+        "TDP-C" : "S-C",
+        "TDP-D" : "S-D"
+      }
+    },
+    "TBG": {
+      "query-filter": null,
+      "colour": "#CA6746",
+      "state-links": {
+        "TBG-X": "S-B",
+        "TBG-Y": "S-C"
+      }
+    }
+  },
+  "linked-projects": {}
+}

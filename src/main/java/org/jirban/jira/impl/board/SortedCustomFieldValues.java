@@ -1,28 +1,29 @@
 package org.jirban.jira.impl.board;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.config.CustomFieldConfig;
+import org.jirban.jira.impl.util.IndexedMap;
 
 /**
  * Sorted values for a given custom field used as the 'registry' in the overall board data.
+ * The sort order is according to the key or the value.
  *
  * @author Kabir Khan
  */
 public class SortedCustomFieldValues {
     private final CustomFieldConfig config;
-    private final Map<String, CustomFieldValue> sortedFields;
-    private final Map<String, Integer> fieldIndices;
+    private final IndexedMap<String, CustomFieldValue> sortedFields;
 
-    private SortedCustomFieldValues(CustomFieldConfig config, Map<String, CustomFieldValue> sortedFields) {
+    private SortedCustomFieldValues(CustomFieldConfig config, IndexedMap<String, CustomFieldValue> sortedFields) {
         this.config = config;
         this.sortedFields = sortedFields;
-        this.fieldIndices = Board.getIndices(sortedFields);
     }
+
 
     String getFieldName() {
         return config.getName();
@@ -33,7 +34,7 @@ public class SortedCustomFieldValues {
     }
 
     int getCustomFieldIndex(CustomFieldValue customFieldValue) {
-        return fieldIndices.get(customFieldValue.getKey());
+        return sortedFields.getIndex(customFieldValue.getKey());
     }
 
     public void serialize(ModelNode parentNode) {
@@ -50,13 +51,13 @@ public class SortedCustomFieldValues {
         protected final CustomFieldConfig config;
         protected final Map<String, CustomFieldValue> fields;
 
-        protected Accessor(CustomFieldConfig config) {
-            this(config, null);
-        }
-
         protected Accessor(CustomFieldConfig config, Map<String, CustomFieldValue> fields) {
             this.config = config;
-            this.fields = fields == null ? new HashMap<>() : new HashMap<>(fields);
+            this.fields = fields == null ? new LinkedHashMap<>() : new LinkedHashMap<>(fields);
+        }
+
+        CustomFieldUtil getUtil() {
+            return CustomFieldUtil.getUtil(config);
         }
     }
 
@@ -68,7 +69,7 @@ public class SortedCustomFieldValues {
 
         CustomFieldValue getCustomFieldValue(Object customFieldValue) {
             return fields.computeIfAbsent(
-                    config.getUtil().getKey(customFieldValue), s -> config.getUtil().loadCustomField(config, customFieldValue));
+                    getUtil().getKey(customFieldValue), s -> getUtil().loadCustomField(config, customFieldValue));
         }
 
         void addBulkLoadedCustomFieldValue(CustomFieldValue customFieldValue) {
@@ -76,19 +77,22 @@ public class SortedCustomFieldValues {
         }
 
         SortedCustomFieldValues build() {
-            final Map<String, CustomFieldValue> sortedFields = config.getUtil().sortFields(fields);
-            return new SortedCustomFieldValues(config, Collections.unmodifiableMap(sortedFields));
+            final Map<String, CustomFieldValue> sortedFields;
+            sortedFields = getUtil().sortFields(fields);
+            return new SortedCustomFieldValues(config, new IndexedMap<>(sortedFields));
         }
     }
 
     static class Updater extends Accessor {
         Updater(CustomFieldConfig config, SortedCustomFieldValues sortedCustomFieldValues) {
-            super(config, sortedCustomFieldValues == null ? null : sortedCustomFieldValues.sortedFields);
+            super(
+                    config,
+                    sortedCustomFieldValues == null ? null : sortedCustomFieldValues.sortedFields.map());
         }
 
         CustomFieldValue getCustomFieldValue(JiraInjectables jiraInjectables, String key) {
             return fields.computeIfAbsent(
-                    key, s -> config.getUtil().loadCustomFieldFromKey(jiraInjectables, config, key));
+                    key, s -> getUtil().loadCustomFieldFromKey(jiraInjectables, config, key));
         }
 
         static Map<String, SortedCustomFieldValues> merge(Map<Long, SortedCustomFieldValues.Updater> updates, Map<String, SortedCustomFieldValues> original) {
@@ -97,12 +101,11 @@ public class SortedCustomFieldValues {
             }
             Map<String, SortedCustomFieldValues> result = new HashMap<>(original);
             for (SortedCustomFieldValues.Updater updater : updates.values()) {
-                final Map<String, CustomFieldValue> sortedFields =
-                        updater.config.getUtil().sortFields(updater.fields);
-
+                final Map<String, CustomFieldValue> sortedFields;
+                sortedFields = updater.getUtil().sortFields(updater.fields);
                 result.put(
                         updater.config.getName(),
-                        new SortedCustomFieldValues(updater.config, Collections.unmodifiableMap(sortedFields)));
+                        new SortedCustomFieldValues(updater.config, new IndexedMap<>(sortedFields)));
             }
             return result;
         }

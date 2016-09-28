@@ -1,14 +1,12 @@
 package org.jirban.jira.impl.config;
 
-import org.jirban.jira.impl.board.CustomFieldUtil;
-
 import com.atlassian.jira.issue.fields.CustomField;
 
 /**
  * @author Kabir Khan
  */
-public class VersionCustomFieldConfig extends CustomFieldConfig {
+class VersionCustomFieldConfig extends CustomFieldConfigImpl {
     VersionCustomFieldConfig(String name, Type type, CustomField customField) {
-        super(name, type, customField, CustomFieldUtil.VERSION);
+        super(name, type, customField);
     }
 }

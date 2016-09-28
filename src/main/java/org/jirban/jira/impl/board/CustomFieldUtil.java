@@ -25,7 +25,7 @@ public abstract class CustomFieldUtil {
 
     public abstract String getUpdateEventValue(String changeKey, String changeValue);
 
-    abstract BulkLoadContext<?> createBulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig);
+    abstract BulkLoadContext<?> createBulkLoadContext(BoardProject.Builder project, CustomFieldConfig customFieldConfig);
 
     public Map<String, CustomFieldValue> sortFields(Map<String, CustomFieldValue> fields) {
         List<CustomFieldValue> fieldValues = new ArrayList<>(fields.values());
@@ -35,6 +35,17 @@ public abstract class CustomFieldUtil {
             result.put(field.getKey(), field);
         }
         return result;
+    }
+
+    public static CustomFieldUtil getUtil(CustomFieldConfig config) {
+        switch (config.getType()) {
+            case USER:
+                return USER;
+            case VERSION:
+                return VERSION;
+            default:
+                throw new IllegalStateException("No util class for type " + config.getType());
+        }
     }
 
     public static final CustomFieldUtil USER = new CustomFieldUtil() {
@@ -64,8 +75,8 @@ public abstract class CustomFieldUtil {
         }
 
         @Override
-        BulkLoadContext<?> createBulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig) {
-            return new BulkLoadContext<String>(jiraInjectables, customFieldConfig) {
+        BulkLoadContext<?> createBulkLoadContext(BoardProject.Builder project, CustomFieldConfig customFieldConfig) {
+            return new BulkLoadContext<String>(customFieldConfig) {
                 @Override
                 String getCacheKey(String stringValue, Long numericValue) {
                     return stringValue;
@@ -73,7 +84,7 @@ public abstract class CustomFieldUtil {
 
                 @Override
                 CustomFieldValue loadCustomFieldValue(String key) {
-                    return UserCustomFieldValue.load(jiraInjectables, customFieldConfig, key);
+                    return UserCustomFieldValue.load(project.getJiraInjectables(), customFieldConfig, key);
                 }
             };
         }
@@ -106,8 +117,8 @@ public abstract class CustomFieldUtil {
         }
 
         @Override
-        BulkLoadContext<?> createBulkLoadContext(JiraInjectables jiraInjectables, CustomFieldConfig customFieldConfig) {
-            return new BulkLoadContext<Long>(jiraInjectables, customFieldConfig) {
+        BulkLoadContext<?> createBulkLoadContext(BoardProject.Builder project, CustomFieldConfig customFieldConfig) {
+            return new BulkLoadContext<Long>(customFieldConfig) {
                 @Override
                 Long getCacheKey(String stringValue, Long numericValue) {
                     return numericValue;
@@ -115,7 +126,7 @@ public abstract class CustomFieldUtil {
 
                 @Override
                 CustomFieldValue loadCustomFieldValue(Long id) {
-                    return VersionCustomFieldValue.load(jiraInjectables, customFieldConfig, id);
+                    return VersionCustomFieldValue.load(project.getJiraInjectables(), customFieldConfig, id);
                 }
             };
         }

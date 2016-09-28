@@ -44,9 +44,11 @@ public class Constants {
     public static final String CURRENT_BOARD_LAST_LOGGED_ACCESS = "current-board-time";
     public static final String CUSTOM = "custom";
     public static final String DELETE = "delete";
+    public static final String DISPLAY = "display";
     public static final String DONE = "done";
     public static final String EDIT = "edit";
     public static final String EMAIL = "email";
+    public static final String FIELDS = "fields";
     public static final String FIELD_ID = "field-id";
     public static final String HEADER = "header";
     public static final String HEADERS = "headers";
@@ -64,8 +66,10 @@ public class Constants {
     public static final String MAIN = "main";
     public static final String NAME = "name";
     public static final String NEW = "new";
+    public static final String OPTIONS = "options";
     public static final String OWNER = "owner";
     public static final String OWNING_PROJECT = "owning-project";
+    public static final String PARALLEL_TASKS = "parallel-tasks";
     public static final String PRIORITIES = "priorities";
     public static final String PRIORITY = "priority";
     public static final String PROJECTS = "projects";

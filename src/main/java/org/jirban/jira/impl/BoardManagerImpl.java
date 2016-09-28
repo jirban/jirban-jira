@@ -21,6 +21,7 @@
  */
 package org.jirban.jira.impl;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -42,13 +44,26 @@ import org.jirban.jira.JirbanValidationException;
 import org.jirban.jira.api.BoardConfigurationManager;
 import org.jirban.jira.api.BoardManager;
 import org.jirban.jira.api.NextRankedIssueUtil;
+import org.jirban.jira.api.ProjectParallelTaskOptionsLoader;
 import org.jirban.jira.impl.board.Board;
 import org.jirban.jira.impl.board.BoardChangeRegistry;
+import org.jirban.jira.impl.board.BoardProject;
+import org.jirban.jira.impl.board.CustomFieldValue;
+import org.jirban.jira.impl.board.SortedParallelTaskFieldOptions;
 import org.jirban.jira.impl.config.BoardConfig;
+import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
+import org.jirban.jira.impl.config.ParallelTaskConfig;
+import org.jirban.jira.impl.config.ParallelTaskCustomFieldConfig;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 
+import com.atlassian.jira.bc.issue.IssueService;
+import com.atlassian.jira.event.type.EventDispatchOption;
+import com.atlassian.jira.issue.IssueInputParameters;
+import com.atlassian.jira.issue.MutableIssue;
+import com.atlassian.jira.issue.customfields.view.CustomFieldParams;
+import com.atlassian.jira.issue.fields.CustomField;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
 
@@ -71,6 +86,8 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     private final BoardConfigurationManager boardConfigurationManager;
 
+    private final ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader;
+
     private final ExecutorService boardRefreshExecutor = Executors.newSingleThreadExecutor();
 
     private final Queue<RefreshEntry> boardRefreshQueue = new LinkedBlockingQueue<>();
@@ -80,9 +97,102 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Inject
     public BoardManagerImpl(JiraInjectables jiraInjectables,
-                            BoardConfigurationManager boardConfigurationManager) {
+                            BoardConfigurationManager boardConfigurationManager,
+                            ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader) {
         this.jiraInjectables = jiraInjectables;
         this.boardConfigurationManager = boardConfigurationManager;
+        this.projectParallelTaskOptionsLoader = projectParallelTaskOptionsLoader;
+    }
+
+    @Override
+    public void updateParallelTaskForIssue(ApplicationUser user, String boardCode, String issueKey, int taskIndex, int optionIndex) {
+        //Don't do anything to any of the cached boards, the Jira event mechanism will trigger an event when we update
+        // the issue, which in turn will end up in our event listener to update the caches for the active boards.
+
+        final Board board;
+        synchronized (this) {
+            board = boards.get(boardCode);
+            if (board == null) {
+                throw new JirbanValidationException("Could not find board with code: " + boardCode);
+            }
+        }
+
+        final IssueService issueService = jiraInjectables.getIssueService();
+        final IssueService.IssueResult issueResult = issueService.getIssue(user, issueKey);
+        final MutableIssue issue = issueResult.getIssue();
+        if (issue == null) {
+            throw new JirbanValidationException("Could not find issue " + issueKey);
+        }
+
+        final String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
+
+        final ParallelTaskConfig parallelTaskConfig = board.getConfig().getBoardProject(projectCode).getParallelTaskConfig();
+        final ParallelTaskCustomFieldConfig taskFieldConfig = parallelTaskConfig.forIndex(taskIndex);
+        final CustomField customField = taskFieldConfig.getJiraCustomField();
+
+        final BoardProject boardProject = board.getBoardProject(projectCode);
+        final SortedParallelTaskFieldOptions sortedParallelTaskFieldOptions = boardProject.getParallelTaskValues().get(taskFieldConfig.getName());
+        final CustomFieldValue value = sortedParallelTaskFieldOptions.forIndex(optionIndex);
+
+        final IssueInputParameters inputParameters = issueService.newIssueInputParameters();
+        inputParameters.addCustomFieldValue(customField.getId(), value.getKey());
+
+        IssueService.UpdateValidationResult validationResult = issueService.validateUpdate(user, issue.getId(), inputParameters);
+        if (validationResult.getErrorCollection().hasAnyErrors()) {
+            //Typically we see errors if custom fields are used in a field configuration scheme where some are
+            //required, and the custom fields were added after the issue was added so any default value has not actually
+            //been set.
+            //This means that if we have say two parallel task custom fields configured, an update will only set one of them,
+            //while the other one remains unset. Attempt to work around this be checking which fields appear in the error
+            //message, set them to the initial value, and try again
+
+            final Map<String, String> errors = new HashMap<>(validationResult.getErrorCollection().getErrors());
+            final Set<String> found = new HashSet<>();
+            for (String fieldName : errors.keySet()) {
+                Object object = validationResult.getFieldValuesHolder().get(fieldName);
+                if (object instanceof CustomFieldParams) {
+                    final CustomFieldParams customFieldParams = (CustomFieldParams)object;
+                    CustomField currentField = customFieldParams.getCustomField();
+                    if (currentField.getId().equals(customField.getId())) {
+                        //There were problems with the field we were looking for so skip it
+                        continue;
+                    }
+
+                    //currentField is most likely not set, look for the field in the current configuration
+                    ParallelTaskCustomFieldConfig parallelTaskField =
+                            parallelTaskConfig.getConfigs().getForJiraId(currentField.getIdAsLong());
+                    if (parallelTaskConfig != null) {
+                        //Since the field is not set, guess the default value (i.e. the first one in the list)
+                        //Later if this is not satisfactory, we can use the Jira SDK to figure
+                        final SortedParallelTaskFieldOptions currentParallelTaskFieldOptions =
+                                boardProject.getParallelTaskValues().get(parallelTaskField.getName());
+                        CustomFieldValue defaultValue = currentParallelTaskFieldOptions.forIndex(0);
+
+                        inputParameters.addCustomFieldValue(currentField.getId(), defaultValue.getKey());
+                        found.add(fieldName);
+                    }
+                }
+            }
+
+            for (String key : found) {
+                errors.remove(key);
+            }
+
+            if (errors.size() > 0) {
+                throw new RuntimeException("Could not set the value for '" + taskFieldConfig.getCode() + "' due to the following problems: " + errors);
+            }
+            //Validate our new attempt at updating the issue
+            validationResult = issueService.validateUpdate(user, issue.getId(), inputParameters);
+            if (validationResult.getErrorCollection().hasAnyErrors()) {
+                throw new RuntimeException("Error validating update of '" + taskFieldConfig.getCode() + "': " + validationResult.getErrorCollection().getErrors());
+            }
+        }
+
+        //Update the issue
+        IssueService.IssueResult updateResult = issueService.update(user, validationResult, EventDispatchOption.ISSUE_UPDATED, true);
+        if (updateResult.getErrorCollection().hasAnyErrors()) {
+            throw new RuntimeException("Error updating '" + taskFieldConfig.getCode() + "': " + updateResult.getErrorCollection().getErrors());
+        }
     }
 
     @Override
@@ -105,7 +215,7 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     */
 
                     final ApplicationUser boardOwner = jiraInjectables.getJiraUserManager().getUserByKey(boardConfig.getOwningUserKey());
-                    board = Board.builder(jiraInjectables, boardConfig, boardOwner).load().build();
+                    board = Board.builder(jiraInjectables, projectParallelTaskOptionsLoader, boardConfig, boardOwner).load().build();
                     JirbanLogger.LOGGER.debug("Full refresh of board {}; backlog: {}", code, backlog);
                     boards.put(code, board);
                     boardChangeRegistries.put(code, new BoardChangeRegistry(this, board));
@@ -160,45 +270,94 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
 
     @Override
     public Set<CustomFieldConfig> getCustomFieldsForUpdateEvent(String projectCode, String jiraCustomFieldName) {
-        List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(projectCode);
-        if (boardCodes.size() == 0) {
-            return null;
-        }
-        Set<String> activeBoards = new HashSet<>();
-        synchronized (this) {
-            for (String boardCode : boardCodes) {
-                //There might be a config, but no board. So check if there is a board first.
-                //There is a slight chance that a new board might pop up so we will miss this update, but it isn't a big
-                //deal. It will come in during the next periodic full refresh.
-                if (boards.get(boardCode) != null) {
-                    activeBoards.add(boardCode);
-                }
-            }
-        }
-
-        Set<CustomFieldConfig> result = null;
-        for (String boardCode : boardCodes) {
-            BoardConfig boardConfig = null;
-            try {
-                boardConfig = boardConfigurationManager.getBoardConfig(boardCode);
-                if (boardConfig != null) {
-                    CustomFieldConfig config = boardConfig.getCustomFieldObjectForJiraName(jiraCustomFieldName);
-                    if (config != null) {
-                        if (result == null) {
-                            result = new HashSet<>();
+        return processBoardConfigs(
+                projectCode,
+                //Don't use a lamba here, it breaks Jira
+                new BiFunction<BoardConfig, Set<CustomFieldConfig>, Set<CustomFieldConfig>>() {
+                    @Override
+                    public Set<CustomFieldConfig> apply(BoardConfig boardConfig, Set<CustomFieldConfig> result) {
+                        CustomFieldConfig config = boardConfig.getCustomFieldObjectForJiraName(jiraCustomFieldName);
+                        if (config != null) {
+                            if (result == null) {
+                                result = new HashSet<>();
+                            }
+                            result.add(config);
                         }
-                        result.add(config);
+                        return result;
                     }
-                }
-            } catch (JirbanValidationException e) {
-                JirbanLogger.LOGGER.error("Error loading custom fields {} {}", boardCode, e.getMessage());
-            }
-        }
-        return result != null ? result : Collections.emptySet();
+                });
     }
 
     @Override
     public Set<CustomFieldConfig> getCustomFieldsForCreateEvent(String projectCode) {
+        return processBoardConfigs(
+                projectCode,
+                //Don't use a lamba here, it breaks Jira
+                new BiFunction<BoardConfig, Set<CustomFieldConfig>, Set<CustomFieldConfig>>() {
+                    @Override
+                    public Set<CustomFieldConfig> apply(BoardConfig boardConfig, Set<CustomFieldConfig> result) {
+                        Set<CustomFieldConfig> configs = boardConfig.getCustomFieldConfigs();
+                        if (configs.size() > 0) {
+                            if (result == null) {
+                                result = new HashSet<>();
+                            }
+                            result.addAll(configs);
+                        }
+                        return result;
+                    }
+                });
+    }
+
+    public Set<ParallelTaskCustomFieldConfig> getParallelTaskFieldsForUpdateEvent(String projectCode, String jiraCustomFieldName) {
+        return processBoardConfigs(
+                projectCode,
+                new BiFunction<BoardConfig, Set<ParallelTaskCustomFieldConfig>, Set<ParallelTaskCustomFieldConfig>>() {
+                    @Override
+                    public Set<ParallelTaskCustomFieldConfig> apply(BoardConfig boardConfig, Set<ParallelTaskCustomFieldConfig> result) {
+                        BoardProjectConfig projectConfig = boardConfig.getBoardProject(projectCode);
+                        if (projectConfig != null && projectConfig.getParallelTaskConfig() != null) {
+                            ParallelTaskConfig parallelTaskConfig = projectConfig.getParallelTaskConfig();
+                            if (parallelTaskConfig != null) {
+                                ParallelTaskCustomFieldConfig config = parallelTaskConfig.getCustomFieldObjectForJiraName(jiraCustomFieldName);
+                                if (config != null) {
+                                    if (result == null) {
+                                        result = new HashSet<>();
+                                    }
+                                    result.add(config);
+                                }
+                            }
+                        }
+                        return result;
+                    }
+                });
+    }
+
+
+    public Set<ParallelTaskCustomFieldConfig> getParallelTaskFieldsForCreateEvent(String projectCode) {
+        return processBoardConfigs(
+                projectCode,
+                new BiFunction<BoardConfig, Set<ParallelTaskCustomFieldConfig>, Set<ParallelTaskCustomFieldConfig>>() {
+                    @Override
+                    public Set<ParallelTaskCustomFieldConfig> apply(BoardConfig boardConfig, Set<ParallelTaskCustomFieldConfig> result) {
+                        BoardProjectConfig projectConfig = boardConfig.getBoardProject(projectCode);
+                        if (projectConfig != null && projectConfig.getParallelTaskConfig() != null) {
+                            ParallelTaskConfig parallelTaskConfig = projectConfig.getParallelTaskConfig();
+                            if (parallelTaskConfig != null) {
+                                Collection<ParallelTaskCustomFieldConfig> configs = parallelTaskConfig.getConfigs().values();
+                                if (configs.size() > 0) {
+                                    if (result == null) {
+                                        result = new HashSet<>();
+                                    }
+                                    result.addAll(configs);
+                                }
+                            }
+                        }
+                        return result;
+                    }
+                });
+    }
+
+    private <T> Set<T> processBoardConfigs(String projectCode, BiFunction<BoardConfig, Set<T>, Set<T>> function) {
         List<String> boardCodes = boardConfigurationManager.getBoardCodesForProjectCode(projectCode);
         if (boardCodes.size() == 0) {
             return Collections.emptySet();
@@ -214,20 +373,16 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                 }
             }
         }
-        Set<CustomFieldConfig> result = null;
+        Set<T> result = null;
         for (String boardCode : boardCodes) {
             BoardConfig boardConfig = null;
             try {
                 boardConfig = boardConfigurationManager.getBoardConfig(boardCode);
-                Set<CustomFieldConfig> configs = boardConfig.getCustomFieldConfigs();
-                if (configs.size() > 0) {
-                    if (result == null) {
-                        result = new HashSet<>();
-                    }
-                    result.addAll(configs);
+                if (boardConfig != null) {
+                    result = function.apply(boardConfig, result);
                 }
             } catch (JirbanValidationException e) {
-                JirbanLogger.LOGGER.error("Error loading board {} {}", boardCode, e.getMessage());
+                JirbanLogger.LOGGER.error("Error loading custom fields {} {}", boardCode, e.getMessage());
             }
         }
         return result != null ? result : Collections.emptySet();

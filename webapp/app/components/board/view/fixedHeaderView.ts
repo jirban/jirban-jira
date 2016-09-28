@@ -6,6 +6,7 @@ import {AppHeaderService} from "../../../services/appHeaderService";
 import {TOOLBAR_HEIGHT} from "../../../common/constants";
 import {BoardHeaderEntry} from "../../../data/board/header";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
+import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 
 /**
  * Abstract base class for a board containing a fixed header.
@@ -23,6 +24,7 @@ export abstract class FixedHeaderView implements OnInit {
     private boardLeftOffset:string = "";
 
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
+    private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
 
 
     constructor(private _progressError:ProgressErrorService,
@@ -108,5 +110,9 @@ export abstract class FixedHeaderView implements OnInit {
     protected onShowIssueContextMenu(event:IssueContextMenuData) {
         console.log("KBV: Propagating show context menu event");
         this.showIssueContextMenu.emit(event);
+    }
+
+    protected onShowParallelTaskMenu(event:ParallelTaskMenuData) {
+        this.showParallelTaskMenu.emit(event);
     }
 }

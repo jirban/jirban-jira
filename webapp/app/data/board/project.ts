@@ -3,6 +3,7 @@ import {IMap} from "../../common/map";
 import {IssueData} from "./issueData";
 import {IssueTable} from "./issueTable";
 import {RankChange} from "./change";
+import {ParallelTask} from "./parallelTask";
 import ownKeys = Reflect.ownKeys;
 
 /**
@@ -16,7 +17,8 @@ export class Projects {
     private _linkedProjects:IMap<LinkedProject> = {};
     private _boardProjectCodes:string[] = [];
 
-    constructor(owner:string, boardStates:Indexed<string>, boardProjects:Indexed<BoardProject>, linkedProjects:IMap<LinkedProject>) {
+    constructor(owner:string, boardStates:Indexed<string>, boardProjects:Indexed<BoardProject>,
+                linkedProjects:IMap<LinkedProject>) {
         this._owner = owner;
         this._boardProjects = boardProjects;
         this._linkedProjects = linkedProjects;
@@ -120,12 +122,14 @@ export class BoardProject extends Project {
     //The list of issue keys in ranked order.
     private _rankedIssueKeys:string[];
 
-    _boardStatesToProjectState:IMap<string> = {};
-    _projectStatesToBoardState:IMap<string> = {};
+    private _boardStatesToProjectState:IMap<string> = {};
+    private _projectStatesToBoardState:IMap<string> = {};
+    private _parallelTasks:Indexed<ParallelTask>;
 
     constructor(boardStates:Indexed<string>, code:string, canRank:boolean, colour:string, states:Indexed<string>,
                 rankedIssueKeys:string[],
-                boardStatesToProjectState:IMap<string>, projectStatesToBoardState:IMap<string>) {
+                boardStatesToProjectState:IMap<string>, projectStatesToBoardState:IMap<string>,
+                parallelTasks:Indexed<ParallelTask>) {
         super(code, states);
         this._boardStates = boardStates;
         this._colour = colour;
@@ -133,6 +137,7 @@ export class BoardProject extends Project {
         this._rankedIssueKeys = rankedIssueKeys;
         this._boardStatesToProjectState = boardStatesToProjectState;
         this._projectStatesToBoardState = projectStatesToBoardState;
+        this._parallelTasks = parallelTasks;
     }
 
     get colour():string {
@@ -145,6 +150,10 @@ export class BoardProject extends Project {
 
     get rankedIssueKeys():string[] {
         return this._rankedIssueKeys;
+    }
+
+    get parallelTasks(): Indexed<ParallelTask> {
+        return this._parallelTasks;
     }
 
     getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toStateIndex:number) : IssueData[] {
@@ -301,8 +310,23 @@ export class ProjectDeserializer {
                     }
                 }
 
+                let parallelTasksInput = projectInput["parallel-tasks"];
+                let parallelTasks:Indexed<ParallelTask>;
+                if (parallelTasksInput) {
+                    parallelTasks = new Indexed<ParallelTask>();
+                    parallelTasks.indexArray(
+                        parallelTasksInput,
+                        (entry:any) => {
+                            return ParallelTask.deserialize(entry)
+                        },
+                        (parallelTask:ParallelTask) => {
+                            return parallelTask.code;
+                        }
+                    );
+                }
+
                 return new BoardProject(this._boardStates, key, canRank, colour, states, ranked,
-                    boardStatesToProjectState, projectStatesToBoardState);
+                    boardStatesToProjectState, projectStatesToBoardState, parallelTasks);
             }
         );
         return boardProjects;

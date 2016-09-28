@@ -11,7 +11,7 @@ import {IssuesService} from "../../../../services/issuesService";
 @Component({
     selector: 'kanban-view',
     inputs: ["boardCode", "issuesService", "boardData"],
-    outputs: ["showIssueContextMenu"],
+    outputs: ["showIssueContextMenu", "showParallelTaskMenu"],
     templateUrl: './kanbanview.html',
     styleUrls: ['./kanbanview.css']
 })
