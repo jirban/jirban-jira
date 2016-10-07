@@ -425,7 +425,6 @@ public class BoardChangeRegistry {
     static class IssueChange {
         private final String projectCode;
         private final String issueKey;
-        private int view;
         private Type type;
         private boolean reranked;
 
@@ -463,7 +462,6 @@ public class BoardChangeRegistry {
         }
 
         void merge(NewReferenceCollector newReferenceCollector, BoardChange boardChange) {
-            view = boardChange.getView();
             mergeType(boardChange.getEvent());
             if (type == null) {
                 //If the issue was both updated and deleted we return null
@@ -726,7 +724,7 @@ public class BoardChangeRegistry {
         }
     }
 
-    public class FullRefreshNeededException extends Exception {
+    public static class FullRefreshNeededException extends Exception {
 
     }
 }
