@@ -47,7 +47,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.atlassian.core.util.map.EasyMap;
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
 import com.atlassian.greenhopper.service.lexorank.balance.LexoRankBalanceEvent;
@@ -59,6 +58,7 @@ import com.atlassian.jira.issue.index.IndexException;
 import com.atlassian.jira.issue.index.ReindexIssuesCompletedEvent;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
 /**
@@ -315,7 +315,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         String issueType = null;
         String priority = null;
         String summary = null;
-        User assignee = null;
+        ApplicationUser assignee = null;
         Collection<ProjectComponent> components = null;
         String oldState = null;
         String state = null;

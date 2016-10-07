@@ -54,13 +54,11 @@ import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 import org.jirban.jira.impl.util.IndexedMap;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.user.ApplicationUsers;
 
 /**
  * The data for a board.
@@ -200,9 +198,8 @@ public class Board {
         }
     }
 
-    private static Assignee createAssignee(JiraInjectables jiraInjectables, ApplicationUser boardOwner, User assigneeUser) {
-        ApplicationUser assigneeAppUser = ApplicationUsers.from(assigneeUser);
-        URI avatarUrl = jiraInjectables.getAvatarService().getAvatarURL(boardOwner, assigneeAppUser, Avatar.Size.NORMAL);
+    private static Assignee createAssignee(JiraInjectables jiraInjectables, ApplicationUser boardOwner, ApplicationUser assigneeUser) {
+        URI avatarUrl = jiraInjectables.getAvatarService().getAvatarURL(boardOwner, assigneeUser, Avatar.Size.NORMAL);
         Assignee assignee = Assignee.create(assigneeUser, avatarUrl.toString());
         return assignee;
     }
@@ -271,7 +268,7 @@ public class Board {
         }
 
         abstract Accessor addIssue(Issue issue);
-        abstract Assignee getAssignee(User assigneeUser);
+        abstract Assignee getAssignee(ApplicationUser assigneeUser);
         abstract Issue getIssue(String issueKey);
         abstract Blacklist.Accessor getBlacklist();
 
@@ -348,7 +345,7 @@ public class Board {
         }
 
         @Override
-        Assignee getAssignee(User assigneeUser) {
+        Assignee getAssignee(ApplicationUser assigneeUser) {
             if (assigneeUser == null) {
                 //Unassigned issue
                 return null;
@@ -712,7 +709,7 @@ public class Board {
         }
 
         @Override
-        Assignee getAssignee(User assigneeUser) {
+        Assignee getAssignee(ApplicationUser assigneeUser) {
             return getOrCreateIssueAssignee(assigneeUser);
         }
 
@@ -772,7 +769,7 @@ public class Board {
             return getOrCreateIssueAssignee(evtDetail.getAssignee());
         }
 
-        private Assignee getOrCreateIssueAssignee(User evtAssignee) {
+        private Assignee getOrCreateIssueAssignee(ApplicationUser evtAssignee) {
             if (evtAssignee == null) {
                 return null;
             } else if (evtAssignee == JirbanIssueEvent.UNASSIGNED) {

@@ -57,7 +57,7 @@ public class NextRankedIssueUtilImpl implements NextRankedIssueUtil {
                 });
 
         SearchResults searchResults =
-                searchService.search(boardOwner.getDirectoryUser(), query, PagerFilter.newPageAlignedFilter(0, 1));
+                searchService.search(boardOwner, query, PagerFilter.newPageAlignedFilter(0, 1));
         List<Issue> issueList = searchResults.getIssues();
         if (issueList.size() > 0) {
             return issueList.get(0).getKey();

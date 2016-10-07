@@ -27,6 +27,7 @@ import java.util.Map;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
+import com.atlassian.jira.user.ApplicationUser;
 
 /**
  * @author Kabir Khan
@@ -92,14 +93,14 @@ public class JirbanIssueEvent {
     }
 
     public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                                     String summary, User assignee, Collection<ProjectComponent> components,
+                                                     String summary, ApplicationUser assignee, Collection<ProjectComponent> components,
                                                      String state, Map<Long, String> customFieldValues) {
         Detail detail = new Detail(issueType, priority, summary, assignee, components, null, state, true, customFieldValues);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
-                                                     String summary, User assignee, Collection<ProjectComponent> components,
+                                                     String summary, ApplicationUser assignee, Collection<ProjectComponent> components,
                                                      String currentState, String state, boolean reranked,
                                                      Map<Long, String> customFieldValues) {
         Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, reranked, customFieldValues);
@@ -132,14 +133,14 @@ public class JirbanIssueEvent {
         private final String issueType;
         private final String priority;
         private final String summary;
-        private final User assignee;
+        private final ApplicationUser assignee;
         private final Collection<ProjectComponent> components;
         private final String oldState;
         private final String state;
         private final boolean reranked;
         private final Map<Long, String> customFieldValues;
 
-        private Detail(String issueType, String priority, String summary, User assignee, Collection<ProjectComponent> components,
+        private Detail(String issueType, String priority, String summary, ApplicationUser assignee, Collection<ProjectComponent> components,
                        String oldState, String state, boolean reranked, Map<Long, String> customFieldValues) {
             this.summary = summary;
             this.assignee = assignee;
@@ -164,7 +165,7 @@ public class JirbanIssueEvent {
             return summary;
         }
 
-        public User getAssignee() {
+        public ApplicationUser getAssignee() {
             return assignee;
         }
 
@@ -201,7 +202,7 @@ public class JirbanIssueEvent {
     /**
      * Used during an update event to indicate that the assignee was set to unassigned
      */
-    public static final User UNASSIGNED = new User() {
+    public static final ApplicationUser UNASSIGNED = new ApplicationUser() {
         public long getDirectoryId() {
             return 0;
         }
@@ -218,12 +219,28 @@ public class JirbanIssueEvent {
             return Constants.UNASSIGNED;
         }
 
-        public int compareTo(User user) {
-            return -1;
-        }
-
         public String getName() {
             return Constants.UNASSIGNED;
+        }
+
+        @Override
+        public String getKey() {
+            return Constants.UNASSIGNED;
+        }
+
+        @Override
+        public String getUsername() {
+            return Constants.UNASSIGNED;
+        }
+
+        @Override
+        public User getDirectoryUser() {
+            return null;
+        }
+
+        @Override
+        public Long getId() {
+            return -1L;
         }
     };
 }

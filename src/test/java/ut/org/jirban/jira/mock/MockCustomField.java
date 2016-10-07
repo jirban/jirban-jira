@@ -12,7 +12,6 @@ import org.apache.lucene.search.FieldComparatorSource;
 import org.apache.lucene.search.SortField;
 import org.ofbiz.core.entity.GenericValue;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.admin.RenderableProperty;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.ModifiedValue;
@@ -38,13 +37,13 @@ import com.atlassian.jira.issue.fields.rest.json.JsonData;
 import com.atlassian.jira.issue.fields.rest.json.JsonType;
 import com.atlassian.jira.issue.fields.screen.FieldScreenRenderLayoutItem;
 import com.atlassian.jira.issue.fields.util.MessagedResult;
+import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.issue.search.ClauseNames;
 import com.atlassian.jira.issue.search.LuceneFieldSorter;
 import com.atlassian.jira.issue.search.SearchContext;
 import com.atlassian.jira.issue.search.SearchHandler;
 import com.atlassian.jira.issue.util.IssueChangeHolder;
 import com.atlassian.jira.project.Project;
-import com.atlassian.jira.project.ProjectCategory;
 import com.atlassian.jira.util.ErrorCollection;
 import com.atlassian.jira.util.I18nHelper;
 import com.atlassian.jira.web.bean.BulkEditBean;
@@ -81,17 +80,7 @@ public class MockCustomField implements CustomField {
     }
 
     @Override
-    public boolean isInScope(GenericValue genericValue, List<String> list) {
-        return true;
-    }
-
-    @Override
     public boolean isInScope(SearchContext searchContext) {
-        return true;
-    }
-
-    @Override
-    public boolean isInScope(User user, SearchContext searchContext) {
         return true;
     }
 
@@ -125,10 +114,6 @@ public class MockCustomField implements CustomField {
         return null;
     }
 
-    @Override
-    public void setName(String s) {
-
-    }
 
     @Override
     public String getDescription() {
@@ -162,25 +147,13 @@ public class MockCustomField implements CustomField {
         return null;
     }
 
-    @Override
-    public void setDescription(String s) {
-
-    }
 
     @Override
     public CustomFieldSearcher getCustomFieldSearcher() {
         return null;
     }
 
-    @Override
-    public void setCustomFieldSearcher(CustomFieldSearcher customFieldSearcher) {
 
-    }
-
-    @Override
-    public void store() {
-
-    }
 
     @Override
     public boolean isEditable() {
@@ -213,27 +186,7 @@ public class MockCustomField implements CustomField {
     }
 
     @Override
-    public List<GenericValue> getAssociatedProjectCategories() {
-        return null;
-    }
-
-    @Override
-    public List<ProjectCategory> getAssociatedProjectCategoryObjects() {
-        return null;
-    }
-
-    @Override
-    public List<GenericValue> getAssociatedProjects() {
-        return null;
-    }
-
-    @Override
     public List<Project> getAssociatedProjectObjects() {
-        return null;
-    }
-
-    @Override
-    public List<GenericValue> getAssociatedIssueTypes() {
         return null;
     }
 
@@ -531,5 +484,16 @@ public class MockCustomField implements CustomField {
     @Override
     public int compareTo(Object o) {
         return 0;
+    }
+
+    @Nonnull
+    @Override
+    public List<IssueType> getAssociatedIssueTypes() {
+        return null;
+    }
+
+    @Override
+    public List<IssueType> getAssociatedIssueTypeObjects() {
+        return null;
     }
 }

@@ -23,10 +23,8 @@ package org.jirban.jira.api;
 
 import java.util.Map;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.user.ApplicationUser;
-import com.atlassian.jira.user.ApplicationUsers;
 import com.atlassian.plugin.PluginParseException;
 import com.atlassian.plugin.web.Condition;
 
@@ -45,7 +43,7 @@ public class IsLoggedInCondition implements Condition {
 
     @Override
     public boolean shouldDisplay(Map<String, Object> context) {
-        ApplicationUser appUser = ApplicationUsers.from((User)context.get("user"));
+        ApplicationUser appUser = (ApplicationUser)context.get("user");
         if(appUser == null) {
             String username = (String)context.get("username");
             appUser = ComponentAccessor.getUserUtil().getUserByName(username);

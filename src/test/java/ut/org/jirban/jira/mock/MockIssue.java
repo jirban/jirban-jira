@@ -31,7 +31,6 @@ import javax.annotation.Nullable;
 
 import org.ofbiz.core.entity.GenericValue;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.attachment.Attachment;
@@ -44,6 +43,7 @@ import com.atlassian.jira.issue.resolution.Resolution;
 import com.atlassian.jira.issue.status.Status;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.version.Version;
+import com.atlassian.jira.user.ApplicationUser;
 
 /**
  * Mockito seems to get confused with deep mocks, so hardcode these value objects
@@ -56,13 +56,13 @@ public class MockIssue implements Issue {
     private final IssueType issueType;
     private final Priority priority;
     private final String summary;
-    private final User assignee;
+    private final ApplicationUser assignee;
     private final Set<ProjectComponent> components;
     private final Status state;
 
     private final Map<Long, Object> customFields = new HashMap<>();
 
-    public MockIssue(String key, IssueType issueType, Priority priority, String summary, User assignee,
+    public MockIssue(String key, IssueType issueType, Priority priority, String summary, ApplicationUser assignee,
                      Set<ProjectComponent> components, Status state) {
         this.key = key;
         this.issueType = issueType;
@@ -94,11 +94,6 @@ public class MockIssue implements Issue {
     }
 
     @Override
-    public GenericValue getIssueType() {
-        return null;
-    }
-
-    @Override
     public IssueType getIssueTypeObject() {
         return issueType;
     }
@@ -114,12 +109,12 @@ public class MockIssue implements Issue {
     }
 
     @Override
-    public User getAssigneeUser() {
+    public ApplicationUser getAssigneeUser() {
         return assignee;
     }
 
     @Override
-    public User getAssignee() {
+    public ApplicationUser getAssignee() {
         return assignee;
     }
 
@@ -129,22 +124,17 @@ public class MockIssue implements Issue {
     }
 
     @Override
-    public Collection<GenericValue> getComponents() {
-        return null;
-    }
-
-    @Override
     public Collection<ProjectComponent> getComponentObjects() {
         return components;
     }
 
     @Override
-    public User getReporterUser() {
+    public ApplicationUser getReporterUser() {
         return null;
     }
 
     @Override
-    public User getReporter() {
+    public ApplicationUser getReporter() {
         return null;
     }
 
@@ -154,7 +144,7 @@ public class MockIssue implements Issue {
     }
 
     @Override
-    public User getCreator() {
+    public ApplicationUser getCreator() {
         return null;
     }
 
@@ -200,23 +190,12 @@ public class MockIssue implements Issue {
 
     @Nullable
     @Override
-    public GenericValue getPriority() {
-        return null;
-    }
-
-    @Nullable
-    @Override
     public Priority getPriorityObject() {
         return priority;
     }
 
     @Override
     public String getResolutionId() {
-        return null;
-    }
-
-    @Override
-    public GenericValue getResolution() {
         return null;
     }
 
@@ -268,11 +247,6 @@ public class MockIssue implements Issue {
     @Override
     public Object getCustomFieldValue(CustomField customField) {
         return customFields.get(customField.getIdAsLong());
-    }
-
-    @Override
-    public GenericValue getStatus() {
-        return null;
     }
 
     @Override
@@ -383,6 +357,32 @@ public class MockIssue implements Issue {
     @Override
     public void store() {
 
+    }
+
+    @Override
+    public IssueType getIssueType() {
+        return issueType;
+    }
+
+    @Override
+    public Collection<ProjectComponent> getComponents() {
+        return components;
+    }
+
+    @Nullable
+    @Override
+    public Priority getPriority() {
+        return priority;
+    }
+
+    @Override
+    public Resolution getResolution() {
+        return null;
+    }
+
+    @Override
+    public Status getStatus() {
+        return state;
     }
 
     void setCustomField(Long customFieldId, Object value) {

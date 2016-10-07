@@ -6,12 +6,12 @@ import javax.annotation.Nonnull;
 
 import org.ofbiz.core.entity.GenericValue;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectCategory;
+import com.atlassian.jira.project.type.ProjectTypeKey;
 import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 
@@ -51,12 +51,7 @@ public class MockProject implements Project {
     }
 
     @Override
-    public User getLead() {
-        return null;
-    }
-
-    @Override
-    public User getLeadUser() {
+    public ApplicationUser getLead() {
         return null;
     }
 
@@ -76,16 +71,6 @@ public class MockProject implements Project {
     }
 
     @Override
-    public Long getCounter() {
-        return null;
-    }
-
-    @Override
-    public Collection<GenericValue> getComponents() {
-        return null;
-    }
-
-    @Override
     public Collection<ProjectComponent> getProjectComponents() {
         return null;
     }
@@ -97,11 +82,6 @@ public class MockProject implements Project {
 
     @Override
     public Collection<IssueType> getIssueTypes() {
-        return null;
-    }
-
-    @Override
-    public GenericValue getProjectCategory() {
         return null;
     }
 
@@ -133,6 +113,21 @@ public class MockProject implements Project {
 
     @Override
     public String getOriginalKey() {
+        return null;
+    }
+
+    @Override
+    public ProjectTypeKey getProjectTypeKey() {
+        return null;
+    }
+
+    @Override
+    public Collection<ProjectComponent> getComponents() {
+        return null;
+    }
+
+    @Override
+    public ProjectCategory getProjectCategory() {
         return null;
     }
 }

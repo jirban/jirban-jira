@@ -24,7 +24,7 @@ import static org.jirban.jira.impl.Constants.AVATAR;
 
 import org.jboss.dmr.ModelNode;
 
-import com.atlassian.crowd.embedded.api.User;
+import com.atlassian.jira.user.ApplicationUser;
 
 /**
  * @author Kabir Khan
@@ -39,7 +39,7 @@ public class Assignee extends org.jirban.jira.impl.board.User {
         this.avatarUrl = avatarUrl;
     }
 
-    static Assignee create(User user, String avatarUrl) {
+    static Assignee create(ApplicationUser user, String avatarUrl) {
         return new Assignee(
                 user.getName(),
                 user.getEmailAddress(),

@@ -21,15 +21,10 @@
  */
 package ut.org.jirban.jira.mock;
 
-import java.util.Locale;
-
-import org.ofbiz.core.entity.GenericValue;
-
 import com.atlassian.jira.issue.status.SimpleStatus;
 import com.atlassian.jira.issue.status.Status;
 import com.atlassian.jira.issue.status.category.StatusCategory;
 import com.atlassian.jira.util.I18nHelper;
-import com.opensymphony.module.propertyset.PropertySet;
 
 /**
  * Mockito seems to get confused with deep mocks, so hardcode these value objects
@@ -54,22 +49,12 @@ public class MockStatus implements Status {
     }
 
     @Override
-    public void setStatusCategory(StatusCategory statusCategory) {
-
-    }
-
-    @Override
     public SimpleStatus getSimpleStatus() {
         return null;
     }
 
     @Override
     public SimpleStatus getSimpleStatus(I18nHelper i18nHelper) {
-        return null;
-    }
-
-    @Override
-    public GenericValue getGenericValue() {
         return null;
     }
 
@@ -84,28 +69,13 @@ public class MockStatus implements Status {
     }
 
     @Override
-    public void setName(String s) {
-
-    }
-
-    @Override
     public String getDescription() {
         return null;
     }
 
     @Override
-    public void setDescription(String s) {
-
-    }
-
-    @Override
     public Long getSequence() {
         return null;
-    }
-
-    @Override
-    public void setSequence(Long aLong) {
-
     }
 
     @Override
@@ -121,11 +91,6 @@ public class MockStatus implements Status {
     @Override
     public String getIconUrlHtml() {
         return null;
-    }
-
-    @Override
-    public void setIconUrl(String s) {
-
     }
 
     @Override
@@ -155,21 +120,6 @@ public class MockStatus implements Status {
 
     @Override
     public String getDescTranslation(I18nHelper i18nHelper) {
-        return null;
-    }
-
-    @Override
-    public void setTranslation(String s, String s1, String s2, Locale locale) {
-
-    }
-
-    @Override
-    public void deleteTranslation(String s, Locale locale) {
-
-    }
-
-    @Override
-    public PropertySet getPropertySet() {
         return null;
     }
 

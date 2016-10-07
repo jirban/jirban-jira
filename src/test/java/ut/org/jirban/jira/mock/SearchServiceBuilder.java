@@ -32,7 +32,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
@@ -46,6 +45,7 @@ import com.atlassian.jira.jql.builder.JqlClauseBuilder;
 import com.atlassian.jira.jql.builder.JqlClauseBuilderFactory;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.mock.component.MockComponentWorker;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.query.Query;
 
@@ -77,7 +77,7 @@ public class SearchServiceBuilder {
             issueRegistry = new IssueRegistry(new UserManagerBuilder().addDefaultUsers().build(mockComponentWorker));
         }
         registerMockQueryManagers(mockComponentWorker);
-        when(searchService.search(any(User.class), any(Query.class), any(PagerFilter.class)))
+        when(searchService.search(any(ApplicationUser.class), any(Query.class), any(PagerFilter.class)))
                 .then(invocation -> getSearchResults());
 
         return searchService;
@@ -161,7 +161,7 @@ public class SearchServiceBuilder {
         final IssueType issueType;
         final Priority priority;
         final Status state;
-        final User assignee = mock(User.class);
+        final ApplicationUser assignee = mock(ApplicationUser.class);
 
         public IssueDetail(String key, String issueType, String priority, String summary,
                            String state, String assignee, String[] components) {

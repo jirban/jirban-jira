@@ -42,7 +42,6 @@ import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.CustomFieldManager;
@@ -183,7 +182,7 @@ public class BoardProject {
         queryBuilder.orderBy().addSortForFieldName("Rank", SortOrder.ASC, true);
         if (projectConfig.getQueryFilter() != null) {
             final SearchService.ParseResult parseResult = searchService.parseQuery(
-                    boardOwner.getDirectoryUser(),
+                    boardOwner,
                     "(" + projectConfig.getQueryFilter() + ")");
             if (!parseResult.isValid()) {
                 throw new RuntimeException("The query-filter for " + projectConfig.getCode() + ": '" + projectConfig.getQueryFilter() + "' could not be parsed");
@@ -252,7 +251,7 @@ public class BoardProject {
             return jiraInjectables.getIssueLinkManager();
         }
 
-        Assignee getAssignee(User assigneeUser) {
+        Assignee getAssignee(ApplicationUser assigneeUser) {
             return board.getAssignee(assigneeUser);
         }
 
@@ -322,7 +321,7 @@ public class BoardProject {
             final Query query = initialiseQuery(projectConfig, boardOwner, searchService, null);
 
             SearchResults searchResults =
-                        searchService.search(boardOwner.getDirectoryUser(), query, PagerFilter.getUnlimitedFilter());
+                        searchService.search(boardOwner, query, PagerFilter.getUnlimitedFilter());
 
             final BulkIssueLoadStrategy issueLoadStrategy = BulkIssueLoadStrategy.create(this);
             List<Issue.Builder> issueBuilders = new ArrayList<>();
@@ -452,7 +451,7 @@ public class BoardProject {
             final SearchService searchService = jiraInjectables.getSearchService();
 
             SearchResults searchResults =
-                    searchService.search(boardOwner.getDirectoryUser(), queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
+                    searchService.search(boardOwner, queryBuilder.buildQuery(), PagerFilter.getUnlimitedFilter());
 
             List<com.atlassian.jira.issue.Issue> issues = searchResults.getIssues();
             if (issues.size() == 0) {
