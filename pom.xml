@@ -22,7 +22,7 @@
         <version.atlassian.activeobjects>0.28.7</version.atlassian.activeobjects>
         <version.atlassian.sal-api>2.11.6</version.atlassian.sal-api>
         <version.gson>2.2.2-atlassian-1</version.gson>
-        <version.httpcomponents>4.1.1</version.httpcomponents>
+        <version.httpcomponents>4.5.2</version.httpcomponents>
         <version.javax.inject>1</version.javax.inject>
         <version.javax.jsr311-api>1.1.1</version.javax.jsr311-api>
         <version.javax.servlet-api>2.4</version.javax.servlet-api>

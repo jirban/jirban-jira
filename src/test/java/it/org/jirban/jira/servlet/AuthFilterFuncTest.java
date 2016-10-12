@@ -25,7 +25,7 @@ public class AuthFilterFuncTest {
         httpClient.getConnectionManager().shutdown();
     }
 
-    @Test
+//    @Test
     public void testSomething() throws IOException {
 //        HttpGet httpget = new HttpGet(baseUrl);
 //
