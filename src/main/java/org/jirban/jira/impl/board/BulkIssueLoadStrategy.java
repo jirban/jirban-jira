@@ -31,7 +31,7 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
     //The size of the batch of issues to do a bulk load for
     private static final int BATCH_SIZE = 100;
 
-    private final String dataSourceName = "defaultDS";
+    private static final String dataSourceName = "defaultDS";
     private final BoardProject.Builder project;
     private final Map<Long, BulkLoadContext<?>> customFieldContexts = new HashMap<>();
     private final Map<Long, ParallelTaskCustomFieldConfig> parallelTaskFields = new HashMap();
