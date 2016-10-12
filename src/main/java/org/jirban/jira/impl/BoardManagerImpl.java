@@ -155,16 +155,15 @@ public class BoardManagerImpl implements BoardManager, InitializingBean, Disposa
                     //currentField is most likely not set, look for the field in the current configuration
                     ParallelTaskCustomFieldConfig parallelTaskField =
                             parallelTaskConfig.getConfigs().getForJiraId(currentField.getIdAsLong());
-                    if (parallelTaskConfig != null) {
-                        //Since the field is not set, guess the default value (i.e. the first one in the list)
-                        //Later if this is not satisfactory, we can use the Jira SDK to figure
-                        final SortedParallelTaskFieldOptions currentParallelTaskFieldOptions =
-                                boardProject.getParallelTaskValues().get(parallelTaskField.getName());
-                        CustomFieldValue defaultValue = currentParallelTaskFieldOptions.forIndex(0);
 
-                        inputParameters.addCustomFieldValue(currentField.getId(), defaultValue.getKey());
-                        found.add(fieldName);
-                    }
+                    //Since the field is not set, guess the default value (i.e. the first one in the list)
+                    //Later if this is not satisfactory, we can use the Jira SDK to figure
+                    final SortedParallelTaskFieldOptions currentParallelTaskFieldOptions =
+                            boardProject.getParallelTaskValues().get(parallelTaskField.getName());
+                    CustomFieldValue defaultValue = currentParallelTaskFieldOptions.forIndex(0);
+
+                    inputParameters.addCustomFieldValue(currentField.getId(), defaultValue.getKey());
+                    found.add(fieldName);
                 }
             }
 
