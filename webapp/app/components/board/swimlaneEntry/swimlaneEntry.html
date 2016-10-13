@@ -1,9 +1,6 @@
 <tr>
     <td class="swimlane-header" [attr.colspan]="boardStates.length" (click)="toggleSwimlane(swimlaneIndex)" title="{{swimlane.name}}">
-<!--
-        <div class="swimlane-name-holder"><div class="swimlane-name" [ngStyle]="{'left':10 + boardLeftOffset}">{{swimlane.name}}</div></div>
--->
-        <div class="swimlane-name-holder"><div class="swimlane-name" [ngStyle]="{'left':10 + boardLeftOffset}">{{swimlane.name}}</div></div>
+        <div class="swimlane-name-holder"><div class="swimlane-name" [style.left]="boardLeftOffsetPx">{{swimlane.name}}</div></div>
     </td>
 </tr>
 <tr *ngIf="swimlane.visible">

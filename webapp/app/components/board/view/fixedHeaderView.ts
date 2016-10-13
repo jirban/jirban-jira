@@ -21,7 +21,9 @@ export abstract class FixedHeaderView implements OnInit {
     /** The calculate height of the board body */
     private _boardBodyHeight:string;
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
-    private boardLeftOffset:string = "";
+    private boardLeftOffsetPx:string = "";
+    private boardLeftOffset:number;
+
 
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
     private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
@@ -104,7 +106,8 @@ export abstract class FixedHeaderView implements OnInit {
 
     scrollTableBodyX(event:Event) {
         let boardLeftOffset:number = event.target["scrollLeft"] * -1;
-        this.boardLeftOffset = boardLeftOffset + "px";
+        this.boardLeftOffset = boardLeftOffset;
+        this.boardLeftOffsetPx = boardLeftOffset + "px";
     }
 
     protected onShowIssueContextMenu(event:IssueContextMenuData) {

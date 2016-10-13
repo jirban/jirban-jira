@@ -22,7 +22,7 @@ export class SwimlaneEntryComponent {
     public swimlane : SwimlaneData;
     public boardData : BoardData;
     public swimlaneIndex : number;
-    private _boardLeftOffset:number;
+    private _boardLeftOffsetPx:string;
 
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
     private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
@@ -34,12 +34,14 @@ export class SwimlaneEntryComponent {
     constructor() {
     }
 
-    get boardLeftOffset():number {
-        return this._boardLeftOffset;
+    get boardLeftOffsetPx():string {
+        console.log("Get offset " + this._boardLeftOffsetPx);
+        return this._boardLeftOffsetPx;
     }
 
     set boardLeftOffset(value:number) {
-        this._boardLeftOffset = value;
+        let i:number = 10 + -1 * value;
+        this._boardLeftOffsetPx = i + "px";
     }
 
     private get boardStates() : State[] {

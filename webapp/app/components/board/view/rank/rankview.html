@@ -1,6 +1,6 @@
 <div id="board-outer" *ngIf="initialized" (window:resize)="onResize($event)">
     <div id="board-inner">
-        <div id="table-header" [ngStyle]="{'left':boardLeftOffset}">
+        <div id="table-header" [ngStyle]="{'left':boardLeftOffsetPx}">
             <table id="header-table">
                 <thead>
                     <tr>
