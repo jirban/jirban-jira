@@ -368,27 +368,6 @@ export class BoardData {
         this._issueDisplayDetails = new IssueDisplayDetails(assignee, description, info, linked);
     }
 
-    updateProjectFilter(filter:any) {
-        this._boardFilters.setProjectFilter(filter, this._projects.boardProjectCodes);
-        this._issueTable.filters = this._boardFilters;
-
-    }
-
-    updatePriorityFilter(filter:any) {
-        this._boardFilters.setPriorityFilter(filter, this._priorities);
-        this._issueTable.filters = this._boardFilters;
-    }
-
-    updateIssueTypeFilter(filter:any) {
-        this._boardFilters.setIssueTypeFilter(filter, this._issueTypes);
-        this._issueTable.filters = this._boardFilters;
-    }
-
-    updateAssigneeFilter(filter:any) {
-        this._boardFilters.setAssigneeFilter(filter, this._assignees);
-        this._issueTable.filters = this._boardFilters;
-    }
-
     updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any,
                   customFieldValueFilters:IMap<any>, parallelTaskFilters:IMap<any>) {
         this._boardFilters.setProjectFilter(projectFilter, this._projects.boardProjectCodes);
