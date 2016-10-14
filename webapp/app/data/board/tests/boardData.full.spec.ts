@@ -2772,7 +2772,7 @@ describe('BoardData tests', ()=> {
     function checkIssueConvenienceMethods(issue:IssueData) {
         let assignee:Assignee = issue.assignee;
         if (!assignee) {
-            expect(issue.assigneeAvatar).toBe("images/person-4x.png");
+            expect(issue.assigneeAvatar).toBeNull();
             expect(issue.assigneeInitials).toBe("None");
             expect(issue.assigneeName).toBe("Unassigned");
         } else {
