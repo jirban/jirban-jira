@@ -370,13 +370,16 @@ export class BoardData {
 
     updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any,
                   customFieldValueFilters:IMap<any>, parallelTaskFilters:IMap<any>) {
-        this._boardFilters.setProjectFilter(projectFilter, this._projects.boardProjectCodes);
-        this._boardFilters.setPriorityFilter(priorityFilter, this._priorities);
-        this._boardFilters.setIssueTypeFilter(issueTypeFilter, this._issueTypes);
-        this._boardFilters.setAssigneeFilter(assigneeFilter, this._assignees);
-        this._boardFilters.setComponentFilter(componentFilter, this._components);
-        this._boardFilters.setCustomFieldValueFilters(customFieldValueFilters, this._customFields);
-        this._boardFilters.setParallelTaskFilters(parallelTaskFilters, this._parallelTasks);
+        
+        this._boardFilters.updateFilters(
+            projectFilter, this._projects.boardProjectCodes,
+            priorityFilter, this._priorities,
+            issueTypeFilter, this._issueTypes,
+            assigneeFilter, this._assignees,
+            componentFilter, this._components,
+            customFieldValueFilters, this._customFields,
+            parallelTaskFilters, this._parallelTasks);
+
         this._issueTable.filters = this._boardFilters;
     }
 

@@ -36,7 +36,24 @@ export class BoardFilters {
     private _selectedCustomFields:IMap<string[]>;
     private _selectedParallelTasks:IMap<string[]>;
 
-    setProjectFilter(filter:any, boardProjectCodes:string[]) {
+    updateFilters(projectFilter:any, boardProjectCodes:string[],
+                  priorityFilter:any, priorities:Indexed<Priority>,
+                  issueTypeFilter:any, issueTypes:Indexed<IssueType>,
+                  assigneeFilter:any, assignees:Indexed<Assignee>,
+                  componentFilter:any, components:Indexed<JiraComponent>,
+                  customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>,
+                  parallelTaskFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
+
+        this.setProjectFilter(projectFilter, boardProjectCodes);
+        this.setPriorityFilter(priorityFilter, priorities);
+        this.setIssueTypeFilter(issueTypeFilter, issueTypes);
+        this.setAssigneeFilter(assigneeFilter, assignees);
+        this.setComponentFilter(componentFilter, components);
+        this.setCustomFieldValueFilters(customFieldValueFilters, customFields);
+        this.setParallelTaskFilters(parallelTaskFilters, parallelTasks);
+    }
+
+    private setProjectFilter(filter:any, boardProjectCodes:string[]) {
         this._projectFilter = filter;
         this._projects = false;
         this._selectedProjectNames = [];
@@ -50,7 +67,7 @@ export class BoardFilters {
         }
     }
 
-    setPriorityFilter(filter:any, priorities:Indexed<Priority>) {
+    private setPriorityFilter(filter:any, priorities:Indexed<Priority>) {
         this._priorityFilter = filter;
         this._priorities = false;
         this._selectedPriorityNames = [];
@@ -64,7 +81,7 @@ export class BoardFilters {
         }
     }
 
-    setIssueTypeFilter(filter:any, issueTypes:Indexed<IssueType>) {
+    private setIssueTypeFilter(filter:any, issueTypes:Indexed<IssueType>) {
         this._issueTypeFilter = filter;
         this._issueTypes = false;
         this._selectedIssueTypes = [];
@@ -79,7 +96,7 @@ export class BoardFilters {
 
     }
 
-    setAssigneeFilter(filter:any, assignees:Indexed<Assignee>) {
+    private setAssigneeFilter(filter:any, assignees:Indexed<Assignee>) {
         this._assigneeFilter = filter;
         this._assignees = false;
         this._selectedAssignees = [];
@@ -97,7 +114,7 @@ export class BoardFilters {
         }
     }
 
-    setComponentFilter(filter:any, components:Indexed<JiraComponent>) {
+    private setComponentFilter(filter:any, components:Indexed<JiraComponent>) {
         //Trim to only contain the visible ones in _componentFilter
         this._componentFilter = {};
         this._componentFilterLength = 0;
@@ -122,7 +139,7 @@ export class BoardFilters {
         }
     }
 
-    setCustomFieldValueFilters(customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>) {
+    private setCustomFieldValueFilters(customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>) {
         this._customFieldValueFilters = {};
         this._customFields = {};
         this._selectedCustomFields = {};
@@ -151,7 +168,7 @@ export class BoardFilters {
         }
     }
 
-    setParallelTaskFilters(parallelTaskFormFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
+    private setParallelTaskFilters(parallelTaskFormFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
         if (!parallelTasks) {
             return;
         }
