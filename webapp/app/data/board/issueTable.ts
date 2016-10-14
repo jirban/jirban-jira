@@ -10,6 +10,8 @@ import {Subject, Observable} from "rxjs/Rx";
 
 export class IssueTable {
     private _allIssues:Indexed<IssueData>;
+    private _filteredIssues:IMap<boolean>;
+    private _visibleIssues:IMap<boolean>;
     private _issueTable:IssueData[][];
     private _swimlaneTable:SwimlaneData[];
     private _totalIssuesByState:number[];
@@ -56,10 +58,24 @@ export class IssueTable {
     }
 
     set filters(filters:BoardFilters) {
+        if (!this._visibleIssues) {
+            this._visibleIssues = {};
+            this._filteredIssues = {};
+        }
         this._filters = filters;
+
         for (let issue of this._allIssues.array) {
             issue.filtered = this._filters.filterIssue(issue);
+            if (issue.filtered) {
+                delete this._visibleIssues[issue.key];
+                this._filteredIssues[issue.key] = true;
+            } else {
+                delete this._filteredIssues[issue.key];
+                this._visibleIssues[issue.key] = true;
+
+            }
         }
+
         if (this._swimlane) {
             let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
             for (let swimlaneData of this._swimlaneTable) {
@@ -194,7 +210,6 @@ export class IssueTable {
             this._issueTable = this.createIssueTable();
             this._swimlaneTable = null;
         }
-
     }
 
 
