@@ -104,3 +104,7 @@ a.linked-issue-summary {
     width: 40%;
     padding: 2px
 }
+img.jira-icon {
+    height: 16px;
+    width: 16px;
+}

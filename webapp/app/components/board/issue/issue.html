@@ -23,8 +23,8 @@
     </div>
     <div class="info" *ngIf="showInfo">
         <div class="info-icons">
-            <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}"/>
-            <img title="{{issue.typeName}}" src="{{issue.typeUrl}}"/>
+            <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}" class="jira-icon"/>
+            <img title="{{issue.typeName}}" src="{{issue.typeUrl}}" class="jira-icon"/>
         </div>
         <div class="info-parallel" *ngIf="parallelTasks" title="{{parallelTasksTitle}}">
             <span *ngFor="let task of parallelTasks"
