@@ -105,7 +105,6 @@ public class RawSqlLoader {
                     rows.add(row);
                 }
                 result.get("rows").set(rows);
-                System.out.println(result);
                 return result;
             } catch (Exception e) {
                 throw new RuntimeException(e);

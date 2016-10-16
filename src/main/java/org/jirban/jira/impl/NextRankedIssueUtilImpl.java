@@ -46,7 +46,6 @@ public class NextRankedIssueUtilImpl implements NextRankedIssueUtil {
         Issue issue = jiraInjectables.getIssueService().getIssue(boardOwner, issueKey).getIssue();
         LexoRank lexoRank = (LexoRank) issue.getCustomFieldValue(customField);
         String rankValue = lexoRank.format();
-        System.out.println("----> Rank: " + rankValue);
 
         SearchService searchService = jiraInjectables.getSearchService();
         Query query = BoardProject.initialiseQuery(projectConfig, boardOwner, searchService,
