@@ -29,67 +29,112 @@ export class BoardFilters {
                   customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>,
                   parallelTaskFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
 
-        this._projectFilter = SimpleFilter.create(
-            projectFilter,
-            boardProjectCodes, {
-                getKey : (value:string) => {return value;},
-                getDisplayValue : (value:string) => {return value;}});
-
-        this._priorityFilter = SimpleFilter.create(
-            priorityFilter,
-            this.getIndexedArray(priorities), {
-                getKey : (value:Priority) => {return value.name;},
-                getDisplayValue : (value:Priority) => {return value.name;}});
-
-        this._issueTypeFilter = SimpleFilter.create(
-            issueTypeFilter,
-            this.getIndexedArray(issueTypes), {
-                getKey : (value:IssueType) => {return value.name;},
-                getDisplayValue : (value:IssueType) => {return value.name;}});
-
-        this._assigneeFilter = SimpleFilter.create(
-            assigneeFilter,
-            this.getIndexedArray(assignees),{
-                getKey : (value:Assignee) => {return value.key;},
-                getDisplayValue : (value:Assignee) => {return value.name;}},
-            true);
-
-        this._componentFilter = ComponentFilter.create(componentFilter, this.getIndexedArray(components), {
-                getKey : (value:JiraComponent) => {return value.name;},
-                getDisplayValue : (value:JiraComponent) => {return value.name;}});
-
-        this._customFieldValueFilters = MapFilter.create(customFieldValueFilters, customFields, {
-                getKey : (parent:CustomFieldValues) => {return parent.name},
-                getValues : (parent:CustomFieldValues) => {return parent.values.array}
-            }, {
-                getKey : (value:CustomFieldValue) => {return value.key},
-                getDisplayValue : (value:CustomFieldValue) => {return value.displayValue}
-            }, true);
-
-        this._parallelTaskFilters = MapFilter.create(parallelTaskFilters, parallelTasks, {
-            getKey : (parent:ParallelTask) => {return parent.code},
-            getValues : (parent:ParallelTask) => {return parent.options.array}
-        }, {
-            getKey : (value:string) => {return value},
-            getDisplayValue : (value:string) => {return value}
-        });
-    }
-
-    private getIndexedArray<T>(indexed:Indexed<T>):T[] {
-        if (indexed) {
-            return indexed.array;
+        if (projectFilter) {
+            this._projectFilter = SimpleFilter.create(
+                projectFilter ? projectFilter : {},
+                boardProjectCodes, {
+                    getKey: (value: string) => {
+                        return value;
+                    },
+                    getDisplayValue: (value: string) => {
+                        return value;
+                    }
+                });
         }
-        return null;
-    }
 
-    private hasCustomValueFilter(customFieldValueFilters:IMap<any>, name:string, key:string) {
-        let filtersForField:any = customFieldValueFilters[name];
-        if (!filtersForField) {
-            return false;
+        if (priorityFilter) {
+            this._priorityFilter = SimpleFilter.create(
+                priorityFilter ? priorityFilter : {},
+                this.getIndexedArray(priorities), {
+                    getKey: (value: Priority) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: Priority) => {
+                        return value.name;
+                    }
+                });
         }
-        return filtersForField[key];
-    }
 
+        if (issueTypeFilter) {
+            this._issueTypeFilter = SimpleFilter.create(
+                issueTypeFilter ? issueTypeFilter : {},
+                this.getIndexedArray(issueTypes), {
+                    getKey: (value: IssueType) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: IssueType) => {
+                        return value.name;
+                    }
+                });
+        }
+
+        if (assigneeFilter) {
+            this._assigneeFilter = SimpleFilter.create(
+                assigneeFilter ? assigneeFilter : {},
+                this.getIndexedArray(assignees), {
+                    getKey: (value: Assignee) => {
+                        return value.key;
+                    },
+                    getDisplayValue: (value: Assignee) => {
+                        return value.name;
+                    }
+                },
+                true);
+        }
+
+        if (componentFilter) {
+            this._componentFilter = ComponentFilter.create(
+                componentFilter ? componentFilter : {},
+                this.getIndexedArray(components), {
+                    getKey: (value: JiraComponent) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: JiraComponent) => {
+                        return value.name;
+                    }
+            });
+        }
+
+        if (customFieldValueFilters) {
+            this._customFieldValueFilters = MapFilter.create(
+                customFieldValueFilters ? customFieldValueFilters : {},
+                customFields, {
+                    getKey: (parent: CustomFieldValues) => {
+                        return parent.name
+                    },
+                    getValues: (parent: CustomFieldValues) => {
+                        return parent.values.array
+                    }
+                }, {
+                    getKey: (value: CustomFieldValue) => {
+                        return value.key
+                    },
+                    getDisplayValue: (value: CustomFieldValue) => {
+                        return value.displayValue
+                    }
+                }, true);
+        }
+
+        if (parallelTaskFilters) {
+            this._parallelTaskFilters = MapFilter.create(
+                parallelTaskFilters ? parallelTaskFilters : {},
+                parallelTasks, {
+                    getKey: (parent: ParallelTask) => {
+                        return parent.code
+                    },
+                    getValues: (parent: ParallelTask) => {
+                        return parent.options.array
+                    }
+                }, {
+                    getKey: (value: string) => {
+                        return value
+                    },
+                    getDisplayValue: (value: string) => {
+                        return value
+                    }
+                });
+        }
+    }
 
     filterIssue(issue:IssueData):boolean {
         if (this.filterProject(issue.projectCode)) {
@@ -118,7 +163,7 @@ export class BoardFilters {
     }
 
     initialProjectValueForForm(projectCode:string):boolean {
-        return this._projectFilter.initialValueForForm(projectCode);
+        return this.initialValueForForm(this._projectFilter, projectCode);
     }
 
     filterProject(projectCode:string):boolean {
@@ -126,7 +171,7 @@ export class BoardFilters {
     }
 
     initialAssigneeValueForForm(assigneeKey:string):boolean {
-        return this._assigneeFilter.initialValueForForm(assigneeKey);
+        return this.initialValueForForm(this._assigneeFilter, assigneeKey);
     }
 
     filterAssignee(assigneeKey:string):boolean {
@@ -134,7 +179,7 @@ export class BoardFilters {
     }
 
     initialPriorityValueForForm(priorityName:string):boolean {
-        return this._priorityFilter.initialValueForForm(priorityName);
+        return this.initialValueForForm(this._priorityFilter, priorityName);
     }
 
     filterPriority(priorityName:string):boolean {
@@ -142,7 +187,7 @@ export class BoardFilters {
     }
 
     initialIssueTypeValueForForm(issueTypeName:string):boolean {
-        return this._issueTypeFilter.initialValueForForm(issueTypeName);
+        return this.initialValueForForm(this._issueTypeFilter, issueTypeName);
     }
 
     filterIssueType(issueTypeName:string):boolean {
@@ -150,7 +195,7 @@ export class BoardFilters {
     }
 
     initialComponentValueForForm(componentKey:string):boolean {
-        return this._componentFilter.initialValueForForm(componentKey);
+        return this.initialValueForForm(this._componentFilter, componentKey);
     }
 
     initialCustomFieldValueForForm(customFieldName:string, customFieldKey:string):boolean {
@@ -159,20 +204,6 @@ export class BoardFilters {
 
     initialParallelTaskValueForForm(parallelTaskCode:string, optionName:string):boolean {
         return this.initialMapValueForForm(this._parallelTaskFilters, parallelTaskCode, optionName);
-    }
-
-    private initialMapValueForForm(filter:MapFilter, filterName:string, key:string) {
-        if (!filter) {
-            return false;
-        }
-        return filter.initialValueForForm(filterName, key);
-    }
-
-    private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
-        if (!this._componentFilter) {
-            return false;
-        }
-        return this._componentFilter.filterAll(issueComponents);
     }
 
     filterComponent(componentName:string):boolean {
@@ -213,13 +244,6 @@ export class BoardFilters {
             getKey : (value:string) => {return value}});
     }
 
-    private filterSimple(filter:SimpleFilter, key:string):boolean {
-        if (!filter) {
-            return false;
-        }
-        return filter.doFilter(key);
-    }
-
     createFromQueryParams(boardData:BoardData, queryParams:IMap<string>,
                                  callback:(
                                      projectFilter:any,
@@ -250,20 +274,6 @@ export class BoardFilters {
         callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters, parallelTaskFilters);
     }
 
-    parseBooleanFilter(queryParams:IMap<string>, name:string):any{
-        let valueString:string = queryParams[name];
-        if (valueString) {
-            let jsonFilter:any = {};
-            let values:string[] = valueString.split(",");
-            for (let value of values) {
-                value = decodeURIComponent(value);
-                jsonFilter[value] = true;
-            }
-            return jsonFilter;
-        }
-        return {};
-    }
-
     createQueryStringParticles() {
         let query = "";
 
@@ -272,20 +282,101 @@ export class BoardFilters {
         query += this.createQueryStringParticle("issue-type", this._issueTypeFilter);
         query += this.createQueryStringParticle("assignee", this._assigneeFilter);
         query += this.createQueryStringParticle("component", this._componentFilter);
-        for (let key in this._customFieldValueFilters.filters) {
-            let simpleFilter:SimpleFilter = this._customFieldValueFilters.filters[key];
-            query += this.createQueryStringParticle("cf." + key, simpleFilter);
+        if (this._customFieldValueFilters) {
+            for (let key in this._customFieldValueFilters.filters) {
+                let simpleFilter: SimpleFilter = this._customFieldValueFilters.filters[key];
+                query += this.createQueryStringParticle("cf." + key, simpleFilter);
+            }
         }
-        for (let key in this._parallelTaskFilters.filters) {
-            let simpleFilter:SimpleFilter = this._parallelTaskFilters.filters[key];
-            query += this.createQueryStringParticle("pt." + key, simpleFilter);
+        if (this._parallelTaskFilters) {
+            for (let key in this._parallelTaskFilters.filters) {
+                let simpleFilter: SimpleFilter = this._parallelTaskFilters.filters[key];
+                query += this.createQueryStringParticle("pt." + key, simpleFilter);
+            }
         }
         return query;
     }
 
+    get selectedProjectNames():string[] {
+        return this.getSelectedValues(this._projectFilter);
+    }
+
+    get selectedPriorityNames():string[] {
+        return this.getSelectedValues(this._priorityFilter);
+    }
+
+    get selectedIssueTypes():string[] {
+        return this.getSelectedValues(this._issueTypeFilter);
+    }
+
+    get selectedAssignees():string[] {
+        return this.getSelectedValues(this._assigneeFilter);
+    }
+
+    get selectedComponents():string[] {
+        return this.getSelectedValues(this._componentFilter);
+    }
+
+    get selectedCustomFields():IMap<string[]> {
+        return this.getSelectedMapValues(this._customFieldValueFilters);
+    }
+
+    get selectedParallelTasks(): IMap<string[]> {
+        return this.getSelectedMapValues(this._parallelTaskFilters);
+    }
+
+    private getIndexedArray<T>(indexed:Indexed<T>):T[] {
+        if (indexed) {
+            return indexed.array;
+        }
+        return null;
+    }
+
+    private filterSimple(filter:SimpleFilter, key:string):boolean {
+        if (!filter) {
+            return false;
+        }
+        return filter.doFilter(key);
+    }
+
+    private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
+        if (!this._componentFilter) {
+            return false;
+        }
+        return this._componentFilter.filterAll(issueComponents);
+    }
+
+    private initialValueForForm(filter:SimpleFilter, key:string) {
+        if (!filter) {
+            return false;
+        }
+        return filter.initialValueForForm(key);
+    }
+
+    private initialMapValueForForm(filter:MapFilter, filterName:string, key:string) {
+        if (!filter) {
+            return false;
+        }
+        return filter.initialValueForForm(filterName, key);
+    }
+
+    private getSelectedValues(filter:SimpleFilter):string[] {
+        if (!filter) {
+            return [];
+        }
+        return filter.selectedValues;
+    }
+
+    private getSelectedMapValues(filter:MapFilter):IMap<string[]> {
+        if (!filter) {
+            return {};
+        }
+        return filter.selectedValues;
+    }
+
     private createQueryStringParticle(name:string, simpleFilter:SimpleFilter) {
         let query:string = "";
-        if (simpleFilter.anySelected) {
+        if (simpleFilter && simpleFilter.anySelected) {
             let initialised:boolean = false;
             for (let key in simpleFilter.filter) {
                 if (simpleFilter.filter[key]) {
@@ -302,32 +393,18 @@ export class BoardFilters {
         return query;
     }
 
-    get selectedProjectNames():string[] {
-        return this._projectFilter.selectedValues;
-    }
-
-    get selectedPriorityNames():string[] {
-        return this._priorityFilter.selectedValues;
-    }
-
-    get selectedIssueTypes():string[] {
-        return this._issueTypeFilter.selectedValues;
-    }
-
-    get selectedAssignees():string[] {
-        return this._assigneeFilter.selectedValues;
-    }
-
-    get selectedComponents():string[] {
-        return this._componentFilter.selectedValues;
-    }
-
-    get selectedCustomFields():IMap<string[]> {
-        return this._customFieldValueFilters.selectedValues;
-    }
-
-    get selectedParallelTasks(): IMap<string[]> {
-        return this._parallelTaskFilters.selectedValues;
+    private parseBooleanFilter(queryParams:IMap<string>, name:string):any{
+        let valueString:string = queryParams[name];
+        if (valueString) {
+            let jsonFilter:any = {};
+            let values:string[] = valueString.split(",");
+            for (let value of values) {
+                value = decodeURIComponent(value);
+                jsonFilter[value] = true;
+            }
+            return jsonFilter;
+        }
+        return null;
     }
 }
 
