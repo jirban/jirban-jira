@@ -547,6 +547,9 @@ class SimpleFilter {
                 }
             }
         }
+        if (!anySelected) {
+            return null;
+        }
         return new SimpleFilter(handleNone, trimmedFilter, anySelected, selectedValues);
     }
 }
@@ -587,6 +590,9 @@ class ComponentFilter extends SimpleFilter {
 
     static create<T>(filter: any, values: JiraComponent[], valueAccessor: BoardValueAccessor<JiraComponent>): ComponentFilter {
         let tmp: SimpleFilter = SimpleFilter.create(filter, values, valueAccessor, true);
+        if (!tmp) {
+            return null;
+        }
         return new ComponentFilter(tmp.handleNone, tmp.filter, tmp.anySelected, tmp.selectedValues);
     }
 }
@@ -650,6 +656,7 @@ class MapFilter {
         if (!values) {
             return;
         }
+        let hasFilters:boolean = false;
         let simpleFilters:IMap<SimpleFilter> = {};
         for (let value of values.array) {
             let name:string = mapAccessor.getKey(value);
@@ -658,7 +665,14 @@ class MapFilter {
                 filter = {};
             }
             let childValues:V[] = mapAccessor.getValues(value);
-            simpleFilters[name] = SimpleFilter.create(filter, childValues, valueAccessor, handleNone);
+            let simple:SimpleFilter = SimpleFilter.create(filter, childValues, valueAccessor, handleNone);
+            if (simple) {
+                simpleFilters[name] = simple;
+                hasFilters = true;
+            }
+        }
+        if (!hasFilters) {
+            return null;
         }
         return new MapFilter(simpleFilters);
     }
