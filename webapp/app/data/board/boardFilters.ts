@@ -528,10 +528,12 @@ class SimpleFilter {
     static create<T>(filter:any, values:T[], valueAccessor:BoardValueAccessor<T>, handleNone:boolean = false):SimpleFilter {
         let anySelected = false;
         let selectedValues:string[] = [];
+        let trimmedFilter:any = {};
         if (handleNone) {
             if (filter[NONE]) {
                 anySelected = true;
                 selectedValues.push("None");
+                trimmedFilter[NONE] = true;
             }
         }
         if (values) {
@@ -541,10 +543,11 @@ class SimpleFilter {
                     anySelected = true;
                     let displayValue:string = valueAccessor.getDisplayValue(value);
                     selectedValues.push(displayValue);
+                    trimmedFilter[key] = true;
                 }
             }
         }
-        return new SimpleFilter(handleNone, filter, anySelected, selectedValues);
+        return new SimpleFilter(handleNone, trimmedFilter, anySelected, selectedValues);
     }
 }
 
