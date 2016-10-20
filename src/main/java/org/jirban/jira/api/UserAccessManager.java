@@ -6,7 +6,7 @@ import com.atlassian.jira.user.ApplicationUser;
  * @author Kabir Khan
  */
 public interface UserAccessManager {
-    void logUserAccess(ApplicationUser user, String boardCode);
+    void logUserAccess(ApplicationUser user, String boardCode, String userAgent);
 
     String getUserAccessJson(ApplicationUser user);
 }

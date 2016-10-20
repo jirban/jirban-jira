@@ -119,8 +119,8 @@ public class JiraFacadeImpl implements JiraFacade, InitializingBean, DisposableB
 
 
     @Override
-    public void logUserAccess(ApplicationUser user, String boardCode) {
-        userAccessManager.logUserAccess(user, boardCode);
+    public void logUserAccess(ApplicationUser user, String boardCode, String userAgent) {
+        userAccessManager.logUserAccess(user, boardCode, userAgent);
     }
 
     @Override

@@ -24,12 +24,14 @@
             <td><b>User</b></td>
             <td><b>Board</b></td>
             <td><b>Date</b></td>
+            <td><b>Agent</b></td>
         </tr>
         <tr *ngFor="let entry of accessData.entries; let i = index">
             <td>{{i + 1}}</td>
             <td>{{entry.userName}} ({{entry.userKey}})</td>
             <td>{{entry.board}}</td>
             <td>{{entry.time}}</td>
+            <td>{{entry.agent}}</td>
         </tr>
     </table>
 </div>

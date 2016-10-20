@@ -27,4 +27,8 @@ public interface UserAccess extends Entity {
     @NotNull
     Date getTime();
     void setTime(Date time);
+
+    // old data can be null
+    String getUserAgent();
+    void setUserAgent(String agent);
 }

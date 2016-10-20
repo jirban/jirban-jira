@@ -40,6 +40,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
+import javax.ws.rs.HeaderParam;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -112,6 +113,7 @@ public class RestEndpoint {
     @Path(ISSUES + "/{boardCode}")
     public Response getBoard(
             @Context HttpServletRequest req,
+            @HeaderParam("user-agent") String userAgent,
             @PathParam("boardCode") String boardCode,
             @QueryParam("backlog") Boolean backlog) throws SearchException {
 
@@ -125,7 +127,7 @@ public class RestEndpoint {
                 session.getAttribute(CURRENT_BOARD_LAST_LOGGED_ACCESS) == null ? 0 : (Long)session.getAttribute(CURRENT_BOARD_LAST_LOGGED_ACCESS);
         boolean timeout = System.currentTimeMillis() > TimeUnit.HOURS.toMillis(1) + lastAccess;
         if (changedBoard || timeout) {
-            jiraFacade.logUserAccess(getUser(), boardCode);
+            jiraFacade.logUserAccess(getUser(), boardCode, userAgent);
             session.setAttribute(CURRENT_BOARD, boardCode);
             session.setAttribute(CURRENT_BOARD_LAST_LOGGED_ACCESS, System.currentTimeMillis());
         }
