@@ -74,6 +74,28 @@
       "icon" : "/images/icons/issuetypes/epic.png"
     }
   ],
+  "custom": {
+    "Tester": [
+      {
+        "key": "james",
+        "value": "James Perkins"
+      },
+      {
+        "key": "kabir",
+        "value": "Kabir Khan"
+      }
+    ],
+    "Documenter": [
+      {
+        "key": "kabir",
+        "value": "Kabir Khan"
+      },
+      {
+        "key": "stuart",
+        "value": "Stuart Douglas"
+      }
+    ]
+  },
   "projects" : {
     "owner" : "EAPDS",
     "main" : {
@@ -149,6 +171,7 @@
       "priority" : 1,
       "type" : 1,
       "components": [0, 1],
+      "custom": {"Tester": 0, "Documenter": 0},
       "parallel-tasks" : [0, 0, 0, 0]
     },
     "EAPDS-2" : {
@@ -158,6 +181,7 @@
       "priority" : 1,
       "type" : 1,
       "components": [0],
+      "custom": {"Tester": 1, "Documenter": 1},
       "parallel-tasks" : [1, 1, 2, 3]
     },
     "EAPDS-3" : {
@@ -167,6 +191,7 @@
       "priority" : 0,
       "type" : 2,
       "components": [2],
+      "custom": {"Tester": 0, "Documenter": 1},
       "parallel-tasks" : [0, 0, 2, 2]
     },
     "EAPDS-4" : {
@@ -176,6 +201,7 @@
       "priority" : 1,
       "type" : 2,
       "components": [1],
+      "custom": {"Tester": 1, "Documenter": 0},
       "parallel-tasks" : [3, 1, 2, 1]
     },
     "EAPDS-5" : {

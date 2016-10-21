@@ -131,7 +131,6 @@ export class ControlPanelComponent {
         form.valueChanges
             .debounceTime(150) //A delay for when people clear the filters so that we only get one event sent since filters are costly to recalculate
             .subscribe((value) => {
-                //console.log(JSON.stringify(value));
 
                 //Swimlane is necessary to update if dirty
                 if (this.isDirty("swimlane")) {
@@ -142,24 +141,15 @@ export class ControlPanelComponent {
                     this.updateIssueDetail(detailForm, lastValues["detail"], value["detail"]);
                 }
 
-                if (this.isDirty("project") || this.isDirty("priority") || this.isDirty("issue-type")
-                    || this.isDirty("assignee") || this.isDirty("component") || this.isDirty("custom-fields")
-                    || this.isDirty("parallel-tasks")) {
+                this.updateFilters(
+                    this.getValueIfDirty(value, "project"),
+                    this.getValueIfDirty(value, "priority"),
+                    this.getValueIfDirty(value, "issue-type"),
+                    this.getValueIfDirty(value, "assignee"),
+                    this.getValueIfDirty(value, "component"),
+                    this.getMapValueIfDirty(value, "custom-fields", this.customFields, (cfv:CustomFieldValues)=>{return cfv.name}),
+                    this.getMapValueIfDirty(value, "parallel-tasks", this.parallelTasks, (pt:ParallelTask)=>{return pt.code}));
 
-                    let customFieldFormValues:IMap<any> = {};
-                    let customFieldValue:any = value["custom-fields"];
-                    for (let customFieldValues of this.customFields) {
-                        customFieldFormValues[customFieldValues.name] = customFieldValue[customFieldValues.name];
-                    }
-                    let parallelTaskFormValues:IMap<any> = {};
-                    let parallelTaskValue:any = value["parallel-tasks"];
-                    for (let task of this.parallelTasks) {
-                        parallelTaskFormValues[task.code] = parallelTaskValue[task.code];
-                    }
-                    this.updateFilters(
-                        value["project"], value["priority"], value["issue-type"], value["assignee"],
-                        value["component"], customFieldFormValues, parallelTaskFormValues);
-                }
                 this.updateLinkUrl();
 
                 form.reset(value);
@@ -172,6 +162,26 @@ export class ControlPanelComponent {
         this.updateTooltips();
 
         return this._controlForm;
+    }
+
+    private getValueIfDirty(value:any, key:string):any {
+        if (this.isDirty(key)) {
+            return value[key];
+        }
+        return null;
+    }
+
+    private getMapValueIfDirty<T>(value:any, name:string, dataValues:T[], keyGetter:(t:T)=>string):IMap<any> {
+        if (this.isDirty(name)) {
+            let map:IMap<any> = {};
+            let filterMap:any = value[name];
+            for (let value of dataValues) {
+                let key:string = keyGetter(value);
+                map[key] = filterMap[key];
+            }
+            return map;
+        }
+        return null;
     }
 
     private addControlAndRecordInitialValue(form:FormGroup, initialStateRecorder:any, groupName:string, name:string, value:any) {
@@ -460,11 +470,10 @@ export class ControlPanelComponent {
         this.filtersTooltip = filtersToolTip;
     }
 
-    private createTooltipForParallelTaskFilter() {
-
-    }
-
     private createTooltipForFilter(selectedNames:string[]):string {
+        if (!selectedNames) {
+            return "";
+        }
         let tooltip:string = "";
         let first:boolean = true;
         for (let name of selectedNames) {

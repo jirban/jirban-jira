@@ -1841,9 +1841,11 @@ describe('BoardData tests', ()=> {
                     issues: {
                         "update" : [
                             {key: "TDP-3", components: ["First", "Second"]},
+                            {key: "TDP-4", components: ["Third"]},
                             {key: "TDP-7", components: ["First", "Second"]},
                             {key: "TBG-3", components: ["First", "Second"]}]
-                    }
+                    },
+                    components : ["Third"]
                 }
             };
 
@@ -1870,11 +1872,11 @@ describe('BoardData tests', ()=> {
                 .setComponentFilter({"$n$o$n$e$":true})
                 .buildAndFilterBoardData();
             checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
-                ["TDP-4", "TBG-4"]);
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
+                ["TBG-4"]);
 
             new FilterBuilder(boardData)
-                .setComponentFilter({"$n$o$n$e$":true, "First":true, "Second":true})
+                .setComponentFilter({"$n$o$n$e$":true, "First":true, "Second":true, "Third":true})
                 .buildAndFilterBoardData();
             checkFiltered(boardData,
                 [],
@@ -1888,6 +1890,13 @@ describe('BoardData tests', ()=> {
             checkFiltered(boardData,
                 ["TDP-4", "TBG-4"],
                 ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"]);
+
+            new FilterBuilder(boardData)
+                .setComponentFilter({"$n$o$n$e$":true, "First":true, "Second":true})
+                .buildAndFilterBoardData();
+            checkFiltered(boardData,
+                ["TDP-4"],
+                ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
 
             new FilterBuilder(boardData)

@@ -115,7 +115,7 @@
     {
       "id" : 7,
       "code" : "POC7",
-      "name" : "Board with parallel task fields and less data",
+      "name" : "Board with custom and parallel task fields and less data",
       "edit" : true,
       "config" : {
         "_comment" : "This config doesn't actually match the setup for the POC7.json file. It is only here for illustrative purposes, and to see this board in the boards list."

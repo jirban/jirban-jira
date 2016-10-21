@@ -13,179 +13,128 @@ import filter = require("core-js/fn/array/filter");
 export const NONE:string = "$n$o$n$e$";
 
 export class BoardFilters {
-    private _projectFilter:any;
-    private _priorityFilter:any;
-    private _issueTypeFilter:any;
-    private _assigneeFilter:any;
-    private _componentFilter:any;
-    private _componentFilterLength:number;
-    private _customFieldValueFilters:IMap<any>;
-    private _parallelTaskFilters:IMap<any>;
-    private _projects:boolean = false;
-    private _assignees:boolean = false;
-    private _priorities:boolean = false;
-    private _issueTypes:boolean = false;
-    private _components:boolean = false;
-    private _customFields:IMap<boolean> = {};
-    private _parallelTasks:IMap<boolean> = {};
-    private _selectedProjectNames:string[] = [];
-    private _selectedPriorityNames:string[] = [];
-    private _selectedIssueTypes:string[] = [];
-    private _selectedAssignees:string[] = [];
-    private _selectedComponents:string[] = [];
-    private _selectedCustomFields:IMap<string[]>;
-    private _selectedParallelTasks:IMap<string[]>;
+    private _projectFilter:SimpleFilter;
+    private _priorityFilter:SimpleFilter;
+    private _issueTypeFilter:SimpleFilter;
+    private _assigneeFilter:SimpleFilter;
+    private _componentFilter:ComponentFilter;
+    private _customFieldValueFilters:MapFilter;
+    private _parallelTaskFilters:MapFilter;
 
-    setProjectFilter(filter:any, boardProjectCodes:string[]) {
-        this._projectFilter = filter;
-        this._projects = false;
-        this._selectedProjectNames = [];
-        if (boardProjectCodes) {
-            for (let key of boardProjectCodes) {
-                if (filter[key]) {
-                    this._projects = true;
-                    this._selectedProjectNames.push(key);
-                }
-            }
-        }
-    }
+    updateFilters(projectFilter:any, boardProjectCodes:string[],
+                  priorityFilter:any, priorities:Indexed<Priority>,
+                  issueTypeFilter:any, issueTypes:Indexed<IssueType>,
+                  assigneeFilter:any, assignees:Indexed<Assignee>,
+                  componentFilter:any, components:Indexed<JiraComponent>,
+                  customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>,
+                  parallelTaskFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
 
-    setPriorityFilter(filter:any, priorities:Indexed<Priority>) {
-        this._priorityFilter = filter;
-        this._priorities = false;
-        this._selectedPriorityNames = [];
-        if (priorities) {
-            for (let priority of priorities.array) {
-                if (filter[priority.name]) {
-                    this._priorities = true;
-                    this._selectedPriorityNames.push(priority.name)
-                }
-            }
-        }
-    }
-
-    setIssueTypeFilter(filter:any, issueTypes:Indexed<IssueType>) {
-        this._issueTypeFilter = filter;
-        this._issueTypes = false;
-        this._selectedIssueTypes = [];
-        if (issueTypes) {
-            for (let issueType of issueTypes.array) {
-                if (filter[issueType.name]) {
-                    this._issueTypes = true;
-                    this._selectedIssueTypes.push(issueType.name);
-                }
-            }
-        }
-
-    }
-
-    setAssigneeFilter(filter:any, assignees:Indexed<Assignee>) {
-        this._assigneeFilter = filter;
-        this._assignees = false;
-        this._selectedAssignees = [];
-        if (filter[NONE]) {
-            this._assignees = true;
-            this._selectedAssignees.push("None");
-        }
-        if (assignees) {
-            for (let assignee of assignees.array) {
-                if (filter[assignee.key]) {
-                    this._assignees = true;
-                    this._selectedAssignees.push(assignee.name);
-                }
-            }
-        }
-    }
-
-    setComponentFilter(filter:any, components:Indexed<JiraComponent>) {
-        //Trim to only contain the visible ones in _componentFilter
-        this._componentFilter = {};
-        this._componentFilterLength = 0;
-        this._components = false;
-        this._selectedComponents = [];
-        if (filter[NONE]) {
-            this._components = true;
-            this._componentFilter[NONE] = true;
-            this._componentFilterLength = 1;
-            this._selectedComponents.push("None");
-        }
-
-        if (components) {
-            for (let component of components.array) {
-                if (filter[component.name]) {
-                    this._components = true;
-                    this._componentFilter[component.name] = true;
-                    this._componentFilterLength += 1;
-                    this._selectedComponents.push(component.name);
-                }
-            }
-        }
-    }
-
-    setCustomFieldValueFilters(customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>) {
-        this._customFieldValueFilters = {};
-        this._customFields = {};
-        this._selectedCustomFields = {};
-        for (let cfvs of customFields.array) {
-            let filter = customFieldValueFilters[cfvs.name];
-            let hasFilters = false;
-            let selected:string[] = [];
-            if (!filter) {
-                filter = {};
-            } else {
-                if (filter[NONE]) {
-                    hasFilters = true;
-                    selected.push("None")
-                }
-                for (let cfv of cfvs.values.array) {
-                    if (filter[cfv.key]) {
-                        hasFilters = true;
-                        selected.push(cfv.displayValue);
+        if (projectFilter) {
+            this._projectFilter = SimpleFilter.create(
+                projectFilter ? projectFilter : {},
+                boardProjectCodes, {
+                    getKey: (value: string) => {
+                        return value;
+                    },
+                    getDisplayValue: (value: string) => {
+                        return value;
                     }
-                }
-            }
-            this._customFieldValueFilters[cfvs.name] = filter;
-            this._customFields[cfvs.name] = hasFilters;
-            this._selectedCustomFields[cfvs.name] = selected;
-
+                });
         }
-    }
 
-    setParallelTaskFilters(parallelTaskFormFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
-        if (!parallelTasks) {
-            return;
-        }
-        this._parallelTaskFilters = {};
-        this._parallelTasks = {};
-        this._selectedParallelTasks = {};
-        for (let pt of parallelTasks.array) {
-            let filter = parallelTaskFormFilters[pt.code];
-            let hasFilters = false;
-            let selected:string[] = [];
-            if (!filter) {
-                filter = {};
-            } else {
-                for (let option of pt.options.array) {
-                    if (filter[option]) {
-                        hasFilters = true;
-                        selected.push(option);
+        if (priorityFilter) {
+            this._priorityFilter = SimpleFilter.create(
+                priorityFilter ? priorityFilter : {},
+                this.getIndexedArray(priorities), {
+                    getKey: (value: Priority) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: Priority) => {
+                        return value.name;
                     }
-                }
-            }
-            this._parallelTaskFilters[pt.code] = filter;
-            this._parallelTasks[pt.code] = hasFilters;
-            this._selectedParallelTasks[pt.code] = selected;
+                });
+        }
+
+        if (issueTypeFilter) {
+            this._issueTypeFilter = SimpleFilter.create(
+                issueTypeFilter ? issueTypeFilter : {},
+                this.getIndexedArray(issueTypes), {
+                    getKey: (value: IssueType) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: IssueType) => {
+                        return value.name;
+                    }
+                });
+        }
+
+        if (assigneeFilter) {
+            this._assigneeFilter = SimpleFilter.create(
+                assigneeFilter ? assigneeFilter : {},
+                this.getIndexedArray(assignees), {
+                    getKey: (value: Assignee) => {
+                        return value.key;
+                    },
+                    getDisplayValue: (value: Assignee) => {
+                        return value.name;
+                    }
+                },
+                true);
+        }
+
+        if (componentFilter) {
+            this._componentFilter = ComponentFilter.create(
+                componentFilter ? componentFilter : {},
+                this.getIndexedArray(components), {
+                    getKey: (value: JiraComponent) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: JiraComponent) => {
+                        return value.name;
+                    }
+            });
+        }
+
+        if (customFieldValueFilters) {
+            this._customFieldValueFilters = MapFilter.create(
+                customFieldValueFilters ? customFieldValueFilters : {},
+                customFields, {
+                    getKey: (parent: CustomFieldValues) => {
+                        return parent.name
+                    },
+                    getValues: (parent: CustomFieldValues) => {
+                        return parent.values.array
+                    }
+                }, {
+                    getKey: (value: CustomFieldValue) => {
+                        return value.key
+                    },
+                    getDisplayValue: (value: CustomFieldValue) => {
+                        return value.displayValue
+                    }
+                }, true);
+        }
+
+        if (parallelTaskFilters) {
+            this._parallelTaskFilters = MapFilter.create(
+                parallelTaskFilters ? parallelTaskFilters : {},
+                parallelTasks, {
+                    getKey: (parent: ParallelTask) => {
+                        return parent.code
+                    },
+                    getValues: (parent: ParallelTask) => {
+                        return parent.options.array
+                    }
+                }, {
+                    getKey: (value: string) => {
+                        return value
+                    },
+                    getDisplayValue: (value: string) => {
+                        return value
+                    }
+                });
         }
     }
-
-    private hasCustomValueFilter(customFieldValueFilters:IMap<any>, name:string, key:string) {
-        let filtersForField:any = customFieldValueFilters[name];
-        if (!filtersForField) {
-            return false;
-        }
-        return filtersForField[key];
-    }
-
 
     filterIssue(issue:IssueData):boolean {
         if (this.filterProject(issue.projectCode)) {
@@ -214,194 +163,85 @@ export class BoardFilters {
     }
 
     initialProjectValueForForm(projectCode:string):boolean {
-        if (!this._projects) {
-            return false;
-        }
-        return this._projectFilter[projectCode];
+        return this.initialValueForForm(this._projectFilter, projectCode);
     }
 
     filterProject(projectCode:string):boolean {
-        if (this._projects) {
-            return !this._projectFilter[projectCode];
-        }
-        return false;
+        return this.filterSimple(this._projectFilter, projectCode);
     }
 
     initialAssigneeValueForForm(assigneeKey:string):boolean {
-        if (!this._assignees) {
-            return false;
-        }
-        return this._assigneeFilter[assigneeKey];
+        return this.initialValueForForm(this._assigneeFilter, assigneeKey);
     }
 
     filterAssignee(assigneeKey:string):boolean {
-        if (this._assignees) {
-            return !this._assigneeFilter[assigneeKey ? assigneeKey : NONE]
-        }
-        return false;
+        return this.filterSimple(this._assigneeFilter, assigneeKey);
     }
 
     initialPriorityValueForForm(priorityName:string):boolean {
-        if (!this._priorities) {
-            return false;
-        }
-        return this._priorityFilter[priorityName];
+        return this.initialValueForForm(this._priorityFilter, priorityName);
     }
 
     filterPriority(priorityName:string):boolean {
-        if (this._priorities) {
-            return !this._priorityFilter[priorityName];
-        }
-        return false;
+        return this.filterSimple(this._priorityFilter, priorityName);
     }
 
     initialIssueTypeValueForForm(issueTypeName:string):boolean {
-        if (!this._issueTypes) {
-            return false;
-        }
-        return this._issueTypeFilter[issueTypeName];
+        return this.initialValueForForm(this._issueTypeFilter, issueTypeName);
     }
 
     filterIssueType(issueTypeName:string):boolean {
-        if (this._issueTypes) {
-            return !this._issueTypeFilter[issueTypeName];
-        }
-        return false;
+        return this.filterSimple(this._issueTypeFilter, issueTypeName);
     }
 
     initialComponentValueForForm(componentKey:string):boolean {
-        if (!this._components) {
-            return false;
-        }
-        return this._componentFilter[componentKey];
+        return this.initialValueForForm(this._componentFilter, componentKey);
     }
 
     initialCustomFieldValueForForm(customFieldName:string, customFieldKey:string):boolean {
-        if (!this._customFields[customFieldName]) {
-            return false;
-        }
-        let customField:any = this._customFieldValueFilters[customFieldName];
-        if (!customField) {
-            return false;
-        }
-        return customField[customFieldKey];
+        return this.initialMapValueForForm(this._customFieldValueFilters, customFieldName, customFieldKey);
     }
 
     initialParallelTaskValueForForm(parallelTaskCode:string, optionName:string):boolean {
-        if (!this._parallelTasks[parallelTaskCode]) {
-            return false;
-        }
-        let paralellTask:any = this._parallelTaskFilters[parallelTaskCode];
-        if (!paralellTask) {
-            return false;
-        }
-        return paralellTask[optionName];
-    }
-
-    private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
-        if (this._components) {
-            if (!issueComponents) {
-                return !this._componentFilter[NONE];
-            } else {
-                if (this._componentFilterLength == 1 && this._componentFilter[NONE]) {
-                    //All we want to match is no components, and we have some components so return that we
-                    //should be filtered out
-                    return true;
-                }
-                for (let component in this._componentFilter) {
-                    if (component === NONE) {
-                        //We have components and we are looking for some components, for this case ignore the
-                        //no components filter
-                        continue;
-                    }
-                    if (issueComponents.forKey(component)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        return false;
+        return this.initialMapValueForForm(this._parallelTaskFilters, parallelTaskCode, optionName);
     }
 
     filterComponent(componentName:string):boolean {
-        if (this._components) {
-            return !this._componentFilter[componentName ? componentName : NONE]
+        if (!this._componentFilter) {
+            return false;
         }
-        return false;
-
+        return this._componentFilter.doFilter(componentName);
     }
 
     filterCustomFields(customFields:IMap<CustomFieldValue>):boolean {
-        for (let customFieldName in this._customFields) {
-            if (this._customFields[customFieldName]) {
-                let hadFilters:boolean = false;
-                let match:boolean = false;
-                let filter:any = this._customFieldValueFilters[customFieldName];
-                for (let fieldName in filter) {
-                    if (!filter[fieldName]) {
-                        continue;
-                    }
-                    hadFilters = true;
-                    if (fieldName === NONE) {
-                        if (!customFields[customFieldName]){
-                            match = true;
-                            break;
-                        }
-                    } else {
-                        let customFieldValue = customFields[customFieldName]
-                        if (customFieldValue && filter[customFieldValue.key]) {
-                            match = true;
-                            break;
-                        }
-                    }
-                }
-                if (hadFilters && !match) {
-                    return true;
-                }
-            }
+        if (!this._customFieldValueFilters) {
+            return false;
         }
-        return false;
+        return this._customFieldValueFilters.filterAll(customFields, {
+            getKey : (value:CustomFieldValue) => {return value == null ? null : value.key}});
     }
 
     filterCustomField(customFieldName:string, customFieldKey:string):boolean {
-        if (this._customFields[customFieldName]) {
-            let customField:any = this._customFieldValueFilters[customFieldName];
-            if (customField) {
-                return !customField[customFieldKey];
-            }
+        if (!this._customFieldValueFilters) {
+            return false;
         }
-        return false;
+        return this._customFieldValueFilters.filterSingle(customFieldName, customFieldKey);
     }
 
     filterParallelTasks(parallelTaskOptions:Indexed<string>) {
-        for (let parallelTaskCode in this._parallelTasks) {
-            if (this._parallelTasks[parallelTaskCode]) {
-                if (!parallelTaskOptions) {
-                    //Issue belongs to a project which does not have parallel task fields set up, so filter it since
-                    //we have selected filtering on parallel task fields
-                    return true;
-                }
-                let hadFilters:boolean = false;
-                let match:boolean = false;
-                let filter: any = this._parallelTaskFilters[parallelTaskCode];
-                for (let option in filter) {
-                    if (!filter[option]) {
-                        continue;
-                    }
-                    hadFilters = true;
-                    let selectedOption = parallelTaskOptions.forKey(parallelTaskCode);
-                    if (selectedOption && filter[selectedOption]) {
-                        match = true;
-                        break;
-                    }
-                }
-                if (hadFilters && !match) {
-                    return true;
-                }
+        if (!this._parallelTaskFilters) {
+            return false;
+        }
+        let optionsMap:IMap<string>;
+        if (parallelTaskOptions) {
+            optionsMap = {};
+            for (let parallelTaskCode in parallelTaskOptions.indices) {
+                optionsMap[parallelTaskCode] = parallelTaskOptions.forKey(parallelTaskCode);
             }
         }
-        return false;
+
+        return this._parallelTaskFilters.filterAll(optionsMap, {
+            getKey : (value:string) => {return value}});
     }
 
     createFromQueryParams(boardData:BoardData, queryParams:IMap<string>,
@@ -434,46 +274,112 @@ export class BoardFilters {
         callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters, parallelTaskFilters);
     }
 
-    parseBooleanFilter(queryParams:IMap<string>, name:string):any{
-        let valueString:string = queryParams[name];
-        if (valueString) {
-            let jsonFilter:any = {};
-            let values:string[] = valueString.split(",");
-            for (let value of values) {
-                value = decodeURIComponent(value);
-                jsonFilter[value] = true;
-            }
-            return jsonFilter;
-        }
-        return {};
-    }
-
     createQueryStringParticles() {
         let query = "";
-        query += this.createQueryStringParticle("project", this._projects, this._projectFilter);
-        query += this.createQueryStringParticle("priority", this._priorities, this._priorityFilter);
-        query += this.createQueryStringParticle("issue-type", this._issueTypes, this._issueTypeFilter);
-        query += this.createQueryStringParticle("assignee", this._assignees, this._assigneeFilter);
-        query += this.createQueryStringParticle("component", this._components, this._componentFilter);
-        for (let key in this._customFieldValueFilters) {
-            let customField:boolean = this._customFields[key];
-            let customFieldFilter:any = this._customFieldValueFilters[key];
-            query += this.createQueryStringParticle("cf." + key, customField, customFieldFilter);
+
+        query += this.createQueryStringParticle("project", this._projectFilter);
+        query += this.createQueryStringParticle("priority", this._priorityFilter);
+        query += this.createQueryStringParticle("issue-type", this._issueTypeFilter);
+        query += this.createQueryStringParticle("assignee", this._assigneeFilter);
+        query += this.createQueryStringParticle("component", this._componentFilter);
+        if (this._customFieldValueFilters) {
+            for (let key in this._customFieldValueFilters.filters) {
+                let simpleFilter: SimpleFilter = this._customFieldValueFilters.filters[key];
+                query += this.createQueryStringParticle("cf." + key, simpleFilter);
+            }
         }
-        for (let key in this._parallelTaskFilters) {
-            let parallelTask:boolean = this._parallelTasks[key];
-            let parallelTaskFilter:any = this._parallelTaskFilters[key];
-            query += this.createQueryStringParticle("pt." + key, parallelTask, parallelTaskFilter);
+        if (this._parallelTaskFilters) {
+            for (let key in this._parallelTaskFilters.filters) {
+                let simpleFilter: SimpleFilter = this._parallelTaskFilters.filters[key];
+                query += this.createQueryStringParticle("pt." + key, simpleFilter);
+            }
         }
         return query;
     }
 
-    private createQueryStringParticle(name:string, hasFilter:boolean, filter:any) {
+    get selectedProjectNames():string[] {
+        return this.getSelectedValues(this._projectFilter);
+    }
+
+    get selectedPriorityNames():string[] {
+        return this.getSelectedValues(this._priorityFilter);
+    }
+
+    get selectedIssueTypes():string[] {
+        return this.getSelectedValues(this._issueTypeFilter);
+    }
+
+    get selectedAssignees():string[] {
+        return this.getSelectedValues(this._assigneeFilter);
+    }
+
+    get selectedComponents():string[] {
+        return this.getSelectedValues(this._componentFilter);
+    }
+
+    get selectedCustomFields():IMap<string[]> {
+        return this.getSelectedMapValues(this._customFieldValueFilters);
+    }
+
+    get selectedParallelTasks(): IMap<string[]> {
+        return this.getSelectedMapValues(this._parallelTaskFilters);
+    }
+
+    private getIndexedArray<T>(indexed:Indexed<T>):T[] {
+        if (indexed) {
+            return indexed.array;
+        }
+        return null;
+    }
+
+    private filterSimple(filter:SimpleFilter, key:string):boolean {
+        if (!filter) {
+            return false;
+        }
+        return filter.doFilter(key);
+    }
+
+    private filterComponentAllComponents(issueComponents:Indexed<JiraComponent>):boolean {
+        if (!this._componentFilter) {
+            return false;
+        }
+        return this._componentFilter.filterAll(issueComponents);
+    }
+
+    private initialValueForForm(filter:SimpleFilter, key:string) {
+        if (!filter) {
+            return false;
+        }
+        return filter.initialValueForForm(key);
+    }
+
+    private initialMapValueForForm(filter:MapFilter, filterName:string, key:string) {
+        if (!filter) {
+            return false;
+        }
+        return filter.initialValueForForm(filterName, key);
+    }
+
+    private getSelectedValues(filter:SimpleFilter):string[] {
+        if (!filter) {
+            return [];
+        }
+        return filter.selectedValues;
+    }
+
+    private getSelectedMapValues(filter:MapFilter):IMap<string[]> {
+        if (!filter) {
+            return {};
+        }
+        return filter.selectedValues;
+    }
+
+    private createQueryStringParticle(name:string, simpleFilter:SimpleFilter) {
         let query:string = "";
-        if (hasFilter) {
+        if (simpleFilter && simpleFilter.anySelected) {
             let initialised:boolean = false;
-            for (let key in filter) {
-                if (filter[key]) {
+            for (let key in simpleFilter.filter) {
+                if (simpleFilter.filter[key]) {
                     if (!initialised) {
                         initialised = true;
                         query = "&" + name + "="
@@ -487,32 +393,18 @@ export class BoardFilters {
         return query;
     }
 
-    get selectedProjectNames():string[] {
-        return this._selectedProjectNames;
-    }
-
-    get selectedPriorityNames():string[] {
-        return this._selectedPriorityNames;
-    }
-
-    get selectedIssueTypes():string[] {
-        return this._selectedIssueTypes;
-    }
-
-    get selectedAssignees():string[] {
-        return this._selectedAssignees;
-    }
-
-    get selectedComponents():string[] {
-        return this._selectedComponents;
-    }
-
-    get selectedCustomFields():IMap<string[]> {
-        return this._selectedCustomFields;
-    }
-
-    get selectedParallelTasks(): IMap<string[]> {
-        return this._selectedParallelTasks;
+    private parseBooleanFilter(queryParams:IMap<string>, name:string):any{
+        let valueString:string = queryParams[name];
+        if (valueString) {
+            let jsonFilter:any = {};
+            let values:string[] = valueString.split(",");
+            for (let value of values) {
+                value = decodeURIComponent(value);
+                jsonFilter[value] = true;
+            }
+            return jsonFilter;
+        }
+        return null;
     }
 }
 
@@ -583,4 +475,219 @@ export class IssueDisplayDetails {
         return query;
     }
 
+}
+
+class SimpleFilter {
+    private _handleNone:boolean;
+    protected _filter:any;
+    protected _anySelected:boolean = false;
+    protected _selectedValues:string[] = [];
+
+    constructor(handleNone:boolean, filter:any, anySelected:boolean, selectedValues:string[]) {
+        this._handleNone = handleNone;
+        this._filter = filter;
+        this._anySelected = anySelected;
+        this._selectedValues = selectedValues;
+    }
+
+    get handleNone(): boolean {
+        return this._handleNone;
+    }
+
+    get filter(): any {
+        return this._filter;
+    }
+
+    get anySelected(): boolean {
+        return this._anySelected;
+    }
+
+    get selectedValues(): string[] {
+        return this._selectedValues;
+    }
+
+    initialValueForForm(key:string):boolean {
+        if (!this._anySelected) {
+            return false;
+        }
+        return this._filter[key];
+    }
+
+    doFilter(key:string):boolean {
+        if (this._anySelected) {
+            let useKey:string = key;
+            if (!key && this._handleNone) {
+                useKey = NONE;
+            }
+            return !this._filter[useKey];
+        }
+        return false;
+    }
+
+
+    static create<T>(filter:any, values:T[], valueAccessor:BoardValueAccessor<T>, handleNone:boolean = false):SimpleFilter {
+        let anySelected = false;
+        let selectedValues:string[] = [];
+        let trimmedFilter:any = {};
+        if (handleNone) {
+            if (filter[NONE]) {
+                anySelected = true;
+                selectedValues.push("None");
+                trimmedFilter[NONE] = true;
+            }
+        }
+        if (values) {
+            for (let value of values) {
+                let key:string = valueAccessor.getKey(value);
+                if (filter[key]) {
+                    anySelected = true;
+                    let displayValue:string = valueAccessor.getDisplayValue(value);
+                    selectedValues.push(displayValue);
+                    trimmedFilter[key] = true;
+                }
+            }
+        }
+        if (!anySelected) {
+            return null;
+        }
+        return new SimpleFilter(handleNone, trimmedFilter, anySelected, selectedValues);
+    }
+}
+
+class ComponentFilter extends SimpleFilter {
+    private _filterLength: number;
+
+    constructor(handleNone:boolean, filter:any, anySelected:boolean, selectedValues:string[]) {
+        super(handleNone, filter, anySelected, selectedValues);
+        this._filterLength = selectedValues.length;
+    }
+
+    filterAll(issueComponents:Indexed<JiraComponent>):boolean {
+        if (this._anySelected) {
+            if (!issueComponents) {
+                return !this._filter[NONE];
+            } else {
+                if (this._filterLength == 1 && this._filter[NONE]) {
+                    //All we want to match is no components, and we have some components so return that we
+                    //should be filtered out
+                    return true;
+                }
+                for (let component in this._filter) {
+                    if (component === NONE) {
+                        //We have components and we are looking for some components, for this case ignore the
+                        //no components filter
+                        continue;
+                    }
+                    if (issueComponents.forKey(component)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static create<T>(filter: any, values: JiraComponent[], valueAccessor: BoardValueAccessor<JiraComponent>): ComponentFilter {
+        let tmp: SimpleFilter = SimpleFilter.create(filter, values, valueAccessor, true);
+        if (!tmp) {
+            return null;
+        }
+        return new ComponentFilter(tmp.handleNone, tmp.filter, tmp.anySelected, tmp.selectedValues);
+    }
+}
+
+class MapFilter {
+    private _filters:IMap<SimpleFilter>;
+    private _selectedValues:IMap<string[]>;
+
+    constructor(filters: IMap<SimpleFilter>) {
+        this._filters = filters;
+        this._selectedValues = {};
+        for (let key in filters) {
+            let simpleFilter:SimpleFilter = filters[key];
+            this._selectedValues[key] = simpleFilter.selectedValues;
+        }
+    }
+
+    get filters() {
+        return this._filters;
+    }
+    get selectedValues(): IMap<string[]> {
+        return this._selectedValues;
+    }
+
+    initialValueForForm(filterName:string, key:string):boolean {
+        let filter:SimpleFilter = this._filters[filterName];
+        if (filter) {
+            return filter.initialValueForForm(key);
+        }
+        return false;
+    }
+
+    filterSingle(filterName:string, key:string):boolean {
+        let filter:SimpleFilter = this._filters[filterName];
+        if (filter) {
+            return filter.doFilter(key);
+        }
+    }
+
+    filterAll<T>(values:IMap<T>, valueAccessor:IssueMapValueAccessor<T>):boolean {
+        for (let name in this._filters) {
+            let simpleFilter:SimpleFilter = this._filters[name];
+            let key:string;
+            if (values) {
+                key = valueAccessor.getKey(values[name]);
+            }
+            if (!key) {
+                if (simpleFilter.doFilter(null)) {
+                    return true;
+                }
+            }
+            if (simpleFilter.doFilter(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static create<T, V>(filters:IMap<any>, values:Indexed<T>,
+                     mapAccessor:MapValueAccessor<T, V>, valueAccessor:BoardValueAccessor<V>, handleNone:boolean = false) : MapFilter {
+        if (!values) {
+            return;
+        }
+        let hasFilters:boolean = false;
+        let simpleFilters:IMap<SimpleFilter> = {};
+        for (let value of values.array) {
+            let name:string = mapAccessor.getKey(value);
+            let filter:any = filters[name];
+            if (!filter) {
+                filter = {};
+            }
+            let childValues:V[] = mapAccessor.getValues(value);
+            let simple:SimpleFilter = SimpleFilter.create(filter, childValues, valueAccessor, handleNone);
+            if (simple) {
+                simpleFilters[name] = simple;
+                hasFilters = true;
+            }
+        }
+        if (!hasFilters) {
+            return null;
+        }
+        return new MapFilter(simpleFilters);
+    }
+}
+
+interface MapValueAccessor<T, V> {
+    getKey(parent:T):string;
+    getValues(parent:T):V[];
+}
+
+interface BoardValueAccessor<T> {
+    getKey(value:T):string;
+    getDisplayValue(value:T):string;
+}
+
+interface IssueMapValueAccessor<T> {
+    getKey(value:T):string;
 }
