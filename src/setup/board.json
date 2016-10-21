@@ -18,10 +18,11 @@
     }
   ],
   "priorities": [
-    "Blocker",
-    "Major",
-    "Minor",
-    "Trivial"
+    "Highest",
+    "High",
+    "Medium",
+    "Low",
+    "Lowest"
   ],
   "issue-types": [
     "Task",
