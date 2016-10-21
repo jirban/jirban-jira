@@ -47,7 +47,7 @@ export class AccessLogData {
             }
 
             let alEntry:AccessLogEntry =
-                new AccessLogEntry(accessSummary.user, entry["board"], entry["time"]);
+                new AccessLogEntry(accessSummary.user, entry["board"], entry["time"], entry["agent"]);
             entries.push(alEntry);
         }
 
@@ -67,11 +67,13 @@ export class AccessLogEntry {
     private _user:User;
     private _board:string;
     private _time:string;
+    private _agent:string;
 
-    constructor(user:User, board:string, time:string) {
+    constructor(user:User, board:string, time:string, agent:string) {
         this._user = user;
         this._board = board;
         this._time = time;
+        this._agent = agent;
     }
 
     get userKey():string {
@@ -88,6 +90,10 @@ export class AccessLogEntry {
 
     get time():string {
         return this._time;
+    }
+
+    get agent():string {
+        return this._agent;
     }
 }
 

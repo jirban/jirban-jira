@@ -33,7 +33,7 @@ public class UserAccessManagerImpl implements UserAccessManager {
     }
 
     @Override
-    public void logUserAccess(ApplicationUser user, String boardCode) {
+    public void logUserAccess(ApplicationUser user, String boardCode, String userAgent) {
         activeObjects.executeInTransaction(new TransactionCallback<Void>() {
             @Override
             public Void doInTransaction() {
@@ -42,7 +42,8 @@ public class UserAccessManagerImpl implements UserAccessManager {
                         new DBParam("USER_KEY", user.getKey()),
                         new DBParam("USER_NAME", user.getDisplayName()),
                         new DBParam("BOARD_CODE", boardCode),
-                        new DBParam("TIME", new Date(System.currentTimeMillis())));
+                        new DBParam("TIME", new Date(System.currentTimeMillis())),
+                        new DBParam("USER_AGENT", userAgent));
 
                 userAccess.save();
                 return null;
@@ -70,6 +71,7 @@ public class UserAccessManagerImpl implements UserAccessManager {
             entry.get("user", "key").set(access.getUserKey());
             entry.get("user", "name").set(access.getUserName());
             entry.get("board").set(access.getBoardCode());
+            entry.get("agent").set(access.getUserAgent() == null ? "n/a" : access.getUserAgent());
 
             String formattedDate = format.format(access.getTime());
             entry.get("time").set(formattedDate);

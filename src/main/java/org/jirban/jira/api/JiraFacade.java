@@ -97,7 +97,7 @@ public interface JiraFacade
      * @param user the logged in user
      * @param boardCode the board code
      */
-    void logUserAccess(ApplicationUser user, String boardCode);
+    void logUserAccess(ApplicationUser user, String boardCode, String userAgent);
 
     /**
      * Loads the list of accesses
