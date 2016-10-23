@@ -178,7 +178,7 @@ export class IssueTable {
             (key, data) => {
                 return IssueData.createFullRefresh(this._boardData, data);
             });
-        this.createTable(true);
+        this.createTable(!initial);
 
         this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
     }
