@@ -10,6 +10,7 @@ import {CustomFieldValue} from "./customField";
 import {IMap} from "../../common/map";
 import {Subject, Observable} from "rxjs/Rx";
 import {ParallelTask} from "./parallelTask";
+import {BoardFilters} from "./boardFilters";
 
 export class IssueData {
     private _boardData:BoardData;
@@ -222,10 +223,6 @@ export class IssueData {
         return this._filtered;
     }
 
-    set filtered(filtered) {
-        this._filtered = filtered;
-    }
-
     get customFields():IMap<CustomFieldValue> {
         return this._customFields;
     }
@@ -385,5 +382,10 @@ export class IssueData {
 
     getCustomFieldValue(name:string):CustomFieldValue {
         return this._customFields[name];
+    }
+
+    filterIssue(filters:BoardFilters) {
+        //console.log("-Filter " + this.key);
+        this._filtered = filters.filterIssue(this);
     }
 }

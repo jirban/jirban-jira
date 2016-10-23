@@ -65,7 +65,7 @@ export class IssueTable {
         this._filters = filters;
 
         for (let issue of this._allIssues.array) {
-            issue.filtered = this._filters.filterIssue(issue);
+            issue.filterIssue(this._filters);
             if (issue.filtered) {
                 delete this._visibleIssues[issue.key];
                 this._filteredIssues[issue.key] = true;
@@ -86,7 +86,7 @@ export class IssueTable {
 
     set swimlane(swimlane:string) {
         this._swimlane = swimlane;
-        this.createTable();
+        this.createTable(false);
         this._swimlaneVisibitilySubject.next(null);
     }
 
@@ -140,6 +140,7 @@ export class IssueTable {
                     continue;
                 }
                 issue.applyUpdate(update);
+                issue.filterIssue(this._filters);
             }
         }
         //Add all the created issues
@@ -147,6 +148,7 @@ export class IssueTable {
             for (let add of changeSet.issueAdds) {
                 let issue:IssueData = IssueData.createFromChangeSet(boardData, add);
                 this._allIssues.add(issue.key, issue);
+                issue.filterIssue(this._filters);
             }
         }
 
@@ -163,7 +165,7 @@ export class IssueTable {
             }
         }
 
-        this.createTable();
+        this.createTable(false);
         this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
     }
 
@@ -176,7 +178,7 @@ export class IssueTable {
             (key, data) => {
                 return IssueData.createFullRefresh(this._boardData, data);
             });
-        this.createTable();
+        this.createTable(true);
 
         this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
     }
@@ -202,18 +204,18 @@ export class IssueTable {
         }
     }
 
-    private createTable() {
+    private createTable(filterIssues:boolean) {
         if (this._swimlane) {
-            this._swimlaneTable = this.createSwimlaneTable();
+            this._swimlaneTable = this.createSwimlaneTable(filterIssues);
             this._issueTable = null;
         } else {
-            this._issueTable = this.createIssueTable();
+            this._issueTable = this.createIssueTable(filterIssues);
             this._swimlaneTable = null;
         }
     }
 
 
-    private createIssueTable() : IssueData[][] {
+    private createIssueTable(filterIssues:boolean) : IssueData[][] {
         let numStates = this._boardData.boardStateNames.length;
 
         this._totalIssuesByState = new Array<number>(numStates);
@@ -238,7 +240,9 @@ export class IssueTable {
 
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
                 issueCounter.increment();
-                issue.filtered = this._filters.filterIssue(issue);
+                if (filterIssues) {
+                    issue.filterIssue(this._filters);
+                }
 
                 this._rankedIssues.push(issue);
             }
@@ -251,7 +255,7 @@ export class IssueTable {
         return issueTable;
     }
 
-    private createSwimlaneTable() : SwimlaneData[] {
+    private createSwimlaneTable(filterIssues:boolean) : SwimlaneData[] {
         let numStates = this._boardData.boardStateNames.length;
 
         this._totalIssuesByState = new Array<number>(numStates);
@@ -281,7 +285,9 @@ export class IssueTable {
 
                 let issueCounter:StateIssueCounter = issueCounters[boardStateIndex];
                 issueCounter.increment();
-                issue.filtered = this._filters.filterIssue(issue);
+                if (filterIssues) {
+                    issue.filterIssue(this._filters);
+                }
 
                 this._rankedIssues.push(issue);
             }
