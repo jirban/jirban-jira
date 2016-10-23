@@ -354,6 +354,9 @@ export class ControlPanelComponent {
 
     private updateFilters(project:any, priority:any, issueType:any, assignee:any, component:any,
                           customFieldValues:IMap<any>, parallelTaskFormValues:IMap<any>) {
+        if (!project && ! priority && !issueType && !assignee && !component && !customFieldValues && !parallelTaskFormValues) {
+            return;
+        }
         this.boardData.updateFilters(project, priority, issueType, assignee, component, customFieldValues, parallelTaskFormValues);
         this.updateTooltips();
     }
