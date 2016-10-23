@@ -21,13 +21,10 @@
  */
 package ut.org.jirban.jira.mock;
 
-import java.util.Locale;
-
-import org.ofbiz.core.entity.GenericValue;
+import javax.annotation.Nullable;
 
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.util.I18nHelper;
-import com.opensymphony.module.propertyset.PropertySet;
 
 /**
  * Mockito seems to get confused with deep mocks, so hardcode these value objects
@@ -53,16 +50,6 @@ public class MockPriority implements Priority {
     }
 
     @Override
-    public void setStatusColor(String s) {
-
-    }
-
-    @Override
-    public GenericValue getGenericValue() {
-        return null;
-    }
-
-    @Override
     public String getId() {
         return null;
     }
@@ -73,28 +60,13 @@ public class MockPriority implements Priority {
     }
 
     @Override
-    public void setName(String s) {
-
-    }
-
-    @Override
     public String getDescription() {
         return null;
     }
 
     @Override
-    public void setDescription(String s) {
-
-    }
-
-    @Override
     public Long getSequence() {
         return null;
-    }
-
-    @Override
-    public void setSequence(Long aLong) {
-
     }
 
     @Override
@@ -110,11 +82,6 @@ public class MockPriority implements Priority {
     @Override
     public String getIconUrlHtml() {
         return null;
-    }
-
-    @Override
-    public void setIconUrl(String s) {
-
     }
 
     @Override
@@ -148,22 +115,19 @@ public class MockPriority implements Priority {
     }
 
     @Override
-    public void setTranslation(String s, String s1, String s2, Locale locale) {
-
+    public int compareTo(Object o) {
+        return 0;
     }
 
+    @Nullable
     @Override
-    public void deleteTranslation(String s, Locale locale) {
-
-    }
-
-    @Override
-    public PropertySet getPropertySet() {
+    public String getSvgIconUrl() {
         return null;
     }
 
+    @Nullable
     @Override
-    public int compareTo(Object o) {
-        return 0;
+    public String getRasterIconUrl() {
+        return null;
     }
 }

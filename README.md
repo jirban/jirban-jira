@@ -3,7 +3,13 @@ Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plug
 * to address some of Jira Agile's short-comings when it comes to how it displays the boards. Effectively this means horizontally scrollable boards, with collapsible colums.
 * to make setup of filters and swimlanes less static, minimising the need for configuration. Since we are using a 'fat' browser client, all changes to the view purely happen on the client side with no need for extra round trips to the server.
 
-It is currently built for and used on Jira 6.4.x. 
+## Jira version 7
+It is currently built for and used on Jira 7.2.2 (starting with the 2.0.0 release), but should work on all Jira 7.x versions. 
+
+##Jira version 6
+The previous 1.0.x versions were built and used on Jira 6.4.11, and should have worked on all 6.4.x and probably other versions in the 6.x series. Jira 7 contains some breaking changes in the SDK, so currently only the Jira 7 version is maintained. It would be nice to provide parallel releases, but it would also be a lot more work than our current user base warrants to set up the project to result in libraries for both Jira versions. If you want to install the plugin on Jira 6.x you can: 
+* either build it yourself from the master branch undoing the changes that were needed to upgrade to Jira 7.2.2 (https://github.com/jirban/jirban-jira/pull/109), or
+* open a GitHub issue, and I can do a backport from the master branch to the 1.0.x branch which is used to support Jira 6.x.
 
  
 This file contains instructions for you to get up and running as a developer of Jirban. We also have a [User Guide](userguide).
@@ -35,7 +41,7 @@ The UI can be developed separately from the plugin itself, since it is a fat cli
 * just the UI steps (if working on purely display logic)
 * or both the UI steps and the SDK steps if you are working on something involving the server. The SDK steps will package the jar containing the plugin.
 
-When JIRA is started for the first time (e.g. running `atlas-run`) you should enable the Agile feature by acquiring evaluation license (it is valid for at least a month, and you can extend it), or buying the license (it is $10). You will need account on https://my.atlassian.com
+When JIRA is started for the first time (e.g. running `atlas-run`) you should enable the Agile feature by acquiring an evaluation license (it is valid for at least a month, and you can extend it), or buying the license (it is $10). You will need account on https://my.atlassian.com. To enable the Agile feature, go to Jira Administration (the cog icon in the top right corner), and select Applications. Then install the Jira Software Application.
 
 ### UI
 Each of the following UI steps happen from the `jirban-jira/webapp` folder, and a separate terminal window is needed for each one.
@@ -63,12 +69,12 @@ To be able to debug the Jirban plugin, you need to set up your SDK's Jira instan
 4. Repeat steps 1-3 to create a project with the name 'Support' and the code 'SUP'
 5. Repeat steps 1-3 to create a project with the name 'Upstream' and the code 'UP'
 6. Create some issues in all three projects, and make some links from issues in 'Support' and 'Feature' to issues in the 'Upstream' project. Make sure that all available issue types and priorities are used for the issues (so that you have something to switch later when you run the board!).
-7. In the Jira Agile boards for each project distribute the issues a bit throughout the states/columns
+7. In the Kanban boards for each project distribute the issues a bit throughout the states/columns
 8. For more advanced development, set up some users and components in Jira and assign issues to those users/components.
 
 ## Configuring a Jirban board
 1. Log in to your local Jira instance
-2. From the 'Agile' menu, select 'Jirban Boards'
+2. From the 'Boards' menu, select 'Jirban Boards'
 3. Click 'Config' in the top banner
 4. Open http://localhost:2990/jira/rest/api/2/field in a browser and look for the field called 'Rank'. Enter its id (probably 10005) into the field on the bottom of the page and click the associated 'Save' button. Another option to get Rank field is invoking http://localhost:2990/jira/plugins/servlet/restbrowser#/resource/api-2-field.
 5. Copy the text from `src/setup/board.json` into the text area on the page, and press 'Save'.

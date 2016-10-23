@@ -37,6 +37,7 @@ import com.atlassian.jira.user.util.UserManager;
  */
 public class UserManagerBuilder {
     private final UserManager userManager = mock(UserManager.class);
+    private static long counter;
 
     private final HashMap<String, String> users = new HashMap<>();
 
@@ -66,6 +67,12 @@ public class UserManagerBuilder {
                 return null;
             }
             return new ApplicationUser() {
+
+                @Override
+                public Long getId() {
+                    return counter++;
+                }
+
                 public String getKey() {
                     return name;
                 }

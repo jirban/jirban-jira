@@ -39,7 +39,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
@@ -47,9 +46,9 @@ import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
 import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
 import com.atlassian.jira.mock.component.MockComponentWorker;
+import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 
-import ut.org.jirban.jira.mock.CrowdUserBridge;
 import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
@@ -141,8 +140,7 @@ public abstract class AbstractBoardTest {
                                                                  String username, String[] components, String state,
                                                                  Map<Long, String> customFieldValues) {
 
-        CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
-        User user = userBridge.getUserByKey(username);
+        ApplicationUser user = userManager.getUserByKey(username);
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
                 summary, user, MockProjectComponent.createProjectComponents(components), state, customFieldValues);
@@ -196,12 +194,11 @@ public abstract class AbstractBoardTest {
             Assert.assertNull(components);
         }
 
-        User user;
+        ApplicationUser user;
         if (unassigned) {
             user = JirbanIssueEvent.UNASSIGNED;
         } else {
-            CrowdUserBridge userBridge = new CrowdUserBridge(userManager);
-            user = userBridge.getUserByKey(username);
+            user = userManager.getUserByKey(username);
         }
         String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         Collection<ProjectComponent> projectComponents = clearComponents ? Collections.emptySet() : MockProjectComponent.createProjectComponents(components);

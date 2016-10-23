@@ -35,7 +35,6 @@ import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.junit.Assert;
 
-import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
@@ -48,11 +47,11 @@ import com.atlassian.jira.user.util.UserManager;
  * @author Kabir Khan
  */
 public class IssueRegistry implements NextRankedIssueUtil {
-    private final CrowdUserBridge userBridge;
+    private final UserManager userManager;
     private final Map<String, Map<String, MockIssue>> issuesByProject = new HashMap<>();
 
     public IssueRegistry(UserManager userManager) {
-        this.userBridge = new CrowdUserBridge(userManager);
+        this.userManager = userManager;
     }
 
     public IssueRegistry addIssue(String projectCode, String issueType, String priority, String summary,
@@ -60,7 +59,7 @@ public class IssueRegistry implements NextRankedIssueUtil {
         Map<String, MockIssue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
         String issueKey = projectCode + "-" + (issues.size() + 1);
         issues.put(issueKey, new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
-                userBridge.getUserByKey(assignee), MockProjectComponent.createProjectComponents(components), MockStatus.create(state)));
+                userManager.getUserByKey(assignee), MockProjectComponent.createProjectComponents(components), MockStatus.create(state)));
         return this;
     }
 
@@ -75,7 +74,7 @@ public class IssueRegistry implements NextRankedIssueUtil {
         IssueType issueType = issueTypeName == null ? issue.getIssueTypeObject() : MockIssueType.create(issueTypeName);
         Priority priority = priorityName == null ? issue.getPriorityObject() : MockPriority.create(priorityName);
         String summ = summary == null ? issue.getSummary() : summary;
-        User assigneeUser = assignee == null ? issue.getAssignee() : userBridge.getUserByKey(assignee);
+        ApplicationUser assigneeUser = assignee == null ? issue.getAssignee() : userManager.getUserByKey(assignee);
         Set<ProjectComponent> comps;
         if (components != null) {
             comps = MockProjectComponent.createProjectComponents(components);

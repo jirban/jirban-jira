@@ -21,16 +21,11 @@
  */
 package ut.org.jirban.jira.mock;
 
-import java.util.Locale;
-
 import javax.annotation.Nullable;
-
-import org.ofbiz.core.entity.GenericValue;
 
 import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.util.I18nHelper;
-import com.opensymphony.module.propertyset.PropertySet;
 
 /**
  * Mockito seems to get confused with deep mocks, so hardcode these value objects
@@ -63,11 +58,6 @@ public class MockIssueType implements IssueType {
     }
 
     @Override
-    public GenericValue getGenericValue() {
-        return null;
-    }
-
-    @Override
     public String getId() {
         return issueTypeName;
     }
@@ -78,28 +68,13 @@ public class MockIssueType implements IssueType {
     }
 
     @Override
-    public void setName(String s) {
-
-    }
-
-    @Override
     public String getDescription() {
         return null;
     }
 
     @Override
-    public void setDescription(String s) {
-
-    }
-
-    @Override
     public Long getSequence() {
         return null;
-    }
-
-    @Override
-    public void setSequence(Long aLong) {
-
     }
 
     @Override
@@ -115,11 +90,6 @@ public class MockIssueType implements IssueType {
     @Override
     public String getIconUrlHtml() {
         return null;
-    }
-
-    @Override
-    public void setIconUrl(String s) {
-
     }
 
     @Override
@@ -153,22 +123,8 @@ public class MockIssueType implements IssueType {
     }
 
     @Override
-    public void setTranslation(String s, String s1, String s2, Locale locale) {
-
-    }
-
-    @Override
-    public void deleteTranslation(String s, Locale locale) {
-
-    }
-
-    @Override
-    public PropertySet getPropertySet() {
-        return null;
-    }
-
-    @Override
     public int compareTo(Object o) {
         return 0;
     }
+
 }

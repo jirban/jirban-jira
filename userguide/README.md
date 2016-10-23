@@ -6,7 +6,7 @@ Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plug
 This file shows you how to use Jirban from a user's point of view. If you are interested in contributing, we also have a [Developers Guide](https://github.com/jirban/jirban-jira) in the main project README.md.
 
 ## Jirban Boards
-To get to the Jirban boards, log in to your Jira instance, and then click on the 'Jirban Boards' entry in the 'Agile' menu:
+To get to the Jirban boards, log in to your Jira instance, and then click on the 'Jirban Boards' entry in the 'Boards' menu:
 
 ![alt text](https://raw.githubusercontent.com/kabir/jirban-jira/master/userguide/images/10-Menu.png)
 
