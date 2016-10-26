@@ -1,5 +1,5 @@
 import {Component, EventEmitter} from "@angular/core";
-import {IssueData} from "../../../data/board/issueData";
+import {IssueData, LinkedIssueData} from "../../../data/board/issueData";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {ParallelTask} from "../../../data/board/parallelTask";
 import {Indexed} from "../../../common/indexed";
@@ -92,13 +92,13 @@ export class IssueComponent {
         return this._parallelTasksTitle;
     }
 
-    private getLinkedIssueStatusFraction(issue:IssueData) : string {
+    private getLinkedIssueStatusFraction(issue:LinkedIssueData) : string {
         //This should only be called for linked projects
-        return issue.statusIndex + "/" + (issue.linkedProject.statesLength - 1);
+        return issue.statusIndex + "/" + (issue.project.statesLength - 1);
     }
 
-    private getLinkedIssueStatusColour(issue:IssueData) : string {
-        return this._progressColourService.getColour(issue.statusIndex, issue.linkedProject.statesLength);
+    private getLinkedIssueStatusColour(issue:LinkedIssueData) : string {
+        return this._progressColourService.getColour(issue.statusIndex, issue.project.statesLength);
     }
 
     private triggerShowIssueContextMenu(event : MouseEvent, issueId:string) {

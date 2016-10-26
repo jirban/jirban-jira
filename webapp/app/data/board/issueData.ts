@@ -2,7 +2,7 @@ import {Assignee} from "./assignee";
 import {BoardData} from "./boardData";
 import {Priority} from "./priority";
 import {IssueType} from "./issueType";
-import {BoardProject, Project} from "./project";
+import {BoardProject, Project, LinkedProject} from "./project";
 import {IssueUpdate, IssueAdd} from "./change";
 import {JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 import {Indexed} from "../../common/indexed";
@@ -12,12 +12,90 @@ import {Subject, Observable} from "rxjs/Rx";
 import {ParallelTask} from "./parallelTask";
 import {BoardFilters} from "./boardFilters";
 
-export class IssueData {
-    private _boardData:BoardData;
-    private _key:string;
-    private _projectCode:string;
+export abstract class IssueDataBase<P extends Project> {
+    protected _boardData:BoardData;
+    protected _key:string;
+    protected _project:P;
+    protected _summary:string;
+
+    //The index within the issue's project's own states
+    protected _statusIndex:number;
+
+    //Used to report the status in mouse-over a card
+    //Note that projects will report their own jira project status rather than
+    // the mapped board state in which they appear
+    protected _ownStatus:string;
+
+    constructor(boardData:BoardData, key:string, project:P, summary:string,
+                statusIndex:number) {
+        this._boardData = boardData;
+        this._key = key;
+        this._project = project;
+        this._statusIndex = statusIndex;
+        this._summary = summary;
+
+        this.initCalculatedFields();
+    }
+
+    static createFullRefresh(boardData:BoardData, input:any) : IssueData {
+        return new BoardIssueDeserializer(boardData).deserialize(input);
+    }
+
+    static createFromChangeSet(boardData:BoardData, add:IssueAdd) : IssueData {
+        return new BoardIssueDeserializer(boardData).createFromAddChange(add);
+    }
+
+    //Plain getters
+    get key():string {
+        return this._key;
+    }
+
+    get projectCode():string {
+        return this._project.code;
+    }
+
+    get summary():string {
+        return this._summary;
+    }
+
+    get statusIndex():number {
+        return this._statusIndex;
+    }
+
+    set statusIndex(index:number) {
+        this._statusIndex = index;
+    }
+
+    get boardData():BoardData {
+        return this._boardData;
+    }
+
+    get project():P {
+        return this._project;
+    }
+
+    get ownStatus():string {
+        return this._ownStatus;
+    }
+
+    private isDefined(index:number):boolean {
+        if (index) {
+            return true;
+        }
+        if (!isNaN(index)) {
+            return true;
+        }
+        return false;
+    }
+
+    protected initCalculatedFields():void{
+        this._ownStatus = this._project.getStateText(this._statusIndex);
+    }
+}
+
+export class IssueData extends IssueDataBase<BoardProject> {
     private _colour:string;
-    private _summary:string;
+    private _linked:LinkedIssueData[];
     private _assignee:Assignee;
     private _components:Indexed<JiraComponent>;
     private _labels:Indexed<JiraLabel>
@@ -25,209 +103,43 @@ export class IssueData {
     private _priority:Priority;
     private _type:IssueType;
     private _customFields:IMap<CustomFieldValue>;
+    private _parallelTaskOptions:Indexed<string>;
 
-    //The index within the issue's project's own states
-    private _statusIndex:number;
-    private _linked:IssueData[];
     private _filtered:boolean = false;
 
     //Cached status fields
     private _boardStatus:string;
     private _boardStatusIndex:number = null;
-    private _ownStatus:string;
 
-    private _parallelTaskOptions:Indexed<string>;
+    protected _issueChangedSubject:Subject<void> = new Subject<void>();
 
-    private _issueChangedSubject:Subject<void> = new Subject<void>();
 
-    constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
-                assignee:Assignee,  components:Indexed<JiraComponent>,
-                labels:Indexed<JiraLabel>, fixVersions:Indexed<JiraFixVersion>,
-                priority:Priority, type:IssueType, statusIndex:number,
-                linked:IssueData[], customFields:IMap<CustomFieldValue>, parallelTaskOptions:Indexed<string>) {
-        this._boardData = boardData;
-        this._key = key;
-        this._projectCode = projectCode;
-        this._statusIndex = statusIndex;
-        this._summary = summary;
+    constructor(boardData:BoardData, key:string, project:BoardProject, colour:string, summary:string,
+                assignee:Assignee,  components:Indexed<JiraComponent>, labels:Indexed<JiraLabel>,
+                fixVersions:Indexed<JiraFixVersion>, priority:Priority, type:IssueType, statusIndex:number,
+                linked:LinkedIssueData[], customFields:IMap<CustomFieldValue>, parallelTaskOptions:Indexed<string>) {
+        super(boardData, key, project, summary, statusIndex);
+        this._colour = colour;
+        this._linked = linked;
         this._assignee = assignee;
         this._components = components;
         this._labels = labels;
         this._fixVersions = fixVersions;
         this._priority = priority;
         this._type = type;
-        this._colour = colour;
-        this._linked = linked;
         this._customFields = customFields;
         this._parallelTaskOptions = parallelTaskOptions;
+
+        this._boardStatus = this.project.mapStateStringToBoard(this.project.states.forIndex(this.statusIndex));
+        this._boardStatusIndex = this.project.mapStateIndexToBoardIndex(this.statusIndex);
     }
 
-    static createFullRefresh(boardData:BoardData, input:any) : IssueData {
-        let key:string = input.key;
-        let projectCode:string = IssueData.productCodeFromKey(key);
-        let statusIndex:number = input.state;
-        let summary:string = input.summary;
-        let assignee:Assignee = boardData.assignees.forIndex(input.assignee);
-        let priority:Priority = boardData.priorities.forIndex(input.priority);
-        let type:IssueType = boardData.issueTypes.forIndex(input.type);
-
-        let components:Indexed<JiraComponent>;
-        if (input["components"]) {
-            components = new Indexed<JiraComponent>();
-            for (let index of input["components"]) {
-                let component:JiraComponent = boardData.components.forIndex(index);
-                components.add(component.name, component);
-            }
-        }
-
-        let labels:Indexed<JiraLabel>;
-        if (input["labels"]) {
-            labels = new Indexed<JiraLabel>();
-            for (let index of input["labels"]) {
-                let label:JiraLabel = boardData.labels.forIndex(index);
-                labels.add(label.name, label);
-            }
-        }
-
-        let fixVersions:Indexed<JiraFixVersion>;
-        if (input["fix-versions"]) {
-            fixVersions = new Indexed<JiraFixVersion>();
-            for (let index of input["fix-versions"]) {
-                let fixVersion:JiraFixVersion = boardData.fixVersions.forIndex(index);
-                fixVersions.add(fixVersion.name, fixVersion);
-            }
-        }
-
-        let colour:string;
-        let project:BoardProject = boardData.boardProjects.forKey(projectCode);
-        if (project) {
-            colour = project.colour;
-        }
-
-        let linked:IssueData[];
-        let linkedIssues = input["linked-issues"];
-        if (!!linkedIssues && linkedIssues.length > 0) {
-            linked = [];
-            for (let i:number = 0; i < linkedIssues.length; i++) {
-                linked.push(IssueData.createFullRefresh(boardData, linkedIssues[i]));
-            }
-        }
-        let customFieldValues:IMap<CustomFieldValue> = {};
-        if (input["custom"]) {
-            let customFields:any[] = input["custom"];
-            for (let name in customFields) {
-                let index = customFields[name];
-                customFieldValues[name] = boardData.getCustomFieldValueForIndex(name, index);
-            }
-        }
-
-        let parallelTaskOptions: Indexed<string>;
-        if (project) {
-            //Only board projects have this
-            let parallelTasksInput: number[] = input["parallel-tasks"];
-            parallelTaskOptions = IssueData.deserializeParallelTasksArray(project, parallelTasksInput);
-        }
-
-        return new IssueData(boardData, key, projectCode, colour, summary,
-            assignee, components, labels, fixVersions, priority,
-            type, statusIndex, linked, customFieldValues, parallelTaskOptions);
-    }
-
-    static createFromChangeSet(boardData:BoardData, add:IssueAdd) {
-        let projectCode:string = IssueData.productCodeFromKey(add.key);
-        let assignee:Assignee = boardData.assignees.forKey(add.assignee);
-        let priority:Priority = boardData.priorities.forKey(add.priority);
-        let type:IssueType = boardData.issueTypes.forKey(add.type);
-        let colour:string;
-        let statusIndex:number;
-        let project:BoardProject = boardData.boardProjects.forKey(projectCode);
-        if (project) {
-            colour = project.colour;
-            statusIndex = project.getOwnStateIndex(add.state);
-        }
-
-        let components:Indexed<JiraComponent>;
-        if (add.components) {
-            components = new Indexed<JiraComponent>();
-            for (let name of add.components) {
-                let component:JiraComponent = boardData.components.forKey(name);
-                components.add(component.name, component);
-            }
-        }
-
-        let labels:Indexed<JiraLabel>;
-        if (add.labels) {
-            labels = new Indexed<JiraLabel>();
-            for (let name of add.labels) {
-                let label:JiraLabel = boardData.labels.forKey(name);
-                labels.add(label.name, label);
-            }
-        }
-
-        let fixVersions:Indexed<JiraFixVersion>;
-        if (add.fixVersions) {
-            fixVersions = new Indexed<JiraFixVersion>();
-            for (let name of add.fixVersions) {
-                let fixVersion:JiraFixVersion = boardData.fixVersions.forKey(name);
-                fixVersions.add(fixVersion.name, fixVersion);
-            }
-        }
-
-        let linked:IssueData[];//This does not get set from the events
-
-        let customFieldValues:IMap<CustomFieldValue> = {};
-        if (add.customFieldValues) {
-            for (let name in add.customFieldValues) {
-                let fieldKey:string = add.customFieldValues[name];
-                customFieldValues[name] = boardData.getCustomFieldValueForKey(name, fieldKey);
-            }
-        }
-
-        let parallelTaskOptions:Indexed<string> = IssueData.deserializeParallelTasksArray(project, add.parallelTaskValues);
-
-        return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee,
-            components, labels, fixVersions, priority, type, statusIndex,
-            linked, customFieldValues, parallelTaskOptions);
-    }
-
-    private static deserializeParallelTasksArray(project:BoardProject, parallelTasksInput: number[]):Indexed<string> {
-        let parallelTaskOptions: Indexed<string>;
-        let projectParallelTasks = project.parallelTasks;
-
-        if (parallelTasksInput) {
-            parallelTaskOptions = new Indexed<string>();
-            for (let i: number = 0; i < parallelTasksInput.length; i++) {
-                let parallelTask: ParallelTask = projectParallelTasks.forIndex(i);
-                let option: string = parallelTask.getOptionForIndex(parallelTasksInput[i]);
-                parallelTaskOptions.add(parallelTask.code, option);
-            }
-        }
-        return parallelTaskOptions;
-    }
-
-    private static productCodeFromKey(key:string) : string {
-        let index:number = key.lastIndexOf("-");
-        return key.substring(0, index);
-    }
-
-    //Plain getters
     get changeObserver():Observable<void> {
         return this._issueChangedSubject;
-    }
-    get key():string {
-        return this._key;
-    }
-
-    get projectCode():string {
-        return this._projectCode;
     }
 
     get colour():string {
         return this._colour;
-    }
-
-    get summary():string {
-        return this._summary;
     }
 
     get assignee():Assignee {
@@ -254,67 +166,8 @@ export class IssueData {
         return this._type;
     }
 
-    get statusIndex():number {
-        return this._statusIndex;
-    }
-
-    set statusIndex(index:number) {
-        this._statusIndex = index;
-    }
-
-
-    get boardData():BoardData {
-        return this._boardData;
-    }
-
-    get linkedIssues():IssueData[] {
-        return this._linked;
-    }
-
-    get filtered() : boolean {
-        return this._filtered;
-    }
-
     get customFields():IMap<CustomFieldValue> {
         return this._customFields;
-    }
-
-    get parallelTaskOptions(): Indexed<string> {
-        return this._parallelTaskOptions;
-    }
-
-//'Advanced'/'Nested' getters
-
-    get boardStatus():string {
-        //The state we map to in the board (only for board projects)
-        if (!this._boardStatus) {
-            let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
-            let myStatusName:string = project.states.forIndex(this._statusIndex);
-            this._boardStatus = project.mapStateStringToBoard(myStatusName);
-        }
-        return this._boardStatus;
-    }
-
-    get boardStatusIndex():number {
-        if (this._boardStatusIndex == null) {
-            let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
-            this._boardStatusIndex = project.mapStateIndexToBoardIndex(this._statusIndex);
-        }
-        return this._boardStatusIndex;
-    }
-
-    get ownStatus():string {
-        //Used to report the status in mouse-over a card
-        //Note that projects will report their own jira project status rather than
-        // the mapped board state in which they appear
-        if (!this._ownStatus) {
-            let project:Project = this._boardData.linkedProjects[this._projectCode];
-            if (!project) {
-                project = this._boardData.boardProjects.forKey(this._projectCode);
-            }
-            this._ownStatus = project.getStateText(this._statusIndex);
-        }
-        return this._ownStatus;
     }
 
     get assigneeName():string {
@@ -344,7 +197,7 @@ export class IssueData {
     }
 
     get priorityUrl():string {
-        return this._boardData.jiraUrl + this._priority.icon;
+        return this.boardData.jiraUrl + this._priority.icon;
     }
 
     get typeName():string {
@@ -352,44 +205,62 @@ export class IssueData {
     }
 
     get typeUrl():string {
-        return this._boardData.jiraUrl + this._type.icon;
+        return this.boardData.jiraUrl + this._type.icon;
     }
 
-    get linkedProject() : Project {
-        return this._boardData.linkedProjects[this._projectCode];
+    getCustomFieldValue(name:string):CustomFieldValue {
+        return this._customFields[name];
     }
 
-    private isDefined(index:number):boolean {
-        if (index) {
-            return true;
-        }
-        if (!isNaN(index)) {
-            return true;
-        }
-        return false;
+    get parallelTaskOptions(): Indexed<string> {
+        return this._parallelTaskOptions;
     }
 
-    private get boardProject() : BoardProject {
-        return this._boardData.boardProjects.forKey(this._projectCode);
+    get filtered() : boolean {
+        return this._filtered;
     }
 
-    //Update functions
+    get boardStatus():string {
+        return this._boardStatus;
+    }
+
+    get boardStatusIndex():number {
+        return this._boardStatusIndex;
+    }
+
+    filterIssue(filters:BoardFilters) {
+        //console.log("-Filter " + this.key);
+        this._filtered = filters.filterIssue(this);
+    }
+
+
+    protected initCalculatedFields():void {
+        super.initCalculatedFields();
+        this._boardStatus = this.project.mapStateStringToBoard(this.project.states.forIndex(this.statusIndex));
+        this._boardStatusIndex = this.project.mapStateIndexToBoardIndex(this.statusIndex);
+
+    }
+
+    //!!! Don't call this outside of tests
+    get customFieldNames():string[] {
+        return IMapUtil.getSortedKeys(this._customFields);
+    }
+
+//Update functions
     applyUpdate(update:IssueUpdate) {
         if (update.type) {
-            this._type = this._boardData.issueTypes.forKey(update.type);
+            this._type = this.boardData.issueTypes.forKey(update.type);
         }
         if (update.priority) {
-            this._priority = this._boardData.priorities.forKey(update.priority);
+            this._priority = this.boardData.priorities.forKey(update.priority);
         }
         if (update.summary) {
             this._summary = update.summary;
         }
         if (update.state) {
-            let project:BoardProject = this.boardProject;
+            let project:BoardProject = this.project;
             this._statusIndex = project.getOwnStateIndex(update.state);
-            this._ownStatus = null;
-            this._boardStatus = null;
-            this._boardStatusIndex = null;
+            this.initCalculatedFields();
         }
         if (update.unassigned) {
             this._assignee = null;
@@ -440,29 +311,201 @@ export class IssueData {
 
         if (update.parallelTaskValueUpdates) {
             for (let indexString in update.parallelTaskValueUpdates) {
-                let project:BoardProject = this._boardData.boardProjects.forKey(this._projectCode);
-                if (project) {
-                    let taskIndex:number = parseInt(indexString);
-                    let parallelTask:ParallelTask = project.parallelTasks.forIndex(taskIndex);
-                    let option: string = parallelTask.getOptionForIndex(update.parallelTaskValueUpdates[indexString]);
-                    this._parallelTaskOptions.array[taskIndex] = option;
-                }
+                let taskIndex:number = parseInt(indexString);
+                let parallelTask:ParallelTask = this.project.parallelTasks.forIndex(taskIndex);
+                let option: string = parallelTask.getOptionForIndex(update.parallelTaskValueUpdates[indexString]);
+                this._parallelTaskOptions.array[taskIndex] = option;
             }
         }
 
         this._issueChangedSubject.next(null);
     }
+}
 
-    get customFieldNames():string[] {
-        return IMapUtil.getSortedKeys(this._customFields);
+export class LinkedIssueData extends IssueDataBase<LinkedProject> {
+    constructor(boardData:BoardData, key:string, project:LinkedProject, summary:string, statusIndex:number) {
+        super(boardData, key, project, summary, statusIndex)
+    }
+}
+
+abstract class IssueDeserializer {
+    protected _boardData:BoardData;
+
+    protected _key: string;
+    protected _projectCode: string;
+    protected _statusIndex: number;
+    protected _summary: string;
+
+    constructor(boardData:BoardData) {
+        this._boardData = boardData;
     }
 
-    getCustomFieldValue(name:string):CustomFieldValue {
-        return this._customFields[name];
+    protected deserialize(input:any) {
+        this._key = input.key;
+        this._projectCode = this.productCodeFromKey(this._key);
+        this._statusIndex = input.state;
+        this._summary = input.summary;
+
     }
 
-    filterIssue(filters:BoardFilters) {
-        //console.log("-Filter " + this.key);
-        this._filtered = filters.filterIssue(this);
+    protected productCodeFromKey(key:string) : string {
+        let index:number = key.lastIndexOf("-");
+        return key.substring(0, index);
+    }
+}
+
+class BoardIssueDeserializer extends IssueDeserializer {
+    private _project:BoardProject;
+    private _assignee: Assignee;
+    private _priority: Priority;
+    private _type: IssueType;
+    private _colour:string;
+    private _components:Indexed<JiraComponent>;
+    private _labels:Indexed<JiraLabel>;
+    private _fixVersions:Indexed<JiraFixVersion>;
+    private _customFields:IMap<CustomFieldValue> = {};
+    private _parallelTaskOptions: Indexed<string>;
+    private _linked:LinkedIssueData[];
+
+
+    constructor(boardData:BoardData) {
+        super(boardData);
+    }
+
+    deserialize(input:any):IssueData {
+        super.deserialize(input);
+        this._assignee = this._boardData.assignees.forIndex(input.assignee);
+        this._priority = this._boardData.priorities.forIndex(input.priority);
+        this._type = this._boardData.issueTypes.forIndex(input.type);
+        this._project = this._boardData.boardProjects.forKey(this._projectCode);
+        this._colour = this._project.colour;
+
+        if (input["components"]) {
+            this._components = new Indexed<JiraComponent>()
+            for (let componentIndex of input["components"]) {
+                let component:JiraComponent = this._boardData.components.forIndex(componentIndex);
+                this._components.add(component.name, component);
+            }
+        }
+
+        if (input["labels"]) {
+            this._labels = new Indexed<JiraLabel>();
+            for (let index of input["labels"]) {
+                let label:JiraLabel = this._boardData.labels.forIndex(index);
+                this._labels.add(label.name, label);
+            }
+        }
+
+        if (input["fix-versions"]) {
+            this._fixVersions = new Indexed<JiraFixVersion>();
+            for (let index of input["fix-versions"]) {
+                let fixVersion:JiraFixVersion = this._boardData.fixVersions.forIndex(index);
+                this._fixVersions.add(fixVersion.name, fixVersion);
+            }
+        }
+
+        let linkedIssues = input["linked-issues"];
+        if (!!linkedIssues && linkedIssues.length > 0) {
+            this._linked = [];
+            for (let i:number = 0; i < linkedIssues.length; i++) {
+                this._linked.push(new LinkedIssueDeserializer(this._boardData).deserialize(linkedIssues[i]));
+            }
+        }
+        if (input["custom"]) {
+            let customFields:any[] = input["custom"];
+            for (let name in customFields) {
+                let index = customFields[name];
+                this._customFields[name] = this._boardData.getCustomFieldValueForIndex(name, index);
+            }
+        }
+
+        if (this._project) {
+            //Only board projects have this
+            let parallelTasksInput: number[] = input["parallel-tasks"];
+            this._parallelTaskOptions = this.deserializeParallelTasksArray(this._project, parallelTasksInput);
+        }
+        return this.build();
+    }
+
+    createFromAddChange(add:IssueAdd):IssueData {
+        this._key = add.key;
+        this._projectCode = this.productCodeFromKey(add.key);
+        this._summary = add.summary;
+        this._assignee = this._boardData.assignees.forKey(add.assignee);
+        this._priority = this._boardData.priorities.forKey(add.priority);
+        this._type = this._boardData.issueTypes.forKey(add.type);
+        this._project = this._boardData.boardProjects.forKey(this._projectCode);
+        this._colour = this._project.colour;
+        this._statusIndex = this._project.getOwnStateIndex(add.state);
+
+        if (add.components) {
+            this._components = new Indexed<JiraComponent>();
+            for (let name of add.components) {
+                let component:JiraComponent = this._boardData.components.forKey(name);
+                this._components.add(component.name, component);
+            }
+        }
+
+        if (add.labels) {
+            this._labels = new Indexed<JiraLabel>();
+            for (let name of add.labels) {
+                let label:JiraLabel = this._boardData.labels.forKey(name);
+                this._labels.add(label.name, label);
+            }
+        }
+
+        if (add.fixVersions) {
+            this._fixVersions = new Indexed<JiraFixVersion>();
+            for (let name of add.fixVersions) {
+                let fixVersion:JiraFixVersion = this._boardData.fixVersions.forKey(name);
+                this._fixVersions.add(fixVersion.name, fixVersion);
+            }
+        }
+
+        if (add.customFieldValues) {
+            for (let name in add.customFieldValues) {
+                let fieldKey:string = add.customFieldValues[name];
+                this._customFields[name] = this._boardData.getCustomFieldValueForKey(name, fieldKey);
+            }
+        }
+
+        this._parallelTaskOptions = this.deserializeParallelTasksArray(this._project, add.parallelTaskValues);
+
+        return this.build();
+    }
+
+    private build():IssueData {
+        return new IssueData(this._boardData, this._key, this._project, this._colour, this._summary,
+            this._assignee, this._components, this._labels, this._fixVersions,
+            this._priority, this._type, this._statusIndex, this._linked,
+            this._customFields, this._parallelTaskOptions);
+
+    }
+
+    private deserializeParallelTasksArray(project:BoardProject, parallelTasksInput: number[]):Indexed<string> {
+        let parallelTaskOptions: Indexed<string>;
+        let projectParallelTasks = project.parallelTasks;
+
+        if (parallelTasksInput) {
+            parallelTaskOptions = new Indexed<string>();
+            for (let i: number = 0; i < parallelTasksInput.length; i++) {
+                let parallelTask: ParallelTask = projectParallelTasks.forIndex(i);
+                let option: string = parallelTask.getOptionForIndex(parallelTasksInput[i]);
+                parallelTaskOptions.add(parallelTask.code, option);
+            }
+        }
+        return parallelTaskOptions;
+    }
+}
+
+class LinkedIssueDeserializer extends IssueDeserializer {
+    constructor(boardData:BoardData) {
+        super(boardData);
+    }
+
+    deserialize(input:any):LinkedIssueData {
+        super.deserialize(input);
+        let project:LinkedProject = this._boardData.linkedProjects[this._projectCode];
+        return new LinkedIssueData(this._boardData, this._key, project, this._summary, this._statusIndex);
     }
 }
