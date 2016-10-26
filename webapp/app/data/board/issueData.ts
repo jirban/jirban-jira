@@ -12,40 +12,33 @@ import {Subject, Observable} from "rxjs/Rx";
 import {ParallelTask} from "./parallelTask";
 import {BoardFilters} from "./boardFilters";
 
+/**
+ * NB! This class is effectively immutable! When changing something, a new instance should be created.
+ */
 export abstract class IssueDataBase<P extends Project> {
-    protected _boardData:BoardData;
-    protected _key:string;
-    protected _project:P;
-    protected _summary:string;
+    protected readonly _boardData:BoardData;
+    protected readonly _key:string;
+    protected readonly _project:P;
+    protected readonly _summary:string;
 
     //The index within the issue's project's own states
-    protected _statusIndex:number;
+    protected readonly _statusIndex:number;
 
     //Used to report the status in mouse-over a card
     //Note that projects will report their own jira project status rather than
     // the mapped board state in which they appear
-    protected _ownStatus:string;
+    protected readonly _ownStatus:string;
 
-    constructor(boardData:BoardData, key:string, project:P, summary:string,
+    protected constructor(boardData:BoardData, key:string, project:P, summary:string,
                 statusIndex:number) {
         this._boardData = boardData;
         this._key = key;
         this._project = project;
         this._statusIndex = statusIndex;
         this._summary = summary;
-
-        this.initCalculatedFields();
+        this._ownStatus = this._project.getStateText(this._statusIndex);
     }
 
-    static createFullRefresh(boardData:BoardData, input:any) : IssueData {
-        return new BoardIssueDeserializer(boardData).deserialize(input);
-    }
-
-    static createFromChangeSet(boardData:BoardData, add:IssueAdd) : IssueData {
-        return new BoardIssueDeserializer(boardData).createFromAddChange(add);
-    }
-
-    //Plain getters
     get key():string {
         return this._key;
     }
@@ -62,10 +55,6 @@ export abstract class IssueDataBase<P extends Project> {
         return this._statusIndex;
     }
 
-    set statusIndex(index:number) {
-        this._statusIndex = index;
-    }
-
     get boardData():BoardData {
         return this._boardData;
     }
@@ -77,41 +66,35 @@ export abstract class IssueDataBase<P extends Project> {
     get ownStatus():string {
         return this._ownStatus;
     }
-
-    private isDefined(index:number):boolean {
-        if (index) {
-            return true;
-        }
-        if (!isNaN(index)) {
-            return true;
-        }
-        return false;
-    }
-
-    protected initCalculatedFields():void{
-        this._ownStatus = this._project.getStateText(this._statusIndex);
-    }
 }
 
+/**
+ * NB! THis class is effectively immutable! When changing something, a new instance should be created.
+ *
+ * The only exception to this is the _filtered field.
+ *
+ */
 export class IssueData extends IssueDataBase<BoardProject> {
-    private _colour:string;
-    private _linked:LinkedIssueData[];
-    private _assignee:Assignee;
-    private _components:Indexed<JiraComponent>;
-    private _labels:Indexed<JiraLabel>
-    private _fixVersions:Indexed<JiraFixVersion>
-    private _priority:Priority;
-    private _type:IssueType;
-    private _customFields:IMap<CustomFieldValue>;
-    private _parallelTaskOptions:Indexed<string>;
-
-    private _filtered:boolean = false;
+    private readonly _colour:string;
+    private readonly _linked:LinkedIssueData[];
+    private readonly _assignee:Assignee;
+    private readonly _components:Indexed<JiraComponent>;
+    private readonly _labels:Indexed<JiraLabel>
+    private readonly _fixVersions:Indexed<JiraFixVersion>
+    private readonly _priority:Priority;
+    private readonly _type:IssueType;
+    private readonly _customFields:IMap<CustomFieldValue>;
+    private readonly _parallelTaskOptions:Indexed<string>;
 
     //Cached status fields
-    private _boardStatus:string;
-    private _boardStatusIndex:number = null;
+    private readonly _boardStatus:string;
+    private readonly _boardStatusIndex:number = null;
 
-    protected _issueChangedSubject:Subject<void> = new Subject<void>();
+    //This one is not immutable, but emits via the observable when it has been changed
+    private _filtered:boolean = false;
+
+
+    protected readonly _filteredSubject:Subject<boolean> = new Subject<boolean>();
 
 
     constructor(boardData:BoardData, key:string, project:BoardProject, colour:string, summary:string,
@@ -134,8 +117,16 @@ export class IssueData extends IssueDataBase<BoardProject> {
         this._boardStatusIndex = this.project.mapStateIndexToBoardIndex(this.statusIndex);
     }
 
-    get changeObserver():Observable<void> {
-        return this._issueChangedSubject;
+    static createFullRefresh(boardData:BoardData, input:any) : IssueData {
+        return new BoardIssueDeserializer(boardData).deserialize(input);
+    }
+
+    static createFromChangeSet(boardData:BoardData, add:IssueAdd) : IssueData {
+        return new BoardIssueDeserializer(boardData).createFromAddChange(add);
+    }
+
+    get filteredObservable():Observable<boolean> {
+        return this._filteredSubject;
     }
 
     get colour():string {
@@ -228,17 +219,8 @@ export class IssueData extends IssueDataBase<BoardProject> {
         return this._boardStatusIndex;
     }
 
-    filterIssue(filters:BoardFilters) {
-        //console.log("-Filter " + this.key);
-        this._filtered = filters.filterIssue(this);
-    }
-
-
-    protected initCalculatedFields():void {
-        super.initCalculatedFields();
-        this._boardStatus = this.project.mapStateStringToBoard(this.project.states.forIndex(this.statusIndex));
-        this._boardStatusIndex = this.project.mapStateIndexToBoardIndex(this.statusIndex);
-
+    get linkedIssues():LinkedIssueData[] {
+        return this._linked;
     }
 
     //!!! Don't call this outside of tests
@@ -246,79 +228,16 @@ export class IssueData extends IssueDataBase<BoardProject> {
         return IMapUtil.getSortedKeys(this._customFields);
     }
 
-//Update functions
-    applyUpdate(update:IssueUpdate) {
-        if (update.type) {
-            this._type = this.boardData.issueTypes.forKey(update.type);
+    filterIssue(filters:BoardFilters) {
+        let old:boolean = this._filtered;
+        this._filtered = filters.filterIssue(this);
+        if (old != this._filtered) {
+            this._filteredSubject.next(this._filtered);
         }
-        if (update.priority) {
-            this._priority = this.boardData.priorities.forKey(update.priority);
-        }
-        if (update.summary) {
-            this._summary = update.summary;
-        }
-        if (update.state) {
-            let project:BoardProject = this.project;
-            this._statusIndex = project.getOwnStateIndex(update.state);
-            this.initCalculatedFields();
-        }
-        if (update.unassigned) {
-            this._assignee = null;
-        } else if (update.assignee) {
-            this._assignee = this.boardData.assignees.forKey(update.assignee);
-        }
+    }
 
-        if (update.clearedComponents) {
-            this._components = null;
-        } else if (update.components) {
-            this._components = new Indexed<JiraComponent>();
-            for (let name of update.components) {
-                let component:JiraComponent = this.boardData.components.forKey(name);
-                this._components.add(component.name, component);
-            }
-        }
-
-        if (update.clearedLabels) {
-            this._labels = null;
-        } else if (update.labels) {
-            this._labels = new Indexed<JiraLabel>();
-            for (let name of update.labels) {
-                let label:JiraLabel = this.boardData.labels.forKey(name);
-                this._labels.add(label.name, label);
-            }
-        }
-
-        if (update.clearedFixVersions) {
-            this._fixVersions = null;
-        } else if (update.fixVersions) {
-            this._fixVersions = new Indexed<JiraFixVersion>();
-            for (let name of update.fixVersions) {
-                let fixVersion:JiraFixVersion = this.boardData.fixVersions.forKey(name);
-                this._fixVersions.add(fixVersion.name, fixVersion);
-            }
-        }
-
-        if (update.customFieldValues) {
-            for (let key in update.customFieldValues) {
-                let fieldKey:string = update.customFieldValues[key];
-                if (!fieldKey) {
-                    delete this._customFields[key];
-                } else {
-                    this._customFields[key] = this._boardData.getCustomFieldValueForKey(key, fieldKey);
-                }
-            }
-        }
-
-        if (update.parallelTaskValueUpdates) {
-            for (let indexString in update.parallelTaskValueUpdates) {
-                let taskIndex:number = parseInt(indexString);
-                let parallelTask:ParallelTask = this.project.parallelTasks.forIndex(taskIndex);
-                let option: string = parallelTask.getOptionForIndex(update.parallelTaskValueUpdates[indexString]);
-                this._parallelTaskOptions.array[taskIndex] = option;
-            }
-        }
-
-        this._issueChangedSubject.next(null);
+    applyUpdate(update:IssueUpdate):IssueData {
+        return new BoardIssueDeserializer(this.boardData).createFromUpdateChange(this, update);
     }
 }
 
@@ -329,7 +248,7 @@ export class LinkedIssueData extends IssueDataBase<LinkedProject> {
 }
 
 abstract class IssueDeserializer {
-    protected _boardData:BoardData;
+    protected readonly _boardData:BoardData;
 
     protected _key: string;
     protected _projectCode: string;
@@ -472,6 +391,91 @@ class BoardIssueDeserializer extends IssueDeserializer {
         this._parallelTaskOptions = this.deserializeParallelTasksArray(this._project, add.parallelTaskValues);
 
         return this.build();
+    }
+
+    createFromUpdateChange(existing:IssueData, update:IssueUpdate):IssueData {
+        //Get the existing data
+        this._key = existing.key;
+        this._projectCode = existing.projectCode;
+        this._summary = existing.summary;
+        this._assignee = existing.assignee;
+        this._priority = existing.priority;
+        this._type = existing.type;
+        this._project = existing.project;
+        this._colour = existing.colour;
+        this._statusIndex = existing.statusIndex;
+        this._components = existing.components;
+        this._labels = existing.labels;
+        this._fixVersions = existing.fixVersions;
+        this._customFields = existing.customFields;
+        this._parallelTaskOptions = existing.parallelTaskOptions;
+
+        //Apply the changes
+        if (update.type) {
+            this._type = this._boardData.issueTypes.forKey(update.type);
+        }
+        if (update.priority) {
+            this._priority = this._boardData.priorities.forKey(update.priority);
+        }
+        if (update.summary) {
+            this._summary = update.summary;
+        }
+        if (update.state) {
+            this._statusIndex = this._project.getOwnStateIndex(update.state);
+        }
+        if (update.unassigned) {
+            this._assignee = null;
+        } else if (update.assignee) {
+            this._assignee = this._boardData.assignees.forKey(update.assignee);
+        }
+        if (update.clearedComponents) {
+            this._components = null;
+        } else if (update.components) {
+            this._components = new Indexed<JiraComponent>();
+            for (let name of update.components) {
+                let component:JiraComponent = this._boardData.components.forKey(name);
+                this._components.add(component.name, component);
+            }
+        }
+        if (update.clearedLabels) {
+            this._labels = null;
+        } else if (update.labels) {
+            this._labels = new Indexed<JiraLabel>();
+            for (let name of update.labels) {
+                let label:JiraLabel = this._boardData.labels.forKey(name);
+                this._labels.add(label.name, label);
+            }
+        }
+        if (update.clearedFixVersions) {
+            this._fixVersions = null;
+        } else if (update.fixVersions) {
+            this._fixVersions = new Indexed<JiraFixVersion>();
+            for (let name of update.fixVersions) {
+                let fixVersion:JiraFixVersion = this._boardData.fixVersions.forKey(name);
+                this._fixVersions.add(fixVersion.name, fixVersion);
+            }
+        }
+        if (update.customFieldValues) {
+            for (let key in update.customFieldValues) {
+                let fieldKey:string = update.customFieldValues[key];
+                if (!fieldKey) {
+                    delete this._customFields[key];
+                } else {
+                    this._customFields[key] = this._boardData.getCustomFieldValueForKey(key, fieldKey);
+                }
+            }
+        }
+        if (update.parallelTaskValueUpdates) {
+            for (let indexString in update.parallelTaskValueUpdates) {
+                let taskIndex:number = parseInt(indexString);
+                let parallelTask:ParallelTask = this._project.parallelTasks.forIndex(taskIndex);
+                let option: string = parallelTask.getOptionForIndex(update.parallelTaskValueUpdates[indexString]);
+                this._parallelTaskOptions.array[taskIndex] = option;
+            }
+        }
+
+        let newIssue:IssueData = this.build();
+        return newIssue;
     }
 
     private build():IssueData {

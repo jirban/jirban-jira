@@ -1,11 +1,11 @@
-import {Component, EventEmitter} from "@angular/core";
+import {Component, EventEmitter, ChangeDetectionStrategy, OnDestroy, ChangeDetectorRef, NgZone} from "@angular/core";
 import {IssueData, LinkedIssueData} from "../../../data/board/issueData";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {ParallelTask} from "../../../data/board/parallelTask";
 import {Indexed} from "../../../common/indexed";
 import {ProgressColourService} from "../../../services/progressColourService";
-import {Subscription} from "rxjs/Rx";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
+import {Subscription} from "rxjs";
 
 @Component({
     inputs: ['issue'],
@@ -13,17 +13,67 @@ import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
     selector: 'issue',
     templateUrl: './issue.html',
     styleUrls: ['./issue.css'],
+    changeDetection: ChangeDetectionStrategy.OnPush
 
 })
-export class IssueComponent {
-    private issue : IssueData;
+export class IssueComponent implements OnDestroy {
+    private _issue : IssueData;
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
     private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
 
     private _parallelTasks:Indexed<ParallelTask>;
     private _parallelTasksTitle:string;
 
-    constructor(private _progressColourService:ProgressColourService) {
+    private _filteredSubscription:Subscription;
+    private _issueDisplayDetailsSubscription:Subscription;
+
+    constructor(private _progressColourService:ProgressColourService,
+                private _changeDetector:ChangeDetectorRef,
+                private _zone:NgZone) {
+    }
+
+    set issue(issue:IssueData) {
+        //Clear any current subscriptions
+        this.unsubscribe();
+
+        this._issue = issue;
+
+        this._filteredSubscription = this._issue.filteredObservable.subscribe(
+            done => {
+                this.changeVisibility();
+            }
+        );
+        this._issueDisplayDetailsSubscription = this.issue.boardData.issueDisplayDetailsObservable.subscribe(
+            done => {
+                this.changeVisibility();
+            }
+        );
+    }
+
+
+    ngOnDestroy(): void {
+        //console.log("Destroying issue " + (this._issue ? this._issue.key : null));
+        this.unsubscribe();
+    }
+
+    private unsubscribe():void {
+        if (this._filteredSubscription) {
+            this._filteredSubscription.unsubscribe();
+        }
+        if (this._issueDisplayDetailsSubscription) {
+            this._issueDisplayDetailsSubscription.unsubscribe();
+        }
+    }
+
+    private changeVisibility():void {
+        //console.log("Changed visibility of " + this._issue.key);
+        this._zone.run(()=>{
+            this._changeDetector.markForCheck();
+        });
+    }
+
+    get issue(): IssueData {
+        return this._issue;
     }
 
     private get jiraUrl() : string {
@@ -72,13 +122,6 @@ export class IssueComponent {
             if (!parallelTasks) {
                 return null;
             }
-
-            let subscription: Subscription = this.issue.changeObserver.subscribe(
-                done => {
-                    this._parallelTasksTitle = null;
-                    subscription.unsubscribe();
-                }
-            );
 
             let title:string = "";
             for (let i:number = 0 ; i < parallelTasks.length ; i++) {
