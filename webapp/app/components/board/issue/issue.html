@@ -14,7 +14,11 @@
   ~ limitations under the License.
   -->
 
-<li class="issue" (contextmenu)="triggerShowIssueContextMenu($event, issue.key)" title="{{issue.key}}&#013;{{issue.ownStatus}}&#013;{{issue.summary}}&#013;{{issue.priority.name}}&#013;{{issue.type.name}}"
+<li class="issue"
+    (contextmenu)="triggerShowIssueContextMenu($event, issue.key)"
+    title="{{issueTitle}}"
+    (mouseover)="showTitle($event, 'issue')"
+    (mouseout)="hideTitles($event)"
     *ngIf="!issue.filtered">
     <div class="header" [style.background-color]="issue.colour">
         <div class="summary">
@@ -42,7 +46,10 @@
             <img title="{{issue.priorityName}}" src="{{issue.priorityUrl}}" class="jira-icon"/>
             <img title="{{issue.typeName}}" src="{{issue.typeUrl}}" class="jira-icon"/>
         </div>
-        <div class="info-parallel" *ngIf="parallelTasks" title="{{parallelTasksTitle}}">
+        <div class="info-parallel" *ngIf="parallelTasks"
+             (mouseover)="showTitle($event, 'parallel')"
+             (mouseout)="hideTitles($event)"
+             title="{{parallelTasksTitle}}">
             <span *ngFor="let task of parallelTasks"
                   class="parallel-task" [ngStyle]="parallelTaskStyle(task.code)"
                   (click)="triggerShowParallelTaskMenu($event, task.code)">{{task.code}}</span>
@@ -50,7 +57,9 @@
     </div>
     <div class="clear-float"></div>
     <div class="linked-issues" *ngFor="let linked of issue.linkedIssues"
-         title="{{linked.key}}&#013;{{linked.ownStatus}}&#013;{{linked.summary}}"
+         title="{{getLinkedIssueTitle(linked)}}"
+         (mouseover)="showTitle($event, 'linked', linked)"
+         (mouseout)="hideTitles($event)"
          [hidden]="!showLinkedIssues">
         <div class="linked-issue">
             <div class="linked-issue-summary">

@@ -6,6 +6,7 @@ import {Indexed} from "../../../common/indexed";
 import {ProgressColourService} from "../../../services/progressColourService";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 import {Subscription} from "rxjs";
+import {JiraMultiSelectFieldValue} from "../../../data/board/multiSelectNameOnlyValue";
 
 @Component({
     inputs: ['issue'],
@@ -18,12 +19,20 @@ import {Subscription} from "rxjs";
 })
 export class IssueComponent implements OnDestroy {
     private _issue : IssueData;
+
+    //Events emitted
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();
     private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
 
-    private _parallelTasks:Indexed<ParallelTask>;
-    private _parallelTasksTitle:string;
 
+    //Used to show titles in the issue cards
+    private _currentTitleTimeout:any;
+    private issueTitle:string;
+    private parallelTasksTitle:string;
+    private _linkedIssueTitleKey:string;
+    private _linkedIssueTitle:string;
+
+    //Subscriptions to changes
     private _filteredSubscription:Subscription;
     private _issueDisplayDetailsSubscription:Subscription;
 
@@ -38,21 +47,22 @@ export class IssueComponent implements OnDestroy {
 
         this._issue = issue;
 
-        this._filteredSubscription = this._issue.filteredObservable.subscribe(
-            done => {
-                this.changeVisibility();
-            }
-        );
-        this._issueDisplayDetailsSubscription = this.issue.boardData.issueDisplayDetailsObservable.subscribe(
-            done => {
-                this.changeVisibility();
-            }
-        );
+        if (this._issue) {
+            this._filteredSubscription = this._issue.filteredObservable.subscribe(
+                done => {
+                    this.viewUpdated();
+                }
+            );
+            this._issueDisplayDetailsSubscription = this.issue.boardData.issueDisplayDetailsObservable.subscribe(
+                done => {
+                    this.viewUpdated();
+                }
+            );
+        }
     }
 
 
     ngOnDestroy(): void {
-        //console.log("Destroying issue " + (this._issue ? this._issue.key : null));
         this.unsubscribe();
     }
 
@@ -65,8 +75,7 @@ export class IssueComponent implements OnDestroy {
         }
     }
 
-    private changeVisibility():void {
-        //console.log("Changed visibility of " + this._issue.key);
+    private viewUpdated():void {
         this._zone.run(()=>{
             this._changeDetector.markForCheck();
         });
@@ -97,7 +106,7 @@ export class IssueComponent implements OnDestroy {
     }
 
     private get parallelTasks():ParallelTask[] {
-        let parallelTasks:Indexed<ParallelTask> = this.issue.boardData.boardProjects.forKey(this.issue.projectCode).parallelTasks;
+        let parallelTasks:Indexed<ParallelTask> = this.issue.project.parallelTasks;
         if (!parallelTasks) {
             return null;
         }
@@ -107,32 +116,13 @@ export class IssueComponent implements OnDestroy {
     private parallelTaskStyle(taskCode:string):Object{
         let selectedOptionName = this.issue.parallelTaskOptions.forKey(taskCode);
         let parallelTask:ParallelTask
-            = this.issue.boardData.boardProjects.forKey(this.issue.projectCode).parallelTasks.forKey(taskCode);
+            = this.issue.project.parallelTasks.forKey(taskCode);
         let progress:number = parallelTask.options.indexOf(selectedOptionName);
         let style:Object = new Object();
         let length:number = parallelTask.options.array.length;
         style["background-color"] = this._progressColourService.getColour(progress, length);
 
         return style;
-    }
-
-    private get parallelTasksTitle() {
-        if (!this._parallelTasksTitle) {
-            let parallelTasks:ParallelTask[] = this.parallelTasks;
-            if (!parallelTasks) {
-                return null;
-            }
-
-            let title:string = "";
-            for (let i:number = 0 ; i < parallelTasks.length ; i++) {
-                if (i > 0) {
-                    title += "\n";
-                }
-                title += parallelTasks[i].name + ": " + this.issue.parallelTaskOptions.forIndex(i);
-            }
-            this._parallelTasksTitle = title;
-        }
-        return this._parallelTasksTitle;
     }
 
     private getLinkedIssueStatusFraction(issue:LinkedIssueData) : string {
@@ -165,5 +155,104 @@ export class IssueComponent implements OnDestroy {
 
     private defaultContextMenu(event:MouseEvent) {
         event.stopPropagation();
+    }
+
+    private showTitle(event:MouseEvent, type:string, extra?:Object) {
+        event.stopPropagation();
+        if (this._currentTitleTimeout) {
+            clearTimeout(this._currentTitleTimeout);
+        }
+        this._currentTitleTimeout = setTimeout(()=>{
+            //this.doHideTitles();
+            if (type === 'issue') {
+                this.issueTitle = this.calculateIssueTitle();
+            } else if (type === 'parallel') {
+                this.parallelTasksTitle = this.calculateParallelTasksTitle();
+            } else if (type === 'linked') {
+                let linked:LinkedIssueData = <LinkedIssueData>extra;
+                this._linkedIssueTitleKey = linked.key;
+                this._linkedIssueTitle = this.calculateLinkedIssueTitle(linked);
+            }
+            this.viewUpdated();
+        }, 75);
+    }
+
+    private hideTitles(event:MouseEvent) {
+        this.doHideTitles();
+        if (this._currentTitleTimeout) {
+            clearTimeout(this._currentTitleTimeout);
+        }
+        this.doHideTitles();
+    }
+
+    private doHideTitles() {
+        if (this.issueTitle || this.parallelTasksTitle) {
+            this.issueTitle = null;
+            this.parallelTasksTitle = null;
+            this.viewUpdated();
+        }
+    }
+
+    private calculateIssueTitle():string{
+        let title:string =
+            this._issue.key + "\n" +
+            this._issue.summary + "\n\n" +
+            "State: " + this._issue.ownStatus + "\n" +
+            "Priority: " + this._issue.priority.name + "\n" +
+            "Type: " + this._issue.type.name;
+
+        if (this.issue.components) {
+            title += "\n" + this.createMultiSelectNameOnlyValueTitleString("Components", this.issue.components.array);
+        }
+        if (this.issue.labels) {
+            title += "\n" + this.createMultiSelectNameOnlyValueTitleString("Labels", this.issue.labels.array);
+        }
+        if (this.issue.fixVersions) {
+            title += "\n" + this.createMultiSelectNameOnlyValueTitleString("Fix Versions", this.issue.fixVersions.array);
+        }
+
+        return title;
+    }
+
+    private createMultiSelectNameOnlyValueTitleString(header:string, values:JiraMultiSelectFieldValue[]) {
+        let result = header + ": ";
+        let first:boolean = true;
+        for (let value of values) {
+            if (first) {
+                first = false;
+            } else {
+                result += ", ";
+            }
+            result += value.name;
+        }
+        return result;
+    }
+
+    private calculateParallelTasksTitle():string {
+        let parallelTasks:ParallelTask[] = this.parallelTasks;
+        if (!parallelTasks) {
+            return null;
+        }
+
+        let title:string = "";
+        for (let i:number = 0 ; i < parallelTasks.length ; i++) {
+            if (i > 0) {
+                title += "\n";
+            }
+            title += parallelTasks[i].name + ": " + this._issue.parallelTaskOptions.forIndex(i);
+        }
+        return title;
+    }
+
+    private calculateLinkedIssueTitle(linked:LinkedIssueData):string {
+        let title:string = linked.key + "\n" + linked.ownStatus + "\n" + linked.summary;
+        return title;
+    }
+
+    private getLinkedIssueTitle(linked:LinkedIssueData):string {
+        if (this._linkedIssueTitleKey == linked.key) {
+            return this._linkedIssueTitle;
+        }
+        return null;
     }
 }
