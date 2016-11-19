@@ -7,8 +7,7 @@
     "test": "karma start",
     "test-debug": "karma start --single-run=false --debug",
     "_build-doc" : "To build it do 'npm run build'",
-    "build": "rimraf ../target/classes/webapp && webpack --config config/webpack.prod.js --progress --profile --bail",
-    "postinstall": "typings install"
+    "build": "rimraf ../target/classes/webapp && webpack --config config/webpack.prod.js --progress --profile --bail"
   },
   "license": "MIT",
   "dependencies": {
@@ -48,9 +47,12 @@
     "ts-helpers": "1.1.1",
     "ts-loader": "0.8.2",
     "typescript": "2.0.3",
-    "typings": "1.3.3",
     "webpack": "1.13.2",
     "webpack-dev-server": "1.15.2",
-    "webpack-merge": "0.14.1"
+    "webpack-merge": "0.14.1",
+
+    "@types/core-js": "0.9.34",
+    "@types/node": "6.0.48",
+    "@types/jasmine": "2.5.38"
   }
 }
