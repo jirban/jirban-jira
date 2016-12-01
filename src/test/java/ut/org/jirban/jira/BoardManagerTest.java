@@ -43,6 +43,7 @@ import static org.jirban.jira.impl.Constants.STATES;
 import static org.jirban.jira.impl.Constants.SUMMARY;
 import static org.jirban.jira.impl.Constants.TYPE;
 import static org.jirban.jira.impl.Constants.VALUE;
+import static org.jirban.jira.impl.Constants.WIP;
 import static org.jirban.jira.impl.board.CustomFieldValue.UNSET_VALUE;
 
 import java.util.Arrays;
@@ -184,6 +185,33 @@ public class BoardManagerTest extends AbstractBoardTest {
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
+    }
+
+    @Test
+    public void testLoadBoardWithWipLimits() throws Exception {
+        //TODO this could be made into a better test covering more state/header/backlog/done/wip functionality
+        initializeMocks("config/board-wip.json");
+        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
+
+        ModelNode statesNode = boardNode.get(STATES);
+        List<ModelNode> states = statesNode.asList();
+
+        Assert.assertEquals(4, states.size());
+
+        checkState(states.get(0), "S-A", 1);
+        checkState(states.get(1), "S-B", 2);
+        checkState(states.get(2), "S-C", null);
+        checkState(states.get(3), "S-D", 10);
+
+    }
+
+    private void checkState(ModelNode state, String name, Integer wip) {
+        Assert.assertEquals(name, state.get(NAME).asString());
+        if (wip != null) {
+            Assert.assertEquals(wip.intValue(), state.get(WIP).asInt());
+        } else {
+            Assert.assertFalse(state.get(WIP).isDefined());
+        }
     }
 
     @Test

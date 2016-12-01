@@ -213,6 +213,24 @@ public class BoardConfigurationManagerTest {
         Assert.assertNotNull(boardConfig);
         ModelNode serialized = boardConfig.serializeModelNodeForConfig();
         Assert.assertEquals(original, serialized);
+    }
+
+
+    @Test
+    public void testLoadConfigurationWithWip() throws IOException {
+        BoardConfigurationManagerBuilder cfgManagerBuilder = new BoardConfigurationManagerBuilder()
+                .addConfigActiveObjectsFromFile("config/board-wip.json")
+                .addSettingActiveObject(RANK_CUSTOM_FIELD_ID, "10000");
+        BoardConfigurationManager cfgManager = cfgManagerBuilder.build();
+
+        ModelNode original = BoardConfigurationManagerBuilder.loadConfig("config/board-wip.json");
+        original.protect();
+
+        BoardConfig boardConfig = cfgManager.getBoardConfigForBoardDisplay(null, "TST");
+        Assert.assertNotNull(boardConfig);
+        ModelNode serialized = boardConfig.serializeModelNodeForConfig();
+        Assert.assertEquals(original, serialized);
+
 
     }
 

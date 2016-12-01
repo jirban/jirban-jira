@@ -98,8 +98,8 @@ export abstract class FixedHeaderView implements OnInit {
     }
 
     private setWindowSize() {
-        //If we have one row of headers the height is 32px, for two rows the height is 62px
-        let headersHeight = (this.bottomHeaders && this.bottomHeaders.length > 0) ? 62 : 32;
+        //If we have one row of headers the height is 42px, for two rows the height is 82px
+        let headersHeight = (this.bottomHeaders && this.bottomHeaders.length > 0) ? 82 : 42;
         let boardBodyHeight:number = window.innerHeight - TOOLBAR_HEIGHT - headersHeight;
         this._boardBodyHeight = boardBodyHeight + "px";
     }

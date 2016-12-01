@@ -8,10 +8,12 @@
       "backlog": true
     },
     {
-      "name": "Selected for Development"
+      "name": "Selected for Development",
+      "wip": 10
     },
     {
-      "name": "In Progress"
+      "name": "In Progress",
+      "wip": 5
     },
     {
       "name": "Done"
