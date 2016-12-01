@@ -36,7 +36,7 @@
         <!-- TestKit version 6.x for JIRA 6.x -->
         <version.testkit>6.3.11</version.testkit>
 
-        <version.frontend-maven-plugin>1.0</version.frontend-maven-plugin>
+        <version.frontend-maven-plugin>1.2</version.frontend-maven-plugin>
 
         <!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
         <atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
@@ -266,15 +266,15 @@
     <profiles>
         <profile>
             <!--
-                Installs node and npm in the webapp/node and webapp/node_modules folders respectively.
-                Run 'atlas-package -Djirban.npm':
+                Installs node and yarn in the webapp/node and webapp/node_modules folders respectively.
+                Run 'atlas-package -Djirban.ui.deps':
                     * the first time you have checked out the source.
                     * whenever the dependencies have been changed in package.json (delete the webapp/node_modules
                       folder first!)
             -->
-            <id>Install node and npm</id>
+            <id>Install node and yarn</id>
             <activation>
-                <property><name>jirban.npm</name></property>
+                <property><name>jirban.ui.deps</name></property>
             </activation>
             <build>
                 <plugins>
@@ -284,26 +284,26 @@
                         <executions>
                             <execution>
                                 <!--
-                                    Install node and npm for the plugin to have a copy.
+                                    Install node and yarn for the plugin to have a copy.
                                 -->
-                                <id>install node and npm</id>
+                                <id>install node and yarn</id>
                                 <goals>
-                                    <goal>install-node-and-npm</goal>
+                                    <goal>install-node-and-yarn</goal>
                                 </goals>
                                 <configuration>
                                     <nodeVersion>v5.3.0</nodeVersion>
-                                    <npmVersion>3.3.12</npmVersion>
+                                    <yarnVersion>v0.16.1</yarnVersion>
                                 </configuration>
                             </execution>
                             <execution>
                                 <!--
-                                    Run npm install when having updated dependencies
+                                    Run yarn install when having updated dependencies
                                 -->
-                                <id>npm install</id>
+                                <id>yarn install</id>
                                 <goals>
-                                    <goal>npm</goal>
+                                    <goal>yarn</goal>
                                 </goals>
-                                <!-- Optional configuration which provides for running any npm command -->
+                                <!-- Optional configuration which provides for running any yarn command -->
                                 <configuration>
                                     <arguments>install</arguments>
                                 </configuration>
@@ -334,9 +334,9 @@
                                 <!--
                                     Uses webpack to bundle the application as set up in package.json
                                 -->
-                                <id>npm run build</id>
+                                <id>yarn run build</id>
                                 <goals>
-                                    <goal>npm</goal>
+                                    <goal>yarn</goal>
                                 </goals>
                                 <configuration>
                                     <arguments>run build</arguments>

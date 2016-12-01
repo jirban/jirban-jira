@@ -11,3 +11,4 @@ webapp/_tsout
 webapp/dist
 webapp/node
 webapp/typings
+webapp/yarn.lock
