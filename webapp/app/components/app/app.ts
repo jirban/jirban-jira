@@ -27,7 +27,7 @@ export class AppComponent {
             //Hack to hide the body scroll bars on the board page.
             //This is only really necessary on FireFox on linux, where the board's table
             //seems have extra width added to allow for the scrollbars on the board's divs
-            document.getElementsByTagName("body")[0].className = disable ? "no-scrollbars" : "";
+            document.getElementsByTagName("body")[0]["className"] = disable ? "no-scrollbars" : "";
         });
 
 
