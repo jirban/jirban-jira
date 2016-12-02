@@ -75,7 +75,7 @@ export class BoardHeaders {
             }
 
             let doneState:boolean = index >= input.states.length - doneSize;
-            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, doneState, category);
+            let stateEntry = new State(boardData, state.name, boardStates.array.length, backlogState, doneState, category, state["wip"]);
             boardStates.add(state.name, stateEntry);
             if (category) {
                 category.states.push(stateEntry);
@@ -362,7 +362,8 @@ class StateCategory {
 export class State {
 
     constructor(private _boardData:BoardData, private _name:string, private _index:number,
-                private _backlog:boolean, private _done:boolean, private _category:StateCategory) {
+                private _backlog:boolean, private _done:boolean, private _category:StateCategory,
+                private _wip:number) {
         //console.log(_index);
     }
 
@@ -388,6 +389,20 @@ export class State {
 
     get done():boolean {
         return this._done;
+    }
+
+    get wip() {
+        return this._wip;
+    }
+
+    get exceedWip():boolean {
+        if (!this._wip) {
+            return false;
+        }
+        if (this.totalIssues > this._wip) {
+            console.log("Exceeded wip for " + this._name);
+        }
+        return this.totalIssues > this._wip;
     }
 
     isVisible(stateVisibilities:boolean[]):boolean{
@@ -448,6 +463,16 @@ export abstract class BoardHeaderEntry {
         throw new Error("nyi");
     }
 
+    get wip():number {
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
+    }
+
+    get exceedWip():boolean {
+        //Abstract getters don't exist :(
+        throw new Error("nyi");
+    }
+
     /** Do not call directly, use BoardHeaders.toggleHeaderVisibility() */
     abstract toggleVisibility():void;
 }
@@ -487,6 +512,14 @@ class CategoryHeaderEntry extends BoardHeaderEntry {
         return true;
     }
 
+    get wip():number {
+        return null;
+    }
+
+    get exceedWip():boolean {
+        return false;
+    }
+
     forceVisible() {
         this._category.forceVisible(this._stateVisibilities);
     }
@@ -524,5 +557,13 @@ class StateHeaderEntry extends BoardHeaderEntry {
 
     get isCategory():boolean {
         return false;
+    }
+
+    get wip():number {
+        return this._state.wip;
+    }
+
+    get exceedWip():boolean {
+        return this._state.exceedWip;
     }
 }

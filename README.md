@@ -93,21 +93,25 @@ The name is what is displayed to the user.
 ```
       "name": "Backlog",
 ```
-This state is considered to be the backlog. It is hidden by default. There are other settings as well to categories several states within a header, and to be 'done' (Done states and their issues are not shown on the board to save bandwidth). The examples in `src/main/webapp/rest/jirban/1.0` should hopefully be enough to get you started.
+This state is considered to be the backlog. It is hidden by default. There are other settings as well to categorise several states within a header, and to be 'done' (Done states and their issues are not shown on the board to save bandwidth). The examples in `src/main/webapp/rest/jirban/1.0` should hopefully be enough to get you started.
 ```
       "backlog": true
     },
     {
-      "name": "Selected for Development"
+      "name": "Selected for Development",
+      "wip": 10
     },
     {
-      "name": "In Progress"
+      "name": "In Progress",
+      "wip": 5
     },
     {
       "name": "Done"
     }
   ],
 ```
+We can see that the 'Selected for Development' and 'In Progress' states have `wip` set. When used that specifies the WIP limit (i.e. the maximum number of issues that can be in that column/state). There is nothing stopping you from putting more issues than the WIP limit in, but the board will provide visual feedback for columns that have too many issues to highlight that there is a problem.
+
 We list all the priorities used for projects within the board. This is the order that they will show up on in the board's control panel.
 ```
   "priorities": [

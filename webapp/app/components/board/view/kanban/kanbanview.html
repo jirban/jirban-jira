@@ -36,7 +36,11 @@
                             [ngClass]="backlogTopHeader.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                             (click)="toggleHeaderVisibility(backlogTopHeader)">
                             <div *ngIf="!backlogTopHeader.visible">&nbsp;</div>
-                            <div *ngIf="backlogTopHeader.visible">{{backlogTopHeader.name}}</div>
+                            <div *ngIf="backlogTopHeader.visible">
+                                <div>{{backlogTopHeader.name}}</div>
+                                <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
+                                <div>({{backlogTopHeader.totalIssues}})</div>
+                            </div>
                         </th>
                         <!-- The non-backlog headers -->
                         <!-- Some of these may be states with a rowspan of two, these may have help text -->
@@ -47,7 +51,11 @@
                             [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
                             [ngClass]="header.stateAndCategory ? header.visible ? 'visible' : 'collapsed' : ''"
                             (click)="toggleHeaderVisibility(header)">
-                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                            <div *ngIf="header.visible">
+                                <div>{{header.name}}</div>
+                                <div [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''"
+                                    >({{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span>)</div>
+                            </div>
                             <div *ngIf="!header.visible">{{header.totalIssues}}</div>
                         </th>
                     </tr>
@@ -58,7 +66,11 @@
                             title="{{getStateHelp(header)}}"
                             [ngClass]="header.visible ? 'visible backlog-cell' : 'collapsed backlog-cell'"
                             (click)="toggleHeaderVisibility(header)">
-                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                            <div *ngIf="header.visible">
+                                <div>{{header.name}}</div>
+                                <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
+                                <div>({{header.totalIssues}})</div>
+                            </div>
                             <div *ngIf="!header.visible">{{header.totalIssues}}</div>
                         </th>
                         <!-- The non-backlog headers -->
@@ -66,7 +78,11 @@
                             title="{{getStateHelp(header)}}"
                             [ngClass]="header.visible ? 'visible' : 'collapsed'"
                             (click)="toggleHeaderVisibility(header)">
-                            <div *ngIf="header.visible">{{header.name}} ({{header.totalIssues}})</div>
+                            <div *ngIf="header.visible">
+                                <div>{{header.name}}</div>
+                                <div [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''"
+                                    >({{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span>)</div>
+                            </div>
                             <div *ngIf="!header.visible">{{header.totalIssues}}</div>
                         </th>
                     </tr>

@@ -22,6 +22,7 @@ import static org.jirban.jira.impl.Constants.HEADERS;
 import static org.jirban.jira.impl.Constants.HELP;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.STATES;
+import static org.jirban.jira.impl.Constants.WIP;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,16 +47,18 @@ public class BoardStates {
     private final Map<String, String> stateHelpTexts;
     private final Set<String> backlogStates;
     private final Set<String> doneStates;
+    private final Map<String, Integer> wipLimits;
 
     private BoardStates(Map<String, Integer> stateIndices, List<String> states, Map<String, String> stateHeaders,
                         Map<String, String> stateHelpTexts,
-                        Set<String> backlogStates, Set<String> doneStates) {
+                        Set<String> backlogStates, Set<String> doneStates, Map<String, Integer> wipLimits) {
         this.stateIndices = stateIndices;
         this.states = states;
         this.stateHeaders = stateHeaders;
         this.stateHelpTexts = stateHelpTexts;
         this.backlogStates = backlogStates;
         this.doneStates = doneStates;
+        this.wipLimits = wipLimits;
     }
 
     static BoardStates loadBoardStates(ModelNode statesNode) {
@@ -69,6 +72,7 @@ public class BoardStates {
         final Map<String, Integer> stateIndices = new LinkedHashMap<>();
         final Set<String> backlogStates = new HashSet<>();
         final Set<String> doneStates = new HashSet<>();
+        final Map<String, Integer> wipLimits = new HashMap<>();
         try {
             String lastHeader = null;
             int i = 0;
@@ -129,6 +133,21 @@ public class BoardStates {
                     lastHeader = null;
                 }
 
+                if (stateNode.hasDefined(WIP)) {
+                    if (backlog) {
+                        throw new JirbanValidationException("Cannot configure  'wip' for state '" + stateName + "' since it is also configured as a backlog state");
+                    }
+                    try {
+                        int wip = stateNode.get(WIP).asInt();
+                        if (wip == 0) {
+                            throw new JirbanValidationException("0 is not a valid value for the 'wip' field for state '" + stateName + "'");
+                        }
+                        wipLimits.put(stateName, wip);
+                    } catch (IllegalStateException e) {
+                        throw new JirbanValidationException("The 'wip' field for state '" + stateName + "' must be an integer");
+                    }
+                }
+
                 i++;
             }
             if (lastDone > -1 && lastDone < i - 1) {
@@ -144,7 +163,8 @@ public class BoardStates {
                 Collections.unmodifiableMap(stateHeaders),
                 Collections.unmodifiableMap(stateHelpTexts),
                 Collections.unmodifiableSet(backlogStates),
-                Collections.unmodifiableSet(doneStates));
+                Collections.unmodifiableSet(doneStates),
+                Collections.unmodifiableMap(wipLimits));
     }
 
 
@@ -170,6 +190,10 @@ public class BoardStates {
             }
             if (doneStates.contains(state)) {
                 stateNode.get(DONE).set(true);
+            }
+            final Integer wipLimit = wipLimits.get(state);
+            if (wipLimit != null) {
+                stateNode.get(WIP).set(wipLimit);
             }
             states.add(stateNode);
         }
@@ -198,6 +222,11 @@ public class BoardStates {
                 }
                 stateNode.get(HEADER).set(headers.size() - 1);
             }
+            final Integer wipLimit = wipLimits.get(state);
+            if (wipLimit != null) {
+                stateNode.get(WIP).set(wipLimit);
+            }
+
             states.add(stateNode);
         }
 

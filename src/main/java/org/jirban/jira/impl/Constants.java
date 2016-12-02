@@ -84,5 +84,5 @@ public class Constants {
     public static final String VALUE = "value";
     public static final String VIEW = "view";
     public static final String VERSION = "version";
-
+    public static final String WIP = "wip";
 }
