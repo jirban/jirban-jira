@@ -511,11 +511,14 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
 
         public boolean isComplete() {
+            /* Fix for issue #90. Keep this old code commented out, in case I really meant to do something else
             if (rerankEvent) {
                 return issueEvent != null && reindexed;
             } else {
                 return issueEvent != null && reindexed;
             }
+            */
+            return issueEvent != null && reindexed;
         }
     }
 }
