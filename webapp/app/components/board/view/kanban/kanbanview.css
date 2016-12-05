@@ -127,3 +127,7 @@ ul.issues-list {
 .backlog-cell {
     background-color: #E0E0E0;
 }
+/* Although my browser marks this as an unknown element, we can still style the custom element */
+swimlane-entry {
+    display: block;
+}
