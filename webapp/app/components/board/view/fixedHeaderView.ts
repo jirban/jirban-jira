@@ -21,8 +21,8 @@ export abstract class FixedHeaderView implements OnInit {
     /** The calculate height of the board body */
     private _boardBodyHeight:string;
     /** The offset of the board, used to synchronize the offset of the headers as the board is scrolled */
-    private boardLeftOffsetPx:string = "";
-    private boardLeftOffset:number;
+    private boardLeftOffsetPx:string = "0px";
+    private boardLeftOffset:number = 0;
 
 
     private showIssueContextMenu:EventEmitter<IssueContextMenuData> = new EventEmitter<IssueContextMenuData>();

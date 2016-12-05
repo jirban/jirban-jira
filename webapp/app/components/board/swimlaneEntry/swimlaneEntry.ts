@@ -35,7 +35,6 @@ export class SwimlaneEntryComponent {
     }
 
     get boardLeftOffsetPx():string {
-        console.log("Get offset " + this._boardLeftOffsetPx);
         return this._boardLeftOffsetPx;
     }
 
