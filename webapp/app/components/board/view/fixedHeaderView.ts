@@ -111,11 +111,12 @@ export abstract class FixedHeaderView implements OnInit {
     }
 
     protected onShowIssueContextMenu(event:IssueContextMenuData) {
-        console.log("KBV: Propagating show context menu event");
+        console.log("View: Propagating show context menu event");
         this.showIssueContextMenu.emit(event);
     }
 
     protected onShowParallelTaskMenu(event:ParallelTaskMenuData) {
+        console.log("View: Propagating show parallel tasks menu event");
         this.showParallelTaskMenu.emit(event);
     }
 }

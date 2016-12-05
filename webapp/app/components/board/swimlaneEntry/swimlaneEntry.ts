@@ -13,7 +13,7 @@ import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
  */
 @Component({
     inputs: ['swimlaneIndex', 'boardData', 'swimlane', 'boardLeftOffset'],
-    outputs: ['showIssueContextMenu', 'toggleBacklogVisibility'],
+    outputs: ['showIssueContextMenu', 'toggleBacklogVisibility', 'showParallelTaskMenu'],
     selector: 'swimlane-entry',
     templateUrl: './swimlaneEntry.html',
     styleUrls: ['../view/kanban/kanbanview.css', './swimlaneEntry.css']
@@ -68,6 +68,7 @@ export class SwimlaneEntryComponent {
     }
 
     protected onShowParallelTaskMenu(event:ParallelTaskMenuData) {
+        console.log("Swimlane: Propagating show parallel menu event");
         this.showParallelTaskMenu.emit(event);
     }
 

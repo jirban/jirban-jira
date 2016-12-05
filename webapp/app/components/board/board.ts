@@ -103,11 +103,12 @@ export class BoardComponent implements OnDestroy {
     }
 
     onCloseParallelTaskMenu(event:any) {
+        console.log("Board: setting parallel task menu data to null");
         this.parallelTaskMenuData = null;
     }
 
     private onShowParallelTaskMenu(parallelTaskMenuData:ParallelTaskMenuData) {
-        console.log("Got event");
+        console.log("Board: setting parallel task menu data " + parallelTaskMenuData);
         this.parallelTaskMenuData = parallelTaskMenuData;
     }
 
