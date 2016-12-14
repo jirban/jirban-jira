@@ -114,6 +114,7 @@
             </div>
             <div class="setting" *ngIf="filtersToDisplay === 'project'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'project')" title="Clear filter">Project Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'project')"></filter-control>
                 <div class="setting-content" formGroupName="project">
                     <div *ngFor="let project of boardProjectCodes" class="setting-entry">
                         <input type="checkbox" formControlName="{{project}}" id="project-{{project}}"/>
@@ -123,6 +124,7 @@
             </div>
             <div class="setting" *ngIf="filtersToDisplay === 'priority'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'priority')" title="Clear filter">Priority Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'priority')"></filter-control>
                 <div class="setting-content" title="Scroll me!" formGroupName="priority">
                     <div *ngFor="let priority of priorities" class="setting-entry">
                         <input type="checkbox" formControlName="{{priority.name}}" id="priority-{{priority.name}}"/>
@@ -132,6 +134,7 @@
             </div>
             <div class="setting" *ngIf="filtersToDisplay === 'issue-type'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'issue-type')" title="Clear filter">Issue Type Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'issue-type')"></filter-control>
                 <div class="setting-content" title="Scroll me!" formGroupName="issue-type">
                     <div *ngFor="let issueType of issueTypes" class="setting-entry">
                         <input type="checkbox" formControlName="{{issueType.name}}" id="type-{{issueType.name}}"/>
@@ -141,6 +144,7 @@
             </div>
             <div class="setting" *ngIf="filtersToDisplay === 'assignee'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'assignee')" title="Clear filter">Assignee Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'assignee')"></filter-control>
                 <div class="setting-content" title="Scroll me!" formGroupName="assignee">
                     <div class="setting-entry">
                         <input type="checkbox" formControlName="{{none}}" id="assignee-$none$none"/>
@@ -154,6 +158,7 @@
             </div>
             <div class="setting" *ngIf="filtersToDisplay === 'component'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'component')" title="Clear filter">Component Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'component')"></filter-control>
                 <div class="setting-content" title="Scroll me!" formGroupName="component">
                     <div class="setting-entry">
                         <input type="checkbox" formControlName="{{none}}" id="component-$none$none"/>
@@ -170,6 +175,7 @@
                     <div class="setting" *ngIf="filtersToDisplay === customFieldValues.name">
                         <div class="setting-header clickable" (click)="clearFilter($event, 'custom-fields-' + customFieldValues.name)"
                              title="Clear filter">{{customFieldValues.name}} Filter</div>
+                        <filter-control (filterControlEvent)="onFilterControlEvent($event, 'custom-fields-' + customFieldValues.name)"></filter-control>
                         <div class="setting-content" title="Scroll me!" formGroupName="{{customFieldValues.name}}">
                             <div class="setting-entry">
                                 <input type="checkbox" formControlName="{{none}}" id="custom-{{customFieldValues.name}}-{{none}}"/>
@@ -186,6 +192,7 @@
             </div>
            <div class="setting" *ngIf="filtersToDisplay === 'parallel-tasks'">
                 <div class="setting-header clickable" (click)="clearFilter($event, 'parallel-tasks')" title="Clear filter">Parallel Tasks Filter</div>
+               <filter-control (filterControlEvent)="onFilterControlEvent($event, 'parallel-tasks')"></filter-control>
                 <div class="setting-content" title="Scroll me!" formGroupName="parallel-tasks">
                     <div *ngFor="let task of parallelTasks ; let i = index">
                         <div class="sub-header setting-header clickable" (click)="clearFilter($event, 'parallel-tasks-' + task.code)" title="Clear filter">{{task.name}} ({{task.code}})</div>
