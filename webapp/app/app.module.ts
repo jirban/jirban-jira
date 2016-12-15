@@ -22,6 +22,7 @@ import {HealthPanelComponent} from "./components/board/healthPanel/healthPanel";
 import {LocationStrategy, HashLocationStrategy, APP_BASE_HREF} from "@angular/common";
 import {ProgressColourService} from "./services/progressColourService";
 import {ParallelTaskMenuComponent} from "./components/board/parallelTaskMenu/parallelTaskMenu";
+import {FilterControlComponent} from "./components/board/controlPanel/filterControl/filterControl";
 
 @NgModule({
     imports: [
@@ -42,6 +43,7 @@ import {ParallelTaskMenuComponent} from "./components/board/parallelTaskMenu/par
         HealthPanelComponent,
         IssueComponent,
         IssueContextMenuComponent,
+        FilterControlComponent,
         KanbanViewComponent,
         PanelMenuComponent,
         ParallelTaskMenuComponent,

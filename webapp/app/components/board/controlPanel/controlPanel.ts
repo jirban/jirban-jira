@@ -12,6 +12,7 @@ import {VIEW_KANBAN} from "../../../common/constants";
 import {FormGroup, FormControl, AbstractControl} from "@angular/forms";
 import {Indexed} from "../../../common/indexed";
 import {ParallelTask} from "../../../data/board/parallelTask";
+import {FilterControlAction} from "./filterControl/filterControl";
 
 @Component({
     selector: 'control-panel',
@@ -202,6 +203,7 @@ export class ControlPanelComponent {
 
     private clearFilters(event:MouseEvent, name:string) {
         event.preventDefault();
+        let filterAction:FilterAction = new ClearFilterActon();
         this.clearFilter(event, 'project');
         this.clearFilter(event, 'issue-type');
         this.clearFilter(event, 'priority');
@@ -217,6 +219,23 @@ export class ControlPanelComponent {
 
     private clearFilter(event:MouseEvent, name:string) {
         event.preventDefault();
+        this.performRecursiveFilterFormAction(name, new ClearFilterActon());
+    }
+
+    private onFilterControlEvent(event:FilterControlAction, formName:string) {
+        console.log("=== Got filter control action " + event + " " + formName);
+        let filterAction:FilterAction;
+        if (event == FilterControlAction.ALL) {
+            filterAction = new AllFilterAction();
+        } else if (event == FilterControlAction.CLEAR) {
+            filterAction = new ClearFilterActon();
+        } else if (event == FilterControlAction.INVERT) {
+            filterAction = new InvertFilterAction();
+        }
+        this.performRecursiveFilterFormAction(formName, filterAction);
+    }
+
+    private performRecursiveFilterFormAction(name:string, filterAction:FilterAction) {
         let complexForms:string[] = ["parallel-tasks", "custom-fields"];
         let complexForm:string = null;
 
@@ -229,27 +248,28 @@ export class ControlPanelComponent {
 
         if (!complexForm) {
             let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
-            this.clearFilterForm(filter);
+            this.performFilterFormAction(filter, filterAction);
         } else {
             if (name === complexForm) {
                 let filter:FormGroup = <FormGroup>this._controlForm.controls[name];
                 for (let key in filter.controls) {
                     let form:FormGroup = <FormGroup>filter.controls[key];
-                    this.clearFilterForm(form);
+                    this.performFilterFormAction(form, filterAction);
                 }
             } else {
                 let filter:FormGroup = <FormGroup>this._controlForm.controls[complexForm];
                 let formName:string = name.substr(complexForm.length + 1);
-                this.clearFilterForm(<FormGroup>filter.controls[formName]);
+                this.performFilterFormAction(<FormGroup>filter.controls[formName], filterAction);
             }
         }
     }
 
-    private clearFilterForm(filterForm:FormGroup) {
+    private performFilterFormAction(filterForm:FormGroup, filterAction:FilterAction) {
         for (let key in filterForm.controls) {
             let control:FormControl = <FormControl>filterForm.controls[key];
-            control.setValue(false);
-            control.markAsDirty();
+            if (filterAction.handle(control)) {
+                control.markAsDirty();
+            }
         }
     }
 
@@ -570,3 +590,36 @@ export class ControlPanelComponent {
     }
 }
 
+interface FilterAction {
+    handle(control: FormControl): boolean;
+}
+
+class ClearFilterActon implements FilterAction {
+
+    handle(control: FormControl): boolean {
+        if (control.value) {
+            control.setValue(false);
+            return true;
+        }
+        return false;
+    }
+}
+
+class AllFilterAction implements FilterAction {
+
+    handle(control: FormControl): boolean {
+        if (!control.value) {
+            control.setValue(true);
+            return true;
+        }
+        return false;
+    }
+}
+
+class InvertFilterAction implements FilterAction {
+    handle(control:FormControl): boolean {
+        control.setValue(!control.value);
+        return true;
+    }
+
+}
