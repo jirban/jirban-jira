@@ -15,7 +15,7 @@
  */
 package ut.org.jirban.jira.mock;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.ofbiz.core.entity.GenericValue;
@@ -37,7 +37,7 @@ public class MockProjectComponent implements ProjectComponent {
         if (names == null || names.length == 0) {
             return null;
         }
-        Set<ProjectComponent> components = new HashSet<>();
+        Set<ProjectComponent> components = new LinkedHashSet<>();
         for (String name : names) {
             components.add(new MockProjectComponent(name));
         }

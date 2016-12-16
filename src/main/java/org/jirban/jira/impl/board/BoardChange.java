@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Component;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.FixVersion;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Label;
 
 /**
  * Contains the details of a change to the board, which the clients will apply when polling for changes since their
@@ -41,8 +44,10 @@ public class BoardChange {
     //The new assignee, if the change brings in an assignee not currently on the board
     private final Assignee newAssignee;
 
-    //The new components, if the change brings in some not currently on the board
+    //The new components, labels and fixVersions if the change brings in some not currently on the board
     private final Set<Component> newComponents;
+    private final Set<Label> newLabels;
+    private final Set<FixVersion> newFixVersions;
 
     //If the blacklist was modified. We are mainly interested in if a new unmapped state/priority/type pops up, and
     //its associated issue. Also, if an issue is deleted, it should be removed from the blacklist.
@@ -61,7 +66,9 @@ public class BoardChange {
     private final Boolean fromBacklogState;
 
 
-    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee, Set<Component> newComponents, String addedBlacklistState,
+    private BoardChange(int view, JirbanIssueEvent event, Assignee newAssignee,
+                        Set<Component> newComponents, Set<Label> newLabels,
+                        Set<FixVersion> newFixVersions, String addedBlacklistState,
                         String addedBlacklistPriority, String addedBlacklistIssueType,
                         String addedBlacklistIssue, String deletedBlacklistIssue,
                         Boolean fromBacklogState, Boolean backlogState,
@@ -72,6 +79,8 @@ public class BoardChange {
         this.event = event;
         this.newAssignee = newAssignee;
         this.newComponents = newComponents;
+        this.newLabels = newLabels;
+        this.newFixVersions = newFixVersions;
         this.addedBlacklistState = addedBlacklistState;
         this.addedBlacklistPriority = addedBlacklistPriority;
         this.addedBlacklistIssueType = addedBlacklistIssueType;
@@ -102,6 +111,14 @@ public class BoardChange {
 
     Set<Component> getNewComponents() {
         return newComponents;
+    }
+
+    Set<Label> getNewLabels() {
+        return newLabels;
+    }
+
+    Set<FixVersion> getNewFixVersions() {
+        return newFixVersions;
     }
 
     String getAddedBlacklistState() {
@@ -156,8 +173,10 @@ public class BoardChange {
         //The new assignee if one was brought in
         private Assignee newAssignee;
 
-        //The new components if any were brought in
+        //The new components, labels and fixVersions if any were brought in
         private Set<Component> newComponents;
+        private Set<Label> newLabels;
+        private Set<FixVersion> newFixVersions;
 
         private Map<String, CustomFieldValue> newCustomFieldValues;
 
@@ -203,6 +222,16 @@ public class BoardChange {
             return this;
         }
 
+        public Builder addNewLabels(Set<Label> newLabels) {
+            this.newLabels = Collections.unmodifiableSet(newLabels);
+            return this;
+        }
+
+        public Builder addNewFixVersions(Set<FixVersion> newFixVersions) {
+            this.newFixVersions = Collections.unmodifiableSet(newFixVersions);
+            return this;
+        }
+
         public Builder setFromBacklogState(boolean fromBacklogState) {
             this.fromBacklogState = fromBacklogState;
             return this;
@@ -243,8 +272,8 @@ public class BoardChange {
 
         public void buildAndRegister() {
             BoardChange change = new BoardChange(
-                    view, event, newAssignee, newComponents, addedBlacklistState, addedBlacklistPriority,
-                    addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue,
+                    view, event, newAssignee, newComponents, newLabels, newFixVersions, addedBlacklistState,
+                    addedBlacklistPriority, addedBlacklistIssueType, addedBlacklistIssue, deletedBlacklistIssue,
                     fromBacklogState, backlogState, customFieldValues, newCustomFieldValues,
                     parallelTaskValues);
             registry.registerChange(change);

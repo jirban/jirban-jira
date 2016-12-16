@@ -75,9 +75,8 @@ class BulkIssueLoadStrategy implements IssueLoadStrategy {
             final ParallelTaskConfig parallelTaskConfig = project.getConfig().getParallelTaskConfig();
             CustomFieldRegistry<ParallelTaskCustomFieldConfig> registry = parallelTaskConfig.getConfigs();
 
-            for (ParallelTaskCustomFieldConfig customFieldConfig : registry.values()) {
-                parallelTaskFields.put(customFieldConfig.getId(), customFieldConfig);
-            }
+            registry.values().forEach(parallelTaskCustomFieldConfig ->
+                    parallelTaskFields.put(parallelTaskCustomFieldConfig.getId(), parallelTaskCustomFieldConfig));
         }
     }
 

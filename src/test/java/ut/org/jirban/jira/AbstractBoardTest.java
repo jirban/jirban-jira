@@ -15,12 +15,11 @@
  */
 package ut.org.jirban.jira;
 
-import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.RANK_CUSTOM_FIELD_ID;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.api.BoardConfigurationManager;
@@ -36,17 +35,21 @@ import org.junit.Rule;
 import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
+import com.atlassian.jira.issue.label.Label;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.junit.rules.MockitoContainer;
 import com.atlassian.jira.junit.rules.MockitoMocksInContainer;
 import com.atlassian.jira.mock.component.MockComponentWorker;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 
 import ut.org.jirban.jira.mock.CustomFieldManagerBuilder;
 import ut.org.jirban.jira.mock.IssueLinkManagerBuilder;
 import ut.org.jirban.jira.mock.IssueRegistry;
+import ut.org.jirban.jira.mock.MockLabel;
 import ut.org.jirban.jira.mock.MockProjectComponent;
+import ut.org.jirban.jira.mock.MockVersion;
 import ut.org.jirban.jira.mock.SearchServiceBuilder;
 import ut.org.jirban.jira.mock.UserManagerBuilder;
 
@@ -109,105 +112,23 @@ public abstract class AbstractBoardTest {
         boardManager = boardManagerBuilder.build();
     }
 
-    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
-                                                                 IssueType issueType, Priority priority, String summary,
-                                                                 String username, String[] components, String state) {
-        return createCreateEventAndAddToRegistry(issueKey, issueType.name, priority.name, summary, username, components, state, null);
+    protected CreateEventBuilder createEventBuilder(String issueKey, IssueType issueType, Priority priority, String summary) {
+        return new CreateEventBuilder(issueKey, issueType == null ? null : issueType.name, priority == null ? null : priority.name, summary);
     }
 
-    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
-                                                                 IssueType issueType, Priority priority, String summary,
-                                                                 String username, String[] components, String state,
-                                                                 Map<Long, String> customFieldValues) {
-        return createCreateEventAndAddToRegistry(
-                issueKey, issueType.name, priority.name, summary, username, components, state, customFieldValues);
+    protected CreateEventBuilder createEventBuilder(String issueKey, String issueType, String priority, String summary) {
+        return new CreateEventBuilder(issueKey, issueType, priority, summary);
     }
 
-    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
-                                                                 String issueType, String priority, String summary,
-                                                                 String username, String[] components, String state) {
-        return createCreateEventAndAddToRegistry(issueKey, issueType, priority, summary, username, components, state, null);
+    protected UpdateEventBuilder updateEventBuilder(String issueKey) {
+        return new UpdateEventBuilder(issueKey);
     }
 
-    protected JirbanIssueEvent createCreateEventAndAddToRegistry(String issueKey,
-                                                                 String issueType, String priority, String summary,
-                                                                 String username, String[] components, String state,
-                                                                 Map<Long, String> customFieldValues) {
-
-        ApplicationUser user = userManager.getUserByKey(username);
-        String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
-        JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(issueKey, projectCode, issueType, priority,
-                summary, user, MockProjectComponent.createProjectComponents(components), state, customFieldValues);
-
-        issueRegistry.addIssue(projectCode, issueType, priority, summary, username, components, state);
-        if (customFieldValues != null) {
-            for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
-                issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());
-            }
+    protected static String[] emptyIfNull(String[] arr) {
+        if (arr == null) {
+            return new String[0];
         }
-
-        return create;
-    }
-
-    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
-                                                                 Priority priority, String summary, String username,
-                                                                 boolean unassigned, String[] components,
-                                                                 boolean clearComponents, String state, boolean rank) {
-        String issueTypeName = issueType == null ? null : issueType.name;
-        String priorityName = priority == null ? null : priority.name;
-        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
-                components, clearComponents, state, rank, Collections.emptyMap());
-    }
-
-    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
-                                                                 String priorityName, String summary, String username,
-                                                                 boolean unassigned, String[] components,
-                                                                 boolean clearComponents, String state, boolean rank) {
-        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
-                components, clearComponents, state, rank, null);
-    }
-
-    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, IssueType issueType,
-                                                                 Priority priority, String summary, String username,
-                                                                 boolean unassigned, String[] components,
-                                                                 boolean clearComponents, String state, boolean rank,
-                                                                 Map<Long, String> customFieldValues) {
-        String issueTypeName = issueType == null ? null : issueType.name;
-        String priorityName = priority == null ? null : priority.name;
-        return createUpdateEventAndAddToRegistry(issueKey, issueTypeName, priorityName, summary, username, unassigned,
-                components, clearComponents, state, rank, customFieldValues);
-    }
-
-    protected JirbanIssueEvent createUpdateEventAndAddToRegistry(String issueKey, String issueTypeName,
-                                                                 String priorityName, String summary, String username,
-                                                                 boolean unassigned, String[] components,
-                                                                 boolean clearComponents, String state, boolean rank,
-                                                                 Map<Long, String> customFieldValues) {
-        Assert.assertFalse(username != null && unassigned);
-        if (clearComponents) {
-            Assert.assertNull(components);
-        }
-
-        ApplicationUser user;
-        if (unassigned) {
-            user = JirbanIssueEvent.UNASSIGNED;
-        } else {
-            user = userManager.getUserByKey(username);
-        }
-        String projectCode = issueKey.substring(0, issueKey.indexOf("-"));
-        Collection<ProjectComponent> projectComponents = clearComponents ? Collections.emptySet() : MockProjectComponent.createProjectComponents(components);
-        Issue issue = issueRegistry.getIssue(issueKey);
-        JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(issueKey, projectCode, issueTypeName,
-                priorityName, summary, user, projectComponents, issue.getStatusObject().getName(),
-                state, rank, customFieldValues);
-
-        issueRegistry.updateIssue(issueKey, issueTypeName, priorityName, summary, username, components, state);
-        if (customFieldValues != null) {
-            for (Map.Entry<Long, String> entry : customFieldValues.entrySet()) {
-                issueRegistry.setCustomField(issueKey, entry.getKey(), entry.getValue());
-            }
-        }
-        return update;
+        return arr;
     }
 
     protected enum IssueType {
@@ -251,23 +172,270 @@ public abstract class AbstractBoardTest {
         void initialise(BoardManagerBuilder boardManagerBuilder);
     }
 
+    /**
+     * Checker to check each individual issue
+     */
     interface IssueChecker {
         void check(ModelNode issue);
     }
 
-    static class NoIssueCustomFieldChecker implements IssueChecker {
-        static final NoIssueCustomFieldChecker TESTER = new NoIssueCustomFieldChecker("Tester");
-        static final NoIssueCustomFieldChecker DOCUMENTER = new NoIssueCustomFieldChecker("Documenter");
+    private class EventBuilderState {
+        private final String issueKey;
+        private final String projectCode;
+        private String issueType;
+        private String priority;
+        private String summary;
+        private String username;
+        private ApplicationUser user;
+        private Set<ProjectComponent> components;
+        private Set<Label> labels;
+        private Set<Version> fixVersions;
+        private String state;
+        private Map<Long, String> customFieldValues;
 
-        private final String fieldName;
-
-        private NoIssueCustomFieldChecker(String fieldName) {
-            this.fieldName = fieldName;
+        EventBuilderState(String issueKey) {
+            this.issueKey = issueKey;
+            projectCode = issueKey.substring(0, issueKey.indexOf("-"));
         }
 
-        @Override
-        public void check(ModelNode issue) {
-            Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
+        void assignee(String username) {
+            this.username = username;
+            this.user = userManager.getUserByKey(username);
+        }
+
+        void components(String... componentNames) {
+            components = MockProjectComponent.createProjectComponents(componentNames);
+        }
+
+        void labels(String... labelNames) {
+            labels = MockLabel.createLabels(labelNames);
+        }
+
+        void fixVersions(String... fixVersionNames) {
+            this.fixVersions = MockVersion.createVersions(fixVersionNames);
+        }
+    }
+
+    class CreateEventBuilder {
+        private final EventBuilderState delegate;
+
+        private CreateEventBuilder(String issueKey, String issueType, String priority, String summary) {
+            delegate = new EventBuilderState(issueKey);
+            delegate.issueType = issueType;
+            delegate.priority = priority;
+            delegate.summary = summary;
+        }
+
+        CreateEventBuilder assignee(String username) {
+            delegate.assignee(username);
+            return this;
+        }
+
+        CreateEventBuilder components(String...componentNames) {
+            delegate.components(componentNames);
+            return this;
+        }
+
+        CreateEventBuilder labels(String... labelNames) {
+            delegate.labels(labelNames);
+            return this;
+        }
+
+        CreateEventBuilder fixVersions(String... fixVersionName) {
+            delegate.fixVersions(fixVersionName);
+            return this;
+        }
+
+        CreateEventBuilder state(String state) {
+            delegate.state = state;
+            return this;
+        }
+
+        CreateEventBuilder customFieldValues(Map<Long, String> customFieldValues) {
+            delegate.customFieldValues = customFieldValues;
+            return this;
+        }
+
+        JirbanIssueEvent buildAndRegister() {
+            JirbanIssueEvent create = JirbanIssueEvent.createCreateEvent(
+                    delegate.issueKey,
+                    delegate.projectCode,
+                    delegate.issueType,
+                    delegate.priority,
+                    delegate.summary,
+                    delegate.user,
+                    delegate.components,
+                    delegate.labels,
+                    delegate.fixVersions,
+                    delegate.state,
+                    delegate.customFieldValues);
+
+            IssueRegistry.CreateIssueBuilder builder = issueRegistry.issueBuilder(delegate.projectCode, delegate.issueType, delegate.priority, delegate.summary, delegate.state);
+            if (delegate.username != null) {
+                builder.assignee(delegate.user);
+            }
+            if (delegate.components != null) {
+                builder.components(delegate.components);
+            }
+            if (delegate.labels != null) {
+                builder.labels(delegate.labels);
+            }
+            if (delegate.fixVersions != null) {
+                builder.fixVersions(delegate.fixVersions);
+            }
+            builder.buildAndRegister();
+
+            if (delegate.customFieldValues != null) {
+                for (Map.Entry<Long, String> entry : delegate.customFieldValues.entrySet()) {
+                    issueRegistry.setCustomField(delegate.issueKey, entry.getKey(), entry.getValue());
+                }
+            }
+            return create;
+        }
+    }
+
+    class UpdateEventBuilder  {
+        private final EventBuilderState delegate;
+
+        private boolean unassigned;
+        private boolean clearComponents;
+        private boolean clearLabels;
+        private boolean clearFixVersions;
+        private boolean rank;
+
+        UpdateEventBuilder(String issueKey) {
+            delegate = new EventBuilderState(issueKey);
+        }
+
+        UpdateEventBuilder issueType(IssueType issueType) {
+            delegate.issueType = issueType.name;
+            return this;
+        }
+
+        UpdateEventBuilder issueType(String issueType) {
+            delegate.issueType = issueType;
+            return this;
+        }
+
+        UpdateEventBuilder priority(Priority priority) {
+            delegate.priority = priority.name;
+            return this;
+        }
+
+        UpdateEventBuilder priority(String priority) {
+            delegate.priority = priority;
+            return this;
+        }
+
+        UpdateEventBuilder summary(String summary) {
+            delegate.summary = summary;
+            return this;
+        }
+
+        UpdateEventBuilder assignee(String username) {
+            delegate.assignee(username);
+            return this;
+        }
+
+        UpdateEventBuilder unassign() {
+            this.unassigned = true;
+            return this;
+        }
+
+        UpdateEventBuilder components(String...componentNames) {
+            delegate.components(componentNames);
+            return this;
+        }
+
+        UpdateEventBuilder labels(String... labelNames) {
+            delegate.labels(labelNames);
+            return this;
+        }
+
+        UpdateEventBuilder fixVersions(String... fixVersionName) {
+            delegate.fixVersions(fixVersionName);
+            return this;
+        }
+
+        UpdateEventBuilder clearComponents() {
+            clearComponents = true;
+            return this;
+        }
+
+        UpdateEventBuilder clearLabels() {
+            clearLabels = true;
+            return this;
+        }
+
+        UpdateEventBuilder clearFixVersions() {
+            clearFixVersions = true;
+            return this;
+        }
+
+        UpdateEventBuilder state(String state) {
+            delegate.state = state;
+            return this;
+        }
+
+        UpdateEventBuilder customFieldValues(Map<Long, String> customFieldValues) {
+            delegate.customFieldValues = customFieldValues;
+            return this;
+        }
+
+        UpdateEventBuilder rank() {
+            rank = true;
+            return this;
+        }
+
+        JirbanIssueEvent buildAndRegister() {
+            Assert.assertFalse(delegate.username != null && unassigned);
+            if (unassigned) {
+                delegate.user = JirbanIssueEvent.UNASSIGNED;
+            }
+            if (clearComponents) {
+                Assert.assertNull(delegate.components);
+                delegate.components = Collections.emptySet();
+            }
+            if (clearLabels) {
+                Assert.assertNull(delegate.labels);
+                delegate.labels = Collections.emptySet();
+            }
+            if (clearFixVersions) {
+                Assert.assertNull(delegate.fixVersions);
+                delegate.fixVersions = Collections.emptySet();
+            }
+            Issue issue = issueRegistry.getIssue(delegate.issueKey);
+            JirbanIssueEvent update = JirbanIssueEvent.createUpdateEvent(
+                    delegate.issueKey,
+                    delegate.projectCode,
+                    delegate.issueType,
+                    delegate.priority,
+                    delegate.summary,
+                    delegate.user,
+                    delegate.components,
+                    delegate.labels,
+                    delegate.fixVersions,
+                    issue.getStatusObject().getName(),
+                    delegate.state,
+                    rank,
+                    delegate.customFieldValues);
+
+            issueRegistry.updateIssue(
+                    delegate.issueKey,
+                    delegate.issueType,
+                    delegate.priority,
+                    delegate.summary,
+                    delegate.username,
+                    delegate.components,
+                    delegate.labels,
+                    delegate.fixVersions,
+                    delegate.state);
+            if (delegate.customFieldValues != null) {
+                for (Map.Entry<Long, String> entry : delegate.customFieldValues.entrySet()) {
+                    issueRegistry.setCustomField(delegate.issueKey, entry.getKey(), entry.getValue());
+                }
+            }
+            return update;
         }
     }
 }

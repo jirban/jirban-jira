@@ -77,9 +77,7 @@ public class Blacklist {
         if (set.isEmpty()) {
             return;
         }
-        for (String value : set) {
-            blacklist.get(key).add(value);
-        }
+        set.forEach(value -> blacklist.get(key).add(value));
     }
 
     public boolean isBlacklisted(String issueKey) {

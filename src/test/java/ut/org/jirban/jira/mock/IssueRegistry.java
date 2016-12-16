@@ -32,8 +32,10 @@ import org.junit.Assert;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.label.Label;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.status.Status;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.user.util.UserManager;
 
@@ -48,18 +50,14 @@ public class IssueRegistry implements NextRankedIssueUtil {
         this.userManager = userManager;
     }
 
-    public IssueRegistry addIssue(String projectCode, String issueType, String priority, String summary,
-                                  String assignee, String[] components, String state) {
-        Map<String, MockIssue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
-        String issueKey = projectCode + "-" + (issues.size() + 1);
-        issues.put(issueKey, new MockIssue(issueKey, MockIssueType.create(issueType), MockPriority.create(priority), summary,
-                userManager.getUserByKey(assignee), MockProjectComponent.createProjectComponents(components), MockStatus.create(state)));
-        return this;
+    public CreateIssueBuilder issueBuilder(
+            String projectCode, String issueType, String priority, String summary, String state) {
+        return new CreateIssueBuilder(projectCode, issueType, priority, summary, state);
     }
 
-
     public void updateIssue(String issueKey, String issueTypeName, String priorityName,
-                            String summary, String assignee, String[] components, String state) {
+                            String summary, String assignee, Set<ProjectComponent> components, Set<Label> labels, Set<Version> fixVersions,
+                            String state) {
         Map<String, MockIssue> issues = issuesByProject.get(getProjectCode(issueKey));
         Assert.assertNotNull(issues);
         Issue issue = issues.get(issueKey);
@@ -71,14 +69,27 @@ public class IssueRegistry implements NextRankedIssueUtil {
         ApplicationUser assigneeUser = assignee == null ? issue.getAssignee() : userManager.getUserByKey(assignee);
         Set<ProjectComponent> comps;
         if (components != null) {
-            comps = MockProjectComponent.createProjectComponents(components);
+            comps = components;
         } else {
             comps = issue.getComponentObjects() == null ? null : new HashSet<>(issue.getComponentObjects());
         }
+        Set<Label> labelz;
+        if (labels != null) {
+            labelz = labels;
+        } else {
+            labelz = issue.getLabels() == null ? null : new HashSet<>(issue.getLabels());
+        }
+        Set<Version> fixVersionz;
+        if (fixVersions != null) {
+            fixVersionz = fixVersions;
+        } else {
+            fixVersionz = issue.getFixVersions() == null ? null : new HashSet<>(issue.getFixVersions());
+        }
         Status status = state == null ? issue.getStatusObject() : MockStatus.create(state);
 
+
         MockIssue newIssue = new MockIssue(issueKey, issueType, priority, summ,
-                assigneeUser, comps, status);
+                assigneeUser, comps, labelz, fixVersionz, status);
         issues.put(issueKey, newIssue);
     }
 
@@ -171,4 +182,79 @@ public class IssueRegistry implements NextRankedIssueUtil {
         return issueKey.substring(0, index);
     }
 
+    public class CreateIssueBuilder {
+        private final String projectCode;
+        private final IssueType issueType;
+        private final Priority priority;
+        private final String summary;
+        private final Status state;
+        private ApplicationUser assignee;
+        private Set<ProjectComponent> components;
+        private Set<Label> labels;
+        private Set<Version> fixVersions;
+
+        private CreateIssueBuilder(String projectCode, String issueType, String priority, String summary, String state) {
+            this(projectCode, MockIssueType.create(issueType), MockPriority.create(priority), summary, MockStatus.create(state));
+        }
+
+
+        private CreateIssueBuilder(String projectCode, IssueType issueType, Priority priority, String summary, Status state) {
+            this.projectCode = projectCode;
+            this.issueType = issueType;
+            this.priority = priority;
+            this.summary = summary;
+            this.state = state;
+        }
+
+        public CreateIssueBuilder assignee(String assignee) {
+            this.assignee = userManager.getUserByKey(assignee);
+            Assert.assertNotNull(this.assignee);
+            return this;
+        }
+
+        public CreateIssueBuilder assignee(ApplicationUser assignee) {
+            this.assignee = assignee;
+            return this;
+        }
+
+        public CreateIssueBuilder components(String...components) {
+            this.components = MockProjectComponent.createProjectComponents(components);
+            return this;
+        }
+
+        public CreateIssueBuilder components(Set<ProjectComponent> components) {
+            this.components = components;
+            return this;
+        }
+
+        public CreateIssueBuilder labels(String...labels) {
+            this.labels = MockLabel.createLabels(labels);
+            return this;
+        }
+
+        public CreateIssueBuilder labels(Set<Label> labels) {
+            this.labels = labels;
+            return this;
+        }
+
+        public CreateIssueBuilder fixVersions(String...fixVersions) {
+            this.fixVersions = MockVersion.createVersions(fixVersions);
+            return this;
+        }
+
+        public CreateIssueBuilder fixVersions(Set<Version> fixVersions) {
+            this.fixVersions = fixVersions;
+            return this;
+        }
+
+        public Issue buildAndRegister() {
+            Map<String, MockIssue> issues = issuesByProject.computeIfAbsent(projectCode, x -> new LinkedHashMap<>());
+            String issueKey = projectCode + "-" + (issues.size() + 1);
+            MockIssue issue =
+                    new MockIssue(issueKey, issueType, priority, summary, assignee, components, labels, fixVersions, state);
+            issues.put(issueKey, issue);
+            return issue;
+        }
+
+    }
 }

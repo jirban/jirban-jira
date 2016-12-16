@@ -58,9 +58,7 @@ public class SortedParallelTaskFieldOptions {
         entry.get(NAME).set(config.getName());
         entry.get(DISPLAY).set(config.getCode());
         ModelNode options = new ModelNode().setEmptyList();
-        for (CustomFieldValue value : sortedFields.values()) {
-            options.add(value.getValue());
-        }
+        sortedFields.values().forEach(customFieldValue -> options.add(customFieldValue.getValue()));
         entry.get(OPTIONS).set(options);
         list.add(entry);
     }

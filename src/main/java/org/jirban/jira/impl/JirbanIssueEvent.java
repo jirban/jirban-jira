@@ -21,6 +21,8 @@ import java.util.Map;
 
 import com.atlassian.crowd.embedded.api.User;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
+import com.atlassian.jira.issue.label.Label;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 
 /**
@@ -88,16 +90,20 @@ public class JirbanIssueEvent {
 
     public static JirbanIssueEvent createCreateEvent(String issueKey, String projectCode, String issueType, String priority,
                                                      String summary, ApplicationUser assignee, Collection<ProjectComponent> components,
+                                                     Collection<Label> labels, Collection<Version> fixVersions,
                                                      String state, Map<Long, String> customFieldValues) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, null, state, true, customFieldValues);
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, labels, fixVersions,
+                null, state, true, customFieldValues);
         return new JirbanIssueEvent(Type.CREATE, issueKey, projectCode, detail);
     }
 
     public static JirbanIssueEvent createUpdateEvent(String issueKey, String projectCode, String issueType, String priority,
                                                      String summary, ApplicationUser assignee, Collection<ProjectComponent> components,
+                                                     Collection<Label> labels, Collection<Version> fixVersions,
                                                      String currentState, String state, boolean reranked,
                                                      Map<Long, String> customFieldValues) {
-        Detail detail = new Detail(issueType, priority, summary, assignee, components, currentState, state, reranked, customFieldValues);
+        Detail detail = new Detail(issueType, priority, summary, assignee, components, labels, fixVersions,
+                currentState, state, reranked, customFieldValues);
         return new JirbanIssueEvent(Type.UPDATE, issueKey, projectCode, detail);
     }
 
@@ -129,16 +135,21 @@ public class JirbanIssueEvent {
         private final String summary;
         private final ApplicationUser assignee;
         private final Collection<ProjectComponent> components;
+        private final Collection<Label> labels;
+        private final Collection<Version> fixVersions;
         private final String oldState;
         private final String state;
         private final boolean reranked;
         private final Map<Long, String> customFieldValues;
 
-        private Detail(String issueType, String priority, String summary, ApplicationUser assignee, Collection<ProjectComponent> components,
+        private Detail(String issueType, String priority, String summary, ApplicationUser assignee,
+                       Collection<ProjectComponent> components, Collection<Label> labels, Collection<Version> fixVersions,
                        String oldState, String state, boolean reranked, Map<Long, String> customFieldValues) {
             this.summary = summary;
             this.assignee = assignee;
             this.components = components;
+            this.labels = labels;
+            this.fixVersions = fixVersions;
             this.issueType = issueType;
             this.priority = priority;
             this.oldState = oldState;
@@ -165,6 +176,14 @@ public class JirbanIssueEvent {
 
         public Collection<ProjectComponent> getComponents() {
             return components;
+        }
+
+        public Collection<Label> getLabels() {
+            return labels;
+        }
+
+        public Collection<Version> getFixVersions() {
+            return fixVersions;
         }
 
         public String getOldState() {

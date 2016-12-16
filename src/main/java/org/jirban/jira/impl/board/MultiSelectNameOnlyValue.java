@@ -18,12 +18,14 @@ package org.jirban.jira.impl.board;
 import org.jboss.dmr.ModelNode;
 
 /**
+ * Base class for things like Component, Fix Version, Label which can all have more than one entry set per issue
+ *
  * @author Kabir Khan
  */
-public class Component {
+public abstract class MultiSelectNameOnlyValue {
     private final String name;
 
-    public Component(String name) {
+    protected MultiSelectNameOnlyValue(String name) {
         this.name = name;
     }
 
@@ -31,8 +33,8 @@ public class Component {
         return name;
     }
 
-    public void serialize(ModelNode componentsNode) {
-        componentsNode.add(name);
+    public void serialize(ModelNode multiSelectNode) {
+        multiSelectNode.add(name);
     }
 
     @Override
@@ -42,10 +44,13 @@ public class Component {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof Component == false) {
+        if (obj == null) {
             return false;
         }
-        Component other = (Component)obj;
+        if (!this.getClass().equals(obj.getClass())) {
+            return false;
+        }
+        MultiSelectNameOnlyValue other = (MultiSelectNameOnlyValue)obj;
         if (this.name != null && other.name == null || this.name == null && other.name != null) {
             return false;
         }
@@ -53,5 +58,23 @@ public class Component {
             return true;
         }
         return this.name.equals(other.name);
+    }
+
+    public static class Component extends MultiSelectNameOnlyValue {
+        public Component(String name) {
+            super(name);
+        }
+    }
+
+    public static class Label extends MultiSelectNameOnlyValue {
+        public Label(String name) {
+            super(name);
+        }
+    }
+
+    public static class FixVersion extends MultiSelectNameOnlyValue {
+        public FixVersion(String name) {
+            super(name);
+        }
     }
 }

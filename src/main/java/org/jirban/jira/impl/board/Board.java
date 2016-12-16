@@ -18,7 +18,9 @@ package org.jirban.jira.impl.board;
 import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
 import static org.jirban.jira.impl.Constants.CUSTOM;
+import static org.jirban.jira.impl.Constants.FIX_VERSIONS;
 import static org.jirban.jira.impl.Constants.ISSUES;
+import static org.jirban.jira.impl.Constants.LABELS;
 import static org.jirban.jira.impl.Constants.MAIN;
 import static org.jirban.jira.impl.Constants.PROJECTS;
 import static org.jirban.jira.impl.Constants.VIEW;
@@ -31,9 +33,11 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.jboss.dmr.ModelNode;
@@ -42,6 +46,9 @@ import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.api.ProjectParallelTaskOptionsLoader;
 import org.jirban.jira.impl.JiraInjectables;
 import org.jirban.jira.impl.JirbanIssueEvent;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Component;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.FixVersion;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Label;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
@@ -52,6 +59,7 @@ import com.atlassian.jira.avatar.Avatar;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.link.IssueLinkManager;
 import com.atlassian.jira.issue.search.SearchException;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 
 /**
@@ -68,6 +76,8 @@ public class Board {
     //Map of assignees sorted by their display name
     private final IndexedMap<String, Assignee> sortedAssignees;
     private final IndexedMap<String, Component> sortedComponents;
+    private final IndexedMap<String, Label> sortedLabels;
+    private final IndexedMap<String, FixVersion> sortedFixVersions;
     private final Map<String, Issue> allIssues;
     private final Map<String, BoardProject> projects;
     private final Map<String, SortedCustomFieldValues> sortedCustomFieldValues;
@@ -77,6 +87,8 @@ public class Board {
     private Board(Board old, BoardConfig boardConfig,
                     IndexedMap<String, Assignee> sortedAssignees,
                     IndexedMap<String, Component> sortedComponents,
+                    IndexedMap<String, Label> sortedLabels,
+                    IndexedMap<String, FixVersion> sortedFixVersions,
                     Map<String, Issue> allIssues,
                     Map<String, BoardProject> projects,
                     Map<String, SortedCustomFieldValues> sortedCustomFieldValues,
@@ -87,6 +99,8 @@ public class Board {
         this.sortedAssignees = sortedAssignees;
 
         this.sortedComponents = sortedComponents;
+        this.sortedLabels = sortedLabels;
+        this.sortedFixVersions = sortedFixVersions;
 
         this.allIssues = allIssues;
         this.projects = projects;
@@ -114,22 +128,23 @@ public class Board {
 
         ModelNode assigneesNode = outputNode.get(ASSIGNEES);
         assigneesNode.setEmptyList();
-        for (Assignee assignee : sortedAssignees.values()) {
-            assignee.serialize(assigneesNode);
-        }
+        sortedAssignees.values().forEach(assignee -> assignee.serialize(assigneesNode));
 
         if (sortedComponents.size() > 0) {
             ModelNode componentsNode = outputNode.get(COMPONENTS);
-            componentsNode.setEmptyList();
-            for (Component component : sortedComponents.values()) {
-                component.serialize(componentsNode);
-            }
+            sortedComponents.values().forEach(component -> component.serialize(componentsNode));
+        }
+        if (sortedLabels.size() > 0) {
+            ModelNode labelsNode = outputNode.get(LABELS);
+            sortedLabels.values().forEach(label -> label.serialize(labelsNode));
+        }
+        if (sortedFixVersions.size() > 0) {
+            ModelNode fixVersionsNode = outputNode.get(FIX_VERSIONS);
+            sortedFixVersions.values().forEach(fixVersion -> fixVersion.serialize(fixVersionsNode));
         }
         if (sortedCustomFieldValues.size() > 0) {
             ModelNode customNode = outputNode.get(CUSTOM);
-            for (SortedCustomFieldValues values : sortedCustomFieldValues.values()) {
-                values.serialize(customNode);
-            }
+            sortedCustomFieldValues.values().forEach(values -> values.serialize(customNode));
         }
 
         boardConfig.serializeModelNodeForBoard(outputNode);
@@ -182,14 +197,20 @@ public class Board {
         return sortedComponents.getIndex(component.getName());
     }
 
+    public int getLabelIndex(Label label) {
+        return sortedLabels.getIndex(label.getName());
+    }
+
+    public int getFixVersionIndex(FixVersion fixVersion) {
+        return sortedFixVersions.getIndex(fixVersion.getName());
+    }
+
     public int getCustomFieldIndex(CustomFieldValue customFieldValue) {
         return sortedCustomFieldValues.get(customFieldValue.getCustomFieldName()).getCustomFieldIndex(customFieldValue);
     }
 
     private void updateBoardInProjects() {
-        for (BoardProject project : projects.values()) {
-            project.setBoard(this);
-        }
+        projects.values().forEach(project -> project.setBoard(this));
     }
 
     private static Assignee createAssignee(JiraInjectables jiraInjectables, ApplicationUser boardOwner, ApplicationUser assigneeUser) {
@@ -272,6 +293,10 @@ public class Board {
 
         abstract Set<Component> getComponents(Collection<ProjectComponent> componentObjects);
 
+        abstract Set<Label> getLabels(Set<com.atlassian.jira.issue.label.Label> labels);
+
+        abstract Set<FixVersion> getFixVersions(Collection<Version> fixVersions);
+
         public List<String> getStateNames() {
             return boardConfig.getStateNames();
         }
@@ -281,25 +306,26 @@ public class Board {
         }
 
         public abstract void addBulkLoadedCustomFieldValue(CustomFieldConfig config, CustomFieldValue value);
+
     }
 
     private static Map<String, Assignee> sortAssignees(Map<String, Assignee> assignees) {
-        List<Assignee> assigneeNames = new ArrayList<>(assignees.values());
-        Collections.sort(assigneeNames, Comparator.comparing(Assignee::getDisplayName, String.CASE_INSENSITIVE_ORDER));
-        LinkedHashMap<String, Assignee> result = new LinkedHashMap<>();
-        for (Assignee assignee : assigneeNames) {
-            result.put(assignee.getKey(), assignee);
-        }
-        return result;
+        return sortMapValues(
+                assignees,
+                Assignee::getDisplayName,
+                Assignee::getKey);
     }
 
-    private static Map<String, Component> sortComponents(Map<String, Component> components) {
-        List<Component> componentNames = new ArrayList<>(components.values());
-        Collections.sort(componentNames, Comparator.comparing(Component::getName, String.CASE_INSENSITIVE_ORDER));
-        LinkedHashMap<String, Component> result = new LinkedHashMap<>();
-        for (Component component : componentNames) {
-            result.put(component.getName(), component);
-        }
+    private static <T extends MultiSelectNameOnlyValue> Map<String, T> sortMultiSelectNameOnlyValueMap(Map<String, T> values) {
+        return sortMapValues(values, MultiSelectNameOnlyValue::getName, MultiSelectNameOnlyValue::getName);
+    }
+
+    private static <T> Map<String, T> sortMapValues(Map<String, T> unsorted, Function<T, String> displayNameExtractor, Function<T, String> keyExtractor) {
+        List<T> values = new ArrayList<T>(unsorted.values());
+        Comparator<T> comparator = Comparator.comparing(displayNameExtractor, String.CASE_INSENSITIVE_ORDER);
+        Collections.sort(values, comparator);
+        LinkedHashMap<String, T> result = new LinkedHashMap<>();
+        values.forEach(value -> result.put(keyExtractor.apply(value), value));
         return result;
     }
 
@@ -310,6 +336,8 @@ public class Board {
         private final ProjectParallelTaskOptionsLoader projectParallelTaskOptionsLoader;
         private final Map<String, Assignee> assignees = new HashMap<>();
         private final Map<String, Component> components = new HashMap<>();
+        private final Map<String, Label> labels = new HashMap<>();
+        private final Map<String, FixVersion> fixVersions = new HashMap<>();
         private final Map<String, Issue> allIssues = new HashMap<>();
         private final Map<String, BoardProject.Builder> projects = new HashMap<>();
         private final Blacklist.Builder blacklist = new Blacklist.Builder();
@@ -355,18 +383,43 @@ public class Board {
 
         @Override
         Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
-            if (componentObjects == null || componentObjects.size() == 0) {
-                //No component for issue
+            return getIssueMultiSelectNameValues(components, componentObjects,
+                    projectComponent -> projectComponent.getName(),
+                    name -> new Component(name));
+        }
+
+        @Override
+        Set<Label> getLabels(Set<com.atlassian.jira.issue.label.Label> jiraLabels) {
+            return getIssueMultiSelectNameValues(labels, jiraLabels,
+                    jiraLabel -> jiraLabel.getLabel(),
+                    name -> new Label(name));
+        }
+
+        @Override
+        Set<FixVersion> getFixVersions(Collection<Version> jiraFixVersions) {
+            return getIssueMultiSelectNameValues(fixVersions, jiraFixVersions,
+                    jiraFixVersion -> jiraFixVersion.getName(),
+                    name -> new FixVersion(name));
+        }
+
+        private <T, R extends MultiSelectNameOnlyValue> Set<R> getIssueMultiSelectNameValues (
+                Map<String, R> builderMap,
+                Collection<T> issueJiraObjects,
+                Function<T, String> nameGetter,
+                Function<String, R> valueFactory) {
+            if (issueJiraObjects == null || issueJiraObjects.size() == 0) {
+                //No values for issue
                 return null;
             }
-            Set<Component> ret = new HashSet<>(componentObjects.size());
-            for (ProjectComponent projectComponent : componentObjects) {
-                Component component = components.get(projectComponent.getName());
-                if (component == null) {
-                    component = new Component(projectComponent.getName());
-                    components.put(component.getName(), component);
+            final Set<R> ret = new LinkedHashSet<R>(issueJiraObjects.size());
+            for (T issueJiraObject : issueJiraObjects) {
+                final String name = nameGetter.apply(issueJiraObject);
+                R value = builderMap.get(name);
+                if (value == null) {
+                    value = valueFactory.apply(name);
+                    builderMap.put(name, value);
                 }
-                ret.add(component);
+                ret.add(value);
             }
             return ret;
         }
@@ -416,23 +469,22 @@ public class Board {
             });
 
             Map<String, SortedCustomFieldValues> sortedCustomFieldValues = new HashMap<>();
-            for (SortedCustomFieldValues.Builder scfBuilder : this.customFieldBuilders.values()) {
+            this.customFieldBuilders.values().forEach(scfBuilder -> {
                 SortedCustomFieldValues fieldValues = scfBuilder.build();
                 sortedCustomFieldValues.put(fieldValues.getFieldName(), fieldValues);
-            }
+            });
 
             Board board = new Board(
                     null, boardConfig,
                     new IndexedMap<>(sortAssignees(assignees)),
-                    new IndexedMap<>(sortComponents(components)),
+                    new IndexedMap<>(sortMultiSelectNameOnlyValueMap(components)),
+                    new IndexedMap<>(sortMultiSelectNameOnlyValueMap(labels)),
+                    new IndexedMap<>(sortMultiSelectNameOnlyValueMap(fixVersions)),
                     Collections.unmodifiableMap(allIssues),
                     Collections.unmodifiableMap(projects),
                     Collections.unmodifiableMap(sortedCustomFieldValues),
                     blacklist.build());
-
-            for (BoardProject project : projects.values()) {
-                project.setBoard(board);
-            }
+            projects.values().forEach(project -> project.setBoard(board));
             return board;
         }
     }
@@ -449,10 +501,17 @@ public class Board {
         private Map<String, Assignee> assigneesCopy;
         //Will only be populated if new components are brought in
         private Map<String, Component> componentsCopy;
+        //Will only be populated if new labels are brought in
+        private Map<String, Label> labelsCopy;
+        //Will only be populated if new fixVersions are brought in
+        private Map<String, FixVersion> fixVersionsCopy;
+
         Map<String, Issue> allIssuesCopy;
 
         private Assignee newAssignee;
         private Set<Component> newComponents;
+        private Set<Label> newLabels;
+        private Set<FixVersion> newFixVersions;
         private final Map<Long, SortedCustomFieldValues.Updater> customFieldUpdaters = new HashMap();
 
         Updater(JiraInjectables jiraInjectables, Board board, ApplicationUser boardOwner, BoardChangeRegistry changeRegistry) {
@@ -514,6 +573,8 @@ public class Board {
             Board boardCopy = new Board(board, board.boardConfig,
                     board.sortedAssignees,
                     board.sortedComponents,
+                    board.sortedLabels,
+                    board.sortedFixVersions,
                     Collections.unmodifiableMap(allIssuesCopy),
                     projectsCopy,
                     SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
@@ -586,6 +647,8 @@ public class Board {
             //Will populate assigneeCopy and newAssignee if we need to add the assignee
             final Assignee issueAssignee = getOrCreateIssueAssignee(evtDetail);
             final Set<Component> issueComponents = getOrCreateIssueComponents(evtDetail);
+            final Set<Label> issueLabels = getOrCreateIssueLabels(evtDetail);
+            final Set<FixVersion> issueFixVersions = getOrCreateIssueFixVersions(evtDetail);
 
             final BoardProject.Updater projectUpdater = project.updater(jiraInjectables, nextRankedIssueUtil, this, boardOwner);
             final Map<String, CustomFieldValue> customFieldValues
@@ -599,7 +662,8 @@ public class Board {
                 JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- create issue {}", event.getIssueKey());
                 existingIssue = null;
                 newIssue = projectUpdater.createIssue(event.getIssueKey(), evtDetail.getIssueType(),
-                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee, issueComponents,
+                        evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
+                        issueComponents, issueLabels, issueFixVersions,
                         evtDetail.getState(), customFieldValues, parallelTaskValues);
             } else {
                 existingIssue = board.allIssues.get(event.getIssueKey());
@@ -620,7 +684,7 @@ public class Board {
                     JirbanLogger.LOGGER.debug("Board.Updater.handleCreateOrUpdateIssue- Updating issue {}", event.getIssueKey());
                     newIssue = projectUpdater.updateIssue(existingIssue, evtDetail.getIssueType(),
                             evtDetail.getPriority(), evtDetail.getSummary(), issueAssignee,
-                            issueComponents,
+                            issueComponents, issueLabels, issueFixVersions,
                             evtDetail.isReranked(), evtDetail.getState(), customFieldValues, parallelTaskValues);
                 }
             }
@@ -643,7 +707,9 @@ public class Board {
 
                 final Board boardCopy = new Board(board, board.boardConfig,
                         assigneesCopy == null ? board.sortedAssignees : new IndexedMap<>(sortAssignees(assigneesCopy)),
-                        componentsCopy == null ? board.sortedComponents : new IndexedMap<>(sortComponents(componentsCopy)),
+                        componentsCopy == null ? board.sortedComponents : new IndexedMap<>(sortMultiSelectNameOnlyValueMap(componentsCopy)),
+                        labelsCopy == null ? board.sortedLabels : new IndexedMap<>(sortMultiSelectNameOnlyValueMap(labelsCopy)),
+                        fixVersionsCopy == null ? board.sortedFixVersions : new IndexedMap<>(sortMultiSelectNameOnlyValueMap(fixVersionsCopy)),
                         allIssuesCopy,
                         Collections.unmodifiableMap(projectsCopy),
                         SortedCustomFieldValues.Updater.merge(customFieldUpdaters, board.sortedCustomFieldValues),
@@ -674,6 +740,12 @@ public class Board {
                     }
                     if (newComponents != null) {
                         changeBuilder.addNewComponents(newComponents);
+                    }
+                    if (newLabels != null) {
+                        changeBuilder.addNewLabels(newLabels);
+                    }
+                    if (newFixVersions != null) {
+                        changeBuilder.addNewFixVersions(newFixVersions);
                     }
                     if (blacklist.isUpdated()) {
                         changeBuilder.addBlacklist(blacklist.getAddedState(), blacklist.getAddedIssueType(),
@@ -710,6 +782,16 @@ public class Board {
         @Override
         Set<Component> getComponents(Collection<ProjectComponent> componentObjects) {
             return getOrCreateIssueComponents(componentObjects);
+        }
+
+        @Override
+        Set<Label> getLabels(Set<com.atlassian.jira.issue.label.Label> labels) {
+            return getOrCreateIssueLabels(labels);
+        }
+
+        @Override
+        Set<FixVersion> getFixVersions(Collection<Version> fixVersions) {
+            return getOrCreateIssueFixVersions(fixVersions);
         }
 
         @Override
@@ -784,30 +866,99 @@ public class Board {
         }
 
         private Set<Component> getOrCreateIssueComponents(Collection<ProjectComponent> evtComponents) {
-            if (evtComponents == null) {
+            return getOrCreateIssueMultiSelectNameValues(
+                    evtComponents,
+                    ProjectComponent::getName,
+                    name -> new Component(name),
+                    () -> componentsCopy == null ? board.sortedComponents.map() : componentsCopy,
+                    () -> {
+                        if (componentsCopy == null) {
+                            componentsCopy = new HashMap<String, Component>(board.sortedComponents.map());
+                        }
+                        return componentsCopy;
+                    },
+                    () -> {
+                        if (newComponents == null) {
+                            newComponents = new HashSet<Component>();
+                        }
+                        return newComponents;
+                    });
+        }
+
+        private Set<Label> getOrCreateIssueLabels(JirbanIssueEvent.Detail evtDetail) {
+            return getOrCreateIssueLabels(evtDetail.getLabels());
+        }
+
+        private Set<Label> getOrCreateIssueLabels(Collection<com.atlassian.jira.issue.label.Label> evtLabels) {
+            return getOrCreateIssueMultiSelectNameValues(
+                    evtLabels,
+                    com.atlassian.jira.issue.label.Label::getLabel,
+                    name -> new Label(name),
+                    () -> labelsCopy == null ? board.sortedLabels.map() : labelsCopy,
+                    () -> {
+                        if (labelsCopy == null) {
+                            labelsCopy = new HashMap<String, Label>(board.sortedLabels.map());
+                        }
+                        return labelsCopy;
+                    },
+                    () -> {
+                        if (newLabels == null) {
+                            newLabels = new HashSet<Label>();
+                        }
+                        return newLabels;
+                    });
+        }
+
+        private Set<FixVersion> getOrCreateIssueFixVersions(JirbanIssueEvent.Detail evtDetail) {
+            return getOrCreateIssueFixVersions(evtDetail.getFixVersions());
+        }
+
+        private Set<FixVersion> getOrCreateIssueFixVersions(Collection<com.atlassian.jira.project.version.Version> evtFixVersions) {
+            return getOrCreateIssueMultiSelectNameValues(
+                    evtFixVersions,
+                    com.atlassian.jira.project.version.Version::getName,
+                    name -> new FixVersion(name),
+                    () -> fixVersionsCopy == null ? board.sortedFixVersions.map() : fixVersionsCopy,
+                    () -> {
+                        if (fixVersionsCopy == null) {
+                            fixVersionsCopy = new HashMap<String, FixVersion>(board.sortedFixVersions.map());
+                        }
+                        return fixVersionsCopy;
+                    },
+                    () -> {
+                        if (newFixVersions == null) {
+                            newFixVersions = new HashSet<FixVersion>();
+                        }
+                        return newFixVersions;
+                    });
+        }
+
+        private <T, R extends MultiSelectNameOnlyValue> Set<R> getOrCreateIssueMultiSelectNameValues(
+                Collection<T> jiraEventValues,
+                Function<T, String> nameExtractor,
+                Function<String, R> newValueCreator,
+                Supplier<Map<String, R>> valueMapSupplier,
+                Supplier<Map<String, R>> copyMapSupplier,
+                Supplier<Set<R>> newSetSupplier) {
+            if (jiraEventValues == null) {
                 return null;
-            } else if (evtComponents.isEmpty()) {
+            } else if (jiraEventValues.isEmpty()) {
                 return Collections.emptySet();
             } else {
-                Set<Component> components = new HashSet<>();
-                for (ProjectComponent evtComponent : evtComponents) {
-                    Map<String, Component> componentMap = componentsCopy == null ? board.sortedComponents.map() : componentsCopy;
-
-                    Component component = componentMap.get(evtComponent.getName());
-                    if (component == null) {
-                        component = new Component(evtComponent.getName());
-                        if (componentsCopy == null) {
-                            componentsCopy = new HashMap<>(board.sortedComponents.map());
-                        }
-                        componentsCopy.put(component.getName(), component);
-                        if (newComponents == null) {
-                            newComponents = new HashSet<>();
-                        }
-                        newComponents.add(component);
+                Set<R> values = new HashSet<>();
+                for (T jiraEventValue : jiraEventValues) {
+                    Map<String, R> valueMap = valueMapSupplier.get();
+                    final String name = nameExtractor.apply(jiraEventValue);
+                    R value = valueMap.get(name);
+                    if (value == null) {
+                        value = newValueCreator.apply(name);
+                        Map<String, R> copyMap = copyMapSupplier.get();
+                        copyMap.put(name, value);
+                        newSetSupplier.get().add(value);
                     }
-                    components.add(component);
+                    values.add(value);
                 }
-                return components;
+                return values;
             }
         }
 

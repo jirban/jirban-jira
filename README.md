@@ -122,7 +122,7 @@ We list all the priorities used for projects within the board. This is the order
     "Trivial"
   ],
 ```
-We list all the issue types used for projects within the board. This is the order that they will show up on in the board's control panel. If you leave out any priorities or issue types the health panel (accessible via the heart icon in the bottom right when viewing the board) will warn you of your configuration problem and list the affected issues. For components and assignees, since there can be so many of them within Jira, and they are not necessarily all known at the time we take a different approach and populate the control panel with the ones which are actually used by issues on the board. 
+We list all the issue types used for projects within the board. This is the order that they will show up on in the board's control panel. If you leave out any priorities or issue types the health panel (accessible via the heart icon in the bottom right when viewing the board) will warn you of your configuration problem and list the affected issues. For components and assignees, since there can be so many of them within Jira, and they are not necessarily all known at the time we take a different approach and populate the control panel with the ones which are actually used by issues on the board.
 ```
   "issue-types": [
     "Task",

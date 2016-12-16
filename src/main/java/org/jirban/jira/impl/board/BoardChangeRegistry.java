@@ -20,12 +20,16 @@ import static org.jirban.jira.impl.Constants.ASSIGNEES;
 import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
+import static org.jirban.jira.impl.Constants.CLEAR_FIX_VERSIONS;
+import static org.jirban.jira.impl.Constants.CLEAR_LABELS;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
 import static org.jirban.jira.impl.Constants.CUSTOM;
+import static org.jirban.jira.impl.Constants.FIX_VERSIONS;
 import static org.jirban.jira.impl.Constants.INDEX;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.LABELS;
 import static org.jirban.jira.impl.Constants.NEW;
 import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
 import static org.jirban.jira.impl.Constants.PRIORITIES;
@@ -56,6 +60,9 @@ import org.jirban.jira.impl.BoardManagerImpl;
 import org.jirban.jira.impl.Constants;
 import org.jirban.jira.impl.JirbanIssueEvent;
 import org.jirban.jira.impl.JirbanIssueEvent.Type;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Component;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.FixVersion;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Label;
 
 
 /**
@@ -179,7 +186,7 @@ public class BoardChangeRegistry {
     }
 
     //Callback for the BoardIssue to convert itself to an IssueChange
-    IssueChange createCreateIssueChange(Issue issue, Assignee assignee, String issueType, String priority, Set<Component> components) {
+    IssueChange createCreateIssueChange(Issue issue, Assignee assignee, String issueType, String priority, Set<Component> components, Set<Label> labels, Set<FixVersion> fixVersions) {
         IssueChange change = new IssueChange(issue.getProjectCode(), issue.getKey(), null);
         change.type = CREATE;
         change.state = issue.getState();
@@ -190,9 +197,15 @@ public class BoardChangeRegistry {
 
         if (components != null) {
             change.components = new HashSet<>();
-            for (Component component : components) {
-                change.components.add(component.getName());
-            }
+            components.forEach(component -> change.components.add(component.getName()));
+        }
+        if (labels != null) {
+            change.labels = new HashSet<>();
+            labels.forEach(label -> change.labels.add(label.getName()));
+        }
+        if (fixVersions != null) {
+            change.fixVersions = new HashSet<>();
+            fixVersions.forEach(fixVersion -> change.fixVersions.add(fixVersion.getName()));
         }
         return change;
     }
@@ -213,6 +226,8 @@ public class BoardChangeRegistry {
     private static class NewReferenceCollector {
         private final Map<String, Assignee> newAssignees = new HashMap<>();
         private final Map<String, Component> newComponents = new HashMap<>();
+        private final Map<String, Label> newLabels = new HashMap<>();
+        private final Map<String, FixVersion> newFixVersions = new HashMap<>();
         private final Map<String, List<CustomFieldValue>> newCustomFieldValues = new HashMap<>();
 
         void addNewAssignee(Assignee assignee) {
@@ -221,6 +236,14 @@ public class BoardChangeRegistry {
 
         void addNewComponents(Set<Component> evtNewComponents) {
             evtNewComponents.forEach(c -> newComponents.put(c.getName(), c));
+        }
+
+        void addNewLabels(Set<Label> evtNewLabels) {
+            evtNewLabels.forEach(l -> newLabels.put(l.getName(), l));
+        }
+
+        void addNewFixVersions(Set<FixVersion> evtNewFixVersions) {
+            evtNewFixVersions.forEach(f -> newFixVersions.put(f.getName(), f));
         }
 
         void addNewCustomFieldValues(Map<String, CustomFieldValue> newCustomFields) {
@@ -236,6 +259,14 @@ public class BoardChangeRegistry {
 
         Map<String, Component> getNewComponents() {
             return newComponents;
+        }
+
+        public Map<String, Label> getNewLabels() {
+            return newLabels;
+        }
+
+        public Map<String, FixVersion> getNewFixVersions() {
+            return newFixVersions;
         }
 
         Map<String, List<CustomFieldValue>> getNewCustomFieldValues() {
@@ -298,7 +329,9 @@ public class BoardChangeRegistry {
             }
 
             serializeAssignees(changes, newReferenceCollector.getNewAssignees());
-            serializeComponents(changes, newReferenceCollector.getNewComponents());
+            serializeMultiSelectNameOnlyValues(changes, COMPONENTS, newReferenceCollector.getNewComponents());
+            serializeMultiSelectNameOnlyValues(changes, LABELS, newReferenceCollector.getNewLabels());
+            serializeMultiSelectNameOnlyValues(changes, FIX_VERSIONS, newReferenceCollector.getNewFixVersions());
             serializeCustomFieldValues(changes, newReferenceCollector.getNewCustomFieldValues());
             serializeBlacklist(changes);
 
@@ -333,14 +366,12 @@ public class BoardChangeRegistry {
             serializeIssues(parent, Constants.DELETE, deletedIssues);
         }
 
-        private void serializeIssues(ModelNode parent, String key, Set<IssueChange> issues) {
-            if (issues.size() == 0) {
+        private void serializeIssues(ModelNode parent, String key, Set<IssueChange> issueChanges) {
+            if (issueChanges.size() == 0) {
                 return;
             }
             ModelNode issuesNode = parent.get(key);
-            for (IssueChange change : issues) {
-                issuesNode.add(change.serialize());
-            }
+            issueChanges.forEach(change -> issuesNode.add(change.serialize()));
         }
 
         private void serializeAssignees(ModelNode parent, Map<String, Assignee> newAssignees) {
@@ -350,9 +381,9 @@ public class BoardChangeRegistry {
             }
         }
 
-        private void serializeComponents(ModelNode parent, Map<String, Component> newComponents) {
+        private void serializeMultiSelectNameOnlyValues(ModelNode parent, String name, Map<String, ? extends MultiSelectNameOnlyValue> newComponents) {
             if (newComponents.size() > 0) {
-                ModelNode components = parent.get(COMPONENTS);
+                ModelNode components = parent.get(name);
                 newComponents.values().forEach(component -> component.serialize(components));
             }
         }
@@ -430,6 +461,10 @@ public class BoardChangeRegistry {
         private boolean unassigned;
         private Set<String> components;
         private boolean clearedComponents;
+        private Set<String> labels;
+        private boolean clearedLabels;
+        private Set<String> fixVersions;
+        private boolean clearedFixVersions;
         private String state;
         private Boolean backlogStartState;
         private Boolean backlogEndState;
@@ -468,7 +503,7 @@ public class BoardChangeRegistry {
                     if (!reranked) {
                         reranked = boardChange.getEvent().getDetails().isReranked();
                     }
-                    mergeFields(boardChange, newReferenceCollector, boardChange.getNewAssignee(), boardChange.getNewComponents());
+                    mergeFields(boardChange, newReferenceCollector);
                     if (boardChange.getBacklogState() != null) {
                         backlogEndState = boardChange.getBacklogState();
                     }
@@ -481,7 +516,7 @@ public class BoardChangeRegistry {
             }
         }
 
-        void mergeFields(BoardChange boardChange, NewReferenceCollector newReferenceCollector, Assignee evtNewAssignee, Set<Component> evtNewComponents) {
+        void mergeFields(BoardChange boardChange, NewReferenceCollector newReferenceCollector) {
             JirbanIssueEvent event = boardChange.getEvent();
             final JirbanIssueEvent.Detail detail = event.getDetails();
             if (detail.getIssueType() != null) {
@@ -500,12 +535,12 @@ public class BoardChangeRegistry {
                 } else {
                     assignee = detail.getAssignee().getName();
                     unassigned = false;
-                    if (evtNewAssignee != null) {
+                    if (boardChange.getNewAssignee() != null) {
                         //We always add the new assignees, even if a later change might remove the need, since the board
                         //only tracks when an assignee is first referenced before creating the BoardChange entries.
                         //Later changes to the board might use this assignee, in which case this information will be needed
                         //on the client
-                        newReferenceCollector.addNewAssignee(evtNewAssignee);
+                        newReferenceCollector.addNewAssignee(boardChange.getNewAssignee());
                     }
                 }
             }
@@ -517,12 +552,46 @@ public class BoardChangeRegistry {
                     components = new HashSet<>(detail.getComponents().size());
                     detail.getComponents().forEach(comp -> components.add(comp.getName()));
                     clearedComponents = false;
-                    if (evtNewComponents != null) {
+                    if (boardChange.getNewComponents() != null) {
                         //We always add the new components, even if a later change might remove the need, since the board
                         //only tracks when an component is first referenced before creating the BoardChange entries
                         //Later changes to the board might use this component, in which case this information will be needed
                         //on the client
-                        newReferenceCollector.addNewComponents(evtNewComponents);
+                        newReferenceCollector.addNewComponents(boardChange.getNewComponents());
+                    }
+                }
+            }
+            if (detail.getLabels() != null) {
+                if (detail.getLabels().isEmpty()) {
+                    labels = null;
+                    clearedLabels = true;
+                } else {
+                    labels = new HashSet<>(detail.getLabels().size());
+                    detail.getLabels().forEach(lbl -> labels.add(lbl.getLabel()));
+                    clearedLabels = false;
+                    if (boardChange.getNewLabels() != null) {
+                        //We always add the new labels, even if a later change might remove the need, since the board
+                        //only tracks when a label is first referenced before creating the BoardChange entries
+                        //Later changes to the board might use this label, in which case this information will be needed
+                        //on the client
+                        newReferenceCollector.addNewLabels(boardChange.getNewLabels());
+                    }
+                }
+            }
+            if (detail.getFixVersions() != null) {
+                if (detail.getFixVersions().isEmpty()) {
+                    fixVersions = null;
+                    clearedFixVersions = true;
+                } else {
+                    fixVersions = new HashSet<>(detail.getFixVersions().size());
+                    detail.getFixVersions().forEach(fv-> fixVersions.add(fv.getName()));
+                    clearedFixVersions = false;
+                    if (boardChange.getNewFixVersions() != null) {
+                        //We always add the new labels, even if a later change might remove the need, since the board
+                        //only tracks when a label is first referenced before creating the BoardChange entries
+                        //Later changes to the board might use this label, in which case this information will be needed
+                        //on the client
+                        newReferenceCollector.addNewFixVersions(boardChange.getNewFixVersions());
                     }
                 }
             }
@@ -543,16 +612,12 @@ public class BoardChangeRegistry {
                     //on the client
                     newReferenceCollector.addNewCustomFieldValues(newCustomFieldValues);
                 }
-
-                for (Map.Entry<String, CustomFieldValue> entry : customFieldValues.entrySet()) {
-                    this.customFieldValues.put(entry.getKey(), entry.getValue());
-                }
+                customFieldValues.entrySet().forEach(entry -> this.customFieldValues.put(entry.getKey(), entry.getValue()));
             }
             if (boardChange.getParallelTaskValues() != null) {
                 if (this.parallelTaskValues == null) {
                     this.parallelTaskValues = new HashMap<>();
                 }
-
                 parallelTaskValues.putAll(boardChange.getParallelTaskValues());
             }
         }
@@ -594,6 +659,12 @@ public class BoardChangeRegistry {
                     if (components != null) {
                         components.forEach(component -> output.get(COMPONENTS).add(component));
                     }
+                    if (labels != null) {
+                        labels.forEach(label -> output.get(LABELS).add(label));
+                    }
+                    if (fixVersions != null) {
+                        fixVersions.forEach(fixVersion -> output.get(FIX_VERSIONS).add(fixVersion));
+                    }
                     if (customFieldValues != null) {
                         customFieldValues.forEach((key,value)-> output.get(CUSTOM, key).set(value.getKey()));
                     }
@@ -621,6 +692,12 @@ public class BoardChangeRegistry {
                     if (components != null) {
                         components.forEach(component -> output.get(COMPONENTS).add(component));
                     }
+                    if (labels != null) {
+                        labels.forEach(label -> output.get(LABELS).add(label));
+                    }
+                    if (fixVersions != null) {
+                        fixVersions.forEach(fixVersion -> output.get(FIX_VERSIONS).add(fixVersion));
+                    }
                     if (customFieldValues != null) {
                         customFieldValues.forEach((key, value)-> {
                             ModelNode fieldKey = value == null ? new ModelNode() : new ModelNode(value.getKey());
@@ -638,6 +715,12 @@ public class BoardChangeRegistry {
                     }
                     if (clearedComponents) {
                         output.get(CLEAR_COMPONENTS).set(true);
+                    }
+                    if (clearedLabels) {
+                        output.get(CLEAR_LABELS).set(true);
+                    }
+                    if (clearedFixVersions) {
+                        output.get(CLEAR_FIX_VERSIONS).set(true);
                     }
                     break;
                 case DELETE:
