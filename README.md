@@ -35,7 +35,7 @@ The UI can be developed separately from the plugin itself, since it is a fat cli
 * just the UI steps (if working on purely display logic)
 * or both the UI steps and the SDK steps if you are working on something involving the server. The SDK steps will package the jar containing the plugin.
 
-When JIRA is started for the first time (e.g. running `atlas-run`) you should enable the Agile feature by acquiring an evaluation license (it is valid for at least a month, and you can extend it), or buying the license (it is $10). You will need account on https://my.atlassian.com. To enable the Agile feature, go to Jira Administration (the cog icon in the top right corner), and select Applications. Then install the Jira Software Application.
+When JIRA is started for the first time (e.g. running `atlas-run`) you should enable the Agile feature by acquiring an evaluation license (it is valid for at least a month, and you can extend it), or buying the license (it is $10). You will need account on https://my.atlassian.com. To enable the Agile feature, go to Jira Administration (the cog icon in the top right corner), and select Applications. Then install the Jira Software Application. After this step you will see Software Project Type in addition to default Business Project Type when creating new project or listing projects via View All Projects item in Projects menu.
 
 ### SDK
 These commands happen from the root folder of the project (i.e where `pom.xml` is located). I normally use one window for running the server instance and another to package the project. Stopping and starting the server takes a lot of time.
@@ -58,6 +58,7 @@ Note: instead of `node/yarn/dist/bin/yarn` you can run directly `yarn` or legacy
 
 ## Setting up projects in Jira
 To be able to debug the Jirban plugin, you need to set up your SDK's Jira instance to contain some projects. I originally wanted to share a backup of my local Jira system, but that includes licence keys and things like that which are not a good idea to share. So you will need to do this manually. Use the exact project codes shown below, since we will be referencing those from the Jirban 
+When JIRA is started for the first time you should read [Building/running/debugging the project](#buildingrunningdebugging-the-project) section first.
 
 1. From Jira's 'Projects' menu, select 'Create Project'.
 2. Select the 'Kanban software development' project type
