@@ -46,11 +46,18 @@ export class RestUrlUtil {
             //Return the locally running Jira instance since this is still where the icons etc are loaded from
             return "http://localhost:2990/jira";
         }
-        console.error("Could not determine jira url " + location.href);
+        if (!RestUrlUtil.isTestRunner(location)) {
+            console.error("Could not determine jira url " + location.href);
+        }
         return "";
     }
 
     private static isLocalDebug(location:Location) : boolean {
         return location.hostname === "localhost" && location.port === "3000";
+    }
+
+    private static isTestRunner(location:Location) : boolean {
+        //In our current test setup the url http://localhost:9876/context.html is used by the runner
+        return location.hostname === "localhost" && location.port === "9876" && location.href.endsWith("/context.html");
     }
 }
