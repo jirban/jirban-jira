@@ -5,36 +5,17 @@ import {IMap} from "../../common/map";
 import {SwimlaneData} from "./issueTable";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
 import {Indexed} from "../../common/indexed";
+import {JiraMultiSelectFieldValue, JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 
 export interface SwimlaneIndexer {
     swimlaneTable : SwimlaneData[];
     swimlaneIndex(issue:IssueData):number[];
     filter(swimlaneData:SwimlaneData):boolean;
-    matchIssues(targetIssue:IssueData, issue:IssueData):boolean;
-}
-
-export class SwimlaneMatcher {
-    constructor(
-        private _targetIssue:IssueData,
-        private _indexer:SwimlaneIndexer){
-    }
-
-    matchesSwimlane(issue:IssueData):boolean{
-        return this._indexer.matchIssues(this._targetIssue, issue);
-    }
 }
 
 export class SwimlaneIndexerFactory {
     createSwimlaneIndexer(swimlane:string, filters:BoardFilters, boardData:BoardData):SwimlaneIndexer {
         return this._createIndexer(swimlane, filters, boardData, true);
-    }
-
-    createSwimlaneMatcher(swimlane:string, targetIssue:IssueData):SwimlaneMatcher {
-        let indexer:SwimlaneIndexer = this._createIndexer(swimlane, null, null, false);
-        if (indexer == null) {
-            return null;
-        }
-        return new SwimlaneMatcher(targetIssue, indexer);
     }
 
     private _createIndexer(swimlane:string, filters:BoardFilters, boardData:BoardData, initTable:boolean):SwimlaneIndexer {
@@ -48,6 +29,10 @@ export class SwimlaneIndexerFactory {
             return new AssigneeSwimlaneIndexer(filters, boardData, initTable);
         } else if (swimlane === "component") {
             return new ComponentSwimlaneIndexer(filters, boardData, initTable);
+        } else if (swimlane == "label") {
+            return new LabelSwimlaneIndexer(filters, boardData, initTable);
+        } else if (swimlane == "fix-version") {
+            return new FixVersionSwimlaneIndexer(filters, boardData, initTable);
         } else if (swimlane) {
             if (boardData && boardData.customFields) {
                 let cfvs:CustomFieldValues = boardData.customFields.forKey(swimlane);
@@ -58,7 +43,6 @@ export class SwimlaneIndexerFactory {
                 console.log("Unknown swimlane '" + swimlane + "'. boardData:" + boardData);
             }
         }
-
         return null;
     }
 }
@@ -98,10 +82,6 @@ class ProjectSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     filter(swimlaneData:SwimlaneData):boolean {
         return this._filters.filterProject(swimlaneData.name);
     }
-
-    matchIssues(targetIssue:IssueData, issue:IssueData) : boolean {
-        return targetIssue.projectCode === issue.projectCode;
-    }
 }
 
 class PrioritySwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
@@ -127,10 +107,6 @@ class PrioritySwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     filter(swimlaneData:SwimlaneData):boolean {
         return this._filters.filterPriority(swimlaneData.name);
     }
-
-    matchIssues(targetIssue:IssueData, issue:IssueData) : boolean {
-        return targetIssue.priority.name === issue.priority.name;
-    }
 }
 
 class IssueTypeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
@@ -153,10 +129,6 @@ class IssueTypeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
 
     filter(swimlaneData:SwimlaneData):boolean {
         return this._filters.filterIssueType(swimlaneData.name);
-    }
-
-    matchIssues(targetIssue:IssueData, issue:IssueData) : boolean {
-        return targetIssue.type.name === issue.type.name;
     }
 }
 
@@ -190,26 +162,17 @@ class AssigneeSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
         }
         return this._filters.filterAssignee(assigneeKey);
     }
-
-    matchIssues(targetIssue:IssueData, issue:IssueData):boolean {
-        if (!targetIssue.assignee  && !issue.assignee) {
-            return true;
-        } else if (targetIssue.assignee && issue.assignee) {
-            return targetIssue.assignee.key === issue.assignee.key;
-        }
-        return false;
-    }
 }
 
 
-class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
+abstract class MultiSelectNameOnlyValueIndexer<T extends JiraMultiSelectFieldValue> extends BaseIndexer implements SwimlaneIndexer {
     private _swimlaneNames:string[] = [];
 
     constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
         super(filters, boardData);
         if (initTable) {
-            for (let component of this._boardData.components.array) {
-                this._swimlaneNames.push(component.name);
+            for (let value of this.getBoardValues().array) {
+                this._swimlaneNames.push(value.name);
             }
             //Add an additional entry for the no component case
             this._swimlaneNames.push("None");
@@ -223,32 +186,84 @@ class ComponentSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer {
     }
 
     swimlaneIndex(issue:IssueData):number[] {
-        if (!issue.components) {
+        let values:Indexed<T> = this.getIssueValues(issue);
+        if (!values) {
             return [this._swimlaneNames.length - 1];
         }
 
-        let lanes:number[] = new Array<number>(issue.components.array.length);
+        let lanes:number[] = new Array<number>(values.array.length);
         for (let i:number = 0 ; i < lanes.length ; i++) {
-            lanes[i] = this._boardData.components.indices[issue.components.array[i].name];
+            lanes[i] = this.getBoardValues().indices[values.array[i].name];
         }
         return lanes;
     }
 
     filter(swimlaneData:SwimlaneData):boolean {
-        let componentName:string = null;
+        let valueName:string = null;
         if (swimlaneData.index < this._swimlaneNames.length - 1) {
-            componentName = this._boardData.components.forIndex(swimlaneData.index).name;
+            valueName = this.getBoardValues().forIndex(swimlaneData.index).name;
         }
-        return this._filters.filterComponent(componentName);
+        return this.doFilter(valueName);
     }
 
-    matchIssues(targetIssue:IssueData, issue:IssueData):boolean {
-        if (!targetIssue.assignee  && !issue.assignee) {
-            return true;
-        } else if (targetIssue.assignee && issue.assignee) {
-            return targetIssue.assignee.key === issue.assignee.key;
-        }
-        return false;
+    abstract getBoardValues():Indexed<T>;
+
+    abstract getIssueValues(issue:IssueData):Indexed<T>;
+
+    abstract doFilter(valueName:string):boolean;
+}
+
+class ComponentSwimlaneIndexer extends MultiSelectNameOnlyValueIndexer<JiraComponent> {
+    constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
+        super(filters, boardData, initTable);
+    }
+
+    getBoardValues(): Indexed<JiraComponent> {
+        return this._boardData.components;
+    }
+
+    getIssueValues(issue: IssueData): Indexed<JiraComponent> {
+        return issue.components;
+    }
+
+    doFilter(valueName: string):boolean {
+        return this._filters.filterComponent(valueName);
+    }
+}
+
+class LabelSwimlaneIndexer extends MultiSelectNameOnlyValueIndexer<JiraLabel> {
+    constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
+        super(filters, boardData, initTable);
+    }
+
+    getBoardValues(): Indexed<JiraLabel> {
+        return this._boardData.labels;
+    }
+
+    getIssueValues(issue: IssueData): Indexed<JiraLabel> {
+        return issue.labels;
+    }
+
+    doFilter(valueName: string):boolean {
+        return this._filters.filterLabel(valueName);
+    }
+}
+
+class FixVersionSwimlaneIndexer extends MultiSelectNameOnlyValueIndexer<JiraFixVersion> {
+    constructor(filters:BoardFilters, boardData:BoardData, initTable:boolean) {
+        super(filters, boardData, initTable);
+    }
+
+    getBoardValues(): Indexed<JiraFixVersion> {
+        return this._boardData.fixVersions;
+    }
+
+    getIssueValues(issue: IssueData): Indexed<JiraFixVersion> {
+        return issue.fixVersions;
+    }
+
+    doFilter(valueName: string):boolean {
+        return this._filters.filterFixVersion(valueName);
     }
 }
 
@@ -294,18 +309,6 @@ class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer 
             key = NONE;
         }
         return this._filters.filterCustomField(this._customFieldName, key);
-    }
-
-    matchIssues(targetIssue:IssueData, issue:IssueData):boolean {
-        let tgtValue:CustomFieldValue = targetIssue.getCustomFieldValue(this._customFieldName);
-        let value:CustomFieldValue = issue.getCustomFieldValue(this._customFieldName);
-
-        if (!tgtValue && !value) {
-            return true;
-        } else if (tgtValue && value) {
-            return tgtValue.key === value.key;
-        }
-        return false;
     }
 }
 

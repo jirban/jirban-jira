@@ -31,13 +31,15 @@
       "name" : "Emanuel Muckenhuber"
     },
     {
-      "key" : "kabirkhan",
+      "key" : "kabir.khan",
       "email" : "kabir.khan@jboss.com",
       "avatar" : "https://static.jboss.org/developer/gravatar/00aa85cb5ea8fd5882bab9765f40655e?d=mm&s=32",
       "name" : "Kabir Khan"
     }
   ],
   "components": ["One", "Two", "Three"],
+  "labels": ["Label One", "label-two", "Label-three"],
+  "fix-versions" : ["1.0.0.Alpha", "1.0.0.Beta", "1.0.0.GA"],
   "priorities" : [
     {
       "name" : "Blocker",
@@ -225,6 +227,8 @@
       "priority" : 1,
       "type" : 1,
       "components": [0, 1],
+      "fix-versions" : [0, 1],
+      "labels" : [0, 1],
       "linked-issues" : [
         {
           "key" : "EAPUS-2",
@@ -249,6 +253,7 @@
       "priority" : 1,
       "type" : 1,
       "components": [0],
+      "labels" : [2],
       "linked-issues" : [{
         "key" : "EAPUS-3",
         "state" : 0,
@@ -263,7 +268,8 @@
       "summary" : "Dependency injection is broken in jsf",
       "priority" : 0,
       "type" : 2,
-      "components": [2]
+      "components": [2],
+      "labels" : [0]
     },
     "EAPDS-4" : {
       "key" : "EAPDS-4",
@@ -279,21 +285,25 @@
       "summary" : "Improve model descriptions",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "fix-versions" : [2],
+      "labels" : [0, 1, 2]
     },
     "EAPDS-27" : {
       "key" : "EAPDS-27",
       "state" : 0,
       "summary" : "Bring more refinement to the server management console",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "labels" : [0, 1]
     },
     "EAPDS-24" : {
       "key" : "EAPDS-24",
       "state" : 0,
       "summary" : "Transformer testing improvements",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "labels" : [0]
     },
     "EAPDS-25" : {
       "key" : "EAPDS-25",
@@ -307,21 +317,25 @@
       "state" : 0,
       "summary" : "Put a builder everywhere it makes sense",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "fix-versions" : [2],
+      "labels" : [1]
     },
     "EAPDS-23" : {
       "key" : "EAPDS-23",
       "state" : 1,
       "summary" : "Reinstate mixed domain testing for all versions",
       "priority" : 2,
-      "type" : 0
+      "type" : 0,
+      "fix-versions" : [1]
     },
     "EAPDS-20" : {
       "key" : "EAPDS-20",
       "state" : 0,
       "summary" : "Be able to deploy javascript on the server side",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "labels" : [2]
     },
     "EAPDS-21" : {
       "key" : "EAPDS-21",
@@ -343,7 +357,8 @@
       "state" : 0,
       "summary" : "Reading metrics with dots in their names blows up",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [2]
     },
     "EAPBGS-42" : {
       "key" : "EAPBGS-42",
@@ -364,7 +379,8 @@
       "state" : 0,
       "summary" : "Upgrade to WF core 2.0.0.Alpha4",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [1]
     },
     "EAPBGS-40" : {
       "key" : "EAPBGS-40",
@@ -372,12 +388,14 @@
       "summary" : "Use archive.apache.org to download maven 3.2.3",
       "priority" : 1,
       "type" : 2,
+      "labels" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-17",
         "state" : 3,
         "summary" : "Use archive.apache.org to download maven 3.2.3",
         "priority" : 1,
-        "type" : 2
+        "type" : 2,
+        "fix-versions" : [0, 1]
       }]
     },
     "EAPDS-28" : {
@@ -385,14 +403,16 @@
       "state" : 0,
       "summary" : "Inject code into a method of an XTS (Web Services Transactions) class",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "labels" : [0]
     },
     "EAPDS-29" : {
       "key" : "EAPDS-29",
       "state" : 0,
       "summary" : "Deploy your Helper classes in a module",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "labels" : [0, 1]
     },
     "EAPDS-35" : {
       "key" : "EAPDS-35",
@@ -401,6 +421,7 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 0,
+      "labels" : [0, 1],
       "linked-issues" : [{
         "key" : "EAPUS-36",
         "state" : 0,
@@ -415,7 +436,9 @@
       "summary" : "Byteman to be integrated into a modular JDK runtime",
       "assignee" : 1,
       "priority" : 0,
-      "type" : 0
+      "type" : 0,
+      "labels" : [0, 1, 2],
+      "fix-versions" : [1]
     },
     "EAPDS-34" : {
       "key" : "EAPDS-34",
@@ -423,21 +446,27 @@
       "summary" : "This release is a trial release for the new module import capability ",
       "assignee" : 1,
       "priority" : 3,
-      "type" : 0
+      "type" : 0,
+      "labels" : [0, 1],
+      "fix-versions" : [1]
     },
     "EAPDS-31" : {
       "key" : "EAPDS-31",
       "state" : 1,
       "summary" : "Configure to employ a module system-specific plugin ",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "labels" : [1, 2],
+      "fix-versions" : [1]
     },
     "EAPDS-32" : {
       "key" : "EAPDS-32",
       "state" : 2,
       "summary" : "Include generic support for module imports and a plugin",
       "priority" : 0,
-      "type" : 0
+      "type" : 0,
+      "labels" : [2],
+      "fix-versions" : [2]
     },
     "EAPBGS-38" : {
       "key" : "EAPBGS-38",
@@ -445,6 +474,8 @@
       "summary" : "Remove temporary code to make compatible with WF core",
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [1],
+      "labels" : [0, 1],
       "linked-issues" : [{
         "key" : "EAPUS-29",
         "state" : 3,
@@ -459,6 +490,8 @@
       "summary" : "Remove temporary code following core release",
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [2],
+      "labels" : [0, 1],
       "linked-issues" : [{
         "key" : "EAPUS-30",
         "state" : 0,
@@ -472,11 +505,13 @@
       "state" : 1,
       "summary" : "Resolve  IMPORT statements embedded in individual rules",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "fix-versions" : [1]
     },
     "EAPBGS-36" : {
       "key" : "EAPBGS-36",
       "state" : 1,
+      "labels" : [1],
       "summary" : "Remove deprecated methods for ordered-child-resources",
       "priority" : 1,
       "type" : 2
@@ -487,6 +522,7 @@
       "summary" : "Recognise realm callback on digest server, and make authorize callback come last",
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-31",
         "state" : 3,
@@ -501,14 +537,18 @@
       "summary" : "Improve the subsystem test schema test coverage",
       "assignee" : 1,
       "priority" : 2,
-      "type" : 2
+      "type" : 2,
+      "labels" : [0],
+      "fix-versions" : [1]
     },
     "EAPBGS-34" : {
       "key" : "EAPBGS-34",
       "state" : 9,
       "summary" : "Reading metrics with dots in their names blows up",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [1],
+      "fix-versions" : [1]
     },
     "EAPDS-6" : {
       "key" : "EAPDS-6",
@@ -516,7 +556,8 @@
       "summary" : "Delegating SaslServerFactory supporting properties",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [1]
     },
     "EAPBGS-33" : {
       "key" : "EAPBGS-33",
@@ -524,6 +565,8 @@
       "summary" : "Proper descriptions for the profile clone op",
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-21",
         "state" : 3,
@@ -539,6 +582,8 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [1],
       "linked-issues" : [
         {
           "key" : "EAPUS-4",
@@ -561,21 +606,25 @@
       "state" : 0,
       "summary" : "Publish diffs online of master's model with the legacy versions",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [1]
     },
     "EAPDS-8" : {
       "key" : "EAPDS-8",
       "state" : 14,
       "summary" : "Improve configuration file history",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [1]
     },
     "EAPBGS-31" : {
       "key" : "EAPBGS-31",
       "state" : 0,
       "summary" : "Make metrics nillable",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [0],
+      "fix-versions" : [1]
     },
     "EAPDS-9" : {
       "key" : "EAPDS-9",
@@ -583,7 +632,9 @@
       "summary" : "Incoming mail interface for domain management",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [1],
+      "fix-versions" : [1]
     },
     "EAPBGS-30" : {
       "key" : "EAPBGS-30",
@@ -591,6 +642,8 @@
       "summary" : "Make it possible to propagate attachments from the operation context to the transformer context",
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-26",
         "state" : 3,
@@ -605,6 +658,8 @@
       "summary" : "Mixed domain tests don't work on ipv6",
       "priority" : 1,
       "type" : 2,
+      "labels" : [1],
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-32",
         "state" : 3,
@@ -618,7 +673,8 @@
       "state" : 0,
       "summary" : "Make it possible to add a child resource at a certain position",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [1]
     },
     "EAPBGS-27" : {
       "key" : "EAPBGS-27",
@@ -634,6 +690,8 @@
       "summary" : "Servers don't connect to a reloaded HC",
       "priority" : 1,
       "type" : 2,
+      "labels" : [1],
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-7",
         "state" : 3,
@@ -648,6 +706,8 @@
       "summary" : "Make jgroups protocols support indexed adds",
       "priority" : 1,
       "type" : 2,
+      "labels" : [0],
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-13",
         "state" : 3,
@@ -662,6 +722,8 @@
       "summary" : "List-xxx and map-xxx do not work in a composite",
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-24",
         "state" : 3,
@@ -677,6 +739,7 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-22",
         "state" : 3,
@@ -705,7 +768,9 @@
       "summary" : "Intermittent failures in some test or another",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [0, 1],
+      "fix-versions" : [1]
     },
     "EAPBGS-22" : {
       "key" : "EAPBGS-22",
@@ -714,6 +779,8 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "labels" : [1, 2],
+      "fix-versions" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-27",
         "state" : 3,
@@ -727,7 +794,9 @@
       "state" : 0,
       "summary" : "Permission data is not persisted properly",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [1],
+      "fix-versions" : [2]
     },
     "EAPBGS-21" : {
       "key" : "EAPBGS-21",
@@ -735,6 +804,7 @@
       "summary" : "Fix clustering transformers and reenable in mixed-domain tests",
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-18",
         "state" : 3,
@@ -749,6 +819,7 @@
       "summary" : "Deadlock trying to update an aliased entry",
       "priority" : 1,
       "type" : 2,
+      "labels" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-34",
         "state" : 3,
@@ -776,7 +847,9 @@
       "state" : 12,
       "summary" : "Something similar to Last Resource Gambit",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [0],
+      "fix-versions" : [1]
     },
     "EAPDS-16" : {
       "key" : "EAPDS-16",
@@ -792,14 +865,16 @@
       "summary" : "Special consideration to system administrators",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [0]
     },
     "EAPDS-14" : {
       "key" : "EAPDS-14",
       "state" : 0,
       "summary" : "Avoid errors on server shutdown",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [1]
     },
     "EAPDS-11" : {
       "key" : "EAPDS-11",
@@ -807,7 +882,8 @@
       "summary" : "Error message rather than failure when entering wrong parameters to the :fail operation",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [2]
     },
     "EAPBGS-19" : {
       "key" : "EAPBGS-19",
@@ -815,6 +891,7 @@
       "summary" : "Delegating SaslServerFactory supporting properties",
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
       "linked-issues" : [{
         "key" : "EAPUS-35",
         "state" : 3,
@@ -828,7 +905,8 @@
       "state" : 18,
       "summary" : "Transformers broken for the example subsystem",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [1, 2]
     },
     "EAPBGS-18" : {
       "key" : "EAPBGS-18",
@@ -836,6 +914,8 @@
       "summary" : "Be able to configure the callback handlers used for Sasl Entity",
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-9",
         "state" : 3,
@@ -849,14 +929,16 @@
       "state" : 2,
       "summary" : "CompositeTransformer does not transform addresses",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "fix-versions" : [1]
     },
     "EAPDS-10" : {
       "key" : "EAPDS-10",
       "state" : 16,
       "summary" : "When loading a RealmIdentity with no attributes, make sure we get an empty modifiable AttributesImpl",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [0]
     },
     "EAPBGS-16" : {
       "key" : "EAPBGS-16",
@@ -864,6 +946,7 @@
       "summary" : "ChannelBindingSaslClient and -ServerFactory should not pass on ChannelBindingCallback",
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [2],
       "linked-issues" : [{
         "key" : "EAPUS-15",
         "state" : 3,
@@ -879,6 +962,8 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "labels" : [0],
+      "fix-versions" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-14",
         "state" : 3,
@@ -894,6 +979,7 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-16",
         "state" : 3,
@@ -909,6 +995,7 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "fix-versions" : [1],
       "linked-issues" : [{
         "key" : "EAPUS-19",
         "state" : 3,
@@ -924,6 +1011,7 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "labels" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-23",
         "state" : 3,
@@ -939,6 +1027,8 @@
       "assignee" : 1,
       "priority" : 1,
       "type" : 2,
+      "labels" : [0],
+      "fix-versions" : [1, 2],
       "linked-issues" : [{
         "key" : "EAPUS-25",
         "state" : 3,
@@ -953,6 +1043,8 @@
       "summary" : "CVE Something top secret",
       "priority" : 1,
       "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [0],
       "linked-issues" : [{
         "key" : "EAPUS-28",
         "state" : 3,
@@ -966,7 +1058,9 @@
       "state" : 1,
       "summary" : "Stacktrace logged when not finding an EJB is way too big",
       "priority" : 0,
-      "type" : 2
+      "type" : 2,
+      "labels" : [1],
+      "fix-versions" : [0]
     },
     "EAPBGS-1" : {
       "key" : "EAPBGS-1",
@@ -981,21 +1075,25 @@
       "summary" : "Migrate to use builders rather than so many overloaded constructors",
       "assignee" : 1,
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "fix-versions" : [1, 2]
     },
     "EAPDS-17" : {
       "key" : "EAPDS-17",
       "state" : 9,
       "summary" : "Transactions should not be rolled back when there is no error",
       "priority" : 1,
-      "type" : 2
+      "type" : 2,
+      "labels" : [2],
+      "fix-versions" : [0]
     },
     "EAPDS-18" : {
       "key" : "EAPDS-18",
       "state" : 10,
       "summary" : "It should be possible to enter an unsafe password",
       "priority" : 1,
-      "type" : 0
+      "type" : 0,
+      "fix-versions" : [1]
     }
   },
   "blacklist" : {

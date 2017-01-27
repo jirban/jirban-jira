@@ -1,6 +1,11 @@
 import {Component, EventEmitter} from "@angular/core";
 import {Assignee} from "../../../data/board/assignee";
-import {JiraComponent} from "../../../data/board/component";
+import {
+    JiraComponent,
+    JiraFixVersion,
+    JiraLabel,
+    JiraMultiSelectFieldValue
+} from "../../../data/board/multiSelectNameOnlyValue";
 import {BoardData} from "../../../data/board/boardData";
 import {NONE, BoardFilters} from "../../../data/board/boardFilters";
 import {IssueType} from "../../../data/board/issueType";
@@ -26,6 +31,8 @@ export class ControlPanelComponent {
     private _controlForm:FormGroup;
     private _assigneeFilterForm:FormGroup;
     private _componentFilterForm:FormGroup;
+    private _labelFilterForm:FormGroup;
+    private _fixVersionFilterForm:FormGroup;
 
     private closeControlPanel:EventEmitter<any> = new EventEmitter();
     private filtersUpdated:EventEmitter<any> = new EventEmitter<any>();
@@ -77,18 +84,33 @@ export class ControlPanelComponent {
         }
 
         let assigneeFilterForm:FormGroup = new FormGroup({});
-        //The unassigned assignee and the ones configured in the project
+        //The unassigned assignee and the ones brought in by the issues
         assigneeFilterForm.addControl(NONE, new FormControl(filters.initialAssigneeValueForForm(NONE)));
         for (let assignee of this.assignees) {
             assigneeFilterForm.addControl(assignee.key, new FormControl(filters.initialAssigneeValueForForm(assignee.key)));
         }
 
         let componentFilterForm:FormGroup = new FormGroup({});
-        //The unassigned assignee and the ones configured in the project
+        //The no components and the ones brought in by the issues
         componentFilterForm.addControl(NONE, new FormControl(filters.initialComponentValueForForm(NONE)));
         for (let component of this.components) {
             componentFilterForm.addControl(component.name, new FormControl(filters.initialComponentValueForForm(component.name)));
         }
+
+        let labelFilterForm:FormGroup = new FormGroup({});
+        //The no components and the ones brought in by the issues
+        labelFilterForm.addControl(NONE, new FormControl(filters.initialLabelValueForForm(NONE)));
+        for (let component of this.labels) {
+            labelFilterForm.addControl(component.name, new FormControl(filters.initialLabelValueForForm(component.name)));
+        }
+
+        let fixVersionFilterForm:FormGroup = new FormGroup({});
+        //The no components and the ones brought in by the issues
+        fixVersionFilterForm.addControl(NONE, new FormControl(filters.initialFixVersionValueForForm(NONE)));
+        for (let component of this.fixVersions) {
+            fixVersionFilterForm.addControl(component.name, new FormControl(filters.initialFixVersionValueForForm(component.name)));
+        }
+
 
         //Add to the main form
         form.addControl("project", projectFilterForm);
@@ -96,6 +118,8 @@ export class ControlPanelComponent {
         form.addControl("issue-type", issueTypeFilterForm);
         form.addControl("assignee", assigneeFilterForm);
         form.addControl("component", componentFilterForm);
+        form.addControl("label", labelFilterForm);
+        form.addControl("fix-version", fixVersionFilterForm);
 
         //Add the custom fields form(s) to the main form
         if (this.customFields.length > 0) {
@@ -148,6 +172,8 @@ export class ControlPanelComponent {
                     this.getValueIfDirty(value, "issue-type"),
                     this.getValueIfDirty(value, "assignee"),
                     this.getValueIfDirty(value, "component"),
+                    this.getValueIfDirty(value, "label"),
+                    this.getValueIfDirty(value, "fix-version"),
                     this.getMapValueIfDirty(value, "custom-fields", this.customFields, (cfv:CustomFieldValues)=>{return cfv.name}),
                     this.getMapValueIfDirty(value, "parallel-tasks", this.parallelTasks, (pt:ParallelTask)=>{return pt.code}));
 
@@ -159,6 +185,8 @@ export class ControlPanelComponent {
 
         this._assigneeFilterForm = assigneeFilterForm;
         this._componentFilterForm = componentFilterForm;
+        this._labelFilterForm = labelFilterForm;
+        this._fixVersionFilterForm = fixVersionFilterForm;
         this._controlForm = form;
         this.updateTooltips();
 
@@ -185,22 +213,6 @@ export class ControlPanelComponent {
         return null;
     }
 
-    private addControlAndRecordInitialValue(form:FormGroup, initialStateRecorder:any, groupName:string, name:string, value:any) {
-        form.addControl(name, new FormControl(value));
-
-        let recorder:any = initialStateRecorder;
-        if (groupName) {
-            let groupRecorder = recorder[groupName];
-            if (!groupRecorder) {
-                recorder[groupName] = {};
-                groupRecorder = recorder[groupName];
-            }
-            recorder = groupRecorder;
-        }
-        recorder[name] = value;
-    }
-
-
     private clearFilters(event:MouseEvent, name:string) {
         event.preventDefault();
         let filterAction:FilterAction = new ClearFilterActon();
@@ -209,6 +221,8 @@ export class ControlPanelComponent {
         this.clearFilter(event, 'priority');
         this.clearFilter(event, 'assignee');
         this.clearFilter(event, 'component');
+        this.clearFilter(event, 'label');
+        this.clearFilter(event, 'fix-version');
         for (let customFieldValues of this.customFields) {
             this.clearFilter(event, "custom-fields");
         }
@@ -324,13 +338,33 @@ export class ControlPanelComponent {
     private get components():JiraComponent[] {
         if (this.boardData.getAndClearHasNewComponents()) {
             //TODO look into using an Observable for this instead
-            for (let component of this.boardData.components.array) {
-                if (!this._componentFilterForm.controls[component.name]) {
-                    this._componentFilterForm.addControl(component.name, new FormControl(false));
-                }
-            }
+            this.initWithNewData(this._componentFilterForm, this.boardData.components.array);
         }
         return this.boardData.components.array;
+    }
+
+    private get labels():JiraLabel[] {
+        if (this.boardData.getAndClearHasNewLabels()) {
+            //TODO look into using an Observable for this instead
+            this.initWithNewData(this._labelFilterForm, this.boardData.labels.array);
+        }
+        return this.boardData.labels.array;
+    }
+
+    private get fixVersions():JiraFixVersion[] {
+        if (this.boardData.getAndClearHasNewFixVersions()) {
+            //TODO look into using an Observable for this instead
+            this.initWithNewData(this._fixVersionFilterForm, this.boardData.fixVersions.array);
+        }
+        return this.boardData.fixVersions.array;
+    }
+
+    private initWithNewData(form:FormGroup, values:JiraMultiSelectFieldValue[]) {
+        for (let value of values) {
+            if (!form.controls[value.name]) {
+                form.addControl(value.name, new FormControl(false));
+            }
+        }
     }
 
     private get priorities():Priority[] {
@@ -373,11 +407,12 @@ export class ControlPanelComponent {
     }
 
     private updateFilters(project:any, priority:any, issueType:any, assignee:any, component:any,
-                          customFieldValues:IMap<any>, parallelTaskFormValues:IMap<any>) {
-        if (!project && ! priority && !issueType && !assignee && !component && !customFieldValues && !parallelTaskFormValues) {
+                          label:any, fixVesion:any, customFieldValues:IMap<any>, parallelTaskFormValues:IMap<any>) {
+        if (!project && ! priority && !issueType && !assignee && !component &&
+            !label && !fixVesion && !customFieldValues && !parallelTaskFormValues) {
             return;
         }
-        this.boardData.updateFilters(project, priority, issueType, assignee, component, customFieldValues, parallelTaskFormValues);
+        this.boardData.updateFilters(project, priority, issueType, assignee, component, label, fixVesion, customFieldValues, parallelTaskFormValues);
         this.updateTooltips();
     }
 
@@ -386,7 +421,7 @@ export class ControlPanelComponent {
         //When initialising the form, this will be false.
         let dirty = this.controlForm.dirty;
 
-        let filters:BoardFilters = this.boardData.filters;
+        let filters: BoardFilters = this.boardData.filters;
         if (!this._controlForm.dirty || this.isDirty("project")) {
             this.filterTooltips["project"] = this.createTooltipForFilter(filters.selectedProjectNames);
 
@@ -403,19 +438,25 @@ export class ControlPanelComponent {
         if (!dirty || this.isDirty('component')) {
             this.filterTooltips["component"] = this.createTooltipForFilter(filters.selectedComponents);
         }
+        if (!dirty || this.isDirty("label")) {
+            this.filterTooltips["label"] = this.createTooltipForFilter(filters.selectedLabels);
+        }
+        if (!dirty || this.isDirty("fix-version")) {
+            this.filterTooltips["fix-version"] = this.createTooltipForFilter(filters.selectedFixVersions);
+        }
 
         for (let customFieldValues of this.customFields) {
             if (!dirty || this.isDirty("custom-fields", customFieldValues.name)) {
-                let selected:IMap<string[]> = filters.selectedCustomFields;
+                let selected: IMap<string[]> = filters.selectedCustomFields;
                 this.filterTooltips[customFieldValues.name] = this.createTooltipForFilter(selected[customFieldValues.name]);
             }
         }
 
         if (!dirty || this.isDirty("parallel-tasks")) {
-            let parallelTasksTip:string = "";
-            let selected:IMap<string[]> = filters.selectedParallelTasks;
+            let parallelTasksTip: string = "";
+            let selected: IMap<string[]> = filters.selectedParallelTasks;
             for (let paralellTask of this.parallelTasks) {
-                let tip:string = this.createTooltipForFilter(selected[paralellTask.code]);
+                let tip: string = this.createTooltipForFilter(selected[paralellTask.code]);
                 if (tip) {
                     if (parallelTasksTip.length > 0) {
                         parallelTasksTip += "\n";
@@ -429,68 +470,24 @@ export class ControlPanelComponent {
             this.filterTooltips["parallel-tasks"] = parallelTasksTip;
         }
 
-        let filtersToolTip:string = "";
-        let current:string = this.filterTooltips["project"];
-        if (current) {
-            filtersToolTip += "Projects:\n" + current;
-        }
+        this.createFiltersToolTip();
+    }
 
-        current = this.filterTooltips["issue-type"];
-        if (current) {
-            if (filtersToolTip.length > 0) {
-                filtersToolTip += "\n\n";
-            }
-            filtersToolTip += "Issue Types:\n" + current;
-        }
-
-        current = this.filterTooltips["priority"];
-        if (current) {
-            if (filtersToolTip.length > 0) {
-                filtersToolTip += "\n\n";
-            }
-            filtersToolTip += "Priorities:\n" + current;
-        }
-
-        current = this.filterTooltips["assignee"];
-        if (current) {
-            if (filtersToolTip.length > 0) {
-                filtersToolTip += "\n\n";
-            }
-            filtersToolTip += "Assignees:\n" + current;
-        }
-
-        current = this.filterTooltips["component"];
-        if (current) {
-            if (filtersToolTip.length > 0) {
-                filtersToolTip += "\n\n";
-            }
-            filtersToolTip += "Components:\n" + current;
-        }
-
+    private createFiltersToolTip() {
+        let builder: FiltersToolTipBuilder = new FiltersToolTipBuilder(this.filterTooltips);
+        builder.appendToFiltersToolTip("project", "Projects");
+        builder.appendToFiltersToolTip("issue-type", "Issue Types");
+        builder.appendToFiltersToolTip("priority", "Priorities");
+        builder.appendToFiltersToolTip("assignee", "Assignees");
+        builder.appendToFiltersToolTip("component", "Components");
+        builder.appendToFiltersToolTip("label", "Labels");
+        builder.appendToFiltersToolTip("fix-version", "Fix Versions");
         for (let customFieldValues of this.customFields) {
-            current = this.filterTooltips[customFieldValues.name];
-            if (current) {
-                if (filtersToolTip.length > 0) {
-                    filtersToolTip += "\n\n";
-                }
-                filtersToolTip += customFieldValues.name + ":\n" + current;
-            }
+            builder.appendToFiltersToolTip(customFieldValues.name, customFieldValues.name);
         }
+        builder.appendToFiltersToolTip("parallel-tasks", "Parallel Tasks");
 
-        current = this.filterTooltips["parallel-tasks"];
-        if (current) {
-            if (filtersToolTip.length > 0) {
-                filtersToolTip += "\n\n";
-            }
-            filtersToolTip += "Parallel Tasks:\n" + current;
-        }
-
-
-        if (filtersToolTip.length > 0) {
-            filtersToolTip += "\n\nClick 'Filters' to clear all filters";
-        }
-        
-        this.filtersTooltip = filtersToolTip;
+        this.filtersTooltip = builder.build();
     }
 
     private createTooltipForFilter(selectedNames:string[]):string {
@@ -621,5 +618,30 @@ class InvertFilterAction implements FilterAction {
         control.setValue(!control.value);
         return true;
     }
+}
 
+class FiltersToolTipBuilder {
+    private _filterTooltips:IMap<string>
+    private result:string= "";
+
+    constructor(filterTooltips: IMap<string>) {
+        this._filterTooltips = filterTooltips;
+    }
+
+    appendToFiltersToolTip(name:string, title:string) {
+        let current:string = this._filterTooltips[name];
+        if (current) {
+            if (this.result.length > 0) {
+                this.result += "\n\n";
+            }
+            this.result += title + ":\n" + current;
+        }
+    }
+
+    build():string {
+        if (this.result.length > 0) {
+            this.result += "\n\nClick 'Filters' to clear all filters";
+        }
+        return this.result;
+    }
 }

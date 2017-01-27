@@ -1,7 +1,6 @@
 import {Indexed} from "../../common/indexed";
 import {IMap} from "../../common/map";
 import {IssueData} from "./issueData";
-import {IssueTable} from "./issueTable";
 import {RankChange} from "./change";
 import {ParallelTask} from "./parallelTask";
 import ownKeys = Reflect.ownKeys;
@@ -46,12 +45,6 @@ export class Projects {
 
     get boardProjectCodes():string[] {
         return this._boardProjectCodes;
-    }
-
-    getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toState:string) : IssueData[] {
-        let project:BoardProject = this._boardProjects.forKey(moveIssue.projectCode);
-        let toStateIndex:number = this._boardStates.indices[toState];
-        return project.getValidMoveBeforeIssues(issueTable, swimlane, moveIssue, toStateIndex);
     }
 
     deleteIssues(deletedIssues:IssueData[]) {
@@ -154,23 +147,6 @@ export class BoardProject extends Project {
 
     get parallelTasks(): Indexed<ParallelTask> {
         return this._parallelTasks;
-    }
-
-    getValidMoveBeforeIssues(issueTable:IssueTable, swimlane:string, moveIssue:IssueData, toStateIndex:number) : IssueData[] {
-        //TODO - reintroduce this
-        return [];
-        /*
-        let issueKeys:string[] = this._issueKeys[toStateIndex];
-        let validIssues:IssueData[] = [];
-        let swimlaneMatcher:SwimlaneMatcher = new SwimlaneIndexerFactory().createSwimlaneMatcher(swimlane, moveIssue);
-        for (let issueKey of issueKeys) {
-            let issue:IssueData = issueTable.getIssue(issueKey);
-            if (!swimlaneMatcher || swimlaneMatcher.matchesSwimlane(issue)) {
-                validIssues.push(issue);
-            }
-        }
-        return validIssues;
-        */
     }
 
     getOwnStateIndex(state:string) : number {

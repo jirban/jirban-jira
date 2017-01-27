@@ -42,6 +42,8 @@
                         <option value="issue-type">Issue Type</option>
                         <option value="assignee">Assignee</option>
                         <option value="component">Component</option>
+                        <option value="label">Label</option>
+                        <option value="fix-version">Fix Version</option>
                         <option *ngFor="let customFieldValues of customFields" value="{{customFieldValues.name}}">{{customFieldValues.name}}</option>
                     </select>
                 </div>
@@ -68,6 +70,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Filter pane selector -->
         <div class="column filters-width">
             <div class="setting">
                 <div class="setting-header clickable" title="{{filtersTooltip}}" (click)="clearFilters($event)">Filters</div>
@@ -91,6 +95,12 @@
                     <div [ngClass]="filtersToDisplay === 'component' ? 'filter selected' : 'filter'" title="{{filterTooltips['component']}}">
                         <a href="Filter Component" (click)="onSelectFiltersToDisplay($event, 'component')"
                            [ngClass]="getFilterLinkClass('component')">Component</a></div>
+                    <div [ngClass]="filtersToDisplay === 'label' ? 'filter selected' : 'filter'" title="{{filterTooltips['label']}}">
+                        <a href="Filter Label" (click)="onSelectFiltersToDisplay($event, 'label')"
+                           [ngClass]="getFilterLinkClass('label')">Label</a></div>
+                    <div [ngClass]="filtersToDisplay === 'fix-version' ? 'filter selected' : 'filter'" title="{{filterTooltips['fix-version']}}">
+                        <a href="Filter fix-version" (click)="onSelectFiltersToDisplay($event, 'fix-version')"
+                           [ngClass]="getFilterLinkClass('fix-version')">Fix Version</a></div>
                     <div *ngFor="let customField of customFields"
                             [ngClass]="filtersToDisplay === customField.name ? 'filter selected' : 'filter'" title="{{filterTooltips[customField.name]}}">
                         <a href="Filter {{customField.name}}" (click)="onSelectFiltersToDisplay($event, customField.name)"
@@ -151,8 +161,8 @@
                         <label for="assignee-$none$none">None</label>
                     </div>
                     <div *ngFor="let assignee of assignees" class="setting-entry">
-                        <input type="checkbox" formControlName="{{assignee.key}}" id="assignee-{{assignee.name}}"/>
-                        <label [attr.for]="'assignee-' + assignee.name">{{assignee.name}}</label>
+                        <input type="checkbox" formControlName="{{assignee.key}}" id="assignee-{{assignee.id}}"/>
+                        <label [attr.for]="'assignee-' + assignee.id">{{assignee.name}}</label>
                     </div>
                 </div>
             </div>
@@ -165,11 +175,40 @@
                         <label for="component-$none$none">None</label>
                     </div>
                     <div *ngFor="let component of components" class="setting-entry">
-                        <input type="checkbox" formControlName="{{component.name}}" id="component-{{component.name}}"/>
-                        <label [attr.for]="'component-' + component.name">{{component.name}}</label>
+                        <input type="checkbox" formControlName="{{component.name}}" id="component-{{component.id}}"/>
+                        <label [attr.for]="'component-' + component.id">{{component.name}}</label>
                     </div>
                 </div>
             </div>
+            <div class="setting" *ngIf="filtersToDisplay === 'label'">
+                <div class="setting-header clickable" (click)="clearFilter($event, 'label')" title="Clear filter">Label Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'label')"></filter-control>
+                <div class="setting-content" title="Scroll me!" formGroupName="label">
+                    <div class="setting-entry">
+                        <input type="checkbox" formControlName="{{none}}" id="label-$none$none"/>
+                        <label for="component-$none$none">None</label>
+                    </div>
+                    <div *ngFor="let label of labels" class="setting-entry">
+                        <input type="checkbox" formControlName="{{label.name}}" id="label-{{label.id}}"/>
+                        <label [attr.for]="'label-' + label.id">{{label.name}}</label>
+                    </div>
+                </div>
+            </div>
+            <div class="setting" *ngIf="filtersToDisplay === 'fix-version'">
+                <div class="setting-header clickable" (click)="clearFilter($event, 'fix-version')" title="Clear filter">Fix Version Filter</div>
+                <filter-control (filterControlEvent)="onFilterControlEvent($event, 'fix-version')"></filter-control>
+                <div class="setting-content" title="Scroll me!" formGroupName="fix-version">
+                    <div class="setting-entry">
+                        <input type="checkbox" formControlName="{{none}}" id="fix-version-$none$none"/>
+                        <label for="fix-version-$none$none">None</label>
+                    </div>
+                    <div *ngFor="let fixVersion of fixVersions" class="setting-entry">
+                        <input type="checkbox" formControlName="{{fixVersion.name}}" id="fix-version-{{fixVersion.id}}"/>
+                        <label [attr.for]="'fix-version-' + fixVersion.id">{{fixVersion.name}}</label>
+                    </div>
+                </div>
+            </div>
+
             <div *ngIf="hasCustomFields()" formGroupName="custom-fields">
                 <div *ngFor="let customFieldValues of customFields">
                     <div class="setting" *ngIf="filtersToDisplay === customFieldValues.name">

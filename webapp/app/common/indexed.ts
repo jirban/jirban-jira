@@ -1,4 +1,4 @@
-import {IMap} from "./map";
+import {IMap, IMapUtil} from "./map";
 
 /**
  * Container for an array, and a lookup of the array index by key
@@ -122,5 +122,12 @@ export class Indexed<T> {
 
     get indices():IMap<number> {
         return this._indices;
+    }
+
+    /**
+     * This method should NOT be called frequently
+     */
+    get sortedKeys():string[] {
+        return IMapUtil.getSortedKeys(this._indices);
     }
 }

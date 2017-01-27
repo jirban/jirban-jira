@@ -3,7 +3,7 @@ import {Priority} from "./priority";
 import {IssueData} from "./issueData";
 import {Indexed} from "../../common/indexed";
 import {IssueType} from "./issueType";
-import {JiraComponent} from "./component";
+import {JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 import {IMap} from "../../common/map";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
 import {BoardData} from "./boardData";
@@ -17,7 +17,9 @@ export class BoardFilters {
     private _priorityFilter:SimpleFilter;
     private _issueTypeFilter:SimpleFilter;
     private _assigneeFilter:SimpleFilter;
-    private _componentFilter:ComponentFilter;
+    private _componentFilter:MultiSelectFilter;
+    private _labelFilter:MultiSelectFilter;
+    private _fixVersionFilter:MultiSelectFilter;
     private _customFieldValueFilters:MapFilter;
     private _parallelTaskFilters:MapFilter;
 
@@ -26,6 +28,8 @@ export class BoardFilters {
                   issueTypeFilter:any, issueTypes:Indexed<IssueType>,
                   assigneeFilter:any, assignees:Indexed<Assignee>,
                   componentFilter:any, components:Indexed<JiraComponent>,
+                  labelFilter:any, labels:Indexed<JiraLabel>,
+                  fixVersionFilter:any, fixVersions:Indexed<JiraFixVersion>,
                   customFieldValueFilters:IMap<any>, customFields:Indexed<CustomFieldValues>,
                   parallelTaskFilters:IMap<any>, parallelTasks:Indexed<ParallelTask>) {
 
@@ -83,7 +87,7 @@ export class BoardFilters {
         }
 
         if (componentFilter) {
-            this._componentFilter = ComponentFilter.create(
+            this._componentFilter = MultiSelectFilter.create(
                 componentFilter ? componentFilter : {},
                 this.getIndexedArray(components), {
                     getKey: (value: JiraComponent) => {
@@ -93,6 +97,32 @@ export class BoardFilters {
                         return value.name;
                     }
             });
+        }
+
+        if (labelFilter) {
+            this._labelFilter = MultiSelectFilter.create(
+                labelFilter ? labelFilter : {},
+                this.getIndexedArray(labels), {
+                    getKey: (value: JiraLabel) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: JiraLabel) => {
+                        return value.name;
+                    }
+                });
+        }
+
+        if (fixVersionFilter) {
+            this._fixVersionFilter = MultiSelectFilter.create(
+                fixVersionFilter ? fixVersionFilter : {},
+                this.getIndexedArray(fixVersions), {
+                    getKey: (value: JiraFixVersion) => {
+                        return value.name;
+                    },
+                    getDisplayValue: (value: JiraFixVersion) => {
+                        return value.name;
+                    }
+                });
         }
 
         if (customFieldValueFilters) {
@@ -152,6 +182,12 @@ export class BoardFilters {
         if (this.filterComponentAllComponents(issue.components)) {
             return true;
         }
+        if (this.filterLabelAllLabels(issue.labels)) {
+            return true;
+        }
+        if (this.filterFixVersionAllFixVersions(issue.fixVersions)) {
+            return true;
+        }
         if (this.filterCustomFields(issue.customFields)) {
             return true;
         }
@@ -198,9 +234,18 @@ export class BoardFilters {
         return this.initialValueForForm(this._componentFilter, componentKey);
     }
 
+    initialLabelValueForForm(labelKey:string):boolean {
+        return this.initialValueForForm(this._labelFilter, labelKey);
+    }
+
+    initialFixVersionValueForForm(fixVersionKey:string):boolean {
+        return this.initialValueForForm(this._fixVersionFilter, fixVersionKey);
+    }
+
     initialCustomFieldValueForForm(customFieldName:string, customFieldKey:string):boolean {
         return this.initialMapValueForForm(this._customFieldValueFilters, customFieldName, customFieldKey);
     }
+
 
     initialParallelTaskValueForForm(parallelTaskCode:string, optionName:string):boolean {
         return this.initialMapValueForForm(this._parallelTaskFilters, parallelTaskCode, optionName);
@@ -211,6 +256,20 @@ export class BoardFilters {
             return false;
         }
         return this._componentFilter.doFilter(componentName);
+    }
+
+    filterLabel(labelName:string):boolean {
+        if (!this._labelFilter) {
+            return false;
+        }
+        return this._labelFilter.doFilter(labelName);
+    }
+
+    filterFixVersion(fixVersionName:string) : boolean {
+        if (!this._fixVersionFilter) {
+            return false;
+        }
+        return this._fixVersionFilter.doFilter(fixVersionName);
     }
 
     filterCustomFields(customFields:IMap<CustomFieldValue>):boolean {
@@ -251,6 +310,8 @@ export class BoardFilters {
                                      issueTypeFilter:any,
                                      assigneeFilter:any,
                                      componentFilter:any,
+                                     labelFilter:any,
+                                     fixVersionFilter:any,
                                      customFieldFilters:IMap<any>,
                                      parallelTaskFilters:IMap<any>
                                  )=>void):void {
@@ -259,6 +320,8 @@ export class BoardFilters {
         let issueTypeFilter:any = this.parseBooleanFilter(queryParams, "issue-type");
         let assigneeFilter:any = this.parseBooleanFilter(queryParams, "assignee");
         let componentFilter:any = this.parseBooleanFilter(queryParams, "component");
+        let labelFilter:any = this.parseBooleanFilter(queryParams, "label");
+        let fixVersionFilter:any = this.parseBooleanFilter(queryParams, "fix-version");
 
         let customFieldFilters:IMap<any> = {};
         for (let customFieldValues of boardData.customFields.array) {
@@ -271,7 +334,7 @@ export class BoardFilters {
             parallelTaskFilters[parallelTask.code] = parallelTaskFilter;
         }
 
-        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, customFieldFilters, parallelTaskFilters);
+        callback(projectFilter, priorityFilter, issueTypeFilter, assigneeFilter, componentFilter, labelFilter, fixVersionFilter, customFieldFilters, parallelTaskFilters);
     }
 
     createQueryStringParticles() {
@@ -282,6 +345,8 @@ export class BoardFilters {
         query += this.createQueryStringParticle("issue-type", this._issueTypeFilter);
         query += this.createQueryStringParticle("assignee", this._assigneeFilter);
         query += this.createQueryStringParticle("component", this._componentFilter);
+        query += this.createQueryStringParticle("label", this._labelFilter);
+        query += this.createQueryStringParticle("fix-version", this._fixVersionFilter);
         if (this._customFieldValueFilters) {
             for (let key in this._customFieldValueFilters.filters) {
                 let simpleFilter: SimpleFilter = this._customFieldValueFilters.filters[key];
@@ -317,6 +382,14 @@ export class BoardFilters {
         return this.getSelectedValues(this._componentFilter);
     }
 
+    get selectedLabels():string[] {
+        return this.getSelectedValues(this._labelFilter);
+    }
+
+    get selectedFixVersions():string[] {
+        return this.getSelectedValues(this._fixVersionFilter);
+    }
+
     get selectedCustomFields():IMap<string[]> {
         return this.getSelectedMapValues(this._customFieldValueFilters);
     }
@@ -344,6 +417,20 @@ export class BoardFilters {
             return false;
         }
         return this._componentFilter.filterAll(issueComponents);
+    }
+
+    private filterLabelAllLabels(issueLabels:Indexed<JiraLabel>):boolean {
+        if (!this._labelFilter) {
+            return false;
+        }
+        return this._labelFilter.filterAll(issueLabels);
+    }
+
+    private filterFixVersionAllFixVersions(issueFixVersions:Indexed<JiraFixVersion>):boolean {
+        if (!this._fixVersionFilter) {
+            return false;
+        }
+        return this._fixVersionFilter.filterAll(issueFixVersions);
     }
 
     private initialValueForForm(filter:SimpleFilter, key:string) {
@@ -554,7 +641,7 @@ class SimpleFilter {
     }
 }
 
-class ComponentFilter extends SimpleFilter {
+class MultiSelectFilter extends SimpleFilter {
     private _filterLength: number;
 
     constructor(handleNone:boolean, filter:any, anySelected:boolean, selectedValues:string[]) {
@@ -588,12 +675,12 @@ class ComponentFilter extends SimpleFilter {
         return false;
     }
 
-    static create<T>(filter: any, values: JiraComponent[], valueAccessor: BoardValueAccessor<JiraComponent>): ComponentFilter {
+    static create<T>(filter: any, values: T[], valueAccessor: BoardValueAccessor<T>): MultiSelectFilter {
         let tmp: SimpleFilter = SimpleFilter.create(filter, values, valueAccessor, true);
         if (!tmp) {
             return null;
         }
-        return new ComponentFilter(tmp.handleNone, tmp.filter, tmp.anySelected, tmp.selectedValues);
+        return new MultiSelectFilter(tmp.handleNone, tmp.filter, tmp.anySelected, tmp.selectedValues);
     }
 }
 

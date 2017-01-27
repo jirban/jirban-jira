@@ -11,7 +11,7 @@ import {IssueTable, SwimlaneData} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
-import {JiraComponent, ComponentDeserializer} from "./component";
+import {JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 import {BoardHeaders, State} from "./header";
 import {Observable, Subject, Subscription} from "rxjs/Rx";
 import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
@@ -41,6 +41,10 @@ export class BoardData {
     private _assignees:Indexed<Assignee>;
     /** All the components */
     private _components:Indexed<JiraComponent>;
+    /** All the labels */
+    private _labels:Indexed<JiraLabel>;
+    /** All the fix-versions */
+    private _fixVersions:Indexed<JiraFixVersion>;
     /** All the priorities */
     private _priorities:Indexed<Priority>;
     /** All the issue types */
@@ -61,6 +65,12 @@ export class BoardData {
 
     /** Flag to only recalculate the components in the control panel when they have been changed */
     private _hasNewComponents:boolean = false;
+
+    /** Flag to only recalculate the labels in the control panel when they have been changed */
+    private _hasNewLabels:boolean = false;
+
+    /** Flag to only recalculate the fix-versions in the control panel when they have been changed */
+    private _hasNewFixVersions:boolean = false;
 
     /** Flag to only recalculate the assignees in the control panel when they have been changed */
     private _customFieldsWithNewEntries:string[] = [];
@@ -132,7 +142,26 @@ export class BoardData {
                         (component:JiraComponent) => component.name);
                     this._hasNewComponents = true;
                 }
-
+                if (changeSet.addedLabels) {
+                    //Make sure that the added labels are in alphabetical order for the control panel list
+                    for (let label of changeSet.addedLabels) {
+                        this._labels.add(label.name, label);
+                    }
+                    this._labels.sortAndReorder(
+                        (l1:JiraLabel, l2:JiraLabel) => {return l1.name.localeCompare(l2.name)},
+                        (label:JiraLabel) => label.name);
+                    this._hasNewLabels = true;
+                }
+                if (changeSet.addedFixVersions) {
+                    //Make sure that the added labels are in alphabetical order for the control panel list
+                    for (let fixVersion of changeSet.addedFixVersions) {
+                        this._fixVersions.add(fixVersion.name, fixVersion);
+                    }
+                    this._fixVersions.sortAndReorder(
+                        (f1:JiraFixVersion, f2:JiraFixVersion) => {return f1.name.localeCompare(f2.name)},
+                        (fixVersion:JiraFixVersion) => fixVersion.name);
+                    this._hasNewFixVersions = true;
+                }
                 if (changeSet.addedCustomFields) {
                     //Iterate for each custom field
                     for (let cfvs of changeSet.addedCustomFields.array) {
@@ -183,6 +212,25 @@ export class BoardData {
         return ret;
     }
 
+    getAndClearHasNewLabels() : boolean {
+        //TODO look into an Observable instead
+        let ret:boolean = this._hasNewLabels;
+        if (ret) {
+            this._hasNewLabels = false;
+        }
+        return ret;
+    }
+
+    getAndClearHasNewFixVersions() : boolean {
+        //TODO look into an Observable instead
+        let ret:boolean = this._hasNewFixVersions;
+        if (ret) {
+            this._hasNewFixVersions = false;
+        }
+        return ret;
+    }
+
+
     /**
      * Called when changes are made to the issue detail to display in the control panel
      * @param issueDisplayDetails
@@ -203,7 +251,9 @@ export class BoardData {
         this._headers = BoardHeaders.deserialize(this, input);
         this._projects = new ProjectDeserializer(this.indexedBoardStateNames).deserialize(input);
         this._assignees = new AssigneeDeserializer().deserialize(input);
-        this._components = new ComponentDeserializer().deserialize(input);
+        this._components = JiraComponent.deserialize(input);
+        this._labels = JiraLabel.deserialize(input);
+        this._fixVersions = JiraFixVersion.deserialize(input);
         this._priorities = new PriorityDeserializer().deserialize(input);
         this._issueTypes = new IssueTypeDeserializer().deserialize(input);
         this._customFields = new CustomFieldDeserializer().deserialize(input);
@@ -246,6 +296,14 @@ export class BoardData {
 
     get components():Indexed<JiraComponent> {
         return this._components;
+    }
+
+    get labels():Indexed<JiraLabel> {
+        return this._labels;
+    }
+
+    get fixVersions():Indexed<JiraFixVersion> {
+        return this._fixVersions;
     }
 
     get priorities():Indexed<Priority> {
@@ -369,7 +427,7 @@ export class BoardData {
     }
 
     updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any,
-                  customFieldValueFilters:IMap<any>, parallelTaskFilters:IMap<any>) {
+                  labelFilter:any, fixVersionFilter:any, customFieldValueFilters:IMap<any>, parallelTaskFilters:IMap<any>) {
         
         this._boardFilters.updateFilters(
             projectFilter, this._projects.boardProjectCodes,
@@ -377,6 +435,8 @@ export class BoardData {
             issueTypeFilter, this._issueTypes,
             assigneeFilter, this._assignees,
             componentFilter, this._components,
+            labelFilter, this._labels,
+            fixVersionFilter, this._fixVersions,
             customFieldValueFilters, this._customFields,
             parallelTaskFilters, this._parallelTasks);
 
@@ -414,21 +474,6 @@ export class BoardData {
         return this.boardProjects.forKey(projectCode).isValidState(state);
     }
 
-    /**
-     * Gets a list of the valid issues for a state, that an issue can be moved before/after. For example we don't allow
-     * mixing of priority between issues from different projects. When swimlanes are used, we stay within the same swimlane,
-     * or we would have to change the swimlane selector (e.g. assignee, project, priority, component etc.) in the
-     * upstream jira issue.
-     *
-     * @param issueKey the key of the issue
-     * @param toState the board state we are moving to
-     * @returns {IssueData[]} the list of valid issues we can use for positioning
-     */
-    getValidMoveBeforeIssues(issueKey:string, toState:string) {
-        let moveIssue:IssueData = this._issueTable.getIssue(issueKey);
-        return this._projects.getValidMoveBeforeIssues(this._issueTable, this._swimlane, moveIssue, toState);
-    }
-
     setBacklogFromQueryParams(queryParams:IMap<string>, forceBacklog:boolean):void {
         if (forceBacklog) {
             this._showBacklog = true;
@@ -450,10 +495,12 @@ export class BoardData {
              issueTypeFilter:any,
              assigneeFilter:any,
              componentFilter:any,
+             labelFilter:any,
+             fixVersionFilter:any,
              customFieldFilters:IMap<any>,
              parallelTaskFilters:IMap<any>) => {
                 this.updateFilters(projectFilter, priorityFilter, issueTypeFilter,
-                    assigneeFilter, componentFilter, customFieldFilters, parallelTaskFilters);
+                    assigneeFilter, componentFilter, labelFilter, fixVersionFilter, customFieldFilters, parallelTaskFilters);
         });
 
         this.updateIssueDisplayDetails(this.parseIssueDisplayDetails(queryParams));
