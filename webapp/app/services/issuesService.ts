@@ -18,7 +18,8 @@ export class IssuesService {
     private _progressError:ProgressErrorService;
     private _boardData:BoardData;
 
-
+    private _pollHandle:any;
+    private _missedPolls:boolean;
     private _pollFailureCount:number = 0;
     private _maxPollFailureCount = 3;
 
@@ -44,6 +45,13 @@ export class IssuesService {
             console.log("Blur - restarting polling: " + restartPolling);
             if (restartPolling) {
                 this.pollIssues();
+            }
+        } else {
+            if (this._missedPolls) {
+                //If we lost some polls while not visible, poll immediately
+                this._missedPolls = false;
+                clearTimeout(this._pollHandle);
+                this.doPoll();
             }
         }
     }
@@ -200,7 +208,7 @@ export class IssuesService {
     }
 
     private pollIssues() {
-        setTimeout(()=>{this.doPoll()}, this._defaultPollInterval);
+        this._pollHandle = setTimeout(()=>{this.doPoll()}, this._defaultPollInterval);
     }
 
     private doPoll() {
@@ -218,6 +226,7 @@ export class IssuesService {
         if (!this._visible) {
             //We are not the active window so just skip this update
             this.pollIssues();
+            this._missedPolls = true;
             return;
         }
 
