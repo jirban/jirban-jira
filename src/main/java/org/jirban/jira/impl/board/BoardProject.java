@@ -32,6 +32,9 @@ import org.jirban.jira.JirbanLogger;
 import org.jirban.jira.api.NextRankedIssueUtil;
 import org.jirban.jira.api.ProjectParallelTaskOptionsLoader;
 import org.jirban.jira.impl.JiraInjectables;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Component;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.FixVersion;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Label;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.CustomFieldConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -46,6 +49,7 @@ import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.permission.ProjectPermissions;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.security.PermissionManager;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.util.Consumer;
@@ -84,6 +88,14 @@ public class BoardProject {
         return board.getComponentIndex(component);
     }
 
+    int getLabelIndex(Label label) {
+        return board.getLabelIndex(label);
+    }
+
+    int getFixVersionIndex(FixVersion fixVersion) {
+        return board.getFixVersionIndex(fixVersion);
+    }
+
     public int getCustomFieldValueIndex(CustomFieldValue customFieldValue) {
         return board.getCustomFieldIndex(customFieldValue);
     }
@@ -109,9 +121,8 @@ public class BoardProject {
 
         if (parallelTaskValues.size() > 0) {
             ModelNode parallelTasks = parent.get(PARALLEL_TASKS).setEmptyList();
-            for (SortedParallelTaskFieldOptions sortedCustomFieldValues : parallelTaskValues.values()) {
-                sortedCustomFieldValues.serialize(parallelTasks);
-            }
+            getParallelTaskValues().values().forEach(
+                    sortedCustomFieldValues -> sortedCustomFieldValues.serialize(parallelTasks));
         }
 
     }
@@ -265,6 +276,14 @@ public class BoardProject {
             return board.getComponents(componentObjects);
         }
 
+        public Set<Label> getLabels(Set<com.atlassian.jira.issue.label.Label> labels) {
+            return board.getLabels(labels);
+        }
+
+        public Set<FixVersion> getFixVersions(Collection<Version> fixVersions) {
+            return board.getFixVersions(fixVersions);
+        }
+
         public Board.Accessor getBoard() {
             return board;
         }
@@ -282,6 +301,7 @@ public class BoardProject {
         }
 
         abstract Map<String, SortedParallelTaskFieldOptions> getParallelTaskValues();
+
     }
 
     /**
@@ -327,14 +347,11 @@ public class BoardProject {
                     rankedIssueKeys.add(jiraIssue.getKey());
                 }
             }
-
-            for (Issue.Builder issueBuilder : issueBuilders) {
+            issueBuilders.forEach(issueBuilder -> {
                 Issue issue = issueBuilder.build();
                 if (issue != null) {
                     addIssue(issue.getState(), issue);
-                }
-            }
-
+                }});
         }
 
         BoardProject build() {
@@ -368,12 +385,13 @@ public class BoardProject {
         }
 
         Issue createIssue(String issueKey, String issueType, String priority, String summary,
-                          Assignee assignee, Set<Component> issueComponents, String state,
+                          Assignee assignee, Set<Component> issueComponents,
+                          Set<Label> labels, Set<FixVersion> fixVersions, String state,
                           Map<String, CustomFieldValue> customFieldValues, Map<Integer, Integer> parallelTaskValues) throws SearchException {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - {}", issueKey);
             newIssue = Issue.createForCreateEvent(
                     this, issueKey, state, summary, issueType, priority,
-                    assignee, issueComponents, customFieldValues, parallelTaskValues);
+                    assignee, issueComponents, labels, fixVersions, customFieldValues, parallelTaskValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater.createIssue - created {}", newIssue);
 
             if (newIssue != null) {
@@ -383,12 +401,14 @@ public class BoardProject {
         }
 
         Issue updateIssue(Issue existing, String issueType, String priority, String summary,
-                          Assignee issueAssignee, Set<Component> issueComponents, boolean reranked,
+                          Assignee issueAssignee, Set<Component> issueComponents,
+                          Set<Label> labels, Set<FixVersion> fixVersions, boolean reranked,
                           String state, Map<String, CustomFieldValue> customFieldValues,
                           Map<Integer, Integer> parallelTaskValues) throws SearchException {
             JirbanLogger.LOGGER.debug("BoardProject.Updater.updateIssue - {}, rankOrStateChanged: {}", existing.getKey(), reranked);
             newIssue = existing.copyForUpdateEvent(this, existing, issueType, priority,
-                    summary, issueAssignee, issueComponents, state, customFieldValues, parallelTaskValues);
+                    summary, issueAssignee, issueComponents, labels, fixVersions,
+                    state, customFieldValues, parallelTaskValues);
             JirbanLogger.LOGGER.debug("BoardProject.Updater - updated issue {} to {}. Reranked: {}", existing, newIssue, reranked);
             if (reranked) {
                 rankedIssueKeys = rankIssues(existing.getKey());

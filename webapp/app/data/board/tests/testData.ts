@@ -2,10 +2,12 @@ export class TestBoardData {
 
     public view:number = 0;
     public states:any[] = [{name:"S-1"}, {name:"S-2"}, {name:"S-3"}, {name:"S-4"}];
-    public assignees:any = TestBoardData.STANDARD_ASSIGNEES;
-    public components:any = TestBoardData.STANDARD_COMPONENTS;
-    public priorities:any = TestBoardData.STANDARD_PRIORITIES;
-    public issueTypes:any = TestBoardData.STANDARD_ISSUE_TYPES;
+    public assignees:any[] = TestBoardData.STANDARD_ASSIGNEES;
+    public components:string[] = TestBoardData.STANDARD_COMPONENTS;
+    public labels:string[] = TestBoardData.STANDARD_LABELS;
+    public fixVersions:string[] = TestBoardData.STANDARD_FIX_VERSIONS;
+    public priorities:any[] = TestBoardData.STANDARD_PRIORITIES;
+    public issueTypes:any[] = TestBoardData.STANDARD_ISSUE_TYPES;
     public projects:any;
     public issues:any;
     public blacklist:any;
@@ -16,12 +18,39 @@ export class TestBoardData {
         json["view"] = this.view;
         //We use a clone of the objects. Otherwise tests that share a setup and modify the issue tables will pollute subsequent tests
         json["states"] = TestBoardData.clone(this.states);
-        json["assignees"] = TestBoardData.clone(this.assignees);
-        json["components"] = TestBoardData.clone(this.components);
-        json["priorities"] = TestBoardData.clone(this.priorities);
-        json["issue-types"] = TestBoardData.clone(this.issueTypes);
+        if (this.assignees) {
+            json["assignees"] = TestBoardData.clone(this.assignees);
+        } else {
+            json["assignees"] = [];
+        }
+        if (this.components && this.components.length > 0) {
+            json["components"] = TestBoardData.clone(this.components);
+        }
+        if (this.labels && this.labels.length > 0) {
+            json["labels"] = TestBoardData.clone(this.labels);
+        }
+        if (this.fixVersions && this.fixVersions.length > 0) {
+            json["fix-versions"] = TestBoardData.clone(this.fixVersions);
+        }
+        if (this.priorities && this.priorities.length > 0) {
+            json["priorities"] = TestBoardData.clone(this.priorities);
+        } else {
+            json["priorities"] = [];
+        }
+        if (this.issueTypes) {
+            json["issue-types"] = TestBoardData.clone(this.issueTypes);
+        } else {
+            json["issue-types"] = [];
+        }
+        if (!this.projects) {
+            throw new Error("No projects were set up");
+        }
         json["projects"] = TestBoardData.clone(this.projects);
-        json["issues"] = TestBoardData.clone(this.issues);
+        if (this.issues) {
+            json["issues"] = TestBoardData.clone(this.issues);
+        } else {
+            json["issues"] = {};
+        }
         if (this.blacklist) {
             json["blacklist"] = TestBoardData.clone(this.blacklist);
         }
@@ -46,7 +75,7 @@ export class TestBoardData {
         return JSON.parse(JSON.stringify(input));
     }
 
-    public static STANDARD_ASSIGNEES:any = [
+    public static readonly STANDARD_ASSIGNEES:any[] = [
         {
             key : "brian",
             email : "brian@example.com",
@@ -60,9 +89,13 @@ export class TestBoardData {
             name : "Kabir Khan"
         }];
 
-    public static STANDARD_COMPONENTS:any = ["First", "Second"];
+    public static readonly STANDARD_COMPONENTS: string[] = ["C1", "C5"];
 
-    public static STANDARD_PRIORITIES:any = [
+    public static readonly STANDARD_LABELS: any = ["L1", "L5"];
+
+    public static readonly STANDARD_FIX_VERSIONS: any = ["F1", "F5"];
+
+    public static readonly STANDARD_PRIORITIES:any[] = [
         {
             name : "highest",
             icon : "/icons/priorities/highest.png"
@@ -80,7 +113,7 @@ export class TestBoardData {
             icon : "/icons/priorities/lowest.png"
         }];
 
-    public static STANDARD_ISSUE_TYPES:any = [
+    public static readonly STANDARD_ISSUE_TYPES:any[] = [
         {
             name : "task",
             icon : "/icons/issue-types/task.png"
@@ -98,7 +131,7 @@ export class TestBoardData {
             icon : "/icons/issue-types/issue.png"
         }];
 
-    public static STANDARD_BLACKLIST:any =
+    public static readonly STANDARD_BLACKLIST:any =
         {
             states: [
               "BadState"
@@ -115,7 +148,7 @@ export class TestBoardData {
             ]
         };
 
-    public static STANDARD_CUSTOM_FIELDS:any =
+    public static readonly STANDARD_CUSTOM_FIELDS:any =
         {
             Tester: [
                 {
@@ -142,7 +175,7 @@ export class TestBoardData {
 
     // 'Full' board ////////////
 
-    public static EXPECTED_FULL_BOARD:string[][] =
+    public static readonly EXPECTED_FULL_BOARD:string[][] =
     [
         ["TDP-1", "TDP-5"],
         ["TDP-2", "TDP-6", "TBG-1", "TBG-3"],
@@ -150,7 +183,7 @@ export class TestBoardData {
         ["TDP-4"]
     ];
 
-    public static FULL_BOARD_PROJECTS:any =
+    public static readonly FULL_BOARD_PROJECTS:any =
     {
         owner : "TDP",
         main : {
@@ -184,7 +217,7 @@ export class TestBoardData {
         ]}}
     };
 
-    public static FULL_BOARD_ISSUES:any =
+    public static readonly FULL_BOARD_ISSUES:any =
     {
         "TDP-1" : {
             key : "TDP-1",
@@ -209,14 +242,18 @@ export class TestBoardData {
             state : 2,
             summary : "Three",
             priority : 2,
-            type : 2
+            type : 2,
+            labels : [0],
+            "fix-versions" : [1]
         },
         "TDP-4" : {
             key : "TDP-4",
             state : 3,
             summary : "Four",
             priority : 3,
-            type : 3
+            type : 3,
+            labels : [1],
+            "fix-versions" : [0]
         },
         "TDP-5" : {
             key : "TDP-5",
@@ -241,7 +278,9 @@ export class TestBoardData {
             state : 2,
             summary : "Seven",
             priority : 2,
-            type : 2
+            type : 2,
+            labels : [0],
+            "fix-versions" : [1]
         },
         "TBG-1" : {
             key : "TBG-1",
@@ -266,19 +305,23 @@ export class TestBoardData {
             state : 0,
             summary : "Three",
             priority : 2,
-            type : 2
+            type : 2,
+            labels : [0],
+            "fix-versions" : [1]
         },
         "TBG-4" : {
             key : "TBG-4",
             state : 1,
             summary : "Four",
             priority : 3,
-            type : 3
+            type : 3,
+            labels : [1],
+            "fix-versions" : [0]
         }
     };
 
     // 'Owner' only board /////////
-    public static EXPECTED_OWNER_ONLY_BOARD:string[][] =
+    public static readonly EXPECTED_OWNER_ONLY_BOARD:string[][] =
         [
             ["TDP-1", "TDP-5"],
             ["TDP-2", "TDP-6"],
@@ -286,7 +329,7 @@ export class TestBoardData {
             ["TDP-4"]
         ];
 
-    public static OWNER_ONLY_BOARD_PROJECTS:any =
+    public static readonly OWNER_ONLY_BOARD_PROJECTS:any =
     {
         owner : "TDP",
         main : {
@@ -303,7 +346,7 @@ export class TestBoardData {
         }
     };
 
-    public static OWNER_ONLY_BOARD_ISSUES:any =
+    public static readonly OWNER_ONLY_BOARD_ISSUES:any =
     {
         "TDP-1" : {
             key : "TDP-1",
@@ -328,14 +371,18 @@ export class TestBoardData {
             state : 2,
             summary : "Three",
             priority : 2,
-            type : 2
+            type : 2,
+            labels : [0],
+            "fix-versions" : [1]
         },
         "TDP-4" : {
             key : "TDP-4",
             state : 3,
             summary : "Four",
             priority : 3,
-            type : 3
+            type : 3,
+            labels : [1],
+            "fix-versions" : [0]
         },
         "TDP-5" : {
             key : "TDP-5",
@@ -360,12 +407,14 @@ export class TestBoardData {
             state : 2,
             summary : "Seven",
             priority : 2,
-            type : 2
+            type : 2,
+            labels : [0],
+            "fix-versions" : [1]
         }
     };
 
     // 'Non-Owner' only board ///////////
-    public static EXPECTED_NON_OWNER_ONLY_BOARD:string[][] =
+    public static readonly EXPECTED_NON_OWNER_ONLY_BOARD:string[][] =
         [
             [],
             ["TBG-1", "TBG-3"],
@@ -373,7 +422,7 @@ export class TestBoardData {
             []
         ];
 
-    public static NON_OWNER_ONLY_BOARD_PROJECTS:any =
+    public static readonly NON_OWNER_ONLY_BOARD_PROJECTS:any =
     {
         owner : "TDP",
         main : {
@@ -407,7 +456,7 @@ export class TestBoardData {
         }
     };
 
-    public static NON_OWNER_ONLY_BOARD_ISSUES:any =
+    public static readonly NON_OWNER_ONLY_BOARD_ISSUES:any =
     {
         "TBG-1" : {
             key : "TBG-1",
@@ -432,78 +481,24 @@ export class TestBoardData {
             state : 0,
             summary : "Three",
             priority : 2,
-            type : 2
+            type : 2,
+            labels : [0],
+            "fix-versions" : [1]
         },
         "TBG-4" : {
             key : "TBG-4",
             state : 1,
             summary : "Four",
             priority : 3,
-            type : 3
+            type : 3,
+            labels : [1],
+            "fix-versions" : [0]
         }
     };
 
     // Less data in boards for change tests //////////
 
-    public static PRE_CHANGE_BOARD_PROJECTS:any =
-    {
-        owner : "TDP",
-        main : {
-            TDP : {
-                "state-links" : {
-                    "S-1": "TDP-A",
-                    "S-2": "TDP-B",
-                    "S-3": "TDP-C",
-                    "S-4": "TDP-D"
-                },
-                colour : "#4667CA",
-                ranked : ["TDP-1", "TDP-2"],
-            },
-            TBG : {
-                colour : "#CA6746",
-                "state-links" : {
-                    "S-2" : "TBG-X",
-                    "S-3" : "TBG-Y"
-                },
-                ranked : ["TBG-1"]
-            }
-        }
-    };
-
-    public static PRE_CHANGE_BOARD_ISSUES:any =
-    {
-        "TDP-1" : {
-            key : "TDP-1",
-            state : 0,
-            summary : "One",
-            priority : 0,
-            type : 0,
-            assignee : 0,
-            components: [0]
-        },
-        "TDP-2" : {
-            key : "TDP-2",
-            state : 1,
-            summary : "Two",
-            priority : 1,
-            type : 1,
-            assignee : 1,
-            components: [1]
-        },
-        "TBG-1" : {
-            key : "TBG-1",
-            state : 0,
-            summary : "One",
-            priority : 0,
-            type : 0,
-            assignee : 0,
-            components: [0]
-        }
-    };
-
-    // Less data in boards for change tests //////////
-
-    public static PRE_RERANK_BOARD_PROJECTS:any =
+    public static readonly PRE_CHANGE_BOARD_PROJECTS:any =
     {
         owner : "TDP",
         main : {
@@ -528,50 +523,60 @@ export class TestBoardData {
         }
     };
 
-    public static PRE_RERANK_BOARD_ISSUES:any =
-    {
-        "TDP-1" : {
-            key : "TDP-1",
-            state : 0,
-            summary : "One",
-            priority : 0,
-            type : 0,
-            assignee : 0,
-            components: [0]
-        },
-        "TDP-2" : {
-            key : "TDP-2",
-            state : 1,
-            summary : "Two",
-            priority : 1,
-            type : 1,
-            assignee : 1,
-            components: [1]
-        },
-        "TDP-3" : {
-            key : "TDP-3",
-            state : 2,
-            summary : "Three",
-            priority : 2,
-            type : 2
-        },
-        "TDP-4" : {
-            key : "TDP-4",
-            state : 3,
-            summary : "Four",
-            priority : 3,
-            type : 3
-        },
-        "TBG-1" : {
-            key : "TBG-1",
-            state : 0,
-            summary : "One",
-            priority : 0,
-            type : 0,
-            assignee : 0,
-            components: [0]
-        }
-    };
+    public static readonly PRE_CHANGE_BOARD_ISSUES:any =
+        {
+            "TDP-1" : {
+                key : "TDP-1",
+                state : 0,
+                summary : "One",
+                priority : 0,
+                type : 0,
+                assignee : 0,
+                components: [0]
+            },
+            "TDP-2" : {
+                key : "TDP-2",
+                state : 1,
+                summary : "Two",
+                priority : 1,
+                type : 1,
+                assignee : 1,
+                components: [1]
+            },
+            "TDP-3" : {
+                key : "TDP-3",
+                state : 2,
+                summary : "Three",
+                priority : 2,
+                type : 2,
+                labels : [0],
+                "fix-versions" : [1]
+            },
+            "TDP-4" : {
+                key : "TDP-4",
+                state : 3,
+                summary : "Four",
+                priority : 3,
+                type : 3,
+                labels : [1],
+                "fix-versions" : [0]
+            },
+            "TBG-1" : {
+                key : "TBG-1",
+                state : 0,
+                summary : "One",
+                priority : 0,
+                type : 0,
+                assignee : 0,
+                components: [0]
+            }
+        };
+
+    // Less data in boards for change tests //////////
+
+    public static readonly PRE_RERANK_BOARD_PROJECTS:any = TestBoardData.PRE_CHANGE_BOARD_PROJECTS;
+
+    public static readonly PRE_RERANK_BOARD_ISSUES:any = TestBoardData.PRE_CHANGE_BOARD_ISSUES;
 
     static getFullBoardCustomFieldIssues():any {
         let data:any = TestBoardData.clone(TestBoardData.FULL_BOARD_ISSUES);

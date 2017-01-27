@@ -29,6 +29,8 @@ public class Constants {
     public static final String CODE = "code";
     public static final String CHANGES = "changes";
     public static final String CLEAR_COMPONENTS = "clear-components";
+    public static final String CLEAR_FIX_VERSIONS = "clear-fix-versions";
+    public static final String CLEAR_LABELS = "clear-labels";
     public static final String COLOUR = "colour";
     public static final String COMPONENT = "component";
     public static final String COMPONENTS = "components";
@@ -44,6 +46,7 @@ public class Constants {
     public static final String EMAIL = "email";
     public static final String FIELDS = "fields";
     public static final String FIELD_ID = "field-id";
+    public static final String FIX_VERSIONS = "fix-versions";
     public static final String HEADER = "header";
     public static final String HEADERS = "headers";
     public static final String HELP = "help";
@@ -54,6 +57,7 @@ public class Constants {
     public static final String ISSUES = "issues";
     public static final String JIRBAN_VERSION = "jirban-version";
     public static final String KEY = "key";
+    public static final String LABELS = "labels";
     public static final String LINKED = "linked";
     public static final String LINKED_ISSUES = "linked-issues";
     public static final String LINKED_PROJECTS = "linked-projects";

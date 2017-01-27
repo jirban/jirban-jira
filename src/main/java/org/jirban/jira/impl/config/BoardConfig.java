@@ -292,11 +292,13 @@ public class BoardConfig {
         boardStates.toModelNodeForBoard(boardNode);
 
         ModelNode prioritiesNode = boardNode.get(PRIORITIES);
+        prioritiesNode.setEmptyList();
         for (NameAndUrl priority : priorities.values()) {
             priority.serialize(prioritiesNode);
         }
 
         ModelNode issueTypesNode = boardNode.get(ISSUE_TYPES);
+        issueTypesNode.setEmptyList();
         for (NameAndUrl issueType : issueTypes.values()) {
             issueType.serialize(issueTypesNode);
         }
@@ -305,6 +307,7 @@ public class BoardConfig {
         projects.get(OWNER).set(ownerProjectCode);
 
         final ModelNode main = projects.get(MAIN);
+        main.setEmptyObject();
         for (BoardProjectConfig project : boardProjects.values()) {
             project.serializeModelNodeForBoard(this, main);
         }

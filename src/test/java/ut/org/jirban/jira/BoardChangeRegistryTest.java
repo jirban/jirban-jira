@@ -22,14 +22,18 @@ import static org.jirban.jira.impl.Constants.AVATAR;
 import static org.jirban.jira.impl.Constants.BLACKLIST;
 import static org.jirban.jira.impl.Constants.CHANGES;
 import static org.jirban.jira.impl.Constants.CLEAR_COMPONENTS;
+import static org.jirban.jira.impl.Constants.CLEAR_FIX_VERSIONS;
+import static org.jirban.jira.impl.Constants.CLEAR_LABELS;
 import static org.jirban.jira.impl.Constants.COMPONENTS;
 import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.DELETE;
 import static org.jirban.jira.impl.Constants.EMAIL;
+import static org.jirban.jira.impl.Constants.FIX_VERSIONS;
 import static org.jirban.jira.impl.Constants.INDEX;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.LABELS;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.NEW;
 import static org.jirban.jira.impl.Constants.PARALLEL_TASKS;
@@ -87,17 +91,27 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
     public void setupIssues(AdditionalSetup additionalSetup) throws SearchException {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");     //2
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");    //3
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");  //4
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A"); //5
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");      //6
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, new String[]{"C1"}, "TDP-C");    //7
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").components("C1").labels("L1").fixVersions("F1").buildAndRegister();     //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("C2").labels("L2").fixVersions("F2").buildAndRegister();     //2
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();                      //3
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();                      //4
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A")
+                .assignee("kabir").buildAndRegister();                      //5
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B")
+                .assignee("kabir").buildAndRegister();                      //6
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C")
+            .components("C1").labels("L1").fixVersions("F1").buildAndRegister();                           //7
 
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", new String[]{"C3"}, "TBG-X");  //1
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");      //2
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");    //3
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").components("C3").labels("L3").fixVersions("F3").buildAndRegister();     //1
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();                      //2
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();                                        //3
 
         if (additionalSetup != null) {
             additionalSetup.setupIssues();
@@ -105,8 +119,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         checkViewId(0);
         checkNoIssueChanges(0, 0);
-        checkNoBlacklistChanges(0, 0);
-        checkNoRankChanges(0, 0);
     }
 
     @Test
@@ -132,211 +144,186 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
         ModelNode changesNode = getChangesJson(0, 1);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
 
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
         changesNode = getChangesJson(0, 2);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3", "TDP-7");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
 
 
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
         changesNode = getChangesJson(0, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3", "TDP-7", "TBG-1");
-        checkDeletes(1, 3, "TDP-7", "TBG-1");
-        checkDeletes(2, 3, "TBG-1");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
-
+        changesNode = getChangesJson(1, 3);
+        checkDeletes(changesNode, "TDP-7", "TBG-1");
+        changesNode = getChangesJson(2, 3);
+        checkDeletes(changesNode, "TBG-1");
     }
 
     @Test
     public void testCreateIssuesAssignees() throws Exception {
-        //Add an issue which does not bring in new assignees
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D");
+        //Add an issue which does not bring in new expectedAssignees
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode changesNode = getChangesJson(0, 1);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        ModelNode changesNode = getChangesJson(0, 1, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
-        checkAdds(changesNode, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(7, "TDP-8"));
+        checkAdds(changesNode, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir"));
 
-        //Now add an issue which brings in new assignees
-        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X");
+        //Now add an issue which brings in new expectedAssignees
+        create = createEventBuilder("TBG-4", IssueType.FEATURE, Priority.LOW, "Four")
+                .assignee("jason")
+                .state("TBG-X")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 2
-        changesNode = getChangesJson(0, 2);
-        checkAssignees(changesNode, "jason");
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(0, 2, new NewAssigneesChecker("jason"),
+                new NewRankChecker().rank((7), "TDP-8").rank(3, "TBG-4"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"),
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"));
-        checkRankChanges(changesNode, new RankChange(7, "TDP-8"), new RankChange(3, "TBG-4"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir"),
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "jason"));
         //1 -> 2
-        changesNode = getChangesJson(1, 2);
-        checkAssignees(changesNode, "jason");
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(1, 2, new NewAssigneesChecker("jason"),
+                new NewRankChecker().rank(3, "TBG-4"));
         checkDeletes(changesNode);
+        checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(3, "TBG-4"));
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "jason"));
 
 
-        //Add another one not bringing in new assignees
-        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D");
+        //Add another one not bringing in new expectedAssignees
+        create = createEventBuilder("TDP-9", IssueType.BUG, Priority.HIGH, "Nine")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 3
-        changesNode = getChangesJson(0, 3);
-        checkAssignees(changesNode, "jason");
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(0, 3, new NewAssigneesChecker("jason"),
+                new NewRankChecker().rank(7, "TDP-8").rank(3, "TBG-4").rank(8, "TDP-9"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"),
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode,
-                new RankChange(7, "TDP-8"), new RankChange(3, "TBG-4"), new RankChange(8, "TDP-9"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir"),
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "jason"),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
         //1 -> 3
-        changesNode = getChangesJson(1, 3);
-        checkAssignees(changesNode, "jason");
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(1, 3, new NewAssigneesChecker("jason"),
+                new NewRankChecker().rank(3, "TBG-4").rank(8, "TDP-9"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "jason", null, "TBG-X"),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode,
-                new RankChange(3, "TBG-4"), new RankChange(8, "TDP-9"));
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "jason"),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
         //2 -> 3
-        changesNode = getChangesJson(2, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(2, 3, new NewRankChecker().rank(8, "TDP-9"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(8, "TDP-9"));
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
     }
 
     @Test
-    public void testCreateIssuesComponents() throws Exception {
-        //Add an issue which does not bring in new components
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D");
+    public void testCreateIssuesMultiSelectNameOnlyValues() throws Exception {
+        //Add an issue which does not bring in new components, labels or fix versions
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee( "kabir")
+                .components("C1", "C2")
+                .labels("L1", "L2")
+                .fixVersions("F1", "F2")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode changesNode = getChangesJson(0, 1);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        ModelNode changesNode = getChangesJson(0, 1, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
-        checkAdds(changesNode, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(7, "TDP-8"));
+        checkAdds(changesNode,
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir")
+                        .components("C1", "C2").labels("L1", "L2").fixVersions("F1", "F2"));
 
-        //Now add an issue which brings in new components
-        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X");
+        //Now add an issue which brings in new components, labels and fix versions
+        create = createEventBuilder("TBG-4", IssueType.FEATURE, Priority.LOW, "Four")
+                .assignee("kabir")
+                .components("C5", "C6")
+                .labels("L5", "L6")
+                .fixVersions("F5", "F6")
+                .state("TBG-X")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 2
-        changesNode = getChangesJson(0, 2);
-        checkAssignees(changesNode);
-        checkComponents(changesNode, "C5", "C6");
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(0, 2,
+                new NewComponentsChecker("C5", "C6"),
+                new NewLabelsChecker("L5", "L6"),
+                new NewFixVersionsChecker("F5", "F6"),
+                new NewRankChecker().rank(7, "TDP-8").rank(3, "TBG-4"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"),
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(7, "TDP-8"), new RankChange(3, "TBG-4"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir")
+                        .components("C1", "C2").labels("L1", "L2").fixVersions("F1", "F2"),
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "kabir")
+                        .components("C5", "C6").labels("L5", "L6").fixVersions("F5", "F6"));
         //1 -> 2
-        changesNode = getChangesJson(1, 2);
-        checkAssignees(changesNode);
-        checkComponents(changesNode, "C5", "C6");
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(1, 2,
+                new NewComponentsChecker("C5", "C6"),
+                new NewLabelsChecker("L5", "L6"),
+                new NewFixVersionsChecker("F5", "F6"),
+                new NewRankChecker().rank(3, "TBG-4"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(3, "TBG-4"));
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "kabir")
+                        .components("C5", "C6").labels("L5", "L6").fixVersions("F5", "F6"));
 
 
-        //Add another one not bringing in new components
-        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D");
+        //Add another one not bringing in new components, labels of fix versions
+        create = createEventBuilder("TDP-9", IssueType.BUG, Priority.HIGH, "Nine")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 3
-        changesNode = getChangesJson(0, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode, "C5", "C6");
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(0, 3,
+                new NewComponentsChecker("C5", "C6"),
+                new NewLabelsChecker("L5", "L6"),
+                new NewFixVersionsChecker("F5", "F6"),
+                new NewRankChecker().rank(7, "TDP-8").rank(3, "TBG-4").rank(8, "TDP-9"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", new String[]{"C1", "C2"}, "TDP-D"),
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(7, "TDP-8"), new RankChange(3, "TBG-4"), new RankChange(8, "TDP-9"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir")
+                        .components("C1", "C2").labels("L1", "L2").fixVersions("F1", "F2"),
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "kabir")
+                        .components("C5", "C6").labels("L5", "L6").fixVersions("F5", "F6"),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
         //1 -> 3
-        changesNode = getChangesJson(1, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode, "C5", "C6");
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(1, 3,
+                new NewComponentsChecker("C5", "C6"),
+                new NewLabelsChecker("L5", "L6"),
+                new NewFixVersionsChecker("F5", "F6"),
+                new NewRankChecker().rank(3, "TBG-4").rank(8, "TDP-9"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "kabir", new String[]{"C5", "C6"}, "TBG-X"),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(3, "TBG-4"), new RankChange(8, "TDP-9"));
+                new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", "kabir")
+                        .components("C5", "C6").labels("L5", "L6").fixVersions("F5", "F6"),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
         //2 -> 3
-        changesNode = getChangesJson(2, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(2, 3, new NewRankChecker().rank(8, "TDP-9"));
         checkDeletes(changesNode);
         checkUpdates(changesNode);
         checkAdds(changesNode,
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(8, "TDP-9"));
-
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
     }
 
     @Test
@@ -346,465 +333,276 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         final Long documenterId = 121212121213L;
 
         //Create an issue which does not bring in custom fields
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D");
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        ModelNode changes = getChangesJson(0, 1, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes);
-        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D"));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+        checkAdds(changes, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir"));
 
         //Create an issue which brings in a custom field
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
-        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-9", IssueType.BUG, Priority.HIGH, "Nine")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        changes = getChangesJson(0, 2);
         //0 -> 2
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"jason"}, null);
+        changes = getChangesJson(0, 2, new NewCustomFieldChecker().testers("jason"),
+                new NewRankChecker().rank(7, "TDP-8").rank(8, "TDP-9"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"), new RankChange(8, "TDP-9"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new TesterChecker("jason"), DocumenterChecker.NONE));
         //1 -> 2
-        changes = getChangesJson(1, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"jason"}, null);
+        changes = getChangesJson(1, 2, new NewCustomFieldChecker().testers("jason"),
+                new NewRankChecker().rank(8, "TDP-9"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(8, "TDP-9"));
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new TesterChecker("jason"), DocumenterChecker.NONE));
 
         //Create an issue which brings in a custom field and reuses one of the existing ones
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
         customFieldValues.put(documenterId, "kabir");
-        create = createCreateEventAndAddToRegistry("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-10", IssueType.BUG, Priority.HIGH, "Ten")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        changes = getChangesJson(0, 3);
         //0 -> 3
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        changes = getChangesJson(0, 3, new NewCustomFieldChecker().testers("jason").documenters("kabir"),
+                new NewRankChecker().rank(7, "TDP-8").rank(8, "TDP-9").rank(9, "TDP-10"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), new DocumenterChecker("kabir")));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"), new RankChange(8, "TDP-9"), new RankChange(9, "TDP-10"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new TesterChecker("jason"), DocumenterChecker.NONE),
+                new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new TesterChecker("jason"), new DocumenterChecker("kabir")));
         //1 -> 3
-        changes = getChangesJson(1, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        changes = getChangesJson(1, 3, new NewCustomFieldChecker().testers("jason").documenters("kabir"),
+                new NewRankChecker().rank(8, "TDP-9").rank(9, "TDP-10"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), new DocumenterChecker("kabir")));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(8, "TDP-9"), new RankChange(9, "TDP-10"));
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new TesterChecker("jason"), DocumenterChecker.NONE),
+                new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new TesterChecker("jason"), new DocumenterChecker("kabir")));
         //2 -> 3
-        changes = getChangesJson(2, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, null, new String[]{"kabir"});
+        changes = getChangesJson(2, 3, new NewCustomFieldChecker().documenters("kabir"), new NewRankChecker().rank(9, "TDP-10"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), new DocumenterChecker("kabir")));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(9, "TDP-10"));
+                new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new TesterChecker("jason"), new DocumenterChecker("kabir")));
 
         //Create an issue which brings in no custom fields
-        create = createCreateEventAndAddToRegistry("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D");
+        create = createEventBuilder("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven")
+                .assignee("kabir")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 4
-        changes = getChangesJson(0, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        changes = getChangesJson(0, 4, new NewCustomFieldChecker().testers("jason").documenters("kabir"),
+                new NewRankChecker().rank(7, "TDP-8").rank(8, "TDP-9").rank(9, "TDP-10").rank(10, "TDP-11"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), new DocumenterChecker("kabir")),
-                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes,
-                new RankChange(7, "TDP-8"), new RankChange(8, "TDP-9"), new RankChange(9, "TDP-10"), new RankChange(10, "TDP-11"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE),
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new TesterChecker("jason"), DocumenterChecker.NONE),
+                new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new TesterChecker("jason"), new DocumenterChecker("kabir")),
+                new AddIssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE));
         //1 -> 4
-        changes = getChangesJson(1, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"jason"}, new String[]{"kabir"});
+        changes = getChangesJson(1, 4, new NewCustomFieldChecker().testers("jason").documenters("kabir"),
+                new NewRankChecker().rank(8, "TDP-9").rank(9, "TDP-10").rank(10, "TDP-11"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), NoIssueCustomFieldChecker.DOCUMENTER),
-                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), new DocumenterChecker("kabir")),
-                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes,
-                new RankChange(8, "TDP-9"), new RankChange(9, "TDP-10"), new RankChange(10, "TDP-11"));
+                new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new TesterChecker("jason"), DocumenterChecker.NONE),
+                new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new TesterChecker("jason"), new DocumenterChecker("kabir")),
+                new AddIssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE));
+
         //2 -> 4
-        changes = getChangesJson(2, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, null, new String[]{"kabir"});
+        changes = getChangesJson(2, 4, new NewCustomFieldChecker().documenters("kabir"),
+                new NewRankChecker().rank(9, "TDP-10").rank(10, "TDP-11"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                        new TesterChecker("jason"), new DocumenterChecker("kabir")),
-                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(9, "TDP-10"), new RankChange(10, "TDP-11"));
+                new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new TesterChecker("jason"), new DocumenterChecker("kabir")),
+                new AddIssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE));
         //3 -> 4
-        changes = getChangesJson(3, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(3, 4, new NewRankChecker().rank(10, "TDP-11"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "kabir", null, "TDP-D",
-                        NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(10, "TDP-11"));
+                new AddIssueData("TDP-11", IssueType.BUG, Priority.HIGH, "Eleven", "TDP-D", "kabir").checkers(TesterChecker.NONE, DocumenterChecker.NONE));
     }
 
     @Test
     public void testUpdateSameIssueNoNewData() throws Exception {
         //Do a noop update
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-7").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(0);
-        checkNoIssueChanges(0, 0);
-        checkNoRankChanges(0, 0);
+        ModelNode changes = checkNoIssueChanges(0, 0);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-7").summary("Seven-1").buildAndRegister();
+
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        ModelNode changes = getChangesJson(0, 1);
-        //Check assignees and deletes extra well here so we don't have to in the other tests
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(0, 1);
+        //Check expectedAssignees and deletes extra well here so we don't have to in the other tests
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, "Seven-1", null, null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").summary("Seven-1"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
 
-
-        update = createUpdateEventAndAddToRegistry("TDP-7", IssueType.BUG, null, null, null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-7").issueType(IssueType.BUG).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 2
         changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", IssueType.BUG, null, "Seven-1", null, null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").type(IssueType.BUG).summary("Seven-1"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //1 -> 2
         changes = getChangesJson(1, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", IssueType.BUG, null, null, null, null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").type(IssueType.BUG));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
 
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", null, Priority.HIGHEST, null, null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-7").priority(Priority.HIGHEST).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //0 -> 3
         changes = getChangesJson(0, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", IssueType.BUG, Priority.HIGHEST, "Seven-1", null, null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").type(IssueType.BUG).priority(Priority.HIGHEST).summary("Seven-1"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //1 -> 3
         changes = getChangesJson(1, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", IssueType.BUG, Priority.HIGHEST, null, null, null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").type(IssueType.BUG).priority(Priority.HIGHEST));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //2 -> 3
         changes = getChangesJson(2, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, Priority.HIGHEST, null, null, null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").priority(Priority.HIGHEST));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
     }
 
 
     @Test
     public void testUpdateSameIssueAssignees() throws Exception {
         //Do an update not bringing in any new data
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "kabir", false, null, false, null, false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-7").assignee("kabir").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "kabir", null, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("kabir"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, true, null, false, null, false);
+        update = updateEventBuilder("TDP-7").unassign().buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, true, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").unassigned());
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-        checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, true, null, false, null));
+        changes = getChangesJson(1, 2);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").unassigned());
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "jason", false, null, false, null, false);
+        update = updateEventBuilder("TDP-7").assignee("jason").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //0->3
-        changes = getChangesJson(0, 3);
-        checkAssignees(changes, "jason");
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(0, 3, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "jason", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("jason"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //1 -> 3
-        changes = getChangesJson(1, 3);
-        checkAssignees(changes, "jason");
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(1, 3, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "jason", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("jason"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //2 -> 3
-        changes = getChangesJson(2, 3);
-        checkAssignees(changes, "jason");
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(2, 3, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "jason", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("jason"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, "brian", false, null, false, null, false);
+        update = updateEventBuilder("TDP-7").assignee("brian").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //0->4
-        changes = getChangesJson(0, 4);
-        checkAssignees(changes, "jason");
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(0, 4, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("brian"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //1 -> 4
-        changes = getChangesJson(1, 4);
-        checkAssignees(changes, "jason");
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(1, 4, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("brian"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //2 -> 4
-        changes = getChangesJson(2, 4);
-        checkAssignees(changes, "jason");
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(2, 4, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("brian"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
         //3 -> 4
         changes = getChangesJson(3, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, "brian", false, null, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").assignee("brian"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
     }
 
     @Test
-    public void testUpdateSameIssueComponents() throws Exception {
+    public void testUpdateSameIssueMultiSelectNameOnlyValues() throws Exception {
         //Do an update not bringing in any new data
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false,
-                new String[]{"C1"}, false, null, false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-7")
+                .components("C1").labels("L1").fixVersions("F1").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, new String[]{"C1"}, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").components("C1").labels("L1").fixVersions("F1"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, true, null, false);
+        update = updateEventBuilder("TDP-7").clearComponents().clearLabels().clearFixVersions().buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        //0 -> 2
-        changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, true, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-        //1 -> 2
-        changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, false, null, true, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        for (int i = 0 ; i <= 1; i++) {
+            changes = getChangesJson(i, 2);
+            checkDeletes(changes);
+            checkUpdates(changes, new UpdateIssueData("TDP-7").clearedComponents().clearedLabels().clearedFixVersions());
+            checkAdds(changes);
+        }
+        update = updateEventBuilder("TDP-7").components("C-10").labels("L-10").fixVersions("F-10").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        for (int i = 0 ; i <= 2; i++) {
+            changes = getChangesJson(i, 3,
+                    new NewComponentsChecker("C-10"),
+                    new NewLabelsChecker("L-10"),
+                    new NewFixVersionsChecker("F-10"));
+            checkDeletes(changes);
+            checkUpdates(changes, new UpdateIssueData("TDP-7").components("C-10").labels("L-10").fixVersions("F-10"));
+            checkAdds(changes);
+        }
 
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false,
-                new String[]{"C-10"}, false, null, false);
+        update = updateEventBuilder("TDP-7").components("C1", "C2").labels("L1", "L2").fixVersions("F1", "F2").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        //0 -> 3
-        changes = getChangesJson(0, 3);
-        checkAssignees(changes);
-        checkComponents(changes, "C-10");
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C-10"}, false, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-        //1 -> 3
-        changes = getChangesJson(1, 3);
-        checkAssignees(changes);
-        checkComponents(changes, "C-10");
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C-10"}, false, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-        //2 -> 3
-        changes = getChangesJson(2, 3);
-        checkAssignees(changes);
-        checkComponents(changes, "C-10");
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C-10"}, false, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-
-        update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, new String[]{"C1", "C2"}, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
-        //0 -> 4
-        changes = getChangesJson(0, 4);
-        checkAssignees(changes);
-        checkComponents(changes, "C-10");
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-        //1 -> 4
-        changes = getChangesJson(1, 4);
-        checkAssignees(changes);
-        checkComponents(changes, "C-10");
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
-        //2 -> 4
-        changes = getChangesJson(2, 4);
-        checkAssignees(changes);
-        checkComponents(changes, "C-10");
-        checkNoCustomFields(changes);
-        checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        //0. 1 and 2 -> 4
+        for (int i = 0 ; i <= 2; i++) {
+            changes = getChangesJson(i, 4,
+                    new NewComponentsChecker("C-10"),
+                    new NewLabelsChecker("L-10"),
+                    new NewFixVersionsChecker("F-10"));
+            checkDeletes(changes);
+            checkUpdates(changes, new UpdateIssueData("TDP-7").components("C1", "C2").labels("L1", "L2").fixVersions("F1", "F2"));
+            checkAdds(changes);
+        }
         //3 -> 4
         changes = getChangesJson(3, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, new String[]{"C1", "C2"}, false, null));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").components("C1", "C2").labels("L1", "L2").fixVersions("F1", "F2"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
     }
 
     @Test
@@ -828,89 +626,64 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "brian");
         customFieldValues.put(documenterId, "stuart");
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7",
-                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-7").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(1);
         ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, null, null, new TesterChecker("brian"), new DocumenterChecker("stuart")));
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("brian"), new DocumenterChecker("stuart")));
 
         //Clear one of the custom fields
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "");
-        update = createUpdateEventAndAddToRegistry("TDP-7",
-                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-7").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(2);
         changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null)));
-        checkUpdates(1, 2, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null)));
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(TesterChecker.UNDEFINED, new DocumenterChecker("stuart")));
+        changes = getChangesJson(1, 2);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(TesterChecker.UNDEFINED));
 
         //Clear the other custom field
         customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, "");
-        update = createUpdateEventAndAddToRegistry("TDP-7",
-                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-7").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(3);
         changes = getChangesJson(0, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null), new DocumenterChecker(null)));
-        checkUpdates(1, 3, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker(null), new DocumenterChecker(null)));
-        checkUpdates(2, 3, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new DocumenterChecker(null)));
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(TesterChecker.UNDEFINED, DocumenterChecker.UNDEFINED));
+        changes = getChangesJson(1, 3);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(TesterChecker.UNDEFINED, DocumenterChecker.UNDEFINED));
+        changes = getChangesJson(2, 3);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(DocumenterChecker.UNDEFINED));
 
         //Now add custom fields bringing in new data
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "james");
         customFieldValues.put(documenterId, "jason");
-        update = createUpdateEventAndAddToRegistry("TDP-7",
-                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-7").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(4);
-        changes = getChangesJson(0, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"james"}, new String[]{"jason"});
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
-        checkUpdates(1, 4, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
-        checkUpdates(2, 4, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
-        checkUpdates(3, 4, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("james"), new DocumenterChecker("jason")));
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        changes = getChangesJson(0, 4, new NewCustomFieldChecker().testers("james").documenters("jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("james"), new DocumenterChecker("jason")));
+        changes = getChangesJson(1, 4, new NewCustomFieldChecker().testers("james").documenters("jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("james"), new DocumenterChecker("jason")));
+        changes = getChangesJson(2, 4, new NewCustomFieldChecker().testers("james").documenters("jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("james"), new DocumenterChecker("jason")));
+        changes = getChangesJson(3, 4, new NewCustomFieldChecker().testers("james").documenters("jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("james"), new DocumenterChecker("jason")));
 
         //Update other custom fields bringing in new data
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
         customFieldValues.put(documenterId, "james");
-        update = createUpdateEventAndAddToRegistry("TDP-7",
-                (IssueType) null, null, null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-7").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(5);
-        changes = getChangesJson(0, 5);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkCustomFields(changes, new String[]{"james", "jason"}, new String[]{"james", "jason"});
-        checkUpdates(changes, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
-        checkUpdates(1, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
-        checkUpdates(2, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
-        checkUpdates(3, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
-        checkUpdates(4, 5, new IssueData("TDP-7", null, null, null, null, false, null, false, null, new TesterChecker("jason"), new DocumenterChecker("james")));
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        changes = getChangesJson(0, 5, new NewCustomFieldChecker().testers("james", "jason").documenters("james", "jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("jason"), new DocumenterChecker("james")));
+        changes = getChangesJson(1, 5, new NewCustomFieldChecker().testers("james", "jason").documenters("james", "jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("jason"), new DocumenterChecker("james")));
+        changes = getChangesJson(2, 5, new NewCustomFieldChecker().testers("james", "jason").documenters("james", "jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("jason"), new DocumenterChecker("james")));
+        changes = getChangesJson(3, 5, new NewCustomFieldChecker().testers("james", "jason").documenters("james", "jason"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("jason"), new DocumenterChecker("james")));
+        changes = getChangesJson(4, 5, new NewCustomFieldChecker().testers("jason").documenters("james"));
+        checkUpdates(changes, new UpdateIssueData("TDP-7").checkers(new TesterChecker("jason"), new DocumenterChecker("james")));
     }
 
 
@@ -942,62 +715,52 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "IP");
         customFieldValues.put(downstreamId, "D");
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D", customFieldValues);
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        ModelNode changes = getChangesJson(0, 1, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes);
-        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
-                new ParallelTaskFieldValueChecker(true, 1, 2)));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+        checkAdds(changes, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir").checkers(new ParallelTaskFieldValueChecker(true, 1, 2)));
 
         //Create another issue with no parallel tasks, we should default to the default value
         customFieldValues = new HashMap<>();
-        create = createCreateEventAndAddToRegistry("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-9", IssueType.BUG, Priority.HIGH, "Nine")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        changes = getChangesJson(1, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(1, 2, new NewRankChecker().rank(8, "TDP-9"));
         checkDeletes(changes);
         checkUpdates(changes);
-        checkAdds(changes, new IssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "kabir", null, "TDP-D",
-                new ParallelTaskFieldValueChecker(true, 0, 0)));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(8, "TDP-9"));
+        checkAdds(changes, new AddIssueData("TDP-9", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", "kabir").checkers(new ParallelTaskFieldValueChecker(true, 0, 0)));
 
         //Create another issue with null parallel tasks, we should default to the default value
         customFieldValues = null;
-        create = createCreateEventAndAddToRegistry("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-10", IssueType.BUG, Priority.HIGH, "Ten")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        changes = getChangesJson(2, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(2, 3, new NewRankChecker().rank(9, "TDP-10"));
         checkDeletes(changes);
         checkUpdates(changes);
-        checkAdds(changes, new IssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "kabir", null, "TDP-D",
-                new ParallelTaskFieldValueChecker(true, 0, 0)));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(9, "TDP-10"));
+        checkAdds(changes, new AddIssueData("TDP-10", IssueType.BUG, Priority.HIGH, "Ten", "TDP-D", "kabir").checkers(new ParallelTaskFieldValueChecker(true, 0, 0)));
 
         //Create an issue in a project with no parallel tasks set up
-        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", null, null, "TBG-X");
+        create = createEventBuilder("TBG-4", IssueType.FEATURE, Priority.LOW, "Four")
+                .state("TBG-X")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        changes = getChangesJson(3, 4);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        changes = getChangesJson(3, 4, new NewRankChecker().rank(3, "TBG-4"));
         checkDeletes(changes);
         checkUpdates(changes);
-        checkAdds(changes, new IssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", null, null, "TBG-X",
-                new ParallelTaskFieldValueChecker(true, null)));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(3, "TBG-4"));
+        checkAdds(changes, new AddIssueData("TBG-4", IssueType.FEATURE, Priority.LOW, "Four", "TBG-X", null).checkers(ParallelTaskFieldValueChecker.NONE));
     }
 
     @Test
@@ -1027,67 +790,43 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Update an issue with parallel tasks
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "M");
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(1);
         ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkUpdates(changes, new IssueData("TDP-1", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, -1)));
+        checkUpdates(changes, new UpdateIssueData("TDP-1").checkers(new ParallelTaskFieldValueChecker(false, 2, -1)));
 
         customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "IP");
         customFieldValues.put(downstreamId, "D");
-        update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-2").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(2);
         changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoRankChanges(changes);
         checkUpdates(changes,
-                new IssueData("TDP-1", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, -1)),
-                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)));
+                new UpdateIssueData("TDP-1").checkers(new ParallelTaskFieldValueChecker(false, 2, -1)),
+                new UpdateIssueData("TDP-2").checkers(new ParallelTaskFieldValueChecker(false, 1, 2)));
         changes = getChangesJson(1, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoRankChanges(changes);
         checkUpdates(changes,
-                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)));
+                new UpdateIssueData("TDP-2").checkers(new ParallelTaskFieldValueChecker(false, 1, 2)));
 
 
         //Update an issue which does not have parallel task fields
-        update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
-                null, null, false, null, false, null, false);
+        update = updateEventBuilder("TBG-1").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         checkViewId(2);
-        update = createUpdateEventAndAddToRegistry("TBG-1", IssueType.BUG, null,
-                null, null, false, null, false, null, false);
+        update = updateEventBuilder("TBG-1").issueType(IssueType.BUG).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(3);
         changes = getChangesJson(0, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoRankChanges(changes);
         checkUpdates(changes,
-                new IssueData("TDP-1", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, -1)),
-                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)),
-                new IssueData("TBG-1", IssueType.BUG, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, null)));
+                new UpdateIssueData("TDP-1").checkers(new ParallelTaskFieldValueChecker(false, 2, -1)),
+                new UpdateIssueData("TDP-2").checkers(new ParallelTaskFieldValueChecker(false, 1, 2)),
+                new UpdateIssueData("TBG-1").type(IssueType.BUG).checkers(ParallelTaskFieldValueChecker.NONE));
         changes = getChangesJson(1, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoRankChanges(changes);
         checkUpdates(changes,
-                new IssueData("TDP-2", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 1, 2)),
-                new IssueData("TBG-1", IssueType.BUG, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, null)));
+                new UpdateIssueData("TDP-2").checkers(new ParallelTaskFieldValueChecker(false, 1, 2)),
+                new UpdateIssueData("TBG-1").type(IssueType.BUG).checkers(ParallelTaskFieldValueChecker.NONE));
         changes = getChangesJson(2, 3);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoRankChanges(changes);
         checkUpdates(changes,
-                new IssueData("TBG-1", IssueType.BUG, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, null)));
+                new UpdateIssueData("TBG-1").type(IssueType.BUG).checkers(ParallelTaskFieldValueChecker.NONE));
 
     }
 
@@ -1119,173 +858,142 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "IP");
         customFieldValues.put(downstreamId, "D");
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D", customFieldValues);
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode changes = getChangesJson(0, 1);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkNoCustomFields(changes);
+        ModelNode changes = getChangesJson(0, 1, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes);
-        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
-                new ParallelTaskFieldValueChecker(true, 1, 2)));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+        checkAdds(changes, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir").checkers(new ParallelTaskFieldValueChecker(true, 1, 2)));
 
         customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "M");
         customFieldValues.put(downstreamId, "TD");
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-8", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-8").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        checkViewId(2);
-        changes = getChangesJson(0, 2);
-        checkAssignees(changes);
-        checkComponents(changes);
-        checkAdds(changes, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-D",
-                new ParallelTaskFieldValueChecker(true, 2, 0)));
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+        changes = getChangesJson(0, 2, new NewRankChecker().rank(7, "TDP-8"));
+        checkAdds(changes, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-D", "kabir").checkers(new ParallelTaskFieldValueChecker(true, 2, 0)));
+        checkDeletes(changes);
+        checkUpdates(changes);
         changes = getChangesJson(1, 2);
-        checkUpdates(changes, new IssueData("TDP-8", null, null, null, null, null, null, new ParallelTaskFieldValueChecker(false, 2, 0)));
-        checkNoRankChanges(changes);
+        checkAdds(changes);
+        checkUpdates(changes, new UpdateIssueData("TDP-8").checkers(new ParallelTaskFieldValueChecker(false, 2, 0)));
+        checkDeletes(changes);
     }
 
     @Test
     public void testUpdateSeveralIssues() throws Exception {
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, "Seven-1", null, false, null, false, null, false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-7").summary("Seven-1").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkDeletes(changes);
-        checkUpdates(changes, new IssueData("TDP-7", null, null, "Seven-1", null, null, null));
-        checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
+        checkUpdates(changes, new UpdateIssueData("TDP-7").summary("Seven-1"));
 
-        update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, null, null, "kabir", false, null, false, null, false);
+        update = updateEventBuilder("TBG-3").issueType(IssueType.BUG).assignee("kabir").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         changes = getChangesJson(0, 2);
         checkDeletes(changes);
         checkUpdates(changes,
-                new IssueData("TDP-7", null, null, "Seven-1", null, null, null),
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
+                new UpdateIssueData("TDP-7").summary("Seven-1"),
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
         checkAdds(changes);
-        checkNoBlacklistChanges(changes);
-        checkNoRankChanges(changes);
 
         //////////////////////////////////////////////////////////////////////////////////////
         //Create, update and delete TDP-8 to make sure that does not affect the others
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D");
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Nine")
+                .state("TDP-D")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
         //0 -> 3
-        changes = getChangesJson(0, 3);
+        changes = getChangesJson(0, 3, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes,
-                new IssueData("TDP-7", null, null, "Seven-1", null, null, null),
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
+                new UpdateIssueData("TDP-7").summary("Seven-1"),
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
         checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
-        //1 -> 3
-        changes = getChangesJson(1, 3);
-        checkDeletes(changes);
-        checkUpdates(changes,
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
-        checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
-        //2 -> 3
-        changes = getChangesJson(2, 3);
-        checkDeletes(changes);
-        checkUpdates(2, 3);
-        checkAdds(2, 3,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", null, null, "TDP-D"));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
 
-        //This should appear as an add for change sets including its previous create, and an update for change
-        //sets not including the create
-        update = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, null, "jason", false, null, false, "TDP-C", false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
-        //0 -> 4
-        changes = getChangesJson(0, 4);
-        checkAssignees(changes, "jason");
+        //1 -> 3
+        changes = getChangesJson(1, 3, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes,
-                new IssueData("TDP-7", null, null, "Seven-1", null, null, null),
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
         checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", null, "TDP-C"));
-        checkNoBlacklistChanges(changes);
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
-        //1 -> 4
-        changes = getChangesJson(1, 4);
-        checkAssignees(changes, "jason");
-        checkDeletes(changes);
-        checkUpdates(changes,
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
-        checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", null, "TDP-C"));
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
-        //2 -> 4
-        changes = getChangesJson(2, 4);
-        checkAssignees(changes, "jason");
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
+        //2 -> 3
+        changes = getChangesJson(2, 3, new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes,
-                new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "jason", null, "TDP-C"));
-        //3 -> 4
-        changes = getChangesJson(3, 4);
-        checkAssignees(changes, "jason");
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "TDP-D", null));
+
+        //This should appear as an add for change sets including its previous create, and an update for change
+        //sets not including the create
+        update = updateEventBuilder("TDP-8").assignee("jason").state("TDP-C").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        //0 -> 4
+        changes = getChangesJson(0, 4, new NewAssigneesChecker("jason"), new NewRankChecker().rank(7, "TDP-8"));
         checkDeletes(changes);
         checkUpdates(changes,
-                new IssueData("TDP-8", null, null, null, "jason", null, "TDP-C"));
+                new UpdateIssueData("TDP-7").summary("Seven-1"),
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
+        checkAdds(changes,
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "TDP-C", "jason"));
+        //1 -> 4
+        changes = getChangesJson(1, 4, new NewAssigneesChecker("jason"), new NewRankChecker().rank(7, "TDP-8"));
+        checkDeletes(changes);
+        checkUpdates(changes,
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
+        checkAdds(changes,
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "TDP-C", "jason"));
+        //2 -> 4
+        changes = getChangesJson(2, 4, new NewAssigneesChecker("jason"), new NewRankChecker().rank(7, "TDP-8"));
+        checkDeletes(changes);
+        checkUpdates(changes);
+        checkAdds(changes,
+                new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Nine", "TDP-C", "jason"));
+        //3 -> 4
+        changes = getChangesJson(3, 4, new NewAssigneesChecker("jason"));
+        checkDeletes(changes);
+        checkUpdates(changes,
+                new UpdateIssueData("TDP-8").state("TDP-C").assignee("jason"));
         checkAdds(changes);
-        checkNoRankChanges(changes);
 
         //This will not appear in change sets including the create, it becomes a noop
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
-        changes = getChangesJson(0, 5);
         //0 -> 5
-        checkAssignees(changes, "jason");
+        changes = getChangesJson(0, 5, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
         checkUpdates(changes,
-                new IssueData("TDP-7", null, null, "Seven-1", null, null, null),
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
+                new UpdateIssueData("TDP-7").summary("Seven-1"),
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
         checkAdds(changes);
-        checkNoRankChanges(changes);
         //1 -> 5
-        changes = getChangesJson(1, 5);
-        checkAssignees(changes, "jason");
+        changes = getChangesJson(1, 5, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
         checkUpdates(changes,
-                new IssueData("TBG-3", IssueType.BUG, null, null, "kabir", null, null));
+                new UpdateIssueData("TBG-3").type(IssueType.BUG).assignee("kabir"));
         checkAdds(changes);
-        checkNoRankChanges(changes);
         //2 -> 5
-        changes = getChangesJson(2, 5);
-        checkAssignees(changes, "jason");
+        changes = getChangesJson(2, 5, new NewAssigneesChecker("jason"));
         checkDeletes(changes);
         checkUpdates(changes);
         checkAdds(changes);
-        checkNoRankChanges(changes);
         //3 -> 5
-        changes = getChangesJson(3, 5);
-        checkAssignees(changes, "jason");
+        changes = getChangesJson(3, 5, new NewAssigneesChecker("jason"));
         checkDeletes(changes, "TDP-8");
         checkUpdates(changes);
         checkAdds(changes);
-        checkNoRankChanges(changes);
         //4 -> 5
         changes = getChangesJson(4, 5);
-        checkAssignees(changes);
         checkDeletes(changes, "TDP-8");
         checkUpdates(changes);
         checkAdds(changes);
-        checkNoRankChanges(changes);
     }
 
     @Test
@@ -1297,20 +1005,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "brian");
         customFieldValues.put(documenterId, "stuart");
 
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8",
-                IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", customFieldValues);
+        JirbanIssueEvent event = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee("jason")
+                .labels("L-X", "L-Y")
+                .state("TDP-A")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
 
-        ModelNode changes = getChangesJson(0, 1);
-        checkAdds(changes, new IssueData("TDP-8",
-                IssueType.BUG, Priority.HIGH, "Eight", "jason", new String[]{"C-X", "C-Y"}, "TDP-A", new TesterChecker("brian"), new DocumenterChecker("stuart")));
+        ModelNode changes = getChangesJson(0, 1, new NewAssigneesChecker("jason"),
+                new NewLabelsChecker("L-X", "L-Y"),
+                new NewCustomFieldChecker().testers("brian").documenters("stuart"),
+                new NewRankChecker().rank(7, "TDP-8"));
+        checkAdds(changes, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-A", "jason")
+                .labels("L-X", "L-Y").checkers(new TesterChecker("brian"), new DocumenterChecker("stuart")));
         checkUpdates(changes);
         checkDeletes(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes, "jason");
-        checkComponents(changes, new String[]{"C-X", "C-Y"});
-        checkCustomFields(changes, new String[]{"brian"}, new String[]{"stuart"});
-        checkRankChanges(changes, new RankChange(7, "TDP-8"));
 
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
@@ -1318,185 +1028,142 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         //Although we have deleted the issue introducing the new assignee and components, we should still send those
         //down since they will exist on the server now, so if another issue changes to use those the clients will need a copy.
-        changes = getChangesJson(0, 2);
+        changes = getChangesJson(0, 2, new NewAssigneesChecker("jason"),
+                new NewLabelsChecker("L-X", "L-Y"),
+                new NewCustomFieldChecker().testers("brian").documenters("stuart"));
         checkAdds(changes);
         checkUpdates(changes);
         checkDeletes(changes);
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes, "jason");
-        checkComponents(changes, new String[]{"C-X", "C-Y"});
-        checkCustomFields(changes, new String[]{"brian"}, new String[]{"stuart"});
-        checkNoRankChanges(changes);
     }
 
     @Test
     public void testBlacklistBadCreatedState() throws SearchException {
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.FEATURE, Priority.HIGH, "Eight", null, null, "BadState");
+        JirbanIssueEvent event = createEventBuilder("TDP-8", IssueType.FEATURE, Priority.HIGH, "Eight")
+                .state("BadState")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
-        checkNoIssueChanges(0, 1);
-        checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-8"}, null);
-        checkNoRankChanges(0, 1);
+        checkNoIssueChanges(0, 1, new NewBlackListChecker().states("BadState").keys("TDP-8"));
 
-
-        event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-8").summary("Eight-1").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
-        event = createUpdateEventAndAddToRegistry("TDP-8", "NewBadType", null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-8").issueType("NewBadType").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(2);
-        checkNoIssueChanges(0, 2);
-        checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-8"});
-        checkNoRankChanges(0, 2);
-        checkNoIssueChanges(1, 2);
-        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
-        checkNoRankChanges(1, 2);
+        checkNoIssueChanges(0, 2, new NewBlackListChecker().states("BadState").removedKeys("TDP-8"));
+        checkNoIssueChanges(1, 2, new NewBlackListChecker().removedKeys("TDP-8"));
     }
 
     @Test
     public void testBlacklistBadUpdatedState() throws SearchException {
-        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType)null, null, null, null, false, null, false, "BadState", false);
+        JirbanIssueEvent event = updateEventBuilder("TDP-7").state("BadState").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
-        checkNoIssueChanges(0, 1);
-        checkBlacklist(0, 1, new String[]{"BadState"}, null, null, new String[]{"TDP-7"}, null);
-        checkNoRankChanges(0, 1);
+        checkNoIssueChanges(0, 1, new NewBlackListChecker().states("BadState").keys("TDP-7"));
 
-        event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-7").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
-        event = createUpdateEventAndAddToRegistry("TDP-7", "NewBadType", null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-7").issueType("NewBadType").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(2);
-        checkNoIssueChanges(0, 2);
-        checkBlacklist(0, 2, new String[]{"BadState"}, null, null, null, new String[]{"TDP-7"});
-        checkNoRankChanges(0, 2);
-        checkNoIssueChanges(1, 2);
-        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
-        checkNoRankChanges(1, 2);
+        checkNoIssueChanges(0, 2, new NewBlackListChecker().states("BadState").removedKeys("TDP-7"));
+        checkNoIssueChanges(1, 2, new NewBlackListChecker().removedKeys("TDP-7"));
     }
 
     @Test
     public void testBlacklistBadCreatedIssueType() throws SearchException {
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", "BadType", Priority.HIGH.name, "Eight", null, null, "TDP-C");
+        JirbanIssueEvent event = createEventBuilder("TDP-8", "BadType", Priority.HIGH.name, "Eight")
+                .state("TDP-C")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
-        checkNoIssueChanges(0, 1);
-        checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-8"}, null);
-        checkNoRankChanges(0, 1);
+        checkNoIssueChanges(0, 1, new NewBlackListChecker().types("BadType").keys("TDP-8"));
 
-        event = createUpdateEventAndAddToRegistry("TDP-8", (IssueType) null, null, "Eight-1", null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-8").summary("Eight-1").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
-        event = createUpdateEventAndAddToRegistry("TDP-8", "NewBadType", null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-8").issueType("NewBadType").buildAndRegister();;
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(2);
-        checkNoIssueChanges(0, 2);
-        checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-8"});
-        checkNoRankChanges(0, 2);
-        checkNoIssueChanges(1, 2);
-        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
-        checkNoRankChanges(1, 2);
+        checkNoIssueChanges(0, 2, new NewBlackListChecker().types("BadType").removedKeys("TDP-8"));
+        checkNoIssueChanges(1, 2, new NewBlackListChecker().removedKeys("TDP-8"));
     }
 
     @Test
     public void testBlacklistBadUpdatedIssueType() throws SearchException {
-        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", "BadType", null, null, null, false, null, false, null, false);
+        JirbanIssueEvent event = updateEventBuilder("TDP-7")
+                .issueType("BadType")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
-        checkNoIssueChanges(0, 1);
-        checkBlacklist(0, 1, null, new String[]{"BadType"}, null, new String[]{"TDP-7"}, null);
-        checkNoRankChanges(0, 1);
+        ModelNode changes = checkNoIssueChanges(0, 1, new NewBlackListChecker().types("BadType").keys("TDP-7"));
 
-        event = createUpdateEventAndAddToRegistry("TDP-7", (IssueType) null, null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-7").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
-        event = createUpdateEventAndAddToRegistry("TDP-7", "NewBadType", null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-7").issueType("NewBadType").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(2);
-        checkNoIssueChanges(0, 2);
-        checkBlacklist(0, 2, null, new String[]{"BadType"}, null, null, new String[]{"TDP-7"});
-        checkNoRankChanges(0, 2);
-        checkNoIssueChanges(1, 2);
-        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
-        checkNoRankChanges(1, 2);
+        checkNoIssueChanges(0, 2, new NewBlackListChecker().types("BadType").removedKeys("TDP-7"));
+        checkNoIssueChanges(1, 2, new NewBlackListChecker().removedKeys("TDP-7"));
     }
 
     @Test
     public void testBlacklistBadCreatedPriority() throws SearchException {
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.FEATURE.name, "BadPriority", "Eight", null, null, "TDP-C");
+        JirbanIssueEvent event = createEventBuilder("TDP-8", IssueType.FEATURE.name, "BadPriority", "Eight")
+                .state("TDP-C")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
-        checkNoIssueChanges(0, 1);
-        checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-8"}, null);
-        checkNoRankChanges(0, 1);
+        ModelNode changes = checkNoIssueChanges(0, 1, new NewBlackListChecker().priorities("BadPriority").keys("TDP-8"));
 
-        event = createUpdateEventAndAddToRegistry("TDP-8", null, (Priority)null, "Eight-1", null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-8").summary("Eight-1").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
-        event = createUpdateEventAndAddToRegistry("TDP-8", null, "NewBadPriority", null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-8").priority("NewBadPriority").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-8", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(2);
-        checkNoIssueChanges(0, 2);
-        checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-8"});
-        checkNoRankChanges(0, 2);
-        checkNoIssueChanges(1, 2);
-        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-8"});
-        checkNoRankChanges(1, 2);
+        checkNoIssueChanges(0, 2, new NewBlackListChecker().priorities("BadPriority").removedKeys("TDP-8"));
+        checkNoIssueChanges(1, 2, new NewBlackListChecker().removedKeys("TDP-8"));
     }
 
     @Test
     public void testBlacklistBadUpdatedPriority() throws SearchException {
-        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-7", null, "BadPriority", null, null, false, null, false, null, false);
+        JirbanIssueEvent event = updateEventBuilder("TDP-7")
+                .priority("BadPriority")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
-        checkNoIssueChanges(0, 1);
-        checkBlacklist(0, 1, null, null, new String[]{"BadPriority"}, new String[]{"TDP-7"}, null);
-        checkNoRankChanges(0, 1);
+        ModelNode changes = checkNoIssueChanges(0, 1, new NewBlackListChecker().priorities("BadPriority").keys("TDP-7"));
 
-        event = createUpdateEventAndAddToRegistry("TDP-7", null, (Priority)null, "Eight-1", null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-7").summary("Eight-1").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
-        event = createUpdateEventAndAddToRegistry("TDP-7", null, "NewBadPriority", null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-7").priority("NewBadPriority").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         checkViewId(1); //No change, it was blacklisted already
 
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(2);
-        checkNoIssueChanges(0, 2);
-        checkBlacklist(0, 2, null, null, new String[]{"BadPriority"}, null, new String[]{"TDP-7"});
-        checkNoRankChanges(0, 2);
-        checkNoIssueChanges(1, 2);
-        checkBlacklist(1, 2, null, null, null, null, new String[]{"TDP-7"});
-        checkNoRankChanges(1, 2);
+        checkNoIssueChanges(0, 2, new NewBlackListChecker().priorities("BadPriority").removedKeys("TDP-7"));
+        checkNoIssueChanges(1, 2, new NewBlackListChecker().removedKeys("TDP-7"));
     }
 
     @Test
@@ -1504,29 +1171,17 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent event = createUpdateEventAndAddToRegistry("TDP-1", null, "high", null, null, false, null, false, null, false);
+        JirbanIssueEvent event = updateEventBuilder("TDP-1").priority(Priority.HIGH).buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        checkViewId(1);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, Priority.HIGH, null, null, null, null));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").priority(Priority.HIGH));
         checkDeletes(backlogChanges);
-        checkNoRankChanges(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog not visible
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(backlogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoRankChanges(backlogChanges);
+        ModelNode nonBacklogChanges = checkNoIssueChanges(0, 1);
     }
 
     @Test
@@ -1535,28 +1190,20 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         //Do a create in the backlog
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-A");
+        JirbanIssueEvent event = createEventBuilder("TDP-8", IssueType.BUG, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .state("TDP-A")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
-        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "kabir", null, "TDP-A"));
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewRankChecker().rank(7, "TDP-8"));
+        checkAdds(backlogChanges, new AddIssueData("TDP-8", IssueType.BUG, Priority.HIGH, "Eight", "TDP-A", "kabir"));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkRankChanges(backlogChanges, new RankChange(7, "TDP-8"));
 
         //Backlog not visible, the change is ignored
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        checkNoIssueChanges(0, 1);
     }
 
     @Test
@@ -1564,31 +1211,18 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-B", false);
+        JirbanIssueEvent create = updateEventBuilder("TDP-1").state("TDP-B").buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        checkViewId(1);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-B"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the backlog to the backlog will not show up as a change when the backlog is hidden
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        ModelNode nonBacklogChanges = checkNoIssueChanges(0, 1);
     }
 
     @Test
@@ -1596,32 +1230,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-C", false);
+        JirbanIssueEvent create = updateEventBuilder("TDP-2").state("TDP-C").buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        checkViewId(1);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-2", null, null, null, null, null, "TDP-C"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-2").state("TDP-C"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the backlog to the non-backlog will appear as an add when the backlog is hidden
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkAdds(nonBacklogChanges, new IssueData("TDP-2", IssueType.TASK, Priority.HIGH, "Two", "kabir", new String[]{"C2"}, "TDP-C"));
+        ModelNode nonBacklogChanges = getChangesJson(0, 1, new NewRankChecker().rank(1, "TDP-2"));
+        checkAdds(nonBacklogChanges,
+                new AddIssueData("TDP-2", IssueType.TASK, Priority.HIGH, "Two", "TDP-C", "kabir")
+                    .components("C2").labels("L2").fixVersions("F2"));
         checkDeletes(nonBacklogChanges);
         checkUpdates(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkRankChanges(nonBacklogChanges, new RankChange(1, "TDP-2"));
     }
 
     @Test
@@ -1629,33 +1254,21 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-B", false);
+        JirbanIssueEvent create = updateEventBuilder("TDP-3").state("TDP-B").buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        checkViewId(1);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-B"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-3").state("TDP-B"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the non-backlog to the backlog will appear as a delete when the backlog is hidden
         ModelNode nonBacklogChanges = getChangesJson(0, 1);
         checkAdds(nonBacklogChanges);
-        checkDeletes(0, 1, "TDP-3");
+        checkDeletes(nonBacklogChanges, "TDP-3");
         checkUpdates(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(backlogChanges);
     }
 
     @Test
@@ -1663,32 +1276,21 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        JirbanIssueEvent create = updateEventBuilder("TDP-3").state("TDP-D").buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        checkViewId(1);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-D"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-3").state("TDP-D"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog not visible
         //An issue moved from the non-backlog to the non-backlog will behave normally
         ModelNode nonBacklogChanges = getChangesJson(0, 1);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-3", null, null, null, null, null, "TDP-D"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-3").state("TDP-D"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
     }
 
     @Test
@@ -1696,19 +1298,16 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createUpdateEventAndAddToRegistry("TDP-2", "Bad Type", "Bad Priority", null, null, false, null, false, null, false);
+        JirbanIssueEvent create = updateEventBuilder("TDP-2").issueType("Bad Type").priority("Bad Priority").buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
-        checkNoIssueChanges(backlogChanges);
-        checkBlacklist(backlogChanges, null, new String[]{"Bad Type"}, new String[]{"Bad Priority"}, new String[]{"TDP-2"}, null);
+        checkNoIssueChanges(0, 1, true, new NewBlackListChecker().types("Bad Type").priorities("Bad Priority").keys("TDP-2"));
 
         //Backlog invisible
         //Having something blacklisted is a configuration problem, so report this although this issue is in the backlog and not visible
-        ModelNode nonBacklogChanges = getChangesJson(0, 1, true);
+        ModelNode nonBacklogChanges = getChangesJson(0, 1, true, new NewBlackListChecker().types("Bad Type").priorities("Bad Priority").keys("TDP-2"));
         checkNoIssueChanges(nonBacklogChanges);
-        checkBlacklist(nonBacklogChanges, null, new String[]{"Bad Type"}, new String[]{"Bad Priority"}, new String[]{"TDP-2"}, null);
     }
 
     @Test
@@ -1716,31 +1315,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "jason", null, "TDP-A");
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.TASK, Priority.HIGH, "Eight")
+                .assignee("jason")
+                .state("TDP-A")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
-        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "jason", null, "TDP-A"));
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewRankChecker().rank(7, "TDP-8"), new NewAssigneesChecker("jason"));
+        checkAdds(backlogChanges, new AddIssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "TDP-A", "jason"));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges, "jason");
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkRankChanges(backlogChanges, new RankChange(7, "TDP-8"));
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
         //created using that assignee, and the server has no record of which clients have which assignee.
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges, "jason");
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        checkNoIssueChanges(0, 1, new NewAssigneesChecker("jason"));
     }
 
     @Test
@@ -1748,31 +1338,19 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, "jason", false, null, false, "TDP-B", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").assignee("jason").state("TDP-B").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewAssigneesChecker("jason"));
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, "jason", null, "TDP-B"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-B").assignee("jason"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges, "jason");
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
         //created using that assignee, and the server has no record of which clients have which assignee.
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges, "jason");
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        ModelNode nonBacklogChanges = checkNoIssueChanges(0, 1, new NewAssigneesChecker("jason"));
     }
 
     @Test
@@ -1780,31 +1358,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", new String[]{"C-X", "C-Y"}, "TDP-A");
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.TASK, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .components("C-X", "C-Y")
+                .state("TDP-A")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
-        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", new String[]{"C-X", "C-Y"}, "TDP-A"));
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewComponentsChecker("C-X", "C-Y"), new NewRankChecker().rank(7, "TDP-8"));
+        checkAdds(backlogChanges, new AddIssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "TDP-A", "kabir").components("C-X", "C-Y"));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
-        checkNoCustomFields(backlogChanges);
-        checkRankChanges(backlogChanges, new RankChange(7, "TDP-8"));
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new component. This is needed, since e.g. another visible issue might be
         //created using that component, and the server has no record of which clients have which component.
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        checkNoIssueChanges(0, 1, new NewComponentsChecker("C-X", "C-Y"));
     }
 
     @Test
@@ -1812,31 +1382,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         setupInitialBoard("config/board-tdp-backlog.json");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, new String[]{"C-X", "C-Y"}, false, "TDP-B", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").
+                components("C-X", "C-Y")
+                .state("TDP-B")
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewComponentsChecker("C-X", "C-Y"));
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, new String[]{"C-X", "C-Y"}, "TDP-B"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-B").components("C-X", "C-Y"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges, new String[]{"C-X", "C-Y"});
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new component. This is needed, since e.g. another visible issue might be
         //created using that component, and the server has no record of which clients have which component.
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges, new String[]{"C-X", "C-Y"});
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        checkNoIssueChanges(0, 1, new NewComponentsChecker("C-X", "C-Y"));
     }
 
     @Test
@@ -1850,32 +1411,23 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "kabir");
         customFieldValues.put(documenterId, "stuart");
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-8",
-                IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", customFieldValues);
+        JirbanIssueEvent create = createEventBuilder("TDP-8", IssueType.TASK, Priority.HIGH, "Eight")
+                .assignee("kabir")
+                .state("TDP-A")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
-        checkAdds(backlogChanges, new IssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "kabir", null, "TDP-A", new TesterChecker("kabir")));
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewCustomFieldChecker().testers("kabir").documenters("stuart"), new NewRankChecker().rank(7, "TDP-8"));
+        checkAdds(backlogChanges, new AddIssueData("TDP-8", IssueType.TASK, Priority.HIGH, "Eight", "TDP-A", "kabir").checkers(new TesterChecker("kabir"), new DocumenterChecker("stuart")));
         checkUpdates(backlogChanges);
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkCustomFields(backlogChanges, new String[]{"kabir"}, new String[]{"stuart"});
-        checkRankChanges(backlogChanges, new RankChange(7, "TDP-8"));
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
         //created using that assignee, and the server has no record of which clients have which assignee.
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkCustomFields(nonBacklogChanges, new String[]{"kabir"}, new String[]{"stuart"});
-        checkNoRankChanges(nonBacklogChanges);
+        checkNoIssueChanges(0, 1, new NewCustomFieldChecker().testers("kabir").documenters("stuart"));
     }
 
     @Test
@@ -1890,32 +1442,22 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         customFieldValues.put(testerId, "kabir");
         customFieldValues.put(documenterId, "stuart");
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1",
-                (String)null, null, null, null, false, null, false, "TDP-B", false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1")
+                .state("TDP-B")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
-        ModelNode backlogChanges = getChangesJson(0, 1, true);
+        ModelNode backlogChanges = getChangesJson(0, 1, true, new NewCustomFieldChecker().testers("kabir").documenters("stuart"));
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-B", new TesterChecker("kabir"), new DocumenterChecker("stuart")));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-B").checkers(new TesterChecker("kabir"), new DocumenterChecker("stuart")));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkCustomFields(backlogChanges, new String[]{"kabir"}, new String[]{"stuart"});
-        checkNoRankChanges(backlogChanges);
 
         //Backlog invisible
         //Although the issue is hidden, pull down the new assignee. This is needed, since e.g. another visible issue might be
         //created using that assignee, and the server has no record of which clients have which assignee.
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkCustomFields(nonBacklogChanges, new String[]{"kabir"}, new String[]{"stuart"});
-        checkNoRankChanges(nonBacklogChanges);
+        ModelNode nonBacklogChanges = checkNoIssueChanges(0, 1, new NewCustomFieldChecker().testers("kabir").documenters("stuart"));
     }
 
     @Test
@@ -1924,145 +1466,88 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-backlog.json");
 
         //Move to a non-backlog state
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-C", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").state("TDP-C").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         ModelNode backlogChanges = getChangesJson(0, 1, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-C"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-C"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog invisible
-        ModelNode nonBacklogChanges = getChangesJson(0, 1);
-        //The move from the backlog to a nornal state appears as an add
-        checkAdds(nonBacklogChanges, new IssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "kabir", new String[]{"C1"}, "TDP-C"));
+        ModelNode nonBacklogChanges = getChangesJson(0, 1, new NewRankChecker().rank(0, "TDP-1"));
+        //The move from the backlog to a normal state appears as an add
+        checkAdds(nonBacklogChanges,
+                new AddIssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "TDP-C", "kabir")
+                        .components("C1").labels("L1").fixVersions("F1"));
         checkUpdates(nonBacklogChanges);
         checkDeletes(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkRankChanges(nonBacklogChanges, new RankChange(0, "TDP-1"));
 
         //Move to another non-backlog state
-        update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        update = updateEventBuilder("TDP-1").state("TDP-D").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         backlogChanges = getChangesJson(0, 2, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-D"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         backlogChanges = getChangesJson(1, 2, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-D"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog invisible
-        nonBacklogChanges = getChangesJson(0, 2);
+        nonBacklogChanges = getChangesJson(0, 2, new NewRankChecker().rank(0, "TDP-1"));
         //The move from the backlog to a nornal state appears as an add
-        checkAdds(nonBacklogChanges, new IssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "kabir", new String[]{"C1"}, "TDP-D"));
+        checkAdds(nonBacklogChanges,
+                new AddIssueData("TDP-1", IssueType.TASK, Priority.HIGHEST, "One", "TDP-D", "kabir")
+                        .components("C1").labels("L1").fixVersions("F1"));
         checkUpdates(nonBacklogChanges);
         checkDeletes(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkRankChanges(nonBacklogChanges, new RankChange(0, "TDP-1"));
 
         nonBacklogChanges = getChangesJson(1, 2);
         //From a non-backlog to a non-backlog state appears as an update
         checkAdds(nonBacklogChanges);
-        checkUpdates(nonBacklogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-D"));
+        checkUpdates(nonBacklogChanges, new UpdateIssueData("TDP-1").state("TDP-D"));
         checkDeletes(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
 
         //Move to a bl state
-        update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        update = updateEventBuilder("TDP-1").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
 
         //Backlog visible
         backlogChanges = getChangesJson(0, 3, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-A"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         backlogChanges = getChangesJson(1, 3, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-A"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         backlogChanges = getChangesJson(2, 3, true);
         checkAdds(backlogChanges);
-        checkUpdates(backlogChanges, new IssueData("TDP-1", null, null, null, null, null, "TDP-A"));
+        checkUpdates(backlogChanges, new UpdateIssueData("TDP-1").state("TDP-A"));
         checkDeletes(backlogChanges);
-        checkNoBlacklistChanges(backlogChanges);
-        checkAssignees(backlogChanges);
-        checkComponents(backlogChanges);
-        checkNoCustomFields(backlogChanges);
-        checkNoRankChanges(backlogChanges);
 
         //Backlog invisible
-        nonBacklogChanges = getChangesJson(0, 3);
-        checkNoIssueChanges(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+        checkNoIssueChanges(0, 3);
 
         nonBacklogChanges = getChangesJson(1, 3);
         //The non-blacklog->blacklog move appears as a delete
         checkAdds(nonBacklogChanges);
         checkUpdates(nonBacklogChanges);
         checkDeletes(nonBacklogChanges, "TDP-1");
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
+
         nonBacklogChanges = getChangesJson(2, 3);
         //The non-blacklog->blacklog move appears as a delete
         checkAdds(nonBacklogChanges);
         checkUpdates(nonBacklogChanges);
         checkDeletes(nonBacklogChanges, "TDP-1");
-        checkNoRankChanges(nonBacklogChanges);
-        checkNoBlacklistChanges(nonBacklogChanges);
-        checkAssignees(nonBacklogChanges);
-        checkComponents(nonBacklogChanges);
-        checkNoCustomFields(nonBacklogChanges);
-        checkNoRankChanges(nonBacklogChanges);
     }
 
     @Test
@@ -2071,7 +1556,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-done.json");
 
         //Move an issue into a done state should appear as a delete
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").state("TDP-D").buildAndRegister();
         searchCallback.searched = false;
         boardManager.handleEvent(update, nextRankedIssueUtil);
         Assert.assertFalse(searchCallback.searched);
@@ -2080,13 +1565,9 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(changes);
         checkUpdates(changes);
         checkDeletes(changes, "TDP-1");
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-        checkNoRankChanges(changes);
 
         //Move an issue from a done state into a normal state will force a full refresh
-        update = createUpdateEventAndAddToRegistry("TDP-4", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        update = updateEventBuilder("TDP-4").state("TDP-A").buildAndRegister();
         searchCallback.searched = false;
         boardManager.handleEvent(update, nextRankedIssueUtil);
         Assert.assertTrue(searchCallback.searched);
@@ -2100,7 +1581,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-done.json");
 
         //Move an issue already in a done state into a done state should not appear as a change
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-3").state("TDP-D").buildAndRegister();
         searchCallback.searched = false;
         boardManager.handleEvent(update, nextRankedIssueUtil);
         Assert.assertFalse(searchCallback.searched);
@@ -2110,13 +1591,6 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         checkAdds(changes);
         checkUpdates(changes);
         checkDeletes(changes);
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-        checkNoRankChanges(changes);
     }
 
     @Test
@@ -2125,25 +1599,20 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-done.json");
 
         //Moving a done issue to a non-done state should cause a full refresh
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-3").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         getChangesEnsuringFullRefresh(0);
 
         //Moving the issue back to a done state should appear as a delete
-        update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        update = updateEventBuilder("TDP-3").state("TDP-D").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAdds(changes);
         checkUpdates(changes);
         checkDeletes(changes, "TDP-3");
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-        checkNoRankChanges(changes);
-
 
         //Moving the issue back to a non-done state should cause a full refresh
-        update = createUpdateEventAndAddToRegistry("TDP-3", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        update = updateEventBuilder("TDP-3").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         getChangesEnsuringFullRefresh(0);
     }
@@ -2154,34 +1623,26 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         setupInitialBoard("config/board-tdp-done.json");
 
         //Moving a done issue to a done state should appear as a delete
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-D", false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-2").state("TDP-D").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         ModelNode changes = getChangesJson(0, 1);
         checkAdds(changes);
         checkUpdates(changes);
         checkDeletes(changes, "TDP-2");
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-        checkNoRankChanges(changes);
 
         //Moving the issue back to a non-done state should cause a full refresh
-        update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-A", false);
+        update = updateEventBuilder("TDP-2").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         getChangesEnsuringFullRefresh(0);
 
 
         //Moving the issue back to a done state should appear as a delete
-        update = createUpdateEventAndAddToRegistry("TDP-2", (String)null, null, null, null, false, null, false, "TDP-C", false);
+        update = updateEventBuilder("TDP-2").state("TDP-C").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         changes = getChangesJson(0, 1);
         checkAdds(changes);
         checkUpdates(changes);
         checkDeletes(changes, "TDP-2");
-        checkNoRankChanges(changes);
-        checkNoBlacklistChanges(changes);
-        checkAssignees(changes);
-        checkNoRankChanges(changes);
     }
 
     @Test
@@ -2190,61 +1651,36 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         JirbanIssueEvent event = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
         ModelNode changesNode = getChangesJson(0, 1);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
 
         issueRegistry.deleteIssue("TDP-7");
         event = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
         changesNode = getChangesJson(0, 2);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3", "TDP-7");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
 
         issueRegistry.rerankIssue("TDP-1", null);
-        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         //0 -> 3
-        changesNode = getChangesJson(0, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(0, 3, new NewRankChecker().rank(4, "TDP-1"));
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3", "TDP-7");
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(4, "TDP-1"));
         //1 -> 3
-        changesNode = getChangesJson(1, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(1, 3, new NewRankChecker().rank(4, "TDP-1"));
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-7");
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(4, "TDP-1"));
         //2 -> 3
-        changesNode = getChangesJson(2, 3);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
+        changesNode = getChangesJson(2, 3, new NewRankChecker().rank(4, "TDP-1"));
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode);
-        checkNoBlacklistChanges(changesNode);
-        checkRankChanges(changesNode, new RankChange(4, "TDP-1"));
 
         //Now delete the reranked issue
         issueRegistry.deleteIssue("TDP-1");
@@ -2252,77 +1688,39 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         boardManager.handleEvent(event, nextRankedIssueUtil);
         //0 -> 4
         changesNode = getChangesJson(0, 4);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-3", "TDP-7", "TDP-1");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
         //1 -> 4
         changesNode = getChangesJson(1, 4);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-7", "TDP-1");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
         //2 -> 4
         changesNode = getChangesJson(2, 4);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-1");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
         //3 -> 4
         changesNode = getChangesJson(3, 4);
-        checkAssignees(changesNode);
-        checkComponents(changesNode);
-        checkNoCustomFields(changesNode);
         checkAdds(changesNode);
         checkUpdates(changesNode);
         checkDeletes(changesNode, "TDP-1");
-        checkNoBlacklistChanges(changesNode);
-        checkNoRankChanges(changesNode);
     }
 
-    private void checkNoIssueChanges(int fromView, int expectedView) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
+    private ModelNode checkNoIssueChanges(int fromView, int expectedView, NewChecker...checkers) throws SearchException {
+        return checkNoIssueChanges(fromView, expectedView, false, checkers);
+    }
+
+
+    private ModelNode checkNoIssueChanges(int fromView, int expectedView, boolean backlog, NewChecker...checkers) throws SearchException {
+        ModelNode changesNode = getChangesJson(fromView, expectedView, backlog, checkers);
         checkNoIssueChanges(changesNode);
+        return changesNode;
     }
 
     private void checkNoIssueChanges(ModelNode changesNode) throws SearchException {
         Assert.assertFalse(changesNode.hasDefined(CHANGES, ISSUES));
-    }
-
-    private void checkNoBlacklistChanges(int fromView, int expectedView) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkNoBlacklistChanges(changesNode);
-    }
-
-    private void checkNoBlacklistChanges(ModelNode changesNode) throws SearchException {
-        Assert.assertFalse(changesNode.hasDefined(CHANGES, BLACKLIST));
-    }
-
-    private void checkNoRankChanges(int fromView, int expectedView) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkNoRankChanges(changesNode);
-    }
-
-    private void checkNoRankChanges(ModelNode changesNode) throws SearchException {
-        Assert.assertFalse(changesNode.hasDefined(CHANGES, RANK));
-    }
-
-
-    private void checkDeletes(int fromView, int expectedView, String...expectedKeys) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkDeletes(changesNode, expectedKeys);
     }
 
     private void checkDeletes(ModelNode changesNode, String...expectedKeys) throws SearchException {
@@ -2339,223 +1737,139 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         }
     }
 
-    private void checkAdds(int fromView, int expectedView, IssueData...expectedIssues) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkAdds(changesNode, expectedIssues);
-    }
-
-    private void checkAdds(ModelNode changesNode, IssueData...expectedIssues) throws SearchException {
+    private void checkAdds(ModelNode changesNode, AddIssueData...expectedIssues) throws SearchException {
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedIssues.length == 0) {
             Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined(NEW));
         } else {
-            Map<String, IssueData> expectedIssuesMap = new HashMap<>();
+            Map<String, AddIssueData> expectedIssuesMap = new HashMap<>();
             Arrays.asList(expectedIssues).forEach(ei -> expectedIssuesMap.put(ei.key, ei));
+
             List<ModelNode> list = changesNode.get(CHANGES, ISSUES, NEW).asList();
             Assert.assertEquals(expectedIssuesMap.size(), list.size());
-            for (ModelNode node : list) {
-                final String key = node.get(KEY).asString();
-                IssueData expected = expectedIssuesMap.get(key);
+
+            for (ModelNode issue : list) {
+                final String key = issue.get(KEY).asString();
+                AddIssueData expected = expectedIssuesMap.get(key);
                 Assert.assertNotNull(expected);
-                Assert.assertEquals(expected.type.name, nullOrString(node.get(TYPE)));
-                Assert.assertEquals(expected.priority.name, nullOrString(node.get(PRIORITY)));
-                Assert.assertEquals(expected.summary, nullOrString(node.get(SUMMARY)));
-                Assert.assertEquals(expected.assignee, nullOrString(node.get(ASSIGNEE)));
-                Assert.assertEquals(expected.state, nullOrString(node.get("state")));
-                checkIssueComponents(expected.components, node);
-                if (expected.customFieldCheckers.length == 0) {
-                    Assert.assertFalse(node.hasDefined(CUSTOM));
-                }
-                for (IssueChecker checker : expected.customFieldCheckers) {
-                    checker.check(node);
-                }
+                Assert.assertEquals(expected.type.name, nullOrString(issue.get(TYPE)));
+                Assert.assertEquals(expected.priority.name, nullOrString(issue.get(PRIORITY)));
+                Assert.assertEquals(expected.summary, nullOrString(issue.get(SUMMARY)));
+                Assert.assertEquals(expected.assignee, nullOrString(issue.get(ASSIGNEE)));
+                Assert.assertEquals(expected.state, nullOrString(issue.get("state")));
+                checkIssueComponents(expected.components, issue);
+                checkIssueLabels(expected.labels, issue);
+                checkIssueFixVersions(expected.fixVersions, issue);
+                runIssueCheckers(issue, expected);
             }
         }
     }
 
-    private void checkRankChanges(ModelNode changesNode, RankChange...rankChanges) {
-        Map<String, List<RankChange>> rankChangesMap = new HashMap<>();
-        for (RankChange rankChange : rankChanges) {
-            int index = rankChange.getKey().indexOf("-");
-            String projectCode = rankChange.getKey().substring(0, index);
-            List<RankChange> list = rankChangesMap.computeIfAbsent(projectCode, k -> new ArrayList<RankChange>());
-            list.add(rankChange);
-        }
-        Assert.assertTrue(changesNode.hasDefined(CHANGES, RANK));
-        ModelNode rankNode = changesNode.get(CHANGES, RANK);
-        Assert.assertEquals(rankChangesMap.size(), rankNode.keys().size());
-        for (String projectCode : rankChangesMap.keySet()) {
-            ModelNode projectNode = rankNode.get(projectCode);
-            Assert.assertEquals(LIST, projectNode.getType());
-            List<ModelNode> listNode = projectNode.asList();
-            List<RankChange> rankList = rankChangesMap.get(projectCode);
-            Assert.assertEquals(rankList.size(), listNode.size());
-            for (int i = 0 ; i < rankList.size() ; i++) {
-                ModelNode rankChangeNode = listNode.get(i);
-                RankChange rankChange = rankList.get(i);
-                Assert.assertEquals(rankChange.getIndex(), rankChangeNode.get(INDEX).asInt());
-                Assert.assertEquals(rankChange.getKey(), rankChangeNode.get(KEY).asString());
-            }
-        }
-    }
-
-
-    private void checkUpdates(int fromView, int expectedView, IssueData...expectedIssues) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkUpdates(changesNode, expectedIssues);
-    }
-
-    private void checkUpdates(ModelNode changesNode, IssueData...expectedIssues) throws SearchException {
+    private void checkUpdates(ModelNode changesNode, UpdateIssueData...expectedIssues) throws SearchException {
 
         Assert.assertEquals(1, changesNode.keys().size());
         if (expectedIssues.length == 0) {
             Assert.assertFalse(changesNode.get(CHANGES, ISSUES).hasDefined("update"));
         } else {
-            Map<String, IssueData> expectedIssuesMap = new HashMap<>();
+            Map<String, UpdateIssueData> expectedIssuesMap = new HashMap<>();
             Arrays.asList(expectedIssues).forEach(ei -> expectedIssuesMap.put(ei.key, ei));
             List<ModelNode> list = changesNode.get(CHANGES, ISSUES, "update").asList();
             Assert.assertEquals(expectedIssuesMap.size(), list.size());
-            for (ModelNode node : list) {
-                final String key = node.get(KEY).asString();
-                IssueData expected = expectedIssuesMap.get(key);
+            for (ModelNode issue : list) {
+                final String key = issue.get(KEY).asString();
+                UpdateIssueData expected = expectedIssuesMap.get(key);
                 Assert.assertNotNull(expected);
                 Assert.assertEquals(expected.type == null ? null : expected.type.name,
-                        nullOrString(node.get(TYPE)));
+                        nullOrString(issue.get(TYPE)));
                 Assert.assertEquals(expected.priority == null ? null : expected.priority.name,
-                        nullOrString(node.get(PRIORITY)));
-                Assert.assertEquals(expected.summary, nullOrString(node.get(SUMMARY)));
-                Assert.assertEquals(expected.assignee, nullOrString(node.get(ASSIGNEE)));
-                Assert.assertEquals(expected.state, nullOrString(node.get("state")));
+                        nullOrString(issue.get(PRIORITY)));
+                Assert.assertEquals(expected.summary, nullOrString(issue.get(SUMMARY)));
+                Assert.assertEquals(expected.assignee, nullOrString(issue.get(ASSIGNEE)));
+                Assert.assertEquals(expected.state, nullOrString(issue.get("state")));
                 if (expected.unassigned) {
-                    Assert.assertTrue(node.get(UNASSIGNED).asBoolean());
+                    Assert.assertTrue(issue.get(UNASSIGNED).asBoolean());
                 } else {
-                    Assert.assertFalse(node.has(UNASSIGNED));
+                    Assert.assertFalse(issue.has(UNASSIGNED));
 
                 }
-                checkIssueComponents(expected.components, node);
-                if (expected.clearedComponents) {
-                    Assert.assertTrue(node.get(CLEAR_COMPONENTS).asBoolean());
-                } else {
-                    Assert.assertFalse(node.has(CLEAR_COMPONENTS));
-                }
 
-                if (expected.customFieldCheckers.length == 0) {
-                    Assert.assertFalse(node.hasDefined(CUSTOM));
-                }
-                for (IssueChecker checker : expected.customFieldCheckers) {
-                    checker.check(node);
-                }
+                checkIssueComponents(expected.components, issue);
+                checkClearedComponents(expected, issue);
+                checkIssueLabels(expected.labels, issue);
+                checkClearedLabels(expected, issue);
+                checkIssueFixVersions(expected.fixVersions, issue);
+                checkClearedFixVersions(expected, issue);
+
+                runIssueCheckers(issue, expected);
             }
         }
     }
 
-    private void checkAssignees(ModelNode changesNode, String...expectedAssignees) throws SearchException {
-        Assert.assertEquals(1, changesNode.keys().size());
-        if (expectedAssignees.length == 0) {
-            Assert.assertFalse(changesNode.get(CHANGES).hasDefined(ASSIGNEES));
+    private void checkClearedComponents(UpdateIssueData expected, ModelNode issue) {
+        checkClearedMultiSelectNameOnlyValue(expected.clearedComponents, issue, CLEAR_COMPONENTS);
+    }
+
+    private void checkClearedLabels(UpdateIssueData expected, ModelNode issue) {
+        checkClearedMultiSelectNameOnlyValue(expected.clearedLabels, issue, CLEAR_LABELS);
+    }
+
+    private void checkClearedFixVersions(UpdateIssueData expected, ModelNode issue) {
+        checkClearedMultiSelectNameOnlyValue(expected.clearedFixVersions, issue, CLEAR_FIX_VERSIONS);
+    }
+
+    private void checkClearedMultiSelectNameOnlyValue(boolean expected, ModelNode issue, String name) {
+        if (expected) {
+            Assert.assertTrue(issue.get(name).asBoolean());
         } else {
-            List<ModelNode> list = changesNode.get(CHANGES, ASSIGNEES).asList();
-            Assert.assertEquals(expectedAssignees.length, list.size());
-            Set<String> assignees = new HashSet<>(Arrays.asList(expectedAssignees));
-            for (ModelNode assigneeNode : list) {
-                String key = assigneeNode.get(KEY).asString();
-                Assert.assertTrue(assignees.contains(key));
-                Assert.assertEquals(key + "@example.com", assigneeNode.get(EMAIL).asString());
-                Assert.assertEquals("/avatars/" + key + ".png", assigneeNode.get(AVATAR).asString());
-                String displayName = assigneeNode.get(NAME).toString().toLowerCase();
-                Assert.assertTrue(displayName.length() > key.length());
-                Assert.assertTrue(displayName.contains(key));
-            }
-        }
-    }
-
-    private void checkNoCustomFields(ModelNode changesNode) throws SearchException {
-        Assert.assertEquals(1, changesNode.keys().size());
-        Assert.assertFalse(changesNode.hasDefined(CHANGES, CUSTOM));
-    }
-
-    private void checkCustomFields(int fromView, int expectedView, String[] testers, String[] documenters) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkCustomFields(changesNode, testers, documenters);
-    }
-
-    private void checkCustomFields(ModelNode changesNode, String[] testers, String[] documenters) {
-        Assert.assertEquals(1, changesNode.keys().size());
-        ModelNode custom = changesNode.get(CHANGES, CUSTOM);
-        Assert.assertTrue(custom.isDefined());
-
-        checkCustomField(custom.get("Tester"), testers);
-        checkCustomField(custom.get("Documenter"), documenters);
-    }
-
-    private void checkCustomField(ModelNode userNode, String[] expectedUsers) {
-        if (expectedUsers == null) {
-            Assert.assertFalse(userNode.isDefined());
-            return;
-        }
-        Set<String> expected = new HashSet<>(Arrays.asList(expectedUsers));
-        Assert.assertTrue(userNode.isDefined());
-        List<ModelNode> users = userNode.asList();
-        Assert.assertEquals(expected.size(), users.size());
-
-        for (ModelNode user : users) {
-            String key = user.get(KEY).asString();
-            Assert.assertTrue(expected.remove(key));
-            Assert.assertTrue(user.get(VALUE).asString().toLowerCase().startsWith(key));
-        }
-    }
-
-    private void checkComponents(ModelNode changesNode, String...expectedComponents) throws SearchException {
-        Assert.assertEquals(1, changesNode.keys().size());
-        if (expectedComponents.length == 0) {
-            Assert.assertFalse(changesNode.get(CHANGES).hasDefined(COMPONENTS));
-        } else {
-            List<ModelNode> list = changesNode.get(CHANGES, COMPONENTS).asList();
-            Assert.assertEquals(expectedComponents.length, list.size());
-            Set<String> components = new HashSet<>(Arrays.asList(expectedComponents));
-            for (ModelNode componentNode : list) {
-                Assert.assertTrue(components.contains(componentNode.asString()));
-            }
+            Assert.assertFalse(issue.has(name));
         }
     }
 
     private void checkIssueComponents(String[] expectedComponents, ModelNode issue) {
-        if (expectedComponents == null || expectedComponents.length == 0) {
-            Assert.assertFalse(issue.hasDefined(COMPONENTS));
+        checkIssueMultiSelectValues(expectedComponents, issue, COMPONENTS);
+    }
+
+    private void checkIssueLabels(String[] expectedComponents, ModelNode issue) {
+        checkIssueMultiSelectValues(expectedComponents, issue, LABELS);
+    }
+
+    private void checkIssueFixVersions(String[] expectedComponents, ModelNode issue) {
+        checkIssueMultiSelectValues(expectedComponents, issue, FIX_VERSIONS);
+    }
+
+    private void checkIssueMultiSelectValues(String[] expectedValues, ModelNode issue, String name) {
+        if (expectedValues == null || expectedValues.length == 0) {
+            Assert.assertFalse(issue.hasDefined(name));
         } else {
-            List<ModelNode> issueComponents = issue.get(COMPONENTS).asList();
-            Assert.assertEquals(expectedComponents.length, issueComponents.size());
-            Set<String> expected = new HashSet<>(Arrays.asList(expectedComponents));
-            for (ModelNode component : issueComponents) {
-                Assert.assertTrue(expected.contains(component.asString()));
+            List<ModelNode> issueValues = issue.get(name).asList();
+            Assert.assertEquals(expectedValues.length, issueValues.size());
+            Set<String> expected = new HashSet<>(Arrays.asList(expectedValues));
+            for (ModelNode value : issueValues) {
+                Assert.assertTrue(expected.contains(value.asString()));
             }
         }
     }
 
-    private void checkBlacklist(int fromView, int expectedView, String[] states, String[] issueTypes, String[] priorities, String[] issueKeys, String[] removedIssueKeys) throws SearchException {
-        ModelNode changesNode = getChangesJson(fromView, expectedView);
-        checkBlacklist(changesNode, states, issueTypes, priorities, issueKeys, removedIssueKeys);
-    }
-
-    private void checkBlacklist(ModelNode changesNode, String[] states, String[] issueTypes, String[] priorities, String[] issueKeys, String[] removedIssueKeys) throws SearchException {
-        ModelNode blacklistNode = changesNode.get(CHANGES, BLACKLIST);
-        checkEntries(blacklistNode, STATES, states);
-        checkEntries(blacklistNode, ISSUE_TYPES, issueTypes);
-        checkEntries(blacklistNode, PRIORITIES, priorities);
-        checkEntries(blacklistNode, ISSUES, issueKeys);
-        checkEntries(blacklistNode, REMOVED_ISSUES, removedIssueKeys);
-    }
-
-    private void checkEntries(ModelNode parent, String key, String... entries) {
-        if (entries == null) {
-            Assert.assertFalse(parent.hasDefined(key));
-        } else {
-            List<ModelNode> list = parent.get(key).asList();
-            Assert.assertEquals(entries.length, list.size());
-            Set<String> entrySet = list.stream().map(node -> node.asString()).collect(Collectors.toSet());
-            for (String entry : entries) {
-                Assert.assertTrue(entrySet.contains(entry));
+    private void runIssueCheckers(ModelNode issue, IssueData expected) {
+        Map<Class<? extends IssueChecker>, IssueChecker> checkerMap = new HashMap<>();
+        //Default to the none checkers, unless the user overrides
+        checkerMap.put(TesterChecker.class, TesterChecker.NONE);
+        checkerMap.put(DocumenterChecker.class, DocumenterChecker.NONE);
+        checkerMap.put(ParallelTaskFieldValueChecker.class, ParallelTaskFieldValueChecker.NONE);
+        boolean hasCustom = false;
+        for (IssueChecker checker : expected.issueCheckers) {
+            Class<? extends IssueChecker> clazz = checker.getClass();
+            if (clazz == TesterChecker.class && checker != TesterChecker.NONE
+                    || clazz == DocumenterChecker.class && checker != DocumenterChecker.NONE) {
+                hasCustom = true;
             }
+            checkerMap.put(clazz, checker);
+        }
+
+        Assert.assertEquals(hasCustom, issue.hasDefined(CUSTOM));
+
+        for (IssueChecker checker : checkerMap.values()) {
+            checker.check(issue);
         }
     }
 
@@ -2574,14 +1888,35 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
     }
 
 
-    private ModelNode getChangesJson(int fromView, int expectedView) throws SearchException {
-        return getChangesJson(fromView, expectedView, false);
+    private ModelNode getChangesJson(int fromView, int expectedView, NewChecker...checkers) throws SearchException {
+        return getChangesJson(fromView, expectedView, false, checkers);
     }
 
-    private ModelNode getChangesJson(int fromView, int expectedView, boolean backlog) throws SearchException {
+    private ModelNode getChangesJson(int fromView, int expectedView, boolean backlog, NewChecker...checkers) throws SearchException {
         String json = boardManager.getChangesJson(userManager.getUserByKey("kabir"), backlog, "TST", fromView);
         ModelNode changesNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedView, changesNode.get(CHANGES, VIEW).asInt());
+
+        Assert.assertEquals(1, changesNode.keys().size());
+
+        Map<Class<? extends NewChecker>, NewChecker> checkersMap = new HashMap();
+
+        //Assume that we check for none if no checker has been passed in for a field
+        checkersMap.put(NewAssigneesChecker.class, NewAssigneesChecker.NONE);
+        checkersMap.put(NewComponentsChecker.class, NewComponentsChecker.NONE);
+        checkersMap.put(NewLabelsChecker.class, NewLabelsChecker.NONE);
+        checkersMap.put(NewFixVersionsChecker.class, NewFixVersionsChecker.NONE);
+        checkersMap.put(NewCustomFieldChecker.class, NewCustomFieldChecker.NONE);
+        checkersMap.put(NewRankChecker.class, NewRankChecker.NONE);
+        checkersMap.put(NewBlackListChecker.class, NewBlackListChecker.NONE);
+        for (NewChecker checker : checkers) {
+            checkersMap.put(checker.getClass(), checker);
+        }
+
+        for (NewChecker checker : checkersMap.values()) {
+            checker.check(changesNode);
+        }
+
         return changesNode;
     }
 
@@ -2602,58 +1937,153 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         return fullRefreshNode;
     }
 
-    private static class IssueData {
-        private final String key;
-        private final IssueType type;
-        private final Priority priority;
-        private final String summary;
-        private final String state;
-        private final String assignee;
-        private final boolean unassigned;
-        private final String[] components;
-        private final boolean clearedComponents;
-        private final IssueChecker[] customFieldCheckers;
+    private static abstract class IssueData {
+        String key;
+        IssueType type;
+        Priority priority;
+        String summary;
+        String state;
+        String assignee;
+        boolean unassigned;
+        String[] components;
+        String[] labels;
+        String[] fixVersions;
+        IssueChecker[] issueCheckers;
 
-        IssueData(String key, IssueType type, Priority priority, String summary, String assignee,
-                  String[] components, String state, IssueChecker...customFieldCheckers) {
-            this(key, type, priority, summary, assignee, false, components, false, state, customFieldCheckers);
-        }
-
-        IssueData(String key, IssueType type, Priority priority, String summary, String assignee,
-                  boolean unassigned, String[] components, boolean clearedComponents, String state,
-                  IssueChecker...customFieldCheckers) {
-            this.key = key;
+        protected IssueData(String key, IssueType type, Priority priority, String summary, String state, String assignee) {
+            this(key);
             this.type = type;
             this.priority = priority;
             this.summary = summary;
             this.assignee = assignee;
-            this.unassigned = unassigned;
             this.state = state;
+        }
+
+        protected IssueData(String key) {
+            this.key = key;
+            this.issueCheckers = new IssueChecker[0];
+        }
+    }
+
+    static class AddIssueData extends IssueData {
+        AddIssueData(String key, IssueType type, Priority priority, String summary, String state, String assignee) {
+            super(key, type, priority, summary, state, assignee);
+        }
+
+        AddIssueData components(String... components) {
             this.components = components;
-            this.clearedComponents = clearedComponents;
-            this.customFieldCheckers = customFieldCheckers;
+            return this;
+        }
+
+        AddIssueData labels(String... labels) {
+            this.labels = labels;
+            return this;
+        }
+
+        AddIssueData fixVersions(String... fixVersions) {
+            this.fixVersions = fixVersions;
+            return this;
+        }
+
+        AddIssueData checkers(IssueChecker... checkers) {
+            this.issueCheckers = checkers;
+            return this;
         }
     }
 
-    private static class StateChangeData {
-        private final String projectCode;
-        private final String state;
-        private final String[] issues;
+    static class UpdateIssueData extends IssueData {
+        boolean clearedComponents;
+        boolean clearedLabels;
+        boolean clearedFixVersions;
 
-        public StateChangeData(String projectCode, String state, String...issues) {
-            this.projectCode = projectCode;
+        UpdateIssueData(String key) {
+            super(key);
+        }
+
+        UpdateIssueData type(IssueType type) {
+            this.type = type;
+            return this;
+        }
+
+        UpdateIssueData priority(Priority priority) {
+            this.priority = priority;
+            return this;
+        }
+
+        UpdateIssueData summary(String summary) {
+            this.summary = summary;
+            return this;
+        }
+
+        UpdateIssueData state(String state) {
             this.state = state;
-            this.issues = issues;
+            return this;
+        }
+
+        UpdateIssueData assignee(String assignee) {
+            Assert.assertFalse(this.unassigned);
+            this.assignee = assignee;
+            return this;
+        }
+
+        UpdateIssueData unassigned() {
+            Assert.assertNull(this.assignee);
+            this.unassigned = true;
+            return this;
+        }
+
+        UpdateIssueData components(String... components) {
+            Assert.assertFalse(this.clearedComponents);
+            this.components = components;
+            return this;
+        }
+
+        UpdateIssueData clearedComponents(){
+            Assert.assertNull(this.components);
+            this.clearedComponents = true;
+            return this;
+        }
+
+        UpdateIssueData labels(String... labels) {
+            Assert.assertFalse(this.clearedLabels);
+            this.labels = labels;
+            return this;
+        }
+
+        UpdateIssueData clearedLabels() {
+            Assert.assertNull(this.labels);
+            this.clearedLabels = true;
+            return this;
+        }
+
+        UpdateIssueData fixVersions(String... fixVersions) {
+            Assert.assertFalse(this.clearedFixVersions);
+            this.fixVersions = fixVersions;
+            return this;
+        }
+
+        UpdateIssueData clearedFixVersions() {
+            Assert.assertNull(this.fixVersions);
+            this.clearedFixVersions = true;
+            return this;
+        }
+
+        UpdateIssueData checkers(IssueChecker... checkers) {
+            Assert.assertNull(this.fixVersions);
+            this.issueCheckers = checkers;
+            return this;
         }
     }
 
-    static class DefaultIssueCustomFieldChecker implements IssueChecker {
+    abstract static class CustomFieldChecker implements IssueChecker {
         private final String fieldName;
         private final String key;
+        private final boolean undefined;
 
-        public DefaultIssueCustomFieldChecker(String fieldName, String key) {
+        public CustomFieldChecker(String fieldName, String key, boolean undefined) {
             this.fieldName = fieldName;
             this.key = key;
+            this.undefined = undefined;
         }
 
         @Override
@@ -2662,34 +2092,47 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
                 Assert.assertTrue(issue.hasDefined(CUSTOM, fieldName));
                 Assert.assertEquals(key, issue.get(CUSTOM, fieldName).asString());
             } else {
-                Assert.assertTrue(issue.has(CUSTOM, fieldName));
+                if (undefined) {
+                    Assert.assertTrue(issue.has(CUSTOM, fieldName));
+                }
                 Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
             }
         }
     }
 
-    static class TesterChecker extends DefaultIssueCustomFieldChecker {
+    static class TesterChecker extends CustomFieldChecker {
+        /** Use to check that there is no tester defined */
+        static final TesterChecker NONE = new TesterChecker(null);
+        /** Use to check that there is a tester field but it is undefined (used when sending update events clearing the tester) */
+        static final TesterChecker UNDEFINED = new TesterChecker(true);
+
         public TesterChecker(String key) {
-            super("Tester", key);
+            super("Tester", key, false);
+        }
+
+        private TesterChecker(boolean undefined) {
+            super("Tester", null, undefined);
         }
     }
 
-    static class DocumenterChecker extends DefaultIssueCustomFieldChecker {
+    static class DocumenterChecker extends CustomFieldChecker {
+        /** Use to check that there is no documenter defined */
+        static final DocumenterChecker NONE = new DocumenterChecker(null);
+        /** Use to check that there is a tester field but it is undefined (used when sending update events clearing the tester) */
+        static final DocumenterChecker UNDEFINED = new DocumenterChecker(true);
+
         public DocumenterChecker(String key) {
-            super("Documenter", key);
+            super("Documenter", key, false);
         }
-    }
 
-    static class ClearedCustomFieldsChecker implements IssueChecker {
-        static final ClearedCustomFieldsChecker INSTANCE = new ClearedCustomFieldsChecker();
-
-        @Override
-        public void check(ModelNode issue) {
-            Assert.assertFalse(issue.hasDefined(CUSTOM));
+        private DocumenterChecker(boolean undefined) {
+            super("Documenter", null, undefined);
         }
     }
 
     static class ParallelTaskFieldValueChecker implements IssueChecker {
+        static final ParallelTaskFieldValueChecker NONE = new ParallelTaskFieldValueChecker(true, null);
+
         private final boolean add;
         private final int[] values;
 
@@ -2733,7 +2176,7 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
         void setupIssues();
     }
 
-    private class RankChange {
+    private static class RankChange {
         final int index;
         final String key;
 
@@ -2748,6 +2191,259 @@ public class BoardChangeRegistryTest extends AbstractBoardTest {
 
         public String getKey() {
             return key;
+        }
+    }
+
+    /**
+     * Checker to check added fields sent to the client during a change
+     */
+    private interface NewChecker {
+        void check(ModelNode changes);
+    }
+
+    private static class NewAssigneesChecker implements NewChecker {
+        static final NewAssigneesChecker NONE = new NewAssigneesChecker();
+
+        private final String[] expectedAssignees;
+
+        NewAssigneesChecker(String... expectedAssignees) {
+            this.expectedAssignees = expectedAssignees;
+        }
+
+        @Override
+        public void check(ModelNode changes) {
+            Assert.assertEquals(1, changes.keys().size());
+            if (expectedAssignees.length == 0) {
+                Assert.assertFalse(changes.get(CHANGES).hasDefined(ASSIGNEES));
+            } else {
+                List<ModelNode> list = changes.get(CHANGES, ASSIGNEES).asList();
+                Assert.assertEquals(expectedAssignees.length, list.size());
+                Set<String> assignees = new HashSet<>(Arrays.asList(expectedAssignees));
+                for (ModelNode assigneeNode : list) {
+                    String key = assigneeNode.get(KEY).asString();
+                    Assert.assertTrue(assignees.contains(key));
+                    Assert.assertEquals(key + "@example.com", assigneeNode.get(EMAIL).asString());
+                    Assert.assertEquals("/avatars/" + key + ".png", assigneeNode.get(AVATAR).asString());
+                    String displayName = assigneeNode.get(NAME).toString().toLowerCase();
+                    Assert.assertTrue(displayName.length() > key.length());
+                    Assert.assertTrue(displayName.contains(key));
+                }
+            }
+        }
+    }
+
+    private static abstract class NewMultiSelectNameOnlyValueChecker implements NewChecker {
+        private final String name;
+        private final String[] expectedValues;
+
+        protected NewMultiSelectNameOnlyValueChecker(String name, String[] expectedValues) {
+            this.name = name;
+            this.expectedValues = expectedValues;
+        }
+
+        @Override
+        public void check(ModelNode changes) {
+            Assert.assertEquals(1, changes.keys().size());
+            if (expectedValues.length == 0) {
+                Assert.assertFalse(changes.get(CHANGES).hasDefined(name));
+            } else {
+                List<ModelNode> list = changes.get(CHANGES, name).asList();
+                Assert.assertEquals(expectedValues.length, list.size());
+                Set<String> components = new HashSet<>(Arrays.asList(expectedValues));
+                for (ModelNode componentNode : list) {
+                    Assert.assertTrue(components.contains(componentNode.asString()));
+                }
+            }
+        }
+    }
+
+    private static class NewComponentsChecker extends NewMultiSelectNameOnlyValueChecker {
+        static final NewComponentsChecker NONE = new NewComponentsChecker();
+
+        NewComponentsChecker(String...expectedComponents) {
+            super(COMPONENTS, expectedComponents);
+        }
+    }
+
+    private static class NewLabelsChecker extends NewMultiSelectNameOnlyValueChecker {
+        static final NewLabelsChecker NONE = new NewLabelsChecker();
+
+        NewLabelsChecker(String...expectedLabels) {
+            super(LABELS, expectedLabels);
+        }
+    }
+
+    private static class NewFixVersionsChecker extends NewMultiSelectNameOnlyValueChecker {
+        static final NewFixVersionsChecker NONE = new NewFixVersionsChecker();
+
+        NewFixVersionsChecker(String... expectedFixVersions) {
+            super(FIX_VERSIONS, expectedFixVersions);
+        }
+    }
+
+    private static class NewCustomFieldChecker implements NewChecker {
+        static final NewCustomFieldChecker NONE = new NewCustomFieldChecker();
+
+        private String[] expectedTesters;
+        private String[] expectedDocumenters;
+
+        NewCustomFieldChecker() {
+        }
+
+        NewCustomFieldChecker testers(String...expectedTesters) {
+            this.expectedTesters = expectedTesters;
+            return this;
+        }
+
+        NewCustomFieldChecker documenters(String...expectedDocumenters) {
+            this.expectedDocumenters = expectedDocumenters;
+            return this;
+        }
+
+        @Override
+        public void check(ModelNode changes) {
+            String[] expectedTesters = emptyIfNull(this.expectedTesters);
+            String[] expectedDocumenters = emptyIfNull(this.expectedDocumenters);
+            if (expectedTesters.length == 0 && expectedDocumenters.length == 0) {
+                Assert.assertFalse(changes.hasDefined(CHANGES, CUSTOM));
+
+            } else {
+                ModelNode customNode = changes.get(CHANGES, CUSTOM);
+                checkValues(customNode, "Tester", expectedTesters);
+                checkValues(customNode, "Documenter", expectedDocumenters);
+            }
+        }
+
+        private void checkValues(ModelNode customNode, String name, String[] expectedValues) {
+            ModelNode valueNode = customNode.get(name);
+            if (expectedValues.length == 0) {
+                Assert.assertFalse(valueNode.isDefined());
+                return;
+            }
+            Set<String> expected = new HashSet<>(Arrays.asList(expectedValues));
+            Assert.assertTrue(valueNode.isDefined());
+            List<ModelNode> values = valueNode.asList();
+            Assert.assertEquals(expected.size(), values.size());
+
+            for (ModelNode user : values) {
+                String key = user.get(KEY).asString();
+                Assert.assertTrue(expected.remove(key));
+                Assert.assertTrue(user.get(VALUE).asString().toLowerCase().startsWith(key));
+            }
+        }
+    }
+
+    private static class NewRankChecker implements NewChecker {
+        static final NewRankChecker NONE = new NewRankChecker();
+        private List<RankChange> rankChanges = new ArrayList<>();
+
+        NewRankChecker() {
+        }
+
+        NewRankChecker rank(int index, String key) {
+            rankChanges.add(new RankChange(index, key));
+            return this;
+        }
+
+        @Override
+        public void check(ModelNode changes) {
+            if (rankChanges.size() == 0) {
+                Assert.assertFalse(changes.hasDefined(CHANGES, RANK));
+            } else {
+                Map<String, List<RankChange>> rankChangesMap = new HashMap<>();
+                for (RankChange rankChange : rankChanges) {
+                    int index = rankChange.getKey().indexOf("-");
+                    String projectCode = rankChange.getKey().substring(0, index);
+                    List<RankChange> list = rankChangesMap.computeIfAbsent(projectCode, k -> new ArrayList<RankChange>());
+                    list.add(rankChange);
+                }
+                Assert.assertTrue(changes.hasDefined(CHANGES, RANK));
+                ModelNode rankNode = changes.get(CHANGES, RANK);
+                Assert.assertEquals(rankChangesMap.size(), rankNode.keys().size());
+                for (String projectCode : rankChangesMap.keySet()) {
+                    ModelNode projectNode = rankNode.get(projectCode);
+                    Assert.assertEquals(LIST, projectNode.getType());
+                    List<ModelNode> listNode = projectNode.asList();
+                    List<RankChange> rankList = rankChangesMap.get(projectCode);
+                    Assert.assertEquals(rankList.size(), listNode.size());
+                    for (int i = 0 ; i < rankList.size() ; i++) {
+                        ModelNode rankChangeNode = listNode.get(i);
+                        RankChange rankChange = rankList.get(i);
+                        Assert.assertEquals(rankChange.getIndex(), rankChangeNode.get(INDEX).asInt());
+                        Assert.assertEquals(rankChange.getKey(), rankChangeNode.get(KEY).asString());
+                    }
+                }
+            }
+        }
+    }
+
+    private static class NewBlackListChecker implements NewChecker {
+        static final NewBlackListChecker NONE = new NewBlackListChecker();
+        private String[] states;
+        private String[] issueTypes;
+        private String[] priorities;
+        private String[] issueKeys;
+        private String[] removedIssueKeys;
+
+        NewBlackListChecker() {
+        }
+
+        NewBlackListChecker states(String... states) {
+            this.states = states;
+            return this;
+        }
+
+        NewBlackListChecker types(String... issueTypes) {
+            this.issueTypes = issueTypes;
+            return this;
+        }
+
+        NewBlackListChecker priorities(String... priorities) {
+            this.priorities = priorities;
+            return this;
+        }
+
+        NewBlackListChecker keys(String... issueKeys) {
+            this.issueKeys = issueKeys;
+            return this;
+        }
+
+        NewBlackListChecker removedKeys(String... removedIssueKeys) {
+            this.removedIssueKeys = removedIssueKeys;
+            return this;
+        }
+
+        @Override
+        public void check(ModelNode changes) {
+            ModelNode blacklistNode = changes.get(CHANGES, BLACKLIST);
+            String[] states = emptyIfNull(this.states);
+            String[] issueTypes = emptyIfNull(this.issueTypes);
+            String[] priorities = emptyIfNull(this.priorities);
+            String[] issueKeys = emptyIfNull(this.issueKeys);
+            String[] removedIssueKeys = emptyIfNull(this.removedIssueKeys);
+
+            if (states.length == 0 && issueTypes.length == 0 && priorities.length == 0 && issueKeys.length == 0 && removedIssueKeys.length == 0) {
+                Assert.assertFalse(blacklistNode.isDefined());
+            } else {
+                checkEntries(blacklistNode, STATES, states);
+                checkEntries(blacklistNode, ISSUE_TYPES, issueTypes);
+                checkEntries(blacklistNode, PRIORITIES, priorities);
+                checkEntries(blacklistNode, ISSUES, issueKeys);
+                checkEntries(blacklistNode, REMOVED_ISSUES, removedIssueKeys);
+            }
+        }
+
+        private void checkEntries(ModelNode parent, String key, String... entries) {
+            if (entries.length == 0) {
+                Assert.assertFalse(parent.hasDefined(key));
+            } else {
+                List<ModelNode> list = parent.get(key).asList();
+                Assert.assertEquals(entries.length, list.size());
+                Set<String> entrySet = list.stream().map(node -> node.asString()).collect(Collectors.toSet());
+                for (String entry : entries) {
+                    Assert.assertTrue(entrySet.contains(entry));
+                }
+            }
         }
     }
 }

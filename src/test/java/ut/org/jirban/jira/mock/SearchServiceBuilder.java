@@ -22,7 +22,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +29,7 @@ import com.atlassian.jira.bc.issue.search.SearchService;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.issuetype.IssueType;
+import com.atlassian.jira.issue.label.Label;
 import com.atlassian.jira.issue.priority.Priority;
 import com.atlassian.jira.issue.search.SearchException;
 import com.atlassian.jira.issue.search.SearchResults;
@@ -39,6 +39,7 @@ import com.atlassian.jira.jql.builder.JqlClauseBuilder;
 import com.atlassian.jira.jql.builder.JqlClauseBuilderFactory;
 import com.atlassian.jira.jql.builder.JqlQueryBuilder;
 import com.atlassian.jira.mock.component.MockComponentWorker;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.jira.web.bean.PagerFilter;
 import com.atlassian.query.Query;
@@ -158,7 +159,7 @@ public class SearchServiceBuilder {
         final ApplicationUser assignee = mock(ApplicationUser.class);
 
         public IssueDetail(String key, String issueType, String priority, String summary,
-                           String state, String assignee, String[] components) {
+                           String state, String assignee, String[] components, String[] labels, String[] fixVersions) {
             //Do the nested mocks first
             this.issueType = MockIssueType.create(issueType);
             this.priority = MockPriority.create(priority);
@@ -167,15 +168,18 @@ public class SearchServiceBuilder {
 
             Set<ProjectComponent> componentSet = null;
             if (components != null && components.length > 0) {
-                componentSet = new HashSet<>();
-                for (String componentName : components) {
-                    ProjectComponent component = mock(ProjectComponent.class);
-                    when(component.getName()).thenReturn(componentName);
-                    componentSet.add(component);
-                }
+                componentSet = MockProjectComponent.createProjectComponents(components);
+            }
+            Set<Label> labelSet = null;
+            if (labels != null && labels.length > 0) {
+                labelSet = MockLabel.createLabels(labels);
+            }
+            Set<Version> fixVersionSet = null;
+            if (fixVersions != null && fixVersions.length > 0) {
+                fixVersionSet = MockVersion.createVersions(fixVersions);
             }
 
-            this.issue = new MockIssue(key, this.issueType, this.priority, summary, this.assignee, componentSet, this.state);
+            this.issue = new MockIssue(key, this.issueType, this.priority, summary, this.assignee, componentSet, labelSet, fixVersionSet, this.state);
         }
     }
 

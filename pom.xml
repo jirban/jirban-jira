@@ -31,9 +31,9 @@
 
     <properties>
         <!-- versions -->
-        <version.amps>6.2.1</version.amps>
+        <version.amps>6.2.11</version.amps>
         <version.atlassions.greenhopper>6.7.12</version.atlassions.greenhopper>
-        <version.atlassian.spring.scanner>1.2.6</version.atlassian.spring.scanner>
+        <version.atlassian.spring.scanner>1.2.13</version.atlassian.spring.scanner>
         <version.atlassian.templaterenderer>1.5.6</version.atlassian.templaterenderer>
         <version.atlassian.activeobjects>0.28.7</version.atlassian.activeobjects>
         <version.atlassian.sal-api>2.11.6</version.atlassian.sal-api>

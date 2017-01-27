@@ -50,8 +50,10 @@ import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.index.IndexException;
 import com.atlassian.jira.issue.index.ReindexIssuesCompletedEvent;
+import com.atlassian.jira.issue.label.Label;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
+import com.atlassian.jira.project.version.Version;
 import com.atlassian.jira.user.ApplicationUser;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
@@ -102,6 +104,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
     private static final String CHANGE_LOG_COMPONENT = "Component";
     private static final String CHANGE_LOG_FIELDTYPE = "fieldtype";
     private static final String CHANGE_LOG_CUSTOM = "custom";
+    private static final String CHANGE_LOG_LABELS = "labels";
+    private static final String CHANGE_LOG_FIX_VERSIONS = "Fix Version";
 
     @ComponentImport
     private final EventPublisher eventPublisher;
@@ -280,7 +284,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
-                issue.getAssignee(), issue.getComponentObjects(), issue.getStatusObject().getName(), values);
+                issue.getAssignee(), issue.getComponentObjects(), issue.getLabels(), issue.getFixVersions(),
+                issue.getStatusObject().getName(), values);
 
         passEventToBoardManagerOrDelay(event);
 
@@ -311,6 +316,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         String summary = null;
         ApplicationUser assignee = null;
         Collection<ProjectComponent> components = null;
+        Collection<Label> labels = null;
+        Collection<Version> fixVersions = null;
         String oldState = null;
         String state = null;
         boolean reranked = false;
@@ -337,6 +344,10 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
                 reranked = true;
             } else if (field.equals(CHANGE_LOG_COMPONENT)) {
                 components = issue.getComponentObjects();
+            } else if (field.equals(CHANGE_LOG_LABELS)) {
+                labels = issue.getLabels();
+            } else if (field.equals(CHANGE_LOG_FIX_VERSIONS)) {
+                fixVersions = issue.getFixVersions();
             } else if (change.get(CHANGE_LOG_FIELDTYPE).equals(CHANGE_LOG_CUSTOM)) {
                 Set<CustomFieldConfig> customFieldConfigs = boardManager.getCustomFieldsForUpdateEvent(issue.getProjectObject().getKey(), field);
                 if (customFieldConfigs.size() > 0) {
@@ -365,7 +376,7 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
         }
         final JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent(
                 issue.getKey(), issue.getProjectObject().getKey(), issueType, priority,
-                summary, assignee, components,
+                summary, assignee, components, labels, fixVersions,
                 //Always pass in the existing/old state of the issue
                 oldState != null ? oldState : issue.getStatusObject().getName(),
                 state, reranked, customFieldValues);
@@ -412,7 +423,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
 
         final JirbanIssueEvent event = JirbanIssueEvent.createCreateEvent(issue.getKey(), issue.getProjectObject().getKey(),
                 issue.getIssueTypeObject().getName(), issue.getPriorityObject().getName(), issue.getSummary(),
-                issue.getAssignee(), issue.getComponentObjects(), newState, Collections.emptyMap());
+                issue.getAssignee(), issue.getComponentObjects(), issue.getLabels(), issue.getFixVersions(),
+                newState, Collections.emptyMap());
         passEventToBoardManagerOrDelay(event);
     }
 

@@ -37,6 +37,9 @@ import java.util.TreeSet;
 
 import org.jboss.dmr.ModelNode;
 import org.jirban.jira.impl.Constants;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Component;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.FixVersion;
+import org.jirban.jira.impl.board.MultiSelectNameOnlyValue.Label;
 import org.jirban.jira.impl.config.BoardConfig;
 import org.jirban.jira.impl.config.BoardProjectConfig;
 import org.jirban.jira.impl.config.LinkedProjectConfig;
@@ -45,6 +48,7 @@ import org.jirban.jira.impl.config.ProjectConfig;
 
 import com.atlassian.jira.issue.link.IssueLink;
 import com.atlassian.jira.issue.link.IssueLinkManager;
+import com.atlassian.jira.util.Consumer;
 
 /**
  * The data for an issue on the board
@@ -129,14 +133,17 @@ public abstract class Issue {
      * @param issueType the issue's type
      * @param priority the priority
      * @param assignee the assignee
-     * @param components the component
-     * @param customFieldValues
-     * @param parallelTaskValues
+     * @param components the components
+     * @param labels the labels
+     * @param fixVersions the fix versions
+     * @param customFieldValues the custom field values
+     * @param parallelTaskValues the parallel task values
      * @return the issue
      */
     static Issue createForCreateEvent(BoardProject.Accessor project, String issueKey, String state,
                                       String summary, String issueType, String priority, Assignee assignee,
-                                      Set<Component> components, Map<String, CustomFieldValue> customFieldValues,
+                                      Set<Component> components, Set<Label> labels, Set<FixVersion> fixVersions,
+                                      Map<String, CustomFieldValue> customFieldValues,
                                       Map<Integer, Integer> parallelTaskValues) {
         Builder builder = new Builder(project, issueKey);
         builder.setState(state);
@@ -145,6 +152,8 @@ public abstract class Issue {
         builder.setPriority(priority);
         builder.setAssignee(assignee);
         builder.setComponents(components);
+        builder.setLabels(labels);
+        builder.setFixVersions(fixVersions);
         builder.setCustomFieldValues(customFieldValues);
         builder.setParallelTaskFieldValues(parallelTaskValues);
 
@@ -168,23 +177,28 @@ public abstract class Issue {
      * @param summary the new issue summary
      * @param issueAssignee the new issue assignee
      * @param issueComponents the new issue components
+     * @param labels the new issue labels
+     * @param fixVersions the new issue fix versions
      * @param state the state of the issue  @return the new issue
      * @param customFieldValues the custom field values
-     * @param parallelTaskValues
+     * @param parallelTaskValues the parallel task values
      */
     static Issue copyForUpdateEvent(BoardProject.Accessor project, Issue existing, String issueType, String priority,
                                     String summary, Assignee issueAssignee, Set<Component> issueComponents,
+                                    Set<Label> labels, Set<FixVersion> fixVersions,
                                     String state, Map<String, CustomFieldValue> customFieldValues,
                                     Map<Integer, Integer> parallelTaskValues) {
         if (existing instanceof BoardIssue == false) {
             return null;
         }
         return copyForUpdateEvent(project, (BoardIssue)existing, issueType, priority,
-                summary, issueAssignee, issueComponents, state, customFieldValues, parallelTaskValues);
+                summary, issueAssignee, issueComponents, labels, fixVersions, state,
+                customFieldValues, parallelTaskValues);
     }
 
     private static Issue copyForUpdateEvent(BoardProject.Accessor project, BoardIssue existing, String issueType, String priority,
                                             String summary, Assignee issueAssignee, Set<Component> issueComponents,
+                                            Set<Label> labels, Set<FixVersion> fixVersions,
                                             String state, Map<String, CustomFieldValue> customFieldValues,
                                             Map<Integer, Integer> parallelTaskValues) {
         Builder builder = new Builder(project, existing);
@@ -221,6 +235,26 @@ public abstract class Issue {
                 changed = true;
             }
         }
+        if (labels != null) {
+            //A non-null labels means it was updated
+            if (labels.size() == 0) {
+                builder.setLabels(null);
+                changed = true;
+            } else {
+                builder.setLabels(labels);
+                changed = true;
+            }
+        }
+        if (fixVersions != null) {
+            //A non-null labels means it was updated
+            if (fixVersions.size() == 0) {
+                builder.setFixVersions(null);
+                changed = true;
+            } else {
+                builder.setFixVersions(fixVersions);
+                changed = true;
+            }
+        }
         if (state != null) {
             changed = true;
             builder.setState(state);
@@ -244,6 +278,8 @@ public abstract class Issue {
     private static class BoardIssue extends Issue {
         private final Assignee assignee;
         private final Set<Component> components;
+        private final Set<Label> labels;
+        private final Set<FixVersion> fixVersions;
         /** The index of the issue type in the owning board config */
         private final Integer issueTypeIndex;
         /** The index of the priority in the owning board config */
@@ -254,13 +290,16 @@ public abstract class Issue {
 
         public BoardIssue(BoardProjectConfig project, String key, String state, Integer stateIndex, String summary,
                           Integer issueTypeIndex, Integer priorityIndex, Assignee assignee,
-                          Set<Component> components, List<LinkedIssue> linkedIssues,
+                          Set<Component> components, Set<Label> labels, Set<FixVersion> fixVersions,
+                          List<LinkedIssue> linkedIssues,
                           Map<String, CustomFieldValue> customFieldValues, List<Integer> parallelTaskFieldValues) {
             super(project, key, state, stateIndex, summary);
             this.issueTypeIndex = issueTypeIndex;
             this.priorityIndex = priorityIndex;
             this.assignee = assignee;
             this.components = components;
+            this.labels = labels;
+            this.fixVersions = fixVersions;
             this.linkedIssues = linkedIssues;
             this.customFieldValues = customFieldValues;
             this.parallelTaskFieldValues = parallelTaskFieldValues;
@@ -276,8 +315,8 @@ public abstract class Issue {
 
         @Override
         ModelNode getModelNodeForFullRefresh(Board board) {
-            BoardProject boardProject = board.getBoardProject(getProjectCode());
-            ModelNode issueNode = super.getModelNodeForFullRefresh(board);
+            final BoardProject boardProject = board.getBoardProject(getProjectCode());
+            final ModelNode issueNode = super.getModelNodeForFullRefresh(board);
             issueNode.get(PRIORITY).set(priorityIndex);
             issueNode.get(TYPE).set(issueTypeIndex);
             if (assignee != null) {
@@ -285,30 +324,27 @@ public abstract class Issue {
                 issueNode.get(ASSIGNEE).set(boardProject.getAssigneeIndex(assignee));
             }
             if (components != null) {
-                for (Component component : components) {
-                    //This map will always be populated
-                    issueNode.get(Constants.COMPONENTS).add(boardProject.getComponentIndex(component));
-                }
+                components.forEach(component -> issueNode.get(Constants.COMPONENTS).add(boardProject.getComponentIndex(component)));
+            }
+            if (labels != null) {
+                labels.forEach(label -> issueNode.get(Constants.LABELS).add(boardProject.getLabelIndex(label)));
+            }
+            if (fixVersions != null) {
+                fixVersions.forEach(fixVersion -> issueNode.get(Constants.FIX_VERSIONS).add(boardProject.getFixVersionIndex(fixVersion)));
             }
             if (customFieldValues.size() > 0) {
-                ModelNode custom = issueNode.get(CUSTOM);
-                for (CustomFieldValue customFieldValue : customFieldValues.values()) {
-                    custom.get(customFieldValue.getCustomFieldName()).set(boardProject.getCustomFieldValueIndex(customFieldValue));
-                }
+                final ModelNode custom = issueNode.get(CUSTOM);
+                customFieldValues.values().forEach(
+                        customFieldValue -> custom.get(customFieldValue.getCustomFieldName()).set(boardProject.getCustomFieldValueIndex(customFieldValue)));
             }
             if (parallelTaskFieldValues != null) {
-                ModelNode parallel = issueNode.get(PARALLEL_TASKS).setEmptyList();
-                for (Integer value : parallelTaskFieldValues) {
-                    parallel.add(value);
-                }
+                final ModelNode parallel = issueNode.get(PARALLEL_TASKS).setEmptyList();
+                parallelTaskFieldValues.forEach(value -> parallel.add(value));
             }
 
             if (hasLinkedIssues()) {
-                ModelNode linkedIssuesNode = issueNode.get(LINKED_ISSUES);
-                for (Issue linkedIssue : linkedIssues) {
-                    ModelNode linkedIssueNode = linkedIssue.getModelNodeForFullRefresh(board);
-                    linkedIssuesNode.add(linkedIssueNode);
-                }
+                final ModelNode linkedIssuesNode = issueNode.get(LINKED_ISSUES);
+                linkedIssues.forEach(linkedIssue -> linkedIssuesNode.add(linkedIssue.getModelNodeForFullRefresh(board)));
             }
 
             return issueNode;
@@ -318,7 +354,7 @@ public abstract class Issue {
         BoardChangeRegistry.IssueChange convertToCreateIssueChange(BoardChangeRegistry registry, BoardConfig boardConfig) {
             String issueType = boardConfig.getIssueTypeName(issueTypeIndex);
             String priority = boardConfig.getPriorityName(priorityIndex);
-            return registry.createCreateIssueChange(this, assignee, issueType, priority, components);
+            return registry.createCreateIssueChange(this, assignee, issueType, priority, components, labels, fixVersions);
         }
     }
 
@@ -344,6 +380,8 @@ public abstract class Issue {
         private String summary;
         private Assignee assignee;
         private Set<Component> components;
+        private Set<Label> labels;
+        private Set<FixVersion> fixVersions;
         private Integer issueTypeIndex;
         private Integer priorityIndex;
         private String state;
@@ -378,6 +416,8 @@ public abstract class Issue {
             this.summary = existing.getSummary();
             this.assignee = existing.assignee;
             this.components = existing.components;
+            this.labels = existing.labels;
+            this.fixVersions = existing.fixVersions;
             this.issueTypeIndex = existing.issueTypeIndex;
             this.priorityIndex = existing.priorityIndex;
             this.state = existing.getState();
@@ -398,6 +438,8 @@ public abstract class Issue {
             summary = issue.getSummary();
             assignee = project.getAssignee(issue.getAssignee());
             components = project.getComponents(issue.getComponentObjects());
+            labels = project.getLabels(issue.getLabels());
+            fixVersions = project.getFixVersions(issue.getFixVersions());
             setIssueType(issue.getIssueTypeObject().getName());
             setPriority(issue.getPriorityObject().getName());
             setState(issue.getStatusObject().getName());
@@ -428,10 +470,23 @@ public abstract class Issue {
         }
 
         private Builder setComponents(Set<Component> components) {
-            if (components == null || components.size() == 0) {
-                this.components = null;
+            return setMultiSelectNameOnlyValue(components, set -> this.components = set);
+        }
+
+        private Builder setLabels(Set<Label> labels) {
+            return setMultiSelectNameOnlyValue(labels, set -> this.labels = set);
+        }
+
+        private Builder setFixVersions(Set<FixVersion> fixVersions) {
+            return setMultiSelectNameOnlyValue(fixVersions, set -> this.fixVersions = set);
+        }
+
+        private <T extends MultiSelectNameOnlyValue> Builder setMultiSelectNameOnlyValue(
+                Set<T> values, Consumer<Set<T>> consumer) {
+            if (values == null || values.size() == 0) {
+                consumer.consume(null);
             } else {
-                this.components = components;
+                consumer.consume(values);
             }
             return this;
         }
@@ -497,7 +552,9 @@ public abstract class Issue {
                 //Map<String, CustomFieldValue> builtCustomFieldValues
                 return new BoardIssue(
                         project.getConfig(), issueKey, state, stateIndex, summary,
-                        issueTypeIndex, priorityIndex, assignee, components, linkedList,
+                        issueTypeIndex, priorityIndex, assignee, components,
+                        labels, fixVersions,
+                        linkedList,
                         mergeCustomFieldValues(), mergeParallelTaskFieldValues());
             }
             return null;
@@ -512,13 +569,13 @@ public abstract class Issue {
                     return originalCustomFieldValues;
                 }
                 Map<String, CustomFieldValue> merged = new HashMap<>(originalCustomFieldValues);
-                for (Map.Entry<String, CustomFieldValue> entry : customFieldValues.entrySet()) {
+                customFieldValues.entrySet().forEach(entry -> {
                     if (entry.getValue() == null) {
                         merged.remove(entry.getKey());
                     } else {
                         merged.put(entry.getKey(), entry.getValue());
-                    }
-                }
+                    }});
+
                 return Collections.unmodifiableMap(merged);
             }
         }
@@ -582,9 +639,7 @@ public abstract class Issue {
         }
 
         private Builder setParallelTaskFieldValues(Map<Integer, Integer> parallelTaskValues) {
-            for (Map.Entry<Integer, Integer> value : parallelTaskValues.entrySet()) {
-                setParallelTaskFieldValue(value.getKey(), value.getValue());
-            }
+            parallelTaskValues.entrySet().forEach(value -> setParallelTaskFieldValue(value.getKey(), value.getValue()));
             return this;
         }
 

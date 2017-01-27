@@ -2,13 +2,16 @@ import {Indexed} from "../../common/indexed";
 import {StringUtils} from "../../common/stringUtils";
 
 export class Assignee {
-    private _key:string;
-    private _email:string;
-    private _avatar:string;
-    private _name:string;
-    private _initials:string;
+    //A key suitable for using in the id field of an element
+    private readonly _id:string;
+    private readonly _key:string;
+    private readonly _email:string;
+    private readonly _avatar:string;
+    private readonly _name:string;
+    private readonly _initials:string;
 
-    constructor(key:string, email:string, avatar:string, name:string) {
+    constructor(id:string, key:string, email:string, avatar:string, name:string) {
+        this._id = id;
         this._key = key;
         this._email = email;
         this._avatar = avatar;
@@ -67,8 +70,8 @@ export class AssigneeDeserializer {
         assignees.indexArray(
             input.assignees,
             (entry)=> {
-                let key:string = StringUtils.makeValidKey(entry.key);
-                return new Assignee(key, entry.email, entry.avatar, entry.name);
+                let id:string = StringUtils.makeValidKey(entry.key);
+                return new Assignee(id, entry.key, entry.email, entry.avatar, entry.name);
             },
             (assignee) => {
                 return assignee.key;

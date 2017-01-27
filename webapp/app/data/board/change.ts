@@ -1,7 +1,7 @@
 import {Assignee, AssigneeDeserializer} from "./assignee";
 import {Indexed} from "../../common/indexed";
 import {BlacklistData} from "./blacklist";
-import {JiraComponent, ComponentDeserializer} from "./component";
+import {JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 import {CustomFieldDeserializer, CustomFieldValues} from "./customField";
 import {IMap} from "../../common/map";
 export class ChangeSet {
@@ -13,6 +13,8 @@ export class ChangeSet {
 
     private _addedAssignees:Assignee[];
     private _addedComponents:JiraComponent[];
+    private _addedLabels:JiraLabel[];
+    private _addedFixVersions:JiraFixVersion[];
     private _addedCustomFields:Indexed<CustomFieldValues>;
 
     private _blacklistChange:BlacklistData;
@@ -51,7 +53,13 @@ export class ChangeSet {
             this._addedAssignees = new AssigneeDeserializer().deserialize(changes).array;
         }
         if (changes.components) {
-            this._addedComponents = new ComponentDeserializer().deserialize(changes).array;
+            this._addedComponents = JiraComponent.deserialize(changes).array;
+        }
+        if (changes.labels) {
+            this._addedLabels = JiraLabel.deserialize(changes).array;
+        }
+        if (changes["fix-versions"]) {
+            this._addedFixVersions = JiraFixVersion.deserialize(changes).array;
         }
         if (changes.custom) {
             this._addedCustomFields = new CustomFieldDeserializer().deserialize(changes);
@@ -130,6 +138,14 @@ export class ChangeSet {
         return this._addedComponents;
     }
 
+    get addedLabels(): JiraLabel[] {
+        return this._addedLabels;
+    }
+
+    get addedFixVersions(): JiraFixVersion[] {
+        return this._addedFixVersions;
+    }
+
     get addedCustomFields():Indexed<CustomFieldValues> {
         return this._addedCustomFields;
     }
@@ -155,10 +171,12 @@ export class IssueChange {
     private _state:string;
     private _assignee:string;
     private _components:string[];
+    private _labels:string[];
+    private _fixVersions:string[];
     private _customFieldValues:IMap<string>;
 
     constructor(key:string, type:string, priority:string, summary:string, state:string, assignee:string,
-                components:string[], customFieldValues:IMap<string>) {
+                components:string[], labels:string[], fixVersions:string[], customFieldValues:IMap<string>) {
         this._key = key;
         this._type = type;
         this._priority = priority;
@@ -166,6 +184,8 @@ export class IssueChange {
         this._state = state;
         this._assignee = assignee;
         this._components = components;
+        this._labels = labels;
+        this._fixVersions = fixVersions;
         this._customFieldValues = customFieldValues;
     }
 
@@ -197,6 +217,14 @@ export class IssueChange {
         return this._components;
     }
 
+    get labels(): string[] {
+        return this._labels;
+    }
+
+    get fixVersions(): string[] {
+        return this._fixVersions;
+    }
+
     get customFieldValues():IMap<string> {
         return this._customFieldValues;
     }
@@ -207,15 +235,15 @@ export class IssueAdd extends IssueChange {
     private _parallelTaskValues:number[];
 
     constructor(key: string, type: string, priority: string, summary: string, state: string,
-                assignee: string, components: string[], customFieldValues: IMap<string>,
+                assignee: string, components: string[], labels:string[], fixVersions:string[], customFieldValues: IMap<string>,
                 parallelTaskValues:number[]) {
-        super(key, type, priority, summary, state, assignee, components, customFieldValues);
+        super(key, type, priority, summary, state, assignee, components, labels, fixVersions, customFieldValues);
         this._parallelTaskValues = parallelTaskValues;
     }
 
     static deserialize(input:any) : IssueAdd {
         return new IssueAdd(input.key, input.type, input.priority, input.summary,
-            input.state, input.assignee, input.components, input.custom, input["parallel-tasks"]);
+            input.state, input.assignee, input.components, input.labels, input["fix-versions"], input.custom, input["parallel-tasks"]);
     }
 
 
@@ -228,14 +256,19 @@ export class IssueUpdate extends IssueChange {
     //Only set on update
     private _unassigned:boolean = false;
     private _clearedComponents:boolean = false;
+    private _clearedLabels:boolean = false;
+    private _clearedFixVersions:boolean = false;
     private _parallelTaskValueUpdates:IMap<number>;
 
 
     constructor(key: string, type: string, priority: string, summary: string, state: string, assignee: string, unassigned: boolean,
-                components: string[], clearedComponents: boolean, customFieldValues: IMap<string>, parallelTaskValueUpdates:IMap<number>) {
-        super(key, type, priority, summary, state, assignee, components, customFieldValues);
+                components: string[], labels:string[], fixVersions:string[], clearedComponents: boolean, clearedLabels:boolean, clearedFixVersions:boolean,
+                customFieldValues: IMap<string>, parallelTaskValueUpdates:IMap<number>) {
+        super(key, type, priority, summary, state, assignee, components, labels, fixVersions, customFieldValues);
         this._unassigned = unassigned;
         this._clearedComponents = clearedComponents;
+        this._clearedLabels = clearedLabels;
+        this._clearedFixVersions = clearedFixVersions;
         this._parallelTaskValueUpdates = parallelTaskValueUpdates;
     }
 
@@ -247,6 +280,14 @@ export class IssueUpdate extends IssueChange {
         return this._clearedComponents;
     }
 
+    get clearedLabels(): boolean {
+        return this._clearedLabels;
+    }
+
+    get clearedFixVersions(): boolean {
+        return this._clearedFixVersions;
+    }
+
     get parallelTaskValueUpdates(): IMap<number> {
         return this._parallelTaskValueUpdates;
     }
@@ -254,12 +295,16 @@ export class IssueUpdate extends IssueChange {
     static deserialize(input:any) : IssueUpdate {
         let unassigned:boolean = !!input["unassigned"];
         let clearedComponents:boolean = !!input["clear-components"];
+        let clearedLabels:boolean = !!input["clear-labels"];
+        let clearedFixVersions:boolean = !!input["clear-fix-versions"];
         let parallelTasks:IMap<number> = input["parallel-tasks"];
 
         let change:IssueUpdate =
             new IssueUpdate(
                 input.key, input.type, input.priority, input.summary,
-                input.state, input.assignee, unassigned, input.components, clearedComponents,
+                input.state, input.assignee, unassigned,
+                input.components, input.labels, input["fix-versions"],
+                clearedComponents, clearedLabels, clearedFixVersions,
                 input.custom, parallelTasks);
 
         return change;

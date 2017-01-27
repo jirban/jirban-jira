@@ -5,10 +5,10 @@ import {Priority} from "./../priority";
 import {Indexed} from "../../../common/indexed";
 import {IssueType} from "./../issueType";
 import {IssueData} from "./../issueData";
-import {JiraComponent} from "../component";
+import {JiraMultiSelectFieldValue} from "../multiSelectNameOnlyValue";
 import {SwimlaneData} from "../issueTable";
 import {CustomFieldValues, CustomFieldValue} from "../customField";
-import {IMap} from "../../../common/map";
+import {IMap, IMapUtil} from "../../../common/map";
 import {BoardProject} from "../project";
 
 /**
@@ -39,20 +39,15 @@ describe('BoardData tests', ()=> {
                 TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
 
             expect(boardData.view).toEqual(0);
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-            checkStandardPriorities(boardData);
-            checkStandardIssueTypes(boardData);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
 
             expect(boardData.swimlane).not.toBeDefined();
             expect(boardData.swimlaneTable).toBeNull();
 
-            checkStandardProjects(boardData);
-
             expect(boardData.boardStateNames.length).toBe(4);
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-
-            checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkIssueDatas(checker, boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
             expect(boardData.blacklist).toBeNull();
         });
@@ -64,21 +59,15 @@ describe('BoardData tests', ()=> {
 
             expect(boardData.view).toEqual(0);
 
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-
-            checkStandardPriorities(boardData);
-            checkStandardIssueTypes(boardData);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
 
             expect(boardData.swimlane).not.toBeDefined();
             expect(boardData.swimlaneTable).toBeNull();
 
-            checkStandardProjects(boardData);
-
             expect(boardData.boardStateNames.length).toBe(4);
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-
-            checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkIssueDatas(checker, boardData, TestBoardData.EXPECTED_FULL_BOARD);
 
             expect(boardData.blacklist).toBeDefined();
             checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101");
@@ -94,20 +83,16 @@ describe('BoardData tests', ()=> {
                 TestBoardData.create(TestBoardData.OWNER_ONLY_BOARD_PROJECTS, TestBoardData.OWNER_ONLY_BOARD_ISSUES));
 
             expect(boardData.view).toEqual(0);
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-            checkStandardPriorities(boardData);
-            checkStandardIssueTypes(boardData);
+            let checker:BoardDataChecker =
+                new BoardDataChecker(boardData)
+                    .mainProjects("TDP")
+                    .check();
 
             expect(boardData.swimlane).not.toBeDefined();
             expect(boardData.swimlaneTable).toBeNull();
 
-            checkProjects(boardData, null, "TDP");
-
             expect(boardData.boardStateNames.length).toBe(4);
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
-
-            checkIssueDatas(boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
+            checkIssueDatas(checker, boardData, TestBoardData.EXPECTED_OWNER_ONLY_BOARD);
 
             expect(boardData.blacklist).toBeNull();
         });
@@ -118,20 +103,15 @@ describe('BoardData tests', ()=> {
                 TestBoardData.create(TestBoardData.NON_OWNER_ONLY_BOARD_PROJECTS, TestBoardData.NON_OWNER_ONLY_BOARD_ISSUES));
 
             expect(boardData.view).toEqual(0);
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-            checkStandardPriorities(boardData);
-            checkStandardIssueTypes(boardData);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .mainProjects("TDP", "TBG")
+                .check();
 
             expect(boardData.swimlane).not.toBeDefined();
             expect(boardData.swimlaneTable).toBeNull();
 
-            checkProjects(boardData, null, "TDP", "TBG");
-
             expect(boardData.boardStateNames.length).toBe(4);
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
-
-            checkIssueDatas(boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
+            checkIssueDatas(checker, boardData, TestBoardData.EXPECTED_NON_OWNER_ONLY_BOARD);
 
             expect(boardData.blacklist).toBeNull();
         });
@@ -147,22 +127,19 @@ describe('BoardData tests', ()=> {
             boardData.deserialize("tst", bd.build());
 
             expect(boardData.view).toEqual(0);
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-            checkStandardPriorities(boardData);
-            checkStandardIssueTypes(boardData);
-            checkStandardCustomFields(boardData);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
 
             expect(boardData.swimlane).not.toBeDefined();
             expect(boardData.swimlaneTable).toBeNull();
 
-            checkStandardProjects(boardData);
-
             expect(boardData.boardStateNames.length).toBe(4);
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-
-            checkIssueDatas(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkIssueCustomFields(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+            checkIssueDatas(checker, boardData, TestBoardData.EXPECTED_FULL_BOARD);
             expect(boardData.blacklist).toBeNull();
         });
     });
@@ -179,10 +156,10 @@ describe('BoardData tests', ()=> {
             };
             boardData.processChanges(changes);
 
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
             expect(boardData.blacklist).toBeNull();
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
     });
 
@@ -218,9 +195,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.states, "BadState1", "BadState2");
             checkEntries(boardData.blacklist.issues, "TDP-50", "TBG-100");
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Add to blacklist', () => {
@@ -244,9 +221,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.states, "BadState");
             checkEntries(boardData.blacklist.issues, "TDP-1", "TBG-1");
 
-            let layout:any = [[], ["TDP-2"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-2"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Remove from blacklist', () => {
@@ -269,9 +246,9 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist.states.length).toBe(0);
             expect(boardData.blacklist.issues.length).toBe(0);
 
-            let layout:any = [["TDP-1"], [], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], [], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Remove from and add to blacklist', () => {
@@ -295,9 +272,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.issues, "TDP-1");
 
 
-            let layout:any = [[], ["TDP-2"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-2"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
     });
 
@@ -332,9 +309,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.states, "BadState", "BadState1", "BadState2");
             checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101", "TDP-200", "TBG-200");
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Add to blacklist', () => {
@@ -358,9 +335,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.states, "BadState", "BadStateA");
             checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101", "TDP-1", "TBG-1");
 
-            let layout:any = [[], ["TDP-2"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-2"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Remove from blacklist', () => {
@@ -383,9 +360,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.states, "BadState");
             checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101");
 
-            let layout:any = [["TDP-1"], [], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], [], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Remove from and add to blacklist', () => {
@@ -409,9 +386,9 @@ describe('BoardData tests', ()=> {
             checkEntries(boardData.blacklist.issues, "TDP-100", "TBG-101", "TDP-1");
 
 
-            let layout:any = [[], ["TDP-2"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-2"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
     });
 
@@ -437,9 +414,9 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [[], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
 
@@ -457,9 +434,9 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], [], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], [], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Delete issue and add to backlog', () => {
@@ -482,9 +459,9 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist.priorities.length).toBe(0);
             checkEntries(boardData.blacklist.issueTypes, "BadTypeA");
 
-            let layout:any = [[], ["TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TBG-1"], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
 
         it('Delete issue and remove from blacklist', () => {
@@ -503,9 +480,9 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
 
-            let layout:any = [["TDP-1"], [], [], []];
-            checkBoardLayout(boardData, layout);
-            checkIssueDatas(boardData, layout);
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], [], ["TDP-3"], ["TDP-4"]];
+            checkIssueDatas(checker, boardData, layout);
         });
     });
 
@@ -534,13 +511,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-1");
-            checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
+            new IssueDataChecker(updatedIssue, "bug", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .check();
 
         });
 
@@ -561,13 +541,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-2");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-2");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-2");
-            checkBoardIssue(updatedIssue, "TDP-2", "bug", "low", "kabir", ["Second"], "Two");
+            new IssueDataChecker(updatedIssue, "bug", "low", "kabir", "Two")
+                .key("TDP-2")
+                .components("C5")
+                .check();
         });
 
         it ('Update summary', () => {
@@ -587,13 +570,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["First"], "Uno");
+            new IssueDataChecker(updatedIssue, "task", "highest", "brian", "Uno")
+                .key("TBG-1")
+                .components("C1")
+                .check();
         });
 
         it ('Unassign', () => {
@@ -613,13 +599,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", null, ["First"], "One");
+            new IssueDataChecker(updatedIssue, "task", "highest", null, "One")
+                .key("TBG-1")
+                .components("C1")
+                .check();
         });
 
         it ('Update assignee (not new on board)', () => {
@@ -639,18 +628,21 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "kabir", ["First"], "One");
+            new IssueDataChecker(updatedIssue, "task", "highest", "kabir", "One")
+                .key("TBG-1")
+                .components("C1")
+                .check();
         });
 
         it('Update assignee (new on board)', () => {
 
-            checkAssignees(boardData, "brian", "kabir");
+            new BoardDataChecker(boardData).check();
             let changes:any = {
                 changes: {
                     view: 1,
@@ -673,106 +665,322 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            checkAssignees(boardData, "brian", "jason", "kabir");
-            checkComponents(boardData, "First", "Second");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .assignees("brian", "jason", "kabir")
+                .check();
 
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "jason", ["First"], "One");
+            new IssueDataChecker(updatedIssue, "task", "highest", "jason", "One")
+                .key("TBG-1")
+                .components("C1")
+                .check();
         });
 
-        it ('Clear component', () => {
-            checkComponents(boardData, "First", "Second");
-            let changes:any = {
-                changes: {
-                    view: 1,
-                    issues: {
-                        "update" : [{
-                            key: "TBG-1",
-                            "clear-components": true
-                        }]
+        describe('Components', () => {
+            it ('Clear', () => {
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TBG-1",
+                                "clear-components": true
+                            }]
+                        }
                     }
-                }
-            };
+                };
 
-            boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
-            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
-            expect(updatedIssues.array.length).toBe(1);
-            let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", null, "One");
-            checkComponents(boardData, "First", "Second");
-        });
+                let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TBG-1");
+                new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                    .key("TBG-1")
+                    .check();
+                new BoardDataChecker(boardData).check();
+            });
 
-        it ('Update components (not new on board)', () => {
-            checkComponents(boardData, "First", "Second");
-            let changes:any = {
-                changes: {
-                    view: 1,
-                    issues: {
-                        "update" : [{
-                            key: "TBG-1",
-                            components: ["Second"]
-                        }]
+            it ('Update (not new on board)', () => {
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TBG-1",
+                                components: ["C5"]
+                            }]
+                        }
                     }
-                }
-            };
+                };
 
-            boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
-            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
-            expect(updatedIssues.array.length).toBe(1);
-            let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["Second"], "One");
-            checkComponents(boardData, "First", "Second");
-        });
+                let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TBG-1");
+                new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                    .key("TBG-1")
+                    .components("C5")
+                    .check();
+                new BoardDataChecker(boardData).check();
+            });
 
-        it('Update components (new on board)', () => {
+            it('Update (new on board)', () => {
 
-            checkComponents(boardData, "First", "Second");
-            let changes:any = {
-                changes: {
-                    view: 1,
-                    issues: {
-                        "update" : [{
-                            key: "TBG-1",
-                            components: ["Third", "Fourth"]
-                        }]
-                    },
-                    components : ["Third", "Fourth"]
-                }
-            };
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TBG-1",
+                                components: ["C7", "C3"]
+                            }]
+                        },
+                        components : ["C7", "C3"]
+                    }
+                };
 
-            boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
-            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            checkComponents(boardData, "First", "Fourth", "Second", "Third");
+                let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                    .components("C1", "C3", "C5", "C7")
+                    .check();
 
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TBG-1");
+                new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                    .key("TBG-1")
+                    .components("C7", "C3")
+                    .check();
+            });
+        })
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
-            expect(updatedIssues.array.length).toBe(1);
-            let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "task", "highest", "brian", ["Third", "Fourth"], "One");
-        });
+        describe('Labels', () => {
+            it ('Clear', () => {
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TDP-3",
+                                "clear-labels": true
+                            }]
+                        }
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TDP-3");
+                new IssueDataChecker(updatedIssue, "feature", "low", null, "Three")
+                    .key("TDP-3")
+                    .fixVersions("F5")
+                    .check();
+                new BoardDataChecker(boardData).check();
+            });
+
+            it ('Update (not new on board)', () => {
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TDP-3",
+                                labels: ["L5"]
+                            }]
+                        }
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TDP-3");
+                new IssueDataChecker(updatedIssue, "feature", "low", null, "Three")
+                    .key("TDP-3")
+                    .labels("L5")
+                    .fixVersions("F5")
+                    .check();
+                new BoardDataChecker(boardData).check();
+            });
+
+            it('Update (new on board)', () => {
+
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TDP-3",
+                                labels: ["L7", "L3"]
+                            }]
+                        },
+                        labels : ["L7", "L3"]
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                    .labels("L1", "L3", "L5", "L7")
+                    .check();
+
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TDP-3");
+                new IssueDataChecker(updatedIssue, "feature", "low", null, "Three")
+                    .key("TDP-3")
+                    .labels("L7", "L3")
+                    .fixVersions("F5")
+                    .check();
+            });
+        })
+
+        describe('Fix Versions', () => {
+            it ('Clear', () => {
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TDP-3",
+                                "clear-fix-versions": true
+                            }]
+                        }
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TDP-3");
+                new IssueDataChecker(updatedIssue, "feature", "low", null, "Three")
+                    .key("TDP-3")
+                    .labels("L1")
+                    .check();
+                new BoardDataChecker(boardData).check();
+            });
+
+            it ('Update (not new on board)', () => {
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TDP-3",
+                                "fix-versions": ["F1"]
+                            }]
+                        }
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TDP-3");
+                new IssueDataChecker(updatedIssue, "feature", "low", null, "Three")
+                    .key("TDP-3")
+                    .labels("L1")
+                    .fixVersions("F1")
+                    .check();
+                new BoardDataChecker(boardData).check();
+            });
+
+            it('Update (new on board)', () => {
+
+                new BoardDataChecker(boardData).check();
+                let changes:any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update" : [{
+                                key: "TDP-3",
+                                "fix-versions": ["F7", "F3"]
+                            }]
+                        },
+                        "fix-versions" : ["F7", "F3"]
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                    .fixVersions("F1", "F3", "F5", "F7")
+                    .check();
+
+                let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+                let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
+                expect(updatedIssues.array.length).toBe(1);
+                let updatedIssue:IssueData = updatedIssues.forIndex(0);
+                expect(updatedIssue.key).toBe("TDP-3");
+                new IssueDataChecker(updatedIssue, "feature", "low", null, "Three")
+                    .key("TDP-3")
+                    .labels("L1")
+                    .fixVersions("F7", "F3")
+                    .check();
+            });
+        })
+
 
         it('Clear custom field', () => {
             let bd:TestBoardData = new TestBoardData();
@@ -781,7 +989,6 @@ describe('BoardData tests', ()=> {
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
 
-            checkStandardCustomFields(boardData);
             let changes:any = {
                 changes: {
                     view: 1,
@@ -800,15 +1007,21 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
             //Board should still have all the custom fields
-            checkStandardCustomFields(boardData);
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
-            checkNoCustomField(updatedIssue, updatedIssue.key, "Tester");
-            checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "kabir", "Kabir Khan");
+            new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .check();
 
         });
 
@@ -819,7 +1032,6 @@ describe('BoardData tests', ()=> {
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
 
-            checkStandardCustomFields(boardData);
             let changes:any = {
                 changes: {
                     view: 1,
@@ -838,16 +1050,20 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
             //Board should still have all the custom fields
-            checkStandardCustomFields(boardData);
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
-            checkNoCustomField(updatedIssue, updatedIssue.key, "Tester");
-            checkNoCustomField(updatedIssue, updatedIssue.key, "Documenter");
-
+            new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .check();
         });
 
         it('Update custom field (not new on board)', () => {
@@ -857,7 +1073,6 @@ describe('BoardData tests', ()=> {
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
 
-            checkStandardCustomFields(boardData);
             let changes:any = {
                 changes: {
                     view: 1,
@@ -876,15 +1091,22 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
             //Board should still have all the custom fields
-            checkStandardCustomFields(boardData);
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
-            checkCustomField(updatedIssue, updatedIssue.key, "Tester", "kabir", "Kabir Khan");
-            checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "stuart", "Stuart Douglas");
+            new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
         });
 
         it('Update custom field (new on board)', () => {
@@ -894,7 +1116,6 @@ describe('BoardData tests', ()=> {
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
 
-            checkStandardCustomFields(boardData);
             let changes:any = {
                 changes: {
                     view: 1,
@@ -917,16 +1138,24 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
             //Board should still have all the custom fields
-            checkUpdatedCustomFields(boardData);
-
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Tester", "stuart", "Stuart Douglas")
+                .customField("Documenter", "brian", "Brian Stansberry")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
-            checkCustomField(updatedIssue, updatedIssue.key, "Tester", "stuart", "Stuart Douglas");
-            checkCustomField(updatedIssue, updatedIssue.key, "Documenter", "brian", "Brian Stansberry");
+            new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .customField("Tester", "stuart", "Stuart Douglas")
+                .customField("Documenter", "brian", "Brian Stansberry")
+                .check();
         });
 
         it('Update parallel tasks', () => {
@@ -951,13 +1180,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
-            checkBoardIssue(updatedIssue, "TDP-1", "task", "highest", "brian", ["First"], "One");
-            checkParallelTasks(updatedIssue, "us-In Progress", "ds-Done");
+            new IssueDataChecker(updatedIssue, "task", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .selectedParallelTaskOptions("us-In Progress", "ds-Done")
+                .check();
         });
     });
 
@@ -987,19 +1219,36 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [[], ["TDP-1", "TDP-2", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-1", "TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-1");
-            checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
+            new IssueDataChecker(updatedIssue, "bug", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .check();
+
         });
 
         it ('Update main project to unpopulated state', () => {
+            //Delete an issue first so that we have an unpopulated state
             let changes:any = {
                 changes: {
                     view: 1,
+                    issues: {
+                        "delete" : ["TDP-3"]
+                    }
+                }
+            };
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+
+
+            changes = {
+                changes: {
+                    view: 2,
                     issues: {
                         "update" : [{
                             key: "TDP-1",
@@ -1011,16 +1260,19 @@ describe('BoardData tests', ()=> {
             };
 
             boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
+            expect(boardData.view).toBe(2);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-1"], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-1"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TDP-1");
-            checkBoardIssue(updatedIssue, "TDP-1", "bug", "highest", "brian", ["First"], "One");
+            new IssueDataChecker(updatedIssue, "bug", "highest", "brian", "One")
+                .key("TDP-1")
+                .components("C1")
+                .check();
         });
 
         it ('Update other project', () => {
@@ -1041,13 +1293,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2"], ["TBG-1"], []];
-            checkBoardLayout(boardData, layout);
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-1");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2"], ["TDP-3", "TBG-1"], ["TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-1");
             expect(updatedIssues.array.length).toBe(1);
             let updatedIssue:IssueData = updatedIssues.forIndex(0);
             expect(updatedIssue.key).toBe("TBG-1");
-            checkBoardIssue(updatedIssue, "TBG-1", "bug", "highest", "brian", ["First"], "One");
+            new IssueDataChecker(updatedIssue, "bug", "highest", "brian", "One")
+                .key("TBG-1")
+                .components("C1")
+                .check();
         });
     });
 
@@ -1057,12 +1312,11 @@ describe('BoardData tests', ()=> {
             boardData = new BoardData();
             boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_RERANK_BOARD_PROJECTS, TestBoardData.PRE_RERANK_BOARD_ISSUES));
+            new BoardDataChecker(boardData).check();
         });
 
 
         it("Move end issue to start", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1076,9 +1330,8 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
-
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-4", "TDP-1", "TDP-2", "TDP-3"]})
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
@@ -1086,8 +1339,6 @@ describe('BoardData tests', ()=> {
         });
 
         it("Move one middle issue to start", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1101,9 +1352,9 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
+            new BoardDataChecker(boardData).check();
 
-
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-1", "TDP-2", "TDP-4"]})
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
@@ -1111,8 +1362,6 @@ describe('BoardData tests', ()=> {
         });
 
         it("Move start issue to end", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1126,9 +1375,9 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
+            new BoardDataChecker(boardData).check();
 
-
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-2", "TDP-3", "TDP-4", "TDP-1"]})
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
@@ -1136,8 +1385,6 @@ describe('BoardData tests', ()=> {
         });
 
         it("Move one middle issue to end", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1151,7 +1398,7 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
+            new BoardDataChecker(boardData).check();
 
 
             checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-2", "TDP-4", "TDP-3"]})
@@ -1160,8 +1407,6 @@ describe('BoardData tests', ()=> {
         });
 
         it("Swap middle issues", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1175,17 +1420,14 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
-
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-3", "TDP-2", "TDP-4"]})
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
         });
 
         it("Rank two issues", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1201,16 +1443,14 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-1", "TDP-3", "TDP-4", "TDP-2"]})
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
         });
 
         it("Rank all issues", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1228,16 +1468,14 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-4", "TDP-1", "TDP-2"]})
             let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
         });
 
         it("Combine issue delete with rank", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1253,16 +1491,14 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-3", "TDP-2", "TDP-4"]})
             let layout:any = [[], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
             checkBoardLayout(boardData, layout);
         });
 
         it ("State updates, deletes and adds", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1295,18 +1531,23 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
+            new BoardDataChecker(boardData).check();
             checkBoardRank(boardData, {TDP: ["TDP-5", "TDP-2", "TDP-1", "TDP-4"]})
-            let layout:any = [["TDP-1"], ["TBG-1"], [], ["TDP-5", "TDP-2", "TDP-4"]];
-            checkBoardLayout(boardData, layout);
 
-            let updatedIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-2", "TDP-5");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TBG-1"], [], ["TDP-5", "TDP-2", "TDP-4"]];
+            let updatedIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-2", "TDP-5");
             expect(updatedIssues.array.length).toBe(2);
             let updatedIssue:IssueData = updatedIssues.forKey("TDP-2");
-            checkBoardIssue(updatedIssue, "TDP-2", "issue", "high", "kabir", ["Second"], "Two");
+            new IssueDataChecker(updatedIssue, "issue", "high", "kabir", "Two")
+                .key("TDP-2")
+                .components("C5")
+                .check();
             updatedIssue = updatedIssues.forKey("TDP-5");
-            checkBoardIssue(updatedIssue, "TDP-5", "bug", "high", "kabir", null, "Five");
+            new IssueDataChecker(updatedIssue, "bug", "high", "kabir", "Five")
+                .key("TDP-5")
+                .check();
 
         });
     });
@@ -1317,19 +1558,19 @@ describe('BoardData tests', ()=> {
             boardData = new BoardData();
             boardData.deserialize("tst",
                 TestBoardData.create(TestBoardData.PRE_CHANGE_BOARD_PROJECTS, TestBoardData.PRE_CHANGE_BOARD_ISSUES));
+            new BoardDataChecker(boardData).check();
         });
 
         it ("Main project to populated state - no new assignee", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
+            new BoardDataChecker(boardData).check();
             let changes:any = {
                 changes: {
                     view: 1,
                     issues: {
                         "new" : [{
-                            key: "TDP-3",
+                            key: "TDP-5",
                             state : "TDP-B",
-                            summary : "Three",
+                            summary : "Five",
                             priority : "high",
                             type : "bug",
                             assignee : "kabir"
@@ -1337,7 +1578,7 @@ describe('BoardData tests', ()=> {
                         }]
                     },
                     rank: {
-                        TDP: [{index: 2, key: "TDP-3"}]
+                        TDP: [{index: 2, key: "TDP-5"}]
                     }
                 }
             };
@@ -1345,24 +1586,34 @@ describe('BoardData tests', ()=> {
             boardData.processChanges(changes);
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
-            checkAssignees(boardData, "brian", "kabir");
 
-
-            let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TDP-5", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-5");
             expect(createdIssues.array.length).toBe(1);
             let createdIssue:IssueData = createdIssues.forIndex(0);
-            expect(createdIssue.key).toBe("TDP-3");
-            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", null, "Three");
+            expect(createdIssue.key).toBe("TDP-5");
+            new IssueDataChecker(createdIssue, "bug", "high", "kabir", "Five")
+                .key("TDP-5")
+                .check();
         });
 
         it ("Main project to unpopulated state  - new assignee", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
+            //Delete an issue first so that we have an unpopulated state
             let changes:any = {
                 changes: {
                     view: 1,
+                    issues: {
+                        "delete" : ["TDP-3"]
+                    }
+                }
+            };
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+
+            changes = {
+                changes: {
+                    view: 2,
                     issues: {
                         "new" : [{
                             key: "TDP-3",
@@ -1387,26 +1638,24 @@ describe('BoardData tests', ()=> {
             };
 
             boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
+            expect(boardData.view).toBe(2);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            checkAssignees(boardData, "brian", "jason", "kabir");
-            checkComponents(boardData, "First", "Second");
-
-
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], []];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .assignees("brian", "jason", "kabir")
+                .check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-3");
             expect(createdIssues.array.length).toBe(1);
             let createdIssue:IssueData = createdIssues.forIndex(0);
 
             expect(createdIssue.key).toBe("TDP-3");
-            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "jason", null, "Three");
+            new IssueDataChecker(createdIssue, "bug", "high", "jason", "Three")
+                .key("TDP-3")
+                .check();
         });
 
         it ("Other project populated state", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
             let changes:any = {
                 changes: {
                     view: 1,
@@ -1431,25 +1680,34 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-
-
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1", "TBG-2"], [], []];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-2");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1", "TBG-2"], ["TDP-3"], ["TDP-4"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-2");
             expect(createdIssues.array.length).toBe(1);
             let createdIssue:IssueData = createdIssues.forIndex(0);
             expect(createdIssue.key).toBe("TBG-2");
-            checkBoardIssue(createdIssue, "TBG-2", "bug", "high", "kabir", null, "Two");
+            new IssueDataChecker(createdIssue, "bug", "high", "kabir", "Two")
+                .key("TBG-2")
+                .check();
         });
 
         it ("Other project unpopulated state", () => {
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
+            //Delete an issue first so that we have an unpopulated state
             let changes:any = {
                 changes: {
                     view: 1,
+                    issues: {
+                        "delete" : ["TDP-3"]
+                    }
+                }
+            };
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+
+            new BoardDataChecker(boardData).check();
+            changes = {
+                changes: {
+                    view: 2,
                     issues: {
                         "new" : [{
                             key: "TBG-2",
@@ -1468,19 +1726,17 @@ describe('BoardData tests', ()=> {
             };
 
             boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
+            expect(boardData.view).toBe(2);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            checkAssignees(boardData, "brian", "kabir");
-            checkComponents(boardData, "First", "Second");
-
-
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TBG-2"], []];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TBG-2");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TBG-2"], ["TDP-4"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TBG-2");
             expect(createdIssues.array.length).toBe(1);
             let createdIssue:IssueData = createdIssues.forIndex(0);
-            checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", null, "Two");
+            new IssueDataChecker(createdIssue, "feature", "highest", "brian", "Two")
+                .key("TBG-2")
+                .check();
         });
 
         it('Main project to populated state - existing custom fields', () => {
@@ -1490,26 +1746,27 @@ describe('BoardData tests', ()=> {
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
 
-            checkStandardCustomFields(boardData);
             let changes:any = {
                 changes: {
                     view: 1,
                     issues: {
                         "new" : [{
-                            key: "TDP-3",
+                            key: "TDP-5",
                             state : "TDP-B",
-                            summary : "Three",
+                            summary : "Five",
                             priority : "high",
                             type : "bug",
                             assignee : "kabir",
-                            components: ["First"],
+                            components: ["C1"],
+                            labels: ["L1"],
+                            "fix-versions" : ["F1"],
                             custom: {
                                 Tester: "kabir",
                                 Documenter: "stuart"}
                         }]
                     },
                     rank: {
-                        TDP: [{index: 2, key: "TDP-3"}]
+                        TDP: [{index: 2, key: "TDP-5"}]
                     }
                 }
             };
@@ -1519,15 +1776,24 @@ describe('BoardData tests', ()=> {
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
             //Board should still have all the custom fields
-            checkStandardCustomFields(boardData);
-            let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData)
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TDP-5", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-5");
             expect(createdIssues.array.length).toBe(1);
             let createdIssue:IssueData = createdIssues.forIndex(0);
-            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", ["First"], "Three");
-            checkCustomField(createdIssue, createdIssue.key, "Tester", "kabir", "Kabir Khan");
-            checkCustomField(createdIssue, createdIssue.key, "Documenter", "stuart", "Stuart Douglas");
+            new IssueDataChecker(createdIssue, "bug", "high", "kabir", "Five")
+                .key("TDP-5")
+                .components("C1")
+                .labels("L1")
+                .fixVersions("F1")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
         });
 
         it ("With parallel tasks", () => {
@@ -1541,18 +1807,20 @@ describe('BoardData tests', ()=> {
                     view: 1,
                     issues: {
                         new : [{
-                            key: "TDP-3",
+                            key: "TDP-5",
                             state : "TDP-B",
-                            summary : "Three",
+                            summary : "Five",
                             priority : "high",
                             type : "bug",
                             assignee : "kabir",
-                            components: ["First"],
+                            components : ["C1"],
+                            labels : ["L5"],
+                            "fix-versions" : ["F5"],
                             "parallel-tasks": [3, 0]
                         }]
                     },
                     rank: {
-                        TDP: [{index: 2, key: "TDP-3"}]
+                        TDP: [{index: 2, key: "TDP-5"}]
                     }
                 }
             };
@@ -1561,13 +1829,18 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TDP-3", "TBG-1"], [], []];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TDP-5", "TBG-1"], ["TDP-3"], ["TDP-4"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-5");
             expect(createdIssues.array.length).toBe(1);
             let createdIssue:IssueData = createdIssues.forIndex(0);
-            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "kabir", ["First"], "Three");
-            checkParallelTasks(createdIssue, "us-Done", "ds-TODO");
+            new IssueDataChecker(createdIssue, "bug", "high", "kabir", "Five")
+                .key("TDP-5")
+                .components("C1")
+                .labels("L5")
+                .fixVersions("F5")
+                .selectedParallelTaskOptions("us-Done", "ds-TODO")
+                .check();
         });
 
         it ("Several issues", () => {
@@ -1576,17 +1849,17 @@ describe('BoardData tests', ()=> {
                     view: 1,
                     issues: {
                         "new" : [{
-                                key: "TDP-3",
+                                key: "TDP-5",
                                 state : "TDP-C",
-                                summary : "Three",
+                                summary : "Five",
                                 priority : "high",
                                 type : "bug",
                                 assignee : "brian"
                             },
                             {
-                                key: "TDP-4",
+                                key: "TDP-6",
                                 state : "TDP-D",
-                                summary : "Four",
+                                summary : "Six",
                                 priority : "low",
                                 type : "issue",
                                 assignee : "kabir"
@@ -1602,7 +1875,7 @@ describe('BoardData tests', ()=> {
                         }]
                     },
                     rank: {
-                        TDP: [{index: 2, key: "TDP-3"}, {index: 3, key: "TDP-4"}],
+                        TDP: [{index: 4, key: "TDP-5"}, {index: 5, key: "TDP-6"}],
                         TBG: [{index: 1, key: "TBG-2"}]
                     }
                 }
@@ -1611,16 +1884,22 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3", "TBG-2"], ["TDP-4"]];
-            checkBoardLayout(boardData, layout);
-            let createdIssues:Indexed<IssueData> = checkIssueDatas(boardData, layout, "TDP-3", "TDP-4", "TBG-2");
+            let checker:BoardDataChecker = new BoardDataChecker(boardData).check();
+            let layout:any = [["TDP-1"], ["TDP-2", "TBG-1"], ["TDP-3", "TDP-5", "TBG-2"], ["TDP-4", "TDP-6"]];
+            let createdIssues:Indexed<IssueData> = checkIssueDatas(checker, boardData, layout, "TDP-5", "TDP-6", "TBG-2");
             expect(createdIssues.array.length).toBe(3);
-            let createdIssue:IssueData = createdIssues.forKey("TDP-3");
-            checkBoardIssue(createdIssue, "TDP-3", "bug", "high", "brian", null, "Three");
-            createdIssue = createdIssues.forKey("TDP-4");
-            checkBoardIssue(createdIssue, "TDP-4", "issue", "low", "kabir", null, "Four");
+            let createdIssue:IssueData = createdIssues.forKey("TDP-5");
+            new IssueDataChecker(createdIssue, "bug", "high", "brian", "Five")
+                .key("TDP-5")
+                .check();
+            createdIssue = createdIssues.forKey("TDP-6");
+            new IssueDataChecker(createdIssue, "issue", "low", "kabir", "Six")
+                .key("TDP-6")
+                .check();
             createdIssue = createdIssues.forKey("TBG-2");
-            checkBoardIssue(createdIssue, "TBG-2", "feature", "highest", "brian", null, "Two");
+            new IssueDataChecker(createdIssue, "feature", "highest", "brian", "Two")
+                .key("TBG-2")
+                .check();
         });
     });
 
@@ -1636,496 +1915,774 @@ describe('BoardData tests', ()=> {
                 TestBoardData.create(TestBoardData.FULL_BOARD_PROJECTS, TestBoardData.FULL_BOARD_ISSUES));
         });
 
-        it("Project", () => {
-            new FilterBuilder(boardData)
-                .setProjectFilter({"TDP": true})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"]);
+        describe("Simple", () => {
 
-            new FilterBuilder(boardData)
-                .setProjectFilter({"TDP": true, "TBG": true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            it("Project", () => {
+                new FilterBuilder(boardData)
+                    .setProjectFilter({"TDP": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"]);
 
-            new FilterBuilder(boardData)
-                .setProjectFilter({"TBG": true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"],
-                ["TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+                new FilterBuilder(boardData)
+                    .setProjectFilter({"TDP": true, "TBG": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+                new FilterBuilder(boardData)
+                    .setProjectFilter({"TBG": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7"],
+                    ["TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
 
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            });
+
+            it("Priority", () => {
+                new FilterBuilder(boardData)
+                    .setPriorityFilter({"highest": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setPriorityFilter({"high": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setPriorityFilter({"highest": true, "high":true, "low": true, "lowest":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setPriorityFilter({"low": true, "lowest":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+
+            it("Issue Type", () => {
+                new FilterBuilder(boardData)
+                    .setIssueTypeFilter({"task":true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setIssueTypeFilter({"bug":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setIssueTypeFilter({"task":true, "bug":true, "feature":true, "issue":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setIssueTypeFilter({"feature":true, "issue":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+            it ("Assignee", () => {
+                new FilterBuilder(boardData)
+                    .setAssigneeFilter({"brian":true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setAssigneeFilter({"kabir":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setAssigneeFilter({"$n$o$n$e$":true, "brian":true, "kabir":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setAssigneeFilter({"$n$o$n$e$":true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+            });
         });
 
-        it("Priority", () => {
-            new FilterBuilder(boardData)
-                .setPriorityFilter({"highest": true})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setPriorityFilter({"high": true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .setPriorityFilter({"highest": true, "high":true, "low": true, "lowest":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setPriorityFilter({"low": true, "lowest":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-        });
-
-
-        it("Issue Type", () => {
-            new FilterBuilder(boardData)
-                .setIssueTypeFilter({"task":true})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setIssueTypeFilter({"bug":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .setIssueTypeFilter({"task":true, "bug":true, "feature":true, "issue":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setIssueTypeFilter({"feature":true, "issue":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-        });
-
-        it ("Assignee", () => {
-            new FilterBuilder(boardData)
-                .setAssigneeFilter({"brian":true})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setAssigneeFilter({"kabir":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .setAssigneeFilter({"$n$o$n$e$":true, "brian":true, "kabir":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setAssigneeFilter({"$n$o$n$e$":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-        });
-
-        it ("Component (single per issue)", () => {
-            //Components are a bit different from the other filters, since an issue may have more than one component
-            new FilterBuilder(boardData)
-                .setComponentFilter({"First":true})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"Second":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"$n$o$n$e$":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"$n$o$n$e$":true, "First":true, "Second":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-
-            //Make sure that if selecting more than one component we get all the issues which have EITHER
-            new FilterBuilder(boardData)
-                .setComponentFilter({"First":true, "Second":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
-
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-
-        });
-
-        it ("Component (several per issue)", () => {
-            //Components are a bit different from the other filters, since an issue may have more than one component
-
-            //Add some components to some issues
-            checkComponents(boardData, "First", "Second");
-            let changes:any = {
-                changes: {
-                    view: 1,
-                    issues: {
-                        "update" : [
-                            {key: "TDP-3", components: ["First", "Second"]},
-                            {key: "TDP-4", components: ["Third"]},
-                            {key: "TDP-7", components: ["First", "Second"]},
-                            {key: "TBG-3", components: ["First", "Second"]}]
-                    },
-                    components : ["Third"]
-                }
-            };
-
-            boardData.processChanges(changes);
-            expect(boardData.view).toBe(1);
-            expect(boardData.blacklist).not.toEqual(jasmine.anything());
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"First":true})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-4", "TDP-6", "TBG-2", "TBG-4"],
-                ["TDP-1", "TDP-3", "TDP-5", "TDP-7", "TBG-1", "TBG-3"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"Second":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-4", "TDP-5", "TBG-1", "TBG-4"],
-                ["TDP-2", "TDP-3", "TDP-6", "TDP-7", "TBG-2", "TBG-3"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"$n$o$n$e$":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
-                ["TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"$n$o$n$e$":true, "First":true, "Second":true, "Third":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-
-            //Make sure that if selecting more than one component we get all the issues which have EITHER
-            new FilterBuilder(boardData)
-                .setComponentFilter({"First":true, "Second":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-4", "TBG-4"],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"]);
-
-            new FilterBuilder(boardData)
-                .setComponentFilter({"$n$o$n$e$":true, "First":true, "Second":true})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-4"],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-        });
-
-        it("Custom Field - Tester", () => {
-            let bd:TestBoardData = new TestBoardData();
-            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
-            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
-            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
-            boardData.deserialize("tst", bd.build());
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"james":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"kabir":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"james":false, "kabir":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            //None
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"$n$o$n$e$":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"$n$o$n$e$":true, "kabir":true, "james":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"kabir":true, "james":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
-
-        });
-
-
-        it("Custom Field - Documenter", () => {
-            let bd:TestBoardData = new TestBoardData();
-            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
-            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
-            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
-            boardData.deserialize("tst", bd.build());
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Documenter":{"kabir":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Documenter":{"stuart":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            //None
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Documenter":{"$n$o$n$e$":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Documenter":{"$n$o$n$e$":true, "kabir":true, "stuart":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Documenter":{"kabir":true, "stuart":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
-        });
-
-        it("Custom Field - Documenter+Tester", () => {
-            let bd:TestBoardData = new TestBoardData();
-            bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
-            bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
-            bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
-            boardData.deserialize("tst", bd.build());
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"james":true}, "Documenter":{"kabir":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-5", "TBG-1"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"kabir":true}, "Documenter":{"stuart":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
-                ["TDP-2", "TDP-6", "TBG-2"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"james":true}, "Documenter":{"stuart":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                []);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"kabir":true}, "Documenter":{"kabir":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                []);
-
-            //None
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"$n$o$n$e$":true}, "Documenter":{"$n$o$n$e$":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"$n$o$n$e$":true, "kabir":true, "james":true}, "Documenter":{"$n$o$n$e$":true, "kabir":true, "stuart":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-            new FilterBuilder(boardData)
-                .setCustomFieldFilter({"Tester":{"kabir":true, "james":true}, "Documenter":{"kabir":true, "stuart":true}})
-                .buildAndFilterBoardData();
-            checkFiltered(boardData,
-                ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
-                ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
-
-        });
-
-        it ("Parallel tasks", () => {
-            let bd:TestBoardData = new TestBoardData();
-            bd.projects = TestBoardData.getFullBoardParallelTaskProjects();
-            bd.issues = TestBoardData.getFullBoardParallelTaskIssues();
-            boardData.deserialize("tst", bd.build());
-
-            new FilterBuilder(boardData)
-                .setParallelTasksFilter({"US":{"us-Done":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-4"]);
-
-
-            new FilterBuilder(boardData)
-                .setParallelTasksFilter({"DS":{"ds-Done":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-4", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-3", "TDP-7"]);
-
-            new FilterBuilder(boardData)
-                .setParallelTasksFilter({"US":{"us-Review":true}, "DS":{"ds-Done":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-4", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                ["TDP-3", "TDP-7"]);
-
-            new FilterBuilder(boardData)
-                .setParallelTasksFilter({"US":{"us-Review":true}, "DS":{"ds-Review":true}})
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
-                []);
-
-
-            new FilterBuilder(boardData)
-                .buildAndFilterBoardData();
-            checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
-            checkFiltered(boardData,
-                [],
-                ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
-
-
+        describe("Map", () => {
+
+            it("Component (single per issue)", () => {
+                //Components are a bit different from the other filters, since an issue may have more than one component
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"C1": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"C5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"$n$o$n$e$": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"$n$o$n$e$": true, "C1": true, "C5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                //Make sure that if selecting more than one component we get all the issues which have EITHER
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"C1": true, "C5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+            });
+
+            it("Component (several per issue)", () => {
+                //Components are a bit different from the other filters, since an issue may have more than one component
+
+                //Add some components to some issues
+                new BoardDataChecker(boardData)
+                    .linkedProjects("TUP")
+                    .check();
+                let changes: any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update": [
+                                {key: "TDP-3", components: ["C1", "C5"]},
+                                {key: "TDP-4", components: ["C7"]},
+                                {key: "TDP-7", components: ["C1", "C5"]},
+                                {key: "TBG-3", components: ["C1", "C5"]}]
+                        },
+                        components: ["C7"]
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                new BoardDataChecker(boardData)
+                    .linkedProjects("TUP")
+                    .components("C1", "C5", "C7")
+                    .check();
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"C1": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-4", "TDP-6", "TBG-2", "TBG-4"],
+                    ["TDP-1", "TDP-3", "TDP-5", "TDP-7", "TBG-1", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"C5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-4", "TDP-5", "TBG-1", "TBG-4"],
+                    ["TDP-2", "TDP-3", "TDP-6", "TDP-7", "TBG-2", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"$n$o$n$e$": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
+                    ["TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"$n$o$n$e$": true, "C1": true, "C5": true, "C7": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                //Make sure that if selecting more than one component we get all the issues which have EITHER
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"C1": true, "C5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-4", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setComponentFilter({"$n$o$n$e$": true, "C1": true, "C5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-4"],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+            it("Label (single per issue)", () => {
+                //Components are a bit different from the other filters, since an issue may have more than one component
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"L1": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-4", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-4"],
+                    ["TDP-3", "TDP-7", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"L5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-3"],
+                    ["TDP-4", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"$n$o$n$e$": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"$n$o$n$e$": true, "L1": true, "L5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                //Make sure that if selecting more than one component we get all the issues which have EITHER
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"L1": true, "L5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+            it("Label (several per issue)", () => {
+                //Components are a bit different from the other filters, since an issue may have more than one component
+
+                //Add some components to some issues
+                new BoardDataChecker(boardData)
+                    .linkedProjects("TUP")
+                    .check();
+                let changes: any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update": [
+                                {key: "TDP-1", labels: ["L1", "L5"]},
+                                {key: "TDP-2", labels: ["L7"]},
+                                {key: "TDP-5", labels: ["L1", "L5"]},
+                                {key: "TBG-1", labels: ["L1", "L5"]}]
+                        },
+                        labels: ["L7"]
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                new BoardDataChecker(boardData)
+                    .linkedProjects("TUP")
+                    .labels("L1", "L5", "L7")
+                    .check();
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"L1": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-4", "TDP-6", "TBG-2", "TBG-4"],
+                    ["TDP-1", "TDP-3", "TDP-5", "TDP-7", "TBG-1", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"L5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-6", "TDP-7", "TBG-2", "TBG-3"],
+                    ["TDP-1", "TDP-4", "TDP-5", "TBG-1", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"$n$o$n$e$": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"$n$o$n$e$": true, "L1": true, "L5": true, "L7": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                //Make sure that if selecting more than one label we get all the issues which have EITHER
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"L1": true, "L5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-6", "TBG-2"],
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setLabelFilter({"$n$o$n$e$": true, "L1": true, "L5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-2"],
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+            it("Fix Version (single per issue)", () => {
+                //Components are a bit different from the other filters, since an issue may have more than one component
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"F1": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3"],
+                    ["TDP-4", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"F5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-4", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-4"],
+                    ["TDP-3", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"$n$o$n$e$": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"$n$o$n$e$": true, "F1": true, "F5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                //Make sure that if selecting more than one component we get all the issues which have EITHER
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"F1": true, "F5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+            it("Label (several per issue)", () => {
+                //Components are a bit different from the other filters, since an issue may have more than one component
+
+                //Add some components to some issues
+                new BoardDataChecker(boardData)
+                    .linkedProjects("TUP")
+                    .check();
+                let changes: any = {
+                    changes: {
+                        view: 1,
+                        issues: {
+                            "update": [
+                                {key: "TDP-1", "fix-versions": ["F1", "F5"]},
+                                {key: "TDP-2", "fix-versions": ["F7"]},
+                                {key: "TDP-5", "fix-versions": ["F1", "F5"]},
+                                {key: "TBG-1", "fix-versions": ["F1", "F5"]}]
+                        },
+                        "fix-versions": ["F7"]
+                    }
+                };
+
+                boardData.processChanges(changes);
+                expect(boardData.view).toBe(1);
+                expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+                new BoardDataChecker(boardData)
+                    .linkedProjects("TUP")
+                    .fixVersions("F1", "F5", "F7")
+                    .check();
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"F1": true})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-6", "TDP-7", "TBG-2", "TBG-3"],
+                    ["TDP-1", "TDP-4", "TDP-5", "TBG-1", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"F5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-4", "TDP-6", "TBG-2", "TBG-4"],
+                    ["TDP-1", "TDP-3", "TDP-5", "TDP-7", "TBG-1", "TBG-3"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"$n$o$n$e$": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"$n$o$n$e$": true, "F1": true, "F5": true, "F7": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                //Make sure that if selecting more than one label we get all the issues which have EITHER
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"F1": true, "F5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-6", "TBG-2"],
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setFixVersionFilter({"$n$o$n$e$": true, "F1": true, "F5": true})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-2"],
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+            });
+
+            it("Custom Field - Tester", () => {
+                let bd: TestBoardData = new TestBoardData();
+                bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+                bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+                bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+                boardData.deserialize("tst", bd.build());
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"james": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"kabir": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"james": false, "kabir": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                //None
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"$n$o$n$e$": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"$n$o$n$e$": true, "kabir": true, "james": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"kabir": true, "james": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
+            });
+
+
+            it("Custom Field - Documenter", () => {
+                let bd: TestBoardData = new TestBoardData();
+                bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+                bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+                bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+                boardData.deserialize("tst", bd.build());
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Documenter": {"kabir": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Documenter": {"stuart": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                //None
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Documenter": {"$n$o$n$e$": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Documenter": {"$n$o$n$e$": true, "kabir": true, "stuart": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Documenter": {"kabir": true, "stuart": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+            });
+
+            it("Custom Field - Documenter+Tester", () => {
+                let bd: TestBoardData = new TestBoardData();
+                bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
+                bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
+                bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
+                boardData.deserialize("tst", bd.build());
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"james": true}, "Documenter": {"kabir": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-2", "TDP-3", "TDP-4", "TDP-6", "TDP-7", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-5", "TBG-1"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"kabir": true}, "Documenter": {"stuart": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-3", "TDP-4", "TDP-5", "TDP-7", "TBG-1", "TBG-3", "TBG-4"],
+                    ["TDP-2", "TDP-6", "TBG-2"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"james": true}, "Documenter": {"stuart": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    []);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"kabir": true}, "Documenter": {"kabir": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    []);
+
+                //None
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({"Tester": {"$n$o$n$e$": true}, "Documenter": {"$n$o$n$e$": true}})
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"],
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({
+                        "Tester": {"$n$o$n$e$": true, "kabir": true, "james": true},
+                        "Documenter": {"$n$o$n$e$": true, "kabir": true, "stuart": true}
+                    })
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+                new FilterBuilder(boardData)
+                    .setCustomFieldFilter({
+                        "Tester": {"kabir": true, "james": true},
+                        "Documenter": {"kabir": true, "stuart": true}
+                    })
+                    .buildAndFilterBoardData();
+                checkFiltered(boardData,
+                    ["TDP-3", "TDP-4", "TDP-7", "TBG-3", "TBG-4"],
+                    ["TDP-1", "TDP-2", "TDP-5", "TDP-6", "TBG-1", "TBG-2"]);
+
+            });
+
+            it("Parallel tasks", () => {
+                let bd: TestBoardData = new TestBoardData();
+                bd.projects = TestBoardData.getFullBoardParallelTaskProjects();
+                bd.issues = TestBoardData.getFullBoardParallelTaskIssues();
+                boardData.deserialize("tst", bd.build());
+
+                new FilterBuilder(boardData)
+                    .setParallelTasksFilter({"US": {"us-Done": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-4"]);
+
+
+                new FilterBuilder(boardData)
+                    .setParallelTasksFilter({"DS": {"ds-Done": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-4", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-3", "TDP-7"]);
+
+                new FilterBuilder(boardData)
+                    .setParallelTasksFilter({"US": {"us-Review": true}, "DS": {"ds-Done": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-4", "TDP-5", "TDP-6", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    ["TDP-3", "TDP-7"]);
+
+                new FilterBuilder(boardData)
+                    .setParallelTasksFilter({"US": {"us-Review": true}, "DS": {"ds-Review": true}})
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"],
+                    []);
+
+
+                new FilterBuilder(boardData)
+                    .buildAndFilterBoardData();
+                checkBoardLayout(boardData, TestBoardData.EXPECTED_FULL_BOARD);
+                checkFiltered(boardData,
+                    [],
+                    ["TDP-1", "TDP-2", "TDP-3", "TDP-4", "TDP-5", "TDP-6", "TDP-7", "TBG-1", "TBG-2", "TBG-3", "TBG-4"]);
+
+
+            });
         });
     });
 
@@ -2284,7 +2841,7 @@ describe('BoardData tests', ()=> {
 
             checkBoardSwimlaneLayout(boardData,
                 {
-                    "name": "First",
+                    "name": "C1",
                     table: [
                         ["TDP-1", "TDP-5"],
                         ["TBG-1"],
@@ -2292,7 +2849,7 @@ describe('BoardData tests', ()=> {
                         []]
                 },
                 {
-                    "name": "Second",
+                    "name": "C5",
                     table: [
                         [],
                         ["TDP-2", "TDP-6"],
@@ -2314,15 +2871,17 @@ describe('BoardData tests', ()=> {
             //Components are a bit different from the other swimlane selectors, since an issue may have more than one component
 
             //Add some components to some issues
-            checkComponents(boardData, "First", "Second");
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
             let changes:any = {
                 changes: {
                     view: 1,
                     issues: {
                         "update" : [
-                            {key: "TDP-3", components: ["First", "Second"]},
-                            {key: "TDP-7", components: ["First", "Second"]},
-                            {key: "TBG-3", components: ["First", "Second"]}]
+                            {key: "TDP-3", components: ["C1", "C5"]},
+                            {key: "TDP-7", components: ["C1", "C5"]},
+                            {key: "TBG-3", components: ["C1", "C5"]}]
                     }
                 }
             };
@@ -2331,14 +2890,16 @@ describe('BoardData tests', ()=> {
             expect(boardData.view).toBe(1);
             expect(boardData.blacklist).not.toEqual(jasmine.anything());
 
-
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
             boardData.swimlane = "component";
 
             let table:SwimlaneData[] = boardData.swimlaneTable;
 
             checkBoardSwimlaneLayout(boardData,
                 {
-                    "name": "First",
+                    "name": "C1",
                     table: [
                         ["TDP-1", "TDP-5"],
                         ["TBG-1", "TBG-3"],
@@ -2346,7 +2907,7 @@ describe('BoardData tests', ()=> {
                         []]
                 },
                 {
-                    "name": "Second",
+                    "name": "C5",
                     table: [
                         [],
                         ["TDP-2", "TDP-6", "TBG-3"],
@@ -2364,13 +2925,203 @@ describe('BoardData tests', ()=> {
             );
         });
 
+        it ("Label (single per issue)", () => {
+            //Labels are a bit different from the other swimlane selectors, since an issue may have more than one component
+            boardData.swimlane = "label";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "L1",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "L5",
+                    table: [
+                        [],
+                        [],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TDP-2", "TDP-6", "TBG-1"],
+                        ["TBG-2"],
+                        []]
+                }
+            );
+        });
+
+        it ("Label (several per issue)", () => {
+            //Labels aree a bit different from the other swimlane selectors, since an issue may have more than one component
+
+            //Add some components to some issues
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [
+                            {key: "TDP-1", labels: ["L1", "L5"]},
+                            {key: "TDP-5", labels: ["L1", "L5"]},
+                            {key: "TBG-1", labels: ["L1", "L5"]}]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
+            boardData.swimlane = "label";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "L1",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1", "TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "L5",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                }
+            );
+        });
+
+        it ("Fix Version (single per issue)", () => {
+            //Labels are a bit different from the other swimlane selectors, since an issue may have more than one component
+            boardData.swimlane = "fix-version";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "F1",
+                    table: [
+                        [],
+                        [],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                },
+                {
+                    "name": "F5",
+                    table: [
+                        [],
+                        ["TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TDP-2", "TDP-6", "TBG-1"],
+                        ["TBG-2"],
+                        []]
+                }
+            );
+        });
+
+        it ("Label (several per issue)", () => {
+            //Labels aree a bit different from the other swimlane selectors, since an issue may have more than one component
+
+            //Add some components to some issues
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
+            let changes:any = {
+                changes: {
+                    view: 1,
+                    issues: {
+                        "update" : [
+                            {key: "TDP-1", "fix-versions": ["F1", "F5"]},
+                            {key: "TDP-5", "fix-versions": ["F1", "F5"]},
+                            {key: "TBG-1", "fix-versions": ["F1", "F5"]}]
+                    }
+                }
+            };
+
+            boardData.processChanges(changes);
+            expect(boardData.view).toBe(1);
+            expect(boardData.blacklist).not.toEqual(jasmine.anything());
+
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .check();
+            boardData.swimlane = "fix-version";
+
+            let table:SwimlaneData[] = boardData.swimlaneTable;
+
+            checkBoardSwimlaneLayout(boardData,
+                {
+                    "name": "F1",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1"],
+                        ["TBG-4"],
+                        ["TDP-4"]]
+                },
+                {
+                    "name": "F5",
+                    table: [
+                        ["TDP-1", "TDP-5"],
+                        ["TBG-1", "TBG-3"],
+                        ["TDP-3", "TDP-7"],
+                        []]
+                },
+                {
+                    "name": "None",
+                    table: [
+                        [],
+                        ["TDP-2", "TDP-6"],
+                        ["TBG-2"],
+                        []]
+                }
+            );
+        });
+
         it ("Custom field 'Tester'", () => {
             let bd:TestBoardData = new TestBoardData();
             bd.projects = TestBoardData.FULL_BOARD_PROJECTS;
             bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
-
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
             boardData.swimlane = "Tester";
 
             let table:SwimlaneData[] = boardData.swimlaneTable;
@@ -2409,7 +3160,13 @@ describe('BoardData tests', ()=> {
             bd.issues = TestBoardData.getFullBoardCustomFieldIssues();
             bd.custom = TestBoardData.STANDARD_CUSTOM_FIELDS;
             boardData.deserialize("tst", bd.build());
-
+            new BoardDataChecker(boardData)
+                .linkedProjects("TUP")
+                .customField("Tester", "james", "James Perkins")
+                .customField("Tester", "kabir", "Kabir Khan")
+                .customField("Documenter", "kabir", "Kabir Khan")
+                .customField("Documenter", "stuart", "Stuart Douglas")
+                .check();
             boardData.swimlane = "Documenter";
 
             let table:SwimlaneData[] = boardData.swimlaneTable;
@@ -2442,385 +3199,215 @@ describe('BoardData tests', ()=> {
             );
         });
     });
-
-
-
-    function checkBoardSwimlaneLayout(boardData:BoardData, ...layouts:any[]) {
-        let swimlanes:SwimlaneData[] = boardData.swimlaneTable;
-        expect(swimlanes).toEqual(jasmine.anything());
-        expect(swimlanes.length).toEqual(layouts.length);
-
-        for (let i:number = 0 ; i < swimlanes.length ; i++) {
-            let swimlane:SwimlaneData = swimlanes[i];
-            let layout:any = layouts[i];
-            expect(swimlane.name).toEqual(layout.name);
-            expect(swimlane.issueTable.length).toEqual(layout.table.length);
-
-            console.log(swimlane.name);
-            for (let j:number = 0 ; j < layout.table.length ; j++) {
-                let swimlaneIssues:IssueData[] = swimlane.issueTable[j];
-                let layoutKeys:string[] = layout.table[j];
-                expect(layoutKeys.length).toEqual(swimlaneIssues.length);
-
-                for (let k:number = 0 ; k < layoutKeys.length ; k++) {
-                    let issue:IssueData = swimlaneIssues[k];
-                    expect(issue.key).toEqual(layoutKeys[k]);
-                }
-            }
-        }
-    }
-
-
-    function checkEntries(value:string[], ...expected:string[]) {
-        expect(value.length).toBe(expected.length);
-        for (let ex of expected) {
-            expect(value).toContain(ex);
-        }
-    }
-
-    /**
-     * This verifies the issues against the original setup for the board which uses 'calculable' settings.
-     * When the board has changed, we can pass in an issue to skip. It will be returned, and manual
-     * verification can happen.
-     *
-     * @param boardData the current board data
-     * @param layout the board layout
-     * @param skipKey the issue keys to skip
-     * @returns the issues that were skipped
-     */
-    function checkIssueDatas(boardData:BoardData, layout:string[][], ...skipKeys:string[]) : Indexed<IssueData> {
-        let skippedKeys:IMap<boolean> = {};
-        for (let key of skipKeys) {
-            skippedKeys[key] = true;
-        }
-
-        let skippedIssues: Indexed<IssueData> = new Indexed<IssueData>();
-
-        for (let i:number = 0; i < layout.length; i++) {
-            for (let j:number = 0; j < layout[i].length; j++) {
-                let issue:IssueData = boardData.getIssue(layout[i][j]);
-                if (skippedKeys[issue.key]) {
-                    //If the issue was skipped, we return the issues for manual checks
-                    skippedIssues.add(issue.key, issue);
-                    continue;
-                }
-                let id:number = getIdFromKey(issue.key);
-                let mod4 = (id - 1) % 4;
-                switch (mod4) {
-                    case 0:
-                        checkBoardIssue(issue, issue.key, "task", "highest", "brian", ["First"]);
-                        break;
-                    case 1:
-                        checkBoardIssue(issue, issue.key, "bug", "high", "kabir", ["Second"]);
-                        break;
-                    case 2:
-                        checkBoardIssue(issue, issue.key, "feature", "low", null, null);
-                        break;
-                    case 3:
-                        checkBoardIssue(issue, issue.key, "issue", "lowest", null, null);
-                        break;
-                }
-                checkIssueConvenienceMethods(issue);
-            }
-        }
-        return skippedIssues;
-    }
-
-    function checkIssueCustomFields(boardData:BoardData, layout:string[][]):void {
-        for (let i:number = 0; i < layout.length; i++) {
-            for (let j:number = 0; j < layout[i].length; j++) {
-                let issue:IssueData = boardData.getIssue(layout[i][j]);
-                let id:number = getIdFromKey(issue.key);
-                let mod4 = (id - 1) % 4;
-                switch (mod4) {
-                    case 0:
-                        checkCustomField(issue, issue.key, "Tester", "james", "James Perkins");
-                        checkCustomField(issue, issue.key, "Documenter", "kabir", "Kabir Khan");
-                        break;
-                    case 1:
-                        checkCustomField(issue, issue.key, "Tester", "kabir", "Kabir Khan");
-                        checkCustomField(issue, issue.key, "Documenter", "stuart", "Stuart Douglas");
-                        break;
-                    case 2:
-                    case 3:
-                        checkNoCustomField(issue, issue.key, "Tester");
-                        checkNoCustomField(issue, issue.key, "Documenter");
-                        break;
-                }
-                checkIssueConvenienceMethods(issue);
-            }
-        }
-    }
-
-    function checkCustomField(issue:IssueData, key:string, customFieldName:string, customFieldKey:string, customFieldValue:string) {
-        let customField:CustomFieldValue = issue.getCustomFieldValue(customFieldName);
-        expect(customField).toEqual(jasmine.anything());
-        expect(customField.key).toEqual(customFieldKey);
-        expect(customField.displayValue).toEqual(customFieldValue);
-    }
-
-    function checkNoCustomField(issue:IssueData, key:string, customFieldName:string) {
-        let customField:CustomFieldValue = issue.getCustomFieldValue(customFieldName);
-        expect(customField).not.toEqual(jasmine.anything());
-    }
-
-
-    function checkBoardIssue(issue:IssueData, key:string, type:string, priority:string, assignee:string, components:string[], summary?:string) {
-        expect(issue.key).toEqual(key);
-        checkBoardIssueType(issue.type, type);
-        checkBoardPriority(issue.priority, priority);
-        if (assignee) {
-            checkBoardAssignee(issue.assignee, assignee);
-        } else {
-            expect(issue.assignee).not.toEqual(jasmine.anything());
-        }
-
-        if (components) {
-            expect(issue.components).toEqual(jasmine.anything());
-            checkBoardComponents(issue.components.array, components);
-        } else {
-            expect(issue.components).not.toEqual(jasmine.anything());
-        }
-
-        if (summary) {
-            expect(issue.summary).toEqual(summary);
-        }
-        checkIssueConvenienceMethods(issue);
-        checkIssueConvenienceMethods(issue);
-    }
-
-
-
-    function checkBoardLayout(boardData:BoardData, layout:string[][]) {
-        expect(boardData.swimlaneTable).not.toEqual(jasmine.anything());
-        let issueTable:IssueData[][] = boardData.issueTable;
-        expect(issueTable.length).toBe(layout.length);
-        for (let i:number = 0; i < layout.length; i++) {
-            let columnData:IssueData[] = issueTable[i];
-            let columnLayout:string[] = layout[i];
-
-            expect(boardData.totalIssuesByState[i]).toBe(columnLayout.length);
-
-            expect(columnData.length).toBe(columnLayout.length, "The length of column is different " + i);
-            for (let j:number = 0; j < columnLayout.length; j++) {
-                expect(columnData[j].key).toBe(columnLayout[j]);
-
-                //Check the states are mapped property in both projects
-                let issue:IssueData = columnData[j];
-                if (issue.projectCode === "TDP") {
-                    expect(issue.statusIndex).toBe(i);
-                    if (i == 0) {
-                        expect(issue.boardStatus).toBe("S-1");
-                        expect(issue.ownStatus).toBe("TDP-A");
-                    } else if (i == 1) {
-                        expect(issue.boardStatus).toBe("S-2");
-                        expect(issue.ownStatus).toBe("TDP-B");
-                    } else if (i == 2) {
-                        expect(issue.boardStatus).toBe("S-3");
-                        expect(issue.ownStatus).toBe("TDP-C");
-                    } else if (i == 3) {
-                        expect(issue.boardStatus).toBe("S-4");
-                        expect(issue.ownStatus).toBe("TDP-D");
-                    } else {
-                        fail("Bad TDP state index " + i);
-                    }
-                } else if (issue.projectCode === "TBG") {
-                    expect(issue.statusIndex).toBe(i - 1);
-                    if (i == 1) {
-                        expect(issue.boardStatus).toBe("S-2");
-                        expect(issue.ownStatus).toBe("TBG-X");
-                    } else if (i == 2) {
-                        expect(issue.boardStatus).toBe("S-3");
-                        expect(issue.ownStatus).toBe("TBG-Y");
-                    } else {
-                        fail("Bad TBG state index " + i);
-                    }
-                } else {
-                    fail("Bad project " + issue.projectCode);
-                }
-            }
-        }
-    }
-
-    function checkBoardRank(boardData:BoardData, ranks:any) {
-        for (let projectCode in ranks) {
-            let expectedOrder:string[] = ranks[projectCode];
-
-            let project:BoardProject = boardData.boardProjects.forKey(projectCode);
-            let order:string[] = project.rankedIssueKeys;
-            expect(order.length).toBe(expectedOrder.length);
-            for (let i = 0 ; i < order.length ; i++) {
-                expect(order[i]).toBe(expectedOrder[i]);
-            }
-        }
-    }
-
-    function getIdFromKey(issueKey:string):number {
-        let index:number = issueKey.indexOf("-");
-        expect(index).toBeGreaterThan(0);
-        let sub:string = issueKey.substr(index + 1);
-        return Number(sub);
-    }
-
-
-    function checkAssignees(boardData:BoardData, ...assignees:string[]) {
-        expect(boardData.assignees.array.length).toBe(assignees.length);
-        for (let i = 0; i < assignees.length; i++) {
-            checkBoardAssignee(boardData.assignees.forIndex(i), assignees[i]);
-        }
-    }
-
-    function checkComponents(boardData:BoardData, ...components:string[]) {
-        expect(boardData.components.array.length).toBe(components.length);
-        for (let i = 0 ; i < components.length ; i++) {
-            expect(boardData.components.forIndex(i).name).toEqual(components[i]);
-        }
-    }
-
-    function checkStandardPriorities(boardData:BoardData) {
-        let priorities:Indexed<Priority> = boardData.priorities;
-        expect(priorities.array.length).toEqual(4);
-        checkBoardPriority(priorities.array[0], "highest");
-        checkBoardPriority(priorities.array[1], "high");
-        checkBoardPriority(priorities.array[2], "low");
-        checkBoardPriority(priorities.array[3], "lowest");
-    }
-
-    function checkStandardIssueTypes(boardData:BoardData) {
-        let issueTypes:Indexed<IssueType> = boardData.issueTypes;
-        expect(issueTypes.array.length).toEqual(4);
-        checkBoardIssueType(issueTypes.array[0], "task");
-        checkBoardIssueType(issueTypes.array[1], "bug");
-        checkBoardIssueType(issueTypes.array[2], "feature");
-        checkBoardIssueType(issueTypes.array[3], "issue");
-    }
-
-    function checkStandardCustomFields(boardData:BoardData) {
-        let custom:Indexed<CustomFieldValues> = boardData.customFields;
-        expect(custom.array.length).toEqual(2);
-
-        let testers:CustomFieldValues = custom.forKey("Tester");
-        expect(testers).toEqual(jasmine.anything());
-        expect(testers.values.array.length).toEqual(2);
-        checkBoardCustomField(testers.values.forIndex(0), "james", "James Perkins");
-        checkBoardCustomField(testers.values.forIndex(1), "kabir", "Kabir Khan");
-
-        let documenters:CustomFieldValues = custom.forKey("Documenter");
-        expect(documenters).toEqual(jasmine.anything());
-        expect(documenters.values.array.length).toEqual(2);
-        checkBoardCustomField(documenters.values.forIndex(0), "kabir", "Kabir Khan");
-        checkBoardCustomField(documenters.values.forIndex(1), "stuart", "Stuart Douglas");
-    }
-
-    function checkUpdatedCustomFields(boardData:BoardData) {
-        let custom:Indexed<CustomFieldValues> = boardData.customFields;
-        expect(custom.array.length).toEqual(2);
-
-        let testers:CustomFieldValues = custom.forKey("Tester");
-        expect(testers).toEqual(jasmine.anything());
-        expect(testers.values.array.length).toEqual(3);
-        checkBoardCustomField(testers.values.forIndex(0), "james", "James Perkins");
-        checkBoardCustomField(testers.values.forIndex(1), "kabir", "Kabir Khan");
-        checkBoardCustomField(testers.values.forIndex(2), "stuart", "Stuart Douglas");
-
-        let documenters:CustomFieldValues = custom.forKey("Documenter");
-        expect(documenters).toEqual(jasmine.anything());
-        expect(documenters.values.array.length).toEqual(3);
-        checkBoardCustomField(documenters.values.forIndex(0), "brian", "Brian Stansberry");
-        checkBoardCustomField(documenters.values.forIndex(1), "kabir", "Kabir Khan");
-        checkBoardCustomField(documenters.values.forIndex(2), "stuart", "Stuart Douglas");
-    }
-
-    function checkBoardCustomField(cfv:CustomFieldValue, key:string, value:string) {
-        expect(cfv.key).toEqual(key);
-        expect(cfv.displayValue).toEqual(value);
-    }
-
-    function checkBoardAssignee(assignee:Assignee, key:string) {
-        expect(assignee.key).toEqual(key);
-        expect(assignee.avatar).toEqual("/avatars/" + key + ".png");
-        expect(assignee.email).toEqual(key + "@example.com");
-        expect(assignee.name.toLowerCase()).toContain(key.toLowerCase());
-    }
-
-    function checkBoardComponents(components:JiraComponent[], keys:string[]) {
-        expect(components.length).toEqual(keys.length);
-        for (let i:number = 0 ; i < keys.length ; i++) {
-            expect(keys).toContain(components[i].name);
-        }
-    }
-
-    function checkStandardProjects(boardData:BoardData) {
-        checkProjects(boardData, "TUP", "TDP", "TBG");
-    }
-
-    function checkProjects(boardData:BoardData, linkedProject:string, ...mainProjects:string[]) {
-        expect(boardData.owner).toBe(mainProjects[0]);
-        expect(boardData.boardProjects).not.toBeNull();
-        expect(boardData.boardProjectCodes.length).toBe(mainProjects.length);
-        for (let code of mainProjects) {
-            expect(boardData.boardProjectCodes).toContain(code);
-        }
-
-        if (linkedProject) {
-            expect(boardData.linkedProjects).toEqual(jasmine.anything());
-            expect(boardData.linkedProjects[linkedProject]).toEqual(jasmine.anything());
-        }
-    }
-
-    function checkBoardPriority(priority:Priority, name:string) {
-        expect(priority.name).toEqual(name);
-        expect(priority.icon).toEqual("/icons/priorities/" + name + ".png");
-    }
-
-    function checkBoardIssueType(type:IssueType, name:string) {
-        expect(type.name).toEqual(name);
-        expect(type.icon).toEqual("/icons/issue-types/" + name + ".png");
-    }
-
-    function checkIssueConvenienceMethods(issue:IssueData) {
-        let assignee:Assignee = issue.assignee;
-        if (!assignee) {
-            expect(issue.assigneeAvatar).toBeNull();
-            expect(issue.assigneeInitials).toBe("None");
-            expect(issue.assigneeName).toBe("Unassigned");
-        } else {
-            expect(issue.assigneeAvatar).toBe(assignee.avatar);
-            expect(issue.assigneeInitials).toBe(assignee.initials);
-            expect(issue.assigneeName).toBe(assignee.name);
-        }
-
-        let priority:Priority = issue.priority;
-        expect(issue.priorityName).toBe(priority.name);
-        expect(issue.priorityUrl).toBe(priority.icon);
-
-        let issueType:IssueType = issue.type;
-        expect(issue.typeName).toBe(issueType.name);
-        expect(issue.typeUrl).toBe(issueType.icon);
-    }
-
-    function checkFiltered(boardData:BoardData, invisible:string[], visible:string[]) {
-        for (let key of invisible) {
-            let issue:IssueData = boardData.getIssue(key);
-            expect(issue).toEqual(jasmine.anything());
-            expect(issue.filtered).toBe(true, "for " + key);
-        }
-        for (let key of visible) {
-            let issue:IssueData = boardData.getIssue(key);
-            expect(issue).toEqual(jasmine.anything());
-            expect(issue.filtered).toBe(false, "for " + key);
-        }
-    }
-
-    function checkParallelTasks(issue:IssueData, ...selectedOptions:string[]) {
-        let options:Indexed<string> = issue.parallelTaskOptions;
-        expect(options).toEqual(jasmine.anything());
-        expect(options.array.length).toEqual(selectedOptions.length);
-        for (let i = 0 ; i < selectedOptions.length ; i++) {
-            expect(options.array[i]).toEqual(selectedOptions[i]);
-        }
-    }
 });
+
+
+function checkBoardSwimlaneLayout(boardData:BoardData, ...layouts:any[]) {
+    let swimlanes:SwimlaneData[] = boardData.swimlaneTable;
+    expect(swimlanes).toEqual(jasmine.anything());
+    expect(swimlanes.length).toEqual(layouts.length);
+
+    for (let i:number = 0 ; i < swimlanes.length ; i++) {
+        let swimlane:SwimlaneData = swimlanes[i];
+        let layout:any = layouts[i];
+        expect(swimlane.name).toEqual(layout.name);
+        expect(swimlane.issueTable.length).toEqual(layout.table.length);
+
+        console.log(swimlane.name);
+        for (let j:number = 0 ; j < layout.table.length ; j++) {
+            let swimlaneIssues:IssueData[] = swimlane.issueTable[j];
+            let layoutKeys:string[] = layout.table[j];
+            expect(layoutKeys.length).toEqual(swimlaneIssues.length);
+
+            for (let k:number = 0 ; k < layoutKeys.length ; k++) {
+                let issue:IssueData = swimlaneIssues[k];
+                expect(issue.key).toEqual(layoutKeys[k]);
+            }
+        }
+    }
+}
+
+
+function checkEntries(value:string[], ...expected:string[]) {
+    expect(value.length).toBe(expected.length);
+    for (let ex of expected) {
+        expect(value).toContain(ex);
+    }
+}
+
+/**
+ * This verifies the issues against the original setup for the board which uses 'calculable' settings.
+ * When the board has changed, we can pass in an issue to skip. It will be returned, and manual
+ * verification can happen.
+ *
+ * @param boardData the current board data
+ * @param layout the board layout
+ * @param skipKey the issue keys to skip
+ * @returns the issues that were skipped
+ */
+function checkIssueDatas(config:IssueDataCheckerConfig, boardData:BoardData, layout:string[][], ...skipKeys:string[]) : Indexed<IssueData> {
+
+    checkBoardLayout(boardData, layout);
+
+    let skippedKeys:IMap<boolean> = {};
+    for (let key of skipKeys) {
+        skippedKeys[key] = true;
+    }
+
+    let skippedIssues: Indexed<IssueData> = new Indexed<IssueData>();
+
+    for (let i:number = 0; i < layout.length; i++) {
+        for (let j:number = 0; j < layout[i].length; j++) {
+            let issue: IssueData = boardData.getIssue(layout[i][j]);
+            if (skippedKeys[issue.key]) {
+                //If the issue was skipped, we return the issues for manual checks
+                skippedIssues.add(issue.key, issue);
+                continue;
+            }
+
+            let id: number = getIdFromKey(issue.key);
+            let mod4 = (id - 1) % 4;
+
+            let checker: IssueDataChecker;
+            let summary: string = DEFAULT_SUMMARIES[id - 1];
+            switch (mod4) {
+                case 0:
+                    checker = new IssueDataChecker(issue, "task", "highest", "brian", summary)
+                        .components("C1");
+                    if (config.customFields) {
+                        checker.customField("Tester", "james", "James Perkins")
+                            .customField("Documenter", "kabir", "Kabir Khan")
+                    }
+                    break;
+                case 1:
+                    checker = new IssueDataChecker(issue, "bug", "high", "kabir", summary)
+                        .components("C5");
+                    if (config.customFields) {
+                        checker.customField("Tester", "kabir", "Kabir Khan")
+                            .customField("Documenter", "stuart", "Stuart Douglas");
+                    }
+                    break;
+                case 2:
+                    checker = new IssueDataChecker(issue, "feature", "low", null, summary)
+                        .labels("L1")
+                        .fixVersions("F5")
+                    break;
+                case 3:
+                    checker = new IssueDataChecker(issue, "issue", "lowest", null, summary)
+                        .labels("L5")
+                        .fixVersions("F1")
+                    break;
+            }
+            checker.check();
+        }
+    }
+    return skippedIssues;
+}
+
+function checkBoardLayout(boardData:BoardData, layout:string[][]) {
+    expect(boardData.swimlaneTable).not.toEqual(jasmine.anything());
+    let issueTable:IssueData[][] = boardData.issueTable;
+    expect(issueTable.length).toBe(layout.length);
+    for (let i:number = 0; i < layout.length; i++) {
+        let columnData:IssueData[] = issueTable[i];
+        let columnLayout:string[] = layout[i];
+
+        expect(boardData.totalIssuesByState[i]).toBe(columnLayout.length);
+
+        expect(columnData.length).toBe(columnLayout.length, "The length of column is different " + i);
+        for (let j:number = 0; j < columnLayout.length; j++) {
+            expect(columnData[j].key).toBe(columnLayout[j]);
+
+            //Check the states are mapped property in both projects
+            let issue:IssueData = columnData[j];
+            if (issue.projectCode === "TDP") {
+                expect(issue.statusIndex).toBe(i);
+                if (i == 0) {
+                    expect(issue.boardStatus).toBe("S-1");
+                    expect(issue.ownStatus).toBe("TDP-A");
+                } else if (i == 1) {
+                    expect(issue.boardStatus).toBe("S-2");
+                    expect(issue.ownStatus).toBe("TDP-B");
+                } else if (i == 2) {
+                    expect(issue.boardStatus).toBe("S-3");
+                    expect(issue.ownStatus).toBe("TDP-C");
+                } else if (i == 3) {
+                    expect(issue.boardStatus).toBe("S-4");
+                    expect(issue.ownStatus).toBe("TDP-D");
+                } else {
+                    fail("Bad TDP state index " + i);
+                }
+            } else if (issue.projectCode === "TBG") {
+                expect(issue.statusIndex).toBe(i - 1);
+                if (i == 1) {
+                    expect(issue.boardStatus).toBe("S-2");
+                    expect(issue.ownStatus).toBe("TBG-X");
+                } else if (i == 2) {
+                    expect(issue.boardStatus).toBe("S-3");
+                    expect(issue.ownStatus).toBe("TBG-Y");
+                } else {
+                    fail("Bad TBG state index " + i);
+                }
+            } else {
+                fail("Bad project " + issue.projectCode);
+            }
+        }
+    }
+}
+
+function checkBoardRank(boardData:BoardData, ranks:any) {
+    for (let projectCode in ranks) {
+        let expectedOrder:string[] = ranks[projectCode];
+
+        let project:BoardProject = boardData.boardProjects.forKey(projectCode);
+        let order:string[] = project.rankedIssueKeys;
+        expect(order.length).toBe(expectedOrder.length);
+        for (let i = 0 ; i < order.length ; i++) {
+            expect(order[i]).toBe(expectedOrder[i]);
+        }
+    }
+}
+
+function getIdFromKey(issueKey:string):number {
+    let index:number = issueKey.indexOf("-");
+    expect(index).toBeGreaterThan(0);
+    let sub:string = issueKey.substr(index + 1);
+    return Number(sub);
+}
+
+function checkIssueConvenienceMethods(issue:IssueData) {
+    let assignee:Assignee = issue.assignee;
+    if (!assignee) {
+        expect(issue.assigneeAvatar).toBeNull();
+        expect(issue.assigneeInitials).toBe("None");
+        expect(issue.assigneeName).toBe("Unassigned");
+    } else {
+        expect(issue.assigneeAvatar).toBe(assignee.avatar);
+        expect(issue.assigneeInitials).toBe(assignee.initials);
+        expect(issue.assigneeName).toBe(assignee.name);
+    }
+
+    let priority:Priority = issue.priority;
+    expect(issue.priorityName).toBe(priority.name);
+    expect(issue.priorityUrl).toBe(priority.icon);
+
+    let issueType:IssueType = issue.type;
+    expect(issue.typeName).toBe(issueType.name);
+    expect(issue.typeUrl).toBe(issueType.icon);
+}
+
+function checkFiltered(boardData:BoardData, invisible:string[], visible:string[]) {
+    for (let key of invisible) {
+        let issue:IssueData = boardData.getIssue(key);
+        expect(issue).toEqual(jasmine.anything());
+        expect(issue.filtered).toBe(true, "for " + key);
+    }
+    for (let key of visible) {
+        let issue:IssueData = boardData.getIssue(key);
+        expect(issue).toEqual(jasmine.anything());
+        expect(issue.filtered).toBe(false, "for " + key);
+    }
+}
 
 class FilterBuilder {
     private _boardData:BoardData;
@@ -2830,6 +3417,8 @@ class FilterBuilder {
     private _issueTypeFilter:any = {};
     private _assigneeFilter:any = {};
     private _componentFilter:any = {};
+    private _labelFilter:any = {};
+    private _fixVersionFilter:any = {};
     private _customFieldValueFilters:IMap<any> = {};
     private _parallelTaskFilters:IMap<any> = {};
 
@@ -2862,6 +3451,16 @@ class FilterBuilder {
         return this;
     }
 
+    setLabelFilter(labelFilter:any):FilterBuilder {
+        this._labelFilter = labelFilter;
+        return this;
+    }
+
+    setFixVersionFilter(fixVersionFilter:any):FilterBuilder {
+        this._fixVersionFilter = fixVersionFilter;
+        return this;
+    }
+
     setCustomFieldFilter(customFieldFilter:IMap<any>):FilterBuilder{
         this._customFieldValueFilters = customFieldFilter;
         return this;
@@ -2874,6 +3473,327 @@ class FilterBuilder {
 
     buildAndFilterBoardData():void{
         this._boardData.updateFilters(this._projectFilter, this._priorityFilter, this._issueTypeFilter,
-            this._assigneeFilter, this._componentFilter, this._customFieldValueFilters, this._parallelTaskFilters);
+            this._assigneeFilter, this._componentFilter, this._labelFilter, this._fixVersionFilter,
+            this._customFieldValueFilters, this._parallelTaskFilters);
     }
 }
+
+interface IssueDataCheckerConfig {
+    readonly customFields:IMap<CustomFieldValue[]>;
+}
+
+class BoardDataChecker implements IssueDataCheckerConfig {
+    private _boardData:BoardData;
+    private _assignees:string[] = ["brian", "kabir"];
+    private _components:string[] = ["C1", "C5"];
+    private _labels:string[] = ["L1", "L5"];
+    private _fixVersions:string[] = ["F1", "F5"];
+    private _customFields:IMap<CustomFieldValue[]>;
+    private _linkedProjects:string[] = [];
+    private _mainProjects:string[] = ["TDP", "TBG"];
+
+
+    constructor(boardData:BoardData) {
+        this._boardData = boardData;
+    }
+
+    assignees(...assignees:string[]):BoardDataChecker {
+        this._assignees = assignees;
+        return this;
+    }
+
+    components(...components:string[]):BoardDataChecker {
+        this._components = components;
+        return this;
+    }
+
+    labels(...labels:string[]):BoardDataChecker {
+        this._labels = labels;
+        return this;
+    }
+
+    fixVersions(...fixVersions:string[]):BoardDataChecker {
+        this._fixVersions = fixVersions;
+        return this;
+    }
+
+    customField(field:string, key:string, displayValue:string):BoardDataChecker {
+        if (!this._customFields) {
+            this._customFields = {};
+        }
+        let fieldArray:CustomFieldValue[] = this._customFields[field];
+        if (!this._customFields[field]) {
+            fieldArray = [];
+            this._customFields[field] = fieldArray;
+        }
+        fieldArray.push(new CustomFieldValue(key, displayValue));
+        return this;
+    }
+
+    linkedProjects(...linkedProjects:string[]):BoardDataChecker {
+        if (!linkedProjects) {
+            this._linkedProjects = [];
+        } else {
+            this._linkedProjects = linkedProjects;
+        }
+        return this;
+    }
+
+    mainProjects(...mainProjects:string[]):BoardDataChecker {
+        this._mainProjects = mainProjects;
+        return this;
+    }
+
+
+    get customFields(): IMap<CustomFieldValue[]> {
+        return this._customFields;
+    }
+
+    check():BoardDataChecker {
+        this.checkProjects();
+        this.checkAssignees();
+        this.checkComponents();
+        this.checkLabels();
+        this.checkFixVersions();
+        this.checkStandardPriorities();
+        this.checkStandardIssueTypes();
+        this.checkCustomFields();
+        return this;
+    }
+
+    private checkAssignees():void {
+        expect(this._boardData.assignees.array.length).toBe(this._assignees.length);
+        for (let i = 0; i < this._assignees.length; i++) {
+            DataChecker.checkAssignee(this._boardData.assignees.forIndex(i), this._assignees[i]);
+        }
+    }
+
+    private checkComponents(): void {
+        expect(this._boardData.components.array.length).toBe(this._components.length);
+        for (let i = 0; i < this._components.length; i++) {
+            expect(this._boardData.components.forIndex(i).name).toEqual(this._components[i]);
+        }
+    }
+
+    private checkLabels() : void {
+        expect(this._boardData.labels.array.length).toBe(this._labels.length);
+        for (let i = 0; i < this._labels.length; i++) {
+            expect(this._boardData.labels.forIndex(i).name).toEqual(this._labels[i]);
+        }
+    }
+
+    private checkFixVersions() : void {
+        expect(this._boardData.fixVersions.array.length).toBe(this._fixVersions.length);
+        for (let i = 0; i < this._fixVersions.length; i++) {
+            expect(this._boardData.fixVersions.forIndex(i).name).toEqual(this._fixVersions[i]);
+        }
+    }
+
+    private checkStandardPriorities() {
+        let priorities:Indexed<Priority> = this._boardData.priorities;
+        expect(priorities.array.length).toEqual(4);
+        DataChecker.checkPriority(priorities.array[0], "highest");
+        DataChecker.checkPriority(priorities.array[1], "high");
+        DataChecker.checkPriority(priorities.array[2], "low");
+        DataChecker.checkPriority(priorities.array[3], "lowest");
+    }
+
+    private checkStandardIssueTypes() {
+        let issueTypes:Indexed<IssueType> = this._boardData.issueTypes;
+        expect(issueTypes.array.length).toEqual(4);
+        DataChecker.checkIssueType(issueTypes.array[0], "task");
+        DataChecker.checkIssueType(issueTypes.array[1], "bug");
+        DataChecker.checkIssueType(issueTypes.array[2], "feature");
+        DataChecker.checkIssueType(issueTypes.array[3], "issue");
+    }
+
+    private checkProjects() {
+        expect(this._boardData.owner).toBe(this._mainProjects[0]);
+        expect(this._boardData.boardProjects).not.toBeNull();
+        expect(this._boardData.boardProjectCodes.length).toBe(this._mainProjects.length);
+        for (let code of this._mainProjects) {
+            expect(this._boardData.boardProjectCodes).toContain(code);
+        }
+
+        if (this._linkedProjects) {
+            expect(this._boardData.linkedProjects).toEqual(jasmine.anything());
+            let linked:string[] = IMapUtil.getSortedKeys(this._boardData.linkedProjects);
+            expect(linked.length).toEqual(this._linkedProjects.length);
+            for (let linkedProject of this._linkedProjects) {
+                expect(this._boardData.linkedProjects[linkedProject]).toEqual(jasmine.anything());
+            }
+        }
+    }
+
+    private checkCustomFields() {
+        let boardFields:Indexed<CustomFieldValues> = this._boardData.customFields;
+        //this should always be initialised, but will be empty if there are no fields
+        expect(boardFields).toEqual(jasmine.anything());
+        if (!this._customFields) {
+            expect(boardFields.array).toEqual([]);
+        } else {
+            let expectedFieldNames:string[] = IMapUtil.getSortedKeys(this._customFields);
+            expect(boardFields.sortedKeys).toEqual(expectedFieldNames);
+
+            for (let fieldName of expectedFieldNames) {
+                let boardValues:CustomFieldValue[] = boardFields.forKey(fieldName).values.array;
+                let expectedValues: CustomFieldValue[] = this._customFields[fieldName];
+                expect(boardValues.length).toBe(expectedValues.length);
+                for (let i:number = 0 ; i < boardValues.length ; i++) {
+                    expect(boardValues[i].key).toEqual(expectedValues[i].key);
+                    expect(boardValues[i].displayValue).toEqual(expectedValues[i].displayValue);
+                }
+            }
+        }
+    }
+}
+
+class IssueDataChecker {
+    private _issue:IssueData;
+    private _key:string;
+    private _type:string;
+    private _priority:string;
+    private _assignee:string;
+    private _summary:string;
+    private _components:string[];
+    private _labels:string[];
+    private _fixVersions:string[];
+    private _customFields:IMap<CustomFieldValue>;
+    private _selectedParallelTaskOptions:string[]
+
+
+
+    constructor(issue: IssueData, type: string, priority: string, assignee: string, summary:string) {
+        this._issue = issue;
+        this._key = issue.key;
+        this._type = type;
+        this._priority = priority;
+        this._assignee = assignee;
+        this._summary = summary;
+    }
+
+    key(key:string) : IssueDataChecker {
+        this._key = key;
+        return this;
+    }
+
+    components(...components:string[]) : IssueDataChecker {
+        this._components = components;
+        return this;
+    }
+
+    labels(...labels:string[]) : IssueDataChecker {
+        this._labels = labels;
+        return this;
+    }
+
+    fixVersions(...fixVersions:string[]) : IssueDataChecker {
+        this._fixVersions = fixVersions;
+        return this;
+    }
+
+    customField(field:string, key:string, displayValue:string) : IssueDataChecker {
+        if (!this._customFields) {
+            this._customFields = {};
+        }
+        this._customFields[field] = new CustomFieldValue(key, displayValue);
+        return this;
+    }
+
+    selectedParallelTaskOptions(...selectedOptions:string[]) : IssueDataChecker {
+        this._selectedParallelTaskOptions = selectedOptions;
+        return this;
+    }
+
+    check() {
+        expect(this._issue.key).toEqual(this._key);
+        DataChecker.checkIssueType(this._issue.type, this._type);
+        DataChecker.checkPriority(this._issue.priority, this._priority);
+        if (this._assignee) {
+            DataChecker.checkAssignee(this._issue.assignee, this._assignee);
+        } else {
+            expect(this._issue.assignee).not.toEqual(jasmine.anything());
+        }
+
+        if (this._components) {
+            this.checkMultiSelectFieldValues(this._issue.components.array, this._components);
+
+        } else {
+            expect(this._issue.components).not.toEqual(jasmine.anything());
+        }
+
+        if (this._labels) {
+            this.checkMultiSelectFieldValues(this._issue.labels.array, this._labels);
+        } else {
+            expect(this._issue.labels).not.toEqual(jasmine.anything());
+        }
+
+        if (this._fixVersions) {
+            this.checkMultiSelectFieldValues(this._issue.fixVersions.array, this._fixVersions);
+        } else {
+            expect(this._issue.fixVersions).not.toEqual(jasmine.anything(), this._issue.key);
+        }
+
+        if (this._summary) {
+            expect(this._issue.summary).toEqual(this._summary);
+        }
+
+        if (this._customFields) {
+            let issueFieldNames:string[] = this._issue.customFieldNames;
+            let expectedFieldNames:string[] = IMapUtil.getSortedKeys(this._customFields);
+            expect(expectedFieldNames).toEqual(issueFieldNames);
+
+            for (let fieldName of issueFieldNames) {
+                let customField:CustomFieldValue = this._issue.getCustomFieldValue(fieldName);
+                let expectedField:CustomFieldValue = this._customFields[fieldName];
+                expect(customField).toEqual(jasmine.anything());
+                expect(customField.key).toEqual(expectedField.key);
+                expect(customField.displayValue).toEqual(expectedField.displayValue);
+            }
+        } else {
+            expect(this._issue.customFieldNames).toEqual(jasmine.anything());
+        }
+
+        if (this._selectedParallelTaskOptions) {
+            let options:Indexed<string> = this._issue.parallelTaskOptions;
+            expect(options).toEqual(jasmine.anything());
+            expect(options.array.length).toEqual(this._selectedParallelTaskOptions.length);
+            for (let i = 0 ; i < this._selectedParallelTaskOptions.length ; i++) {
+                expect(options.array[i]).toEqual(this._selectedParallelTaskOptions[i]);
+            }
+        } else {
+            expect(this._selectedParallelTaskOptions).not.toEqual(jasmine.anything());
+        }
+
+        checkIssueConvenienceMethods(this._issue);
+    }
+
+    private checkMultiSelectFieldValues(issueValues:JiraMultiSelectFieldValue[], keys:string[]) {
+        expect(issueValues).toEqual(jasmine.anything());
+        expect(issueValues.length).toEqual(keys.length);
+        for (let i:number = 0 ; i < keys.length ; i++) {
+            expect(keys).toContain(issueValues[i].name);
+        }
+    }
+}
+
+class DataChecker {
+    static checkAssignee(assignee:Assignee, key:string) {
+        expect(assignee.key).toEqual(key);
+        expect(assignee.avatar).toEqual("/avatars/" + key + ".png");
+        expect(assignee.email).toEqual(key + "@example.com");
+        expect(assignee.name.toLowerCase()).toContain(key.toLowerCase());
+    }
+
+    static checkPriority(priority:Priority, name:string) {
+        expect(priority.name).toEqual(name);
+        expect(priority.icon).toEqual("/icons/priorities/" + name + ".png");
+    }
+
+    static checkIssueType(type:IssueType, name:string) {
+        expect(type.name).toEqual(name);
+        expect(type.icon).toEqual("/icons/issue-types/" + name + ".png");
+    }
+}
+
+const DEFAULT_SUMMARIES: string[] = ["One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"];

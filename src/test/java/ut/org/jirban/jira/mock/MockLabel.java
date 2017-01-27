@@ -14,10 +14,26 @@
  * limitations under the License.
  */
 
-package org.jirban.jira.impl.board;
+package ut.org.jirban.jira.mock;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import com.atlassian.jira.issue.label.Label;
 
 /**
  * @author Kabir Khan
  */
-public class CustomFieldValueFactory {
+public class MockLabel {
+    public static Set<Label> createLabels(String...names) {
+        if (names == null || names.length == 0) {
+            return null;
+        }
+        Set<Label> labels = new LinkedHashSet<>();
+        for (String name : names) {
+            Label label = new Label(-1L, -1L, name);
+            labels.add(label);
+        }
+        return labels;
+    }
 }

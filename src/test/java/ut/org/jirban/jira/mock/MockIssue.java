@@ -52,18 +52,22 @@ public class MockIssue implements Issue {
     private final String summary;
     private final ApplicationUser assignee;
     private final Set<ProjectComponent> components;
+    private final Set<Label> labels;
+    private final Set<Version> fixVersions;
     private final Status state;
 
     private final Map<Long, Object> customFields = new HashMap<>();
 
     public MockIssue(String key, IssueType issueType, Priority priority, String summary, ApplicationUser assignee,
-                     Set<ProjectComponent> components, Status state) {
+                     Set<ProjectComponent> components, Set<Label> labels, Set<Version> fixVersions, Status state) {
         this.key = key;
         this.issueType = issueType;
         this.priority = priority;
         this.summary = summary;
         this.assignee = assignee;
         this.components = components;
+        this.labels = labels;
+        this.fixVersions = fixVersions;
         this.state = state;
     }
 
@@ -164,7 +168,7 @@ public class MockIssue implements Issue {
 
     @Override
     public Collection<Version> getFixVersions() {
-        return null;
+        return fixVersions;
     }
 
     @Override
@@ -325,7 +329,7 @@ public class MockIssue implements Issue {
 
     @Override
     public Set<Label> getLabels() {
-        return null;
+        return labels;
     }
 
     @Override

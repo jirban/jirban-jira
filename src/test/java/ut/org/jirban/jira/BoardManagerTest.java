@@ -25,10 +25,12 @@ import static org.jirban.jira.impl.Constants.CUSTOM;
 import static org.jirban.jira.impl.Constants.DISPLAY;
 import static org.jirban.jira.impl.Constants.DONE;
 import static org.jirban.jira.impl.Constants.EMAIL;
+import static org.jirban.jira.impl.Constants.FIX_VERSIONS;
 import static org.jirban.jira.impl.Constants.ICON;
 import static org.jirban.jira.impl.Constants.ISSUES;
 import static org.jirban.jira.impl.Constants.ISSUE_TYPES;
 import static org.jirban.jira.impl.Constants.KEY;
+import static org.jirban.jira.impl.Constants.LABELS;
 import static org.jirban.jira.impl.Constants.MAIN;
 import static org.jirban.jira.impl.Constants.NAME;
 import static org.jirban.jira.impl.Constants.OPTIONS;
@@ -76,19 +78,19 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testStatesFields() throws Exception {
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
+        ModelNode boardNode = getJson(0);
         //No 'special' states
         Assert.assertFalse(boardNode.hasDefined(BACKLOG));
         Assert.assertFalse(boardNode.hasDefined(DONE));
 
         initializeMocks("config/board-tdp-backlog.json");
-        boardNode = getJsonCheckingViewIdAndUsers(0);
+        boardNode = getJson(0);
         //The first 2 states are 'backlog' states (they must always be at the start)
         Assert.assertEquals(2, boardNode.get(BACKLOG).asInt());
         Assert.assertFalse(boardNode.hasDefined(DONE));
 
         initializeMocks("config/board-tdp-done.json");
-        boardNode = getJsonCheckingViewIdAndUsers(0);
+        boardNode = getJson(0);
         Assert.assertFalse(boardNode.hasDefined(BACKLOG));
         //The last 2 states are 'done' states (they must always be at the end)
         Assert.assertEquals(2, boardNode.get(DONE).asInt());
@@ -97,29 +99,40 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testLoadBoardOnlyOwnerProjectIssues() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", new String[]{"C1"}, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C1"}, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", new String[]{"C1", "C2"}, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").components("C1").fixVersions("F1").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("C1").labels("L2").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").components("C1", "C2").labels("L1", "L2", "L3").fixVersions("F2", "F3").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C")
+                .buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkComponents(boardNode, "C1", "C2");
-        checkNoBlacklist(boardNode);
+        ModelNode boardNode = getJson(0,
+                new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"),
+                new BoardLabelsChecker("L1", "L2", "L3"),
+                new BoardFixVersionsChecker("F1", "F2", "F3"));
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
-        checkNoCustomFields(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{0}, 0, 1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", new int[]{0, 1}, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 1);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 1);
-        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(0), new LabelsChecker(1), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2,
+                new ComponentsChecker(0, 1), new LabelsChecker(0, 1, 2), new FixVersionsChecker(1, 2), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2);
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG");
@@ -127,23 +140,24 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testLoadBoardOnlyNonOwnerProjectIssues() throws Exception {
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", new String[]{"C1"}, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", new String[]{"C1", "C2"}, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").components("C1").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").components("C1", "C2").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "lowest", "Four", "TBG-Y")
+                .assignee("jason").buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "jason", "kabir");
-        checkComponents(boardNode, "C1", "C2");
-        checkNoBlacklist(boardNode);
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2"));
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
-        checkNoCustomFields(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{0}, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", new int[]{0, 1}, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -11);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 0);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new ComponentsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new ComponentsChecker(0, 1), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(0));
 
         checkProjectRankedIssues(boardNode, "TDP");
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
@@ -151,37 +165,51 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testLoadBoard() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", new String[]{"C1"}, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", new String[]{"C3"}, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").components("C1").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("C2").labels("L1").fixVersions("F1").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").fixVersions("F1").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").labels("L2").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").components("C3").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").labels("L1", "L2").fixVersions("F1", "F2").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "lowest", "Four", "TBG-Y")
+                .assignee("jason").buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
-        checkComponents(boardNode, "C1", "C2", "C3");
-        checkNoBlacklist(boardNode);
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("brian", "jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2", "C3"),
+                new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
-        checkNoCustomFields(boardNode);
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{0}, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{2}, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new ComponentsChecker(0), new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(1), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2,
+                new FixVersionsChecker(0), new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3,
+                new LabelsChecker(1), new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new ComponentsChecker(2), new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1,
+                new LabelsChecker(0, 1), new FixVersionsChecker(0, 1), new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
@@ -191,7 +219,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     public void testLoadBoardWithWipLimits() throws Exception {
         //TODO this could be made into a better test covering more state/header/backlog/done/wip functionality
         initializeMocks("config/board-wip.json");
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
+        ModelNode boardNode = getJson(0);
 
         ModelNode statesNode = boardNode.get(STATES);
         List<ModelNode> states = statesNode.asList();
@@ -216,38 +244,46 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testDeleteIssue() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
-        getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "lowest", "Four", "TBG-Y")
+                .assignee("jason").buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         //Delete an issue in main project and check board
         JirbanIssueEvent delete = JirbanIssueEvent.createDeleteEvent("TDP-3", "TDP");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 10);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
@@ -255,20 +291,18 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Delete an issue in main project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TDP-7", "TDP");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
@@ -276,19 +310,17 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-1", "TBG");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 8);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6);
         checkProjectRankedIssues(boardNode, "TBG", 2, 3, 4);
@@ -297,77 +329,84 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Delete an issue in other project and check board
         delete = JirbanIssueEvent.createDeleteEvent("TBG-3", "TBG");
         boardManager.handleEvent(delete, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(4, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 4, 5, 6);
         checkProjectRankedIssues(boardNode, "TBG", 2, 4);
     }
 
     @Test
-    public void testAddIssuesNoNewUsersOrComponents() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, new String[]{"C1"}, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkComponents(boardNode, "C1");
+    public void testAddIssuesNoNewUsersOrMultiSelectNameOnlyValues() throws Exception {
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .components("C1").labels("L1").fixVersions("F1").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
-                "Five", "kabir", new String[]{"C1"}, "TDP-B");
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1"), new BoardLabelsChecker("L1"), new BoardFixVersionsChecker("F1"));
+
+        JirbanIssueEvent create = createEventBuilder("TDP-5", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("kabir")
+                .components("C1")
+                .state("TDP-B")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkComponents(boardNode, "C1");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1"), new BoardLabelsChecker("L1"), new BoardFixVersionsChecker("F1"));
 
-        checkUsers(boardNode, "brian", "kabir");
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{0}, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, new ComponentsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
 
 
-        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
-                "Four", null, new String[]{"C1"}, "TBG-X");
+        create = createEventBuilder("TBG-4", IssueType.FEATURE, Priority.HIGH, "Four")
+                .components("C1")
+                .state("TBG-X")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkComponents(boardNode, "C1");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1"), new BoardLabelsChecker("L1"), new BoardFixVersionsChecker("F1"));
 
-        checkUsers(boardNode, "brian", "kabir");
         allIssues = getIssuesCheckingSize(boardNode, 9);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{0}, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", new int[]{0}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, new ComponentsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", 0, new ComponentsChecker(0));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
@@ -376,242 +415,400 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testAddIssuesNewUsers() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
 
-        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"));
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
-                "Five", "james", null, "TDP-B");
+        JirbanIssueEvent create = createEventBuilder("TDP-5", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("james")
+                .state("TDP-B")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "james", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "james", "kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 1, 1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
 
-        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
-                "Four", "stuart", null, "TBG-X");
+        create = createEventBuilder("TBG-4", IssueType.FEATURE, Priority.HIGH, "Four")
+                .assignee("stuart")
+                .state("TBG-X")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "kabir", "stuart");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "james", "kabir", "stuart"));
 
-        checkUsers(boardNode, "brian", "james", "kabir", "stuart");
         allIssues = getIssuesCheckingSize(boardNode, 9);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 1, 1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 0, 3);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", 0, new AssigneeChecker(3));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
     }
 
     @Test
-    public void testAddIssuesNewComponents() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, new String[]{"E", "G"}, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C"}, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", new String[]{"I"}, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", new String[]{"N"}, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
+    public void testAddIssuesNewMultiSelectNameOnlyValues() throws Exception {
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .components("CE", "CG").labels("LE", "LG").fixVersions("FE", "FG").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("CC").labels("LC").fixVersions("FC").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").components("CI").labels("LI").fixVersions("FI").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").components("CN").labels("LN").fixVersions("FN").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkComponents(boardNode, "C", "E", "G", "I", "N");
-        checkNoCustomFields(boardNode);
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("CC", "CE", "CG", "CI", "CN"),
+                new BoardLabelsChecker("LC", "LE", "LG", "LI", "LN"),
+                new BoardFixVersionsChecker("FC", "FE", "FG", "FI", "FN"));
 
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
-                "Five", "brian", new String[]{"F"}, "TDP-B");
+        //Add an issue with a single new component
+        JirbanIssueEvent create = createEventBuilder("TDP-5", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("brian")
+                .components("CF")
+                .state("TDP-B")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkComponents(boardNode, "C", "E", "F", "G", "I", "N");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("CC", "CE", "CF", "CG", "CI", "CN"),
+                new BoardLabelsChecker("LC", "LE", "LG", "LI", "LN"),
+                new BoardFixVersionsChecker("FC", "FE", "FG", "FI", "FN"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 8);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{1, 3}, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", new int[]{4}, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", new int[]{2}, 1, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{5}, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(1, 3), new LabelsChecker(1, 2), new FixVersionsChecker(1, 2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2,
+                new ComponentsChecker(4), new LabelsChecker(3), new FixVersionsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new ComponentsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(5), new LabelsChecker(4), new FixVersionsChecker(4), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
 
-
-        create = createCreateEventAndAddToRegistry("TBG-4", IssueType.FEATURE, Priority.HIGH,
-                "Four", "brian", new String[]{"J", "K"}, "TBG-X");
+        //Add an issue with a single new label
+        create = createEventBuilder("TDP-6", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("brian")
+                .labels("LF")
+                .state("TDP-B")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkComponents(boardNode, "C", "E", "F", "G", "I", "J", "K", "N");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("CC", "CE", "CF", "CG", "CI", "CN"),
+                new BoardLabelsChecker("LC", "LE", "LF", "LG", "LI", "LN"),
+                new BoardFixVersionsChecker("FC", "FE", "FG", "FI", "FN"));
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{1, 3}, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", new int[]{4}, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", new int[]{2}, 1, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{7}, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", new int[]{5, 6}, 0, 0);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(1, 3), new LabelsChecker(1, 3), new FixVersionsChecker(1, 2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2,
+                new ComponentsChecker(4), new LabelsChecker(4), new FixVersionsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new ComponentsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new LabelsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(5), new LabelsChecker(5), new FixVersionsChecker(4), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
 
-        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
+        //Add an issue with a single new fix version
+        create = createEventBuilder("TDP-7", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("brian")
+                .fixVersions("FF")
+                .state("TDP-B")
+                .buildAndRegister();
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("CC", "CE", "CF", "CG", "CI", "CN"),
+                new BoardLabelsChecker("LC", "LE", "LF", "LG", "LI", "LN"),
+                new BoardFixVersionsChecker("FC", "FE", "FF", "FG", "FI", "FN"));
+
+        allIssues = getIssuesCheckingSize(boardNode, 10);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(1, 3), new LabelsChecker(1, 3), new FixVersionsChecker(1, 3));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2,
+                new ComponentsChecker(4), new LabelsChecker(4), new FixVersionsChecker(4), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new ComponentsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new LabelsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new FixVersionsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(5), new LabelsChecker(5), new FixVersionsChecker(5), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+
+        //Add an issue with a several new components, labels and fix versions
+        create = createEventBuilder("TBG-4", IssueType.FEATURE, Priority.HIGH, "Four")
+                .assignee("brian")
+                .components("CJ", "CK")
+                .labels("LJ", "LK")
+                .fixVersions("FJ", "FK")
+                .state("TBG-X")
+                .buildAndRegister();
+        boardManager.handleEvent(create, nextRankedIssueUtil);
+        boardNode = getJson(4, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("CC", "CE", "CF", "CG", "CI", "CJ", "CK", "CN"),
+                new BoardLabelsChecker("LC", "LE", "LF", "LG", "LI", "LJ", "LK", "LN"),
+                new BoardFixVersionsChecker("FC", "FE", "FF", "FG", "FI", "FJ", "FK", "FN"));
+
+        allIssues = getIssuesCheckingSize(boardNode, 11);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(1, 3), new LabelsChecker(1, 3), new FixVersionsChecker(1, 3));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2,
+                new ComponentsChecker(4), new LabelsChecker(4), new FixVersionsChecker(4), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new ComponentsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new LabelsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.HIGH, "Five", 1,
+                new FixVersionsChecker(2), new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(7), new LabelsChecker(7), new FixVersionsChecker(7), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.FEATURE, Priority.HIGH, "Four", 0,
+                new ComponentsChecker(5, 6), new LabelsChecker(5, 6), new FixVersionsChecker(5, 6), new AssigneeChecker(0));
+
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
-
     }
 
     @Test
-    public void testUpdateIssueNoNewUsersOrComponents() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, new String[]{"C1"}, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkComponents(boardNode, "C1", "C2");
+    public void testUpdateIssueNoNewUsersOrMultiSelectNameOnlyValues() throws Exception {
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .components("C1").labels("L1").fixVersions("F1").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("C2").labels("L2").fixVersions("F2").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
-                "Four-1", "kabir", false, new String[]{"C1"}, false, "TDP-B", true);
+
+        //Update everything in one issue in one go
+        JirbanIssueEvent update = updateEventBuilder("TDP-4")
+                .issueType(IssueType.FEATURE)
+                .priority(Priority.HIGH)
+                .summary("Four-1")
+                .assignee("kabir")
+                .components("C1")
+                .labels("L1")
+                .fixVersions("F1")
+                .state("TDP-B")
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
+
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{0}, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four-1", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four-1", 1,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+
+        //DO MORE UPDATES
 
         //Do updates of single fields, don't bother checking everything now. Just the issue tables and the changed issue
         //We will do a full check later
 
         //type
-        update = createUpdateEventAndAddToRegistry("TDP-1", IssueType.FEATURE, null, null, null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-1")
+                .issueType(IssueType.FEATURE)
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", new int[]{0}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.HIGHEST, "One", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
 
         //priority
-        update = createUpdateEventAndAddToRegistry("TDP-1", null, Priority.LOW, null, null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-1")
+                .priority(Priority.LOW)
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", new int[]{0}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
 
         //summary
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, "One-1", null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-1")
+                .summary("One-1")
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(4, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{0}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
 
         //assign
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, "brian", false, null, false, null, false);
+        update = updateEventBuilder("TDP-1").assignee("brian").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(5, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{0}, 0, 0);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(0));
 
         //No updated assignee, nor unassigned - and nothing else changed so the event is a noop and the view does not change
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, null, false, null, false);
+        update = updateEventBuilder("TDP-1").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(5, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(5, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{0}, 0, 0);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(0));
 
         //Unassign
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, true, null, false, null, false);
+        update = updateEventBuilder("TDP-1").unassign().buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(6, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(6, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{0}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
 
         //Change state
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, null, false, "TDP-D", true);
+        update = updateEventBuilder("TDP-1").state("TDP-D").rank().buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(7, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(7, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{0}, 3, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0));
 
         //Change component
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null, false, new String[]{"C2"}, false, "TDP-D", true);
+        update = updateEventBuilder("TDP-1").components("C2").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(8, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(8, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{1}, 3, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3,
+                new ComponentsChecker(1), new LabelsChecker(0), new FixVersionsChecker(0));
+
+        //Change label
+        update = updateEventBuilder("TDP-1").labels("L2").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardNode = getJson(9, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(0));
+
+        //fix versions
+        update = updateEventBuilder("TDP-1").fixVersions("F2").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardNode = getJson(10, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1));
 
         //Change in the other project
-        update = createUpdateEventAndAddToRegistry("TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", "kabir", false, new String[]{"C2"}, false, "TBG-Y", true);
+        update = updateEventBuilder("TBG-3")
+                .issueType(IssueType.BUG)
+                .priority(Priority.HIGHEST)
+                .summary("Three-1")
+                .assignee("kabir")
+                .components("C2")
+                .labels("L2")
+                .fixVersions("F2")
+                .state("TBG-Y")
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(9, "brian", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(11, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", new int[]{1}, 1, 1);
+        checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
 
         //Check full issue table
-        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", new int[]{1}, 3, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four-1", new int[]{0}, 1, 1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", new int[]{1}, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.FEATURE, Priority.LOW, "One-1", 3,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four-1", 1,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.BUG, Priority.HIGHEST, "Three-1", 1,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
@@ -619,33 +816,39 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testUpdateIssueNewUsers() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "feature", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, "jason", false, null, false, null, false);
-        boardManager.handleEvent(update, nextRankedIssueUtil);
-        getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"));
 
-        update = createUpdateEventAndAddToRegistry("TBG-3", (IssueType) null, null, null, "james", false, null, false, null, false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").assignee("jason").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "james", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        getJson(1, new BoardAssigneeChecker("brian", "jason", "kabir"));
+
+        update = updateEventBuilder("TBG-3").assignee("james").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        ModelNode boardNode = getJson(2, new BoardAssigneeChecker("brian", "james", "jason", "kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 3);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 3);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 3);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 3);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(3));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(3));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(3));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(3));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
@@ -654,55 +857,171 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testUpdateIssueNewComponents() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, new String[]{"D"}, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"K"}, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "feature", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .components("D").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("K").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("D", "K"));
 
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null,
-                false, new String[]{"E", "F"}, false, null, false);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").components("E", "F").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkComponents(boardNode, "D", "E", "F", "K");
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("D", "E", "F", "K"));
 
-        update = createUpdateEventAndAddToRegistry("TBG-3", (IssueType) null, null, null, null,
-                false, new String[]{"L"}, false, null, false);
+        update = updateEventBuilder("TBG-3").components("L").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkComponents(boardNode, "D", "E", "F", "K", "L");
-        checkNoBlacklist(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("D", "E", "F", "K", "L"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", new int[]{1, 2}, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{3}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", new int[]{4}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new ComponentsChecker(1, 2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new ComponentsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new ComponentsChecker(4));
 
         //Clear the components from an issue
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType) null, null, null, null,
-                false, null, true, null, false);
+        update = updateEventBuilder("TDP-1").clearComponents().buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
-        checkComponents(boardNode, "D", "E", "F", "K", "L");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("D", "E", "F", "K", "L"));
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, -1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{3}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", new int[]{4}, 0, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new ComponentsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new ComponentsChecker(4));
+
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+    }
+
+    @Test
+    public void testUpdateIssueNewLabels() throws Exception {
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .labels("D").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").labels("K").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardLabelsChecker("D", "K"));
+
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").labels("E", "F").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardLabelsChecker("D", "E", "F", "K"));
+
+        update = updateEventBuilder("TBG-3").labels("L").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        ModelNode boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardLabelsChecker("D", "E", "F", "K", "L"));
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new LabelsChecker(1, 2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new LabelsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new LabelsChecker(4));
+
+        //Clear the components from an issue
+        update = updateEventBuilder("TDP-1").clearLabels().buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardLabelsChecker("D", "E", "F", "K", "L"));
+
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new LabelsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new LabelsChecker(4));
+
+        checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
+        checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
+    }
+
+
+    @Test
+    public void testUpdateIssueNewFixVersions() throws Exception {
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .fixVersions("D").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").fixVersions("K").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardFixVersionsChecker("D", "K"));
+
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").fixVersions("E", "F").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardFixVersionsChecker("D", "E", "F", "K"));
+
+        update = updateEventBuilder("TBG-3").fixVersions("L").buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        ModelNode boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardFixVersionsChecker("D", "E", "F", "K", "L"));
+
+        ModelNode allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new FixVersionsChecker(1, 2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new FixVersionsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new FixVersionsChecker(4));
+
+        //Clear the components from an issue
+        update = updateEventBuilder("TDP-1").clearFixVersions().buildAndRegister();
+        boardManager.handleEvent(update, nextRankedIssueUtil);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardFixVersionsChecker("D", "E", "F", "K", "L"));
+
+        allIssues = getIssuesCheckingSize(boardNode, 7);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new FixVersionsChecker(3), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0, new FixVersionsChecker(4));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
@@ -710,50 +1029,55 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testMissingState() throws SearchException {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", null, null, "BAD");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "BAD");
-        issueRegistry.addIssue("TBG", "bug", "low", "Two", "kabir", null, "TBG-Y");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "BAD")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "BAD")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "low", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-1", "TBG-1"));
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-
-        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-1", "TBG-1");
-        checkNoCustomFields(boardNode);
 
         //Add another issue to the same bad state to check that this works on updating
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.TASK, Priority.HIGHEST, "Three", null, null, "BAD");
+        JirbanIssueEvent event = createEventBuilder("TDP-3", IssueType.TASK, Priority.HIGHEST, "Three")
+                .state("BAD")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-1", "TBG-1", "TDP-3"));
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-1", "TBG-1", "TDP-3");
-        checkNoCustomFields(boardNode);
 
         //Add another issue to another bad state
-        event = createCreateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.HIGH, "Four", null, null, "BADDER");
+        event = createEventBuilder("TDP-4", IssueType.BUG, Priority.HIGH, "Four")
+                .state("BADDER")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().states("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3", "TDP-4"));
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
-        checkNoCustomFields(boardNode);
 
         //Move an issue from a bad state to a good state, this does not affect the blacklist which is ok since the config is broken anyway
-        event = createUpdateEventAndAddToRegistry("TDP-4", (IssueType) null, null, null, null, false, null, false, "TDP-A", false);
+        event = updateEventBuilder("TDP-4").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         //Since the issue has been blacklisted the view id is the same
-        getJsonCheckingViewIdAndUsers(2, "kabir");
+        getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().states("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3", "TDP-4"));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
 
@@ -761,130 +1085,140 @@ public class BoardManagerTest extends AbstractBoardTest {
         //bad configuration notices though so the bad state remains in the list
         event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().states("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3"));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, new String[]{"BAD", "BADDER"}, null, null, "TDP-1", "TBG-1", "TDP-3");
     }
 
     @Test
     public void testMissingIssueType() throws SearchException {
-        issueRegistry.addIssue("TDP", "BAD", "highest", "One", null, null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TBG", "BAD", "highest", "One", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "bug", "low", "Two", "kabir", null, "TBG-Y");
+        issueRegistry.issueBuilder("TDP", "BAD", "highest", "One", "TDP-A")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "BAD", "highest", "One", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "low", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().types("BAD").keys("TDP-1", "TBG-1"));
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-
-        checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1");
-        checkNoCustomFields(boardNode);
 
         //Add another issue to the same bad issue type to check that this works on updating
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", "BAD", Priority.HIGHEST.name, "Three", null, null, "TDP-C");
+        JirbanIssueEvent event = createEventBuilder("TDP-3", "BAD", Priority.HIGHEST.name, "Three")
+                .state("TDP-C")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().types("BAD").keys("TDP-1", "TBG-1", "TDP-3"));
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, new String[]{"BAD"}, null, "TDP-1", "TBG-1", "TDP-3");
-        checkNoCustomFields(boardNode);
 
         //Add another issue to another bad issue type
-        event = createCreateEventAndAddToRegistry("TDP-4", "BADDER", Priority.HIGH.name, "Four", null, null, "TDP-C");
+        event = createEventBuilder("TDP-4", "BADDER", Priority.HIGH.name, "Four")
+                .state("TDP-C")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().types("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3", "TDP-4"));
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
-        checkNoCustomFields(boardNode);
 
         //Move an issue from a bad issue type to a good issue type, this does not affect the blacklist which is ok since the config is broken anyway
-        event = createUpdateEventAndAddToRegistry("TDP-4", IssueType.TASK, null, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-4").issueType(IssueType.TASK).buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         //Since the issue has been blacklisted the view id is the same
-        getJsonCheckingViewIdAndUsers(2, "kabir");
+        getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().types("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3", "TDP-4"));
 
         //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
         //bad configuration notices though so the bad issue type remains in the list
         event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().types("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3"));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, new String[]{"BAD", "BADDER"}, null, "TDP-1", "TBG-1", "TDP-3");
     }
 
     @Test
     public void testMissingPriority() throws SearchException {
-        issueRegistry.addIssue("TDP", "feature", "BAD", "One", null, null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TBG", "bug", "BAD", "One", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "bug", "low", "Two", "kabir", null, "TBG-Y");
+        issueRegistry.issueBuilder("TDP", "feature", "BAD", "One", "TDP-A")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "BAD", "One", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "low", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().priorities("BAD").keys("TDP-1", "TBG-1"));
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1");
-        checkNoCustomFields(boardNode);
 
         //Add another issue to the same bad priority to check that this works on updating
-        JirbanIssueEvent event = createCreateEventAndAddToRegistry("TDP-3", IssueType.FEATURE.name, "BAD", "Three", null, null, "TDP-C");
+        JirbanIssueEvent event = createEventBuilder("TDP-3", IssueType.FEATURE.name, "BAD", "Three")
+                .state("TDP-C")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().priorities("BAD").keys("TDP-1", "TBG-1", "TDP-3"));
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, null, new String[]{"BAD"}, "TDP-1", "TBG-1", "TDP-3");
-        checkNoCustomFields(boardNode);
 
         //Add another issue to another bad priority
-        event = createCreateEventAndAddToRegistry("TDP-4", IssueType.TASK.name, "BADDER", "Four", null, null, "TDP-C");
+        event = createEventBuilder("TDP-4", IssueType.TASK.name, "BADDER", "Four")
+                .state("TDP-C")
+                .buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().priorities("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3", "TDP-4"));
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3", "TDP-4");
-        checkNoCustomFields(boardNode);
-
 
         //Move an issue from a bad priority to a good priority, this does not affect the blacklist which is ok since the config is broken anyway
-        event = createUpdateEventAndAddToRegistry("TDP-4", null, Priority.HIGH, null, null, false, null, false, null, false);
+        event = updateEventBuilder("TDP-4").priority(Priority.HIGH).buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
         //Since the issue has been blacklisted the view id is the same
-        getJsonCheckingViewIdAndUsers(2, "kabir");
+        getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().priorities("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3", "TDP-4"));
 
         //Now delete a bad issue, this should work and remove it from the blacklist. We don't attempt to update the
         //bad configuration notices though so the bad priority remains in the list
         event = JirbanIssueEvent.createDeleteEvent("TDP-4", "TDP");
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", null, 1, 0);
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"),
+                new BoardBlacklistChecker().priorities("BAD", "BADDER").keys("TDP-1", "TBG-1", "TDP-3"));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.LOW, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 2);
         checkProjectRankedIssues(boardNode, "TBG", 2);
-        checkBlacklist(boardNode, null, null, new String[]{"BAD", "BADDER"}, "TDP-1", "TBG-1", "TDP-3");
     }
 
     @Test
@@ -892,46 +1226,50 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with backlog states set up
         initializeMocks("config/board-tdp-backlog.json");
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", new String[]{"C1"}, "TDP-A");  //1
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", new String[]{"C2"}, "TDP-B");     //2
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "brian", null, "TDP-C");                  //3
-        issueRegistry.addIssue("TDP", "task", "high", "Four", "brian", null, "TDP-D");                //4
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", new String[]{"C3"}, "TBG-X");  //1
-        issueRegistry.addIssue("TBG", "task", "high", "Two", "brian", null, "TBG-Y");                    //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").components("C1").labels("L1").buildAndRegister();      //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").components("C2").buildAndRegister();     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("brian").buildAndRegister();                      //3
+        issueRegistry.issueBuilder("TDP", "task", "high", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();                      //4
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").components("C3").fixVersions("F1").buildAndRegister();     //1
+        issueRegistry.issueBuilder("TBG", "task", "high", "Two", "TBG-Y")
+                .assignee("brian").buildAndRegister();                      //2
 
-        //Although not all the assignees and components are used in the non-blacklist part of the board,
+        //Although not all the assignees and components, labels and fixVersions are used in the non-blacklist part of the board,
         //include them anyway
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
-        checkComponents(boardNode, "C1", "C2", "C3");
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2", "C3"), new BoardLabelsChecker("L1"), new BoardFixVersionsChecker("F1"));
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 3);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
 
         checkProjectRankedIssues(boardNode, "TDP", 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 2);
 
 
         //Now check with the backlog
-        boardNode = getJsonCheckingViewIdAndUsers(0, true, "brian", "kabir");
-        checkComponents(boardNode, "C1", "C2", "C3");
-        checkNoCustomFields(boardNode);
-        checkNoBlacklist(boardNode);
+        boardNode = getJson(0, true, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1", "C2", "C3"), new BoardLabelsChecker("L1"), new BoardFixVersionsChecker("F1"));
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
         allIssues = getIssuesCheckingSize(boardNode, 6);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", new int[]{0}, 0, 1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", null, 3, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", new int[]{2}, 0, 1);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new ComponentsChecker(1), new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0,
+                new ComponentsChecker(2), new FixVersionsChecker(0), new AssigneeChecker(1));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2);
@@ -943,141 +1281,144 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Override the default configuration set up by the @Before method to one with done states set up
         initializeMocks("config/board-tdp-done.json");
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
-        issueRegistry.addIssue("TDP", "task", "high", "Four", "brian", new String[]{"C1"}, "TDP-D"); //4
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
-        issueRegistry.addIssue("TBG", "task", "high", "Two", "jason", new String[]{"C2"}, "TBG-Y");  //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();      //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();      //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();      //3
+        issueRegistry.issueBuilder("TDP", "task", "high", "Four", "TDP-D")
+                .assignee("brian").components("C1").labels("L1").fixVersions("F1").buildAndRegister(); //4
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();                  //1
+        issueRegistry.issueBuilder("TBG", "task", "high", "Two", "TBG-Y")
+                .assignee("jason").components("C2").labels("L2").fixVersions("F2").buildAndRegister(); //2
 
         //Although the assignees and components used in the done part of the board should not be included, and neither
         //include them anyway
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        checkComponents(boardNode);
-        checkNoBlacklist(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"));
         checkNameAndIcon(boardNode, "priorities", "highest", "high", "low", "lowest");
         checkNameAndIcon(boardNode, "issue-types", "task", "bug", "feature");
 
         //The issues in the 'done' columns should not be included in the board.
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 3);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //An event putting a 'done' issue into one of the normal states should result in the issue and any assignees/components being brought in
 
-        //This one does not bring in any new assignees/components
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-3", (IssueType)null, null,
-                null, null, false, null, false, "TDP-A", false);
+        //This one does not bring in any new assignees/components/labels/fix versions
+        JirbanIssueEvent update = updateEventBuilder("TDP-3").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //view id is 0 here because board has been recreated (due to moving issue out of 'done')
-        boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        boardNode = getJson(0, new BoardAssigneeChecker("kabir"));
         allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Bring in new assignees/components
-        update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
-                null, null, false, null, false, "TDP-A", false);
+        update = updateEventBuilder("TDP-4").state("TDP-A").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //view id is 0 here because board has been recreated (due to moving issue out of 'done')
-        boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        boardNode = getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardComponentsChecker("C1"), new BoardLabelsChecker("L1"), new BoardFixVersionsChecker("F1"));
         allIssues = getIssuesCheckingSize(boardNode, 5);
-        checkComponents(boardNode, "C1");
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 1);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", new int[]{0}, 0, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
 
-        update = createUpdateEventAndAddToRegistry("TBG-2", (IssueType)null, null,
-                null, null, false, null, false, "TBG-X", false);
+        update = updateEventBuilder("TBG-2").state("TBG-X").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
         //view id is 0 here because board has been recreated (due to moving issue out of 'done')
-        boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        boardNode = getJson(0, new BoardAssigneeChecker("brian", "jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 6);
-        checkComponents(boardNode, "C1", "C2");
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", new int[]{0}, 0, 0);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.HIGH, "Four", 0,
+                new ComponentsChecker(0), new LabelsChecker(0), new FixVersionsChecker(0), new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 0,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2);
 
         //Check moving an issue to a done state
-        update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
-                null, null, false, null, false, "TDP-C", false);
+        update = updateEventBuilder("TDP-4").state("TDP-C").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
+        boardNode = getJson(1, new BoardAssigneeChecker("brian", "jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 5);
-        checkComponents(boardNode, "C1", "C2");
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 0,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2);
 
-        update = createUpdateEventAndAddToRegistry("TBG-1", (IssueType)null, null,
-                null, null, false, null, false, "TBG-Y", false);
+        update = updateEventBuilder("TBG-1").state("TBG-Y").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkComponents(boardNode, "C1", "C2");
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 0,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 2);
 
         //Check that moving an issue from a done state to another done state does not trigger a change
-        update = createUpdateEventAndAddToRegistry("TDP-4", (IssueType)null, null,
-                null, null, false, null, false, "TDP-D", false);
+        update = updateEventBuilder("TDP-4").state("TDP-D").buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkComponents(boardNode, "C1", "C2");
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 0,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 2);
 
         //Test that updating an issue in a 'done' does not trigger a change
-        update = createUpdateEventAndAddToRegistry("TDP-4", IssueType.BUG, Priority.LOW,
-                "Will be ignored", "nonexistent", false, null, false, null, false);
+        update = updateEventBuilder("TDP-4")
+                .issueType(IssueType.BUG)
+                .priority(Priority.LOW)
+                .components("C3")
+                .labels("L3")
+                .fixVersions("F3")
+                .summary("Will be ignored")
+                .assignee("nonexistent")
+                .buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "jason", "kabir"),
+                new BoardComponentsChecker("C1", "C2"), new BoardLabelsChecker("L1", "L2"), new BoardFixVersionsChecker("F1", "F2"));
         allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkComponents(boardNode, "C1", "C2");
-        checkNoCustomFields(boardNode);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", new int[]{1}, 0, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.TASK, Priority.HIGH, "Two", 0,
+                new ComponentsChecker(1), new LabelsChecker(1), new FixVersionsChecker(1), new AssigneeChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 2);
     }
@@ -1100,7 +1441,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkRankIssuesPermissions(boolean allow) throws Exception {
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0);
+        ModelNode boardNode = getJson(0);
         ModelNode projectParent = boardNode.get(PROJECTS, MAIN);
         for (String projectName : projectParent.keys()) {
             ModelNode rank = projectParent.get(projectName).get(RANK);
@@ -1116,21 +1457,25 @@ public class BoardManagerTest extends AbstractBoardTest {
         final Long testerId = 121212121212L;
 
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();      //1
         issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();      //2
         issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("brian"));
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C");                  //3
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();      //3
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();      //1
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        checkTesters(boardNode, "brian", "jason");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1);
     }
@@ -1141,26 +1486,29 @@ public class BoardManagerTest extends AbstractBoardTest {
         final Long testerId = 121212121212L;
         final Long documenterId = 121212121213L;
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister(); //1
         issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
         issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("jason"));
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister(); //2
         issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("brian"));
         issueRegistry.setCustomField("TDP-2", documenterId, userManager.getUserByKey("brian"));
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister(); //3
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();  //1
         issueRegistry.setCustomField("TBG-1", testerId, userManager.getUserByKey("kabir"));
         issueRegistry.setCustomField("TBG-1", documenterId, userManager.getUserByKey("kabir"));
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
-        checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/); //kabir is only for the TBG issue, which has no 'Documenters' configured
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("brian", "jason"/*, "kabir"*/)); //kabir is only for the TBG issue, which has no 'Documenters' configured
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), new TesterChecker(0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1), new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(2));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
@@ -1168,66 +1516,76 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Add an issue
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, "jason");
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
-                "Four", "kabir", null, "TDP-D", customFieldValues);
+        JirbanIssueEvent create = createEventBuilder("TDP-4", IssueType.FEATURE, Priority.HIGH, "Four")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
-        checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("brian", "jason"/*, "kabir"*/));
 
         //Add another issue
         customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, "brian");
         customFieldValues.put(testerId, "brian");
-        create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
-                "Five", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-5", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
-        checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("brian", "jason"/*, "kabir"*/));
 
         //And another....
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
-        create = createCreateEventAndAddToRegistry("TDP-6", IssueType.FEATURE, Priority.HIGH,
-                "Six", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-6", IssueType.FEATURE, Priority.HIGH, "Six")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
-        checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("brian", "jason"/*, "kabir"*/));
 
         //Add issues to other project - this does NOT have the 'Documenter' custom field configured
         //Add an issue
         customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, "kabir");
-        create = createCreateEventAndAddToRegistry("TBG-2", IssueType.FEATURE, Priority.HIGH,
-                "Two", "kabir", null, "TBG-Y", customFieldValues);
+        create = createEventBuilder("TBG-2", IssueType.FEATURE, Priority.HIGH, "Two")
+                .assignee("kabir")
+                .state("TBG-Y")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(4, "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
-        checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
+        boardNode = getJson(4, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("brian", "jason"/*, "kabir"*/));
 
         //Add another issue
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "kabir");
-        create = createCreateEventAndAddToRegistry("TBG-3", IssueType.FEATURE, Priority.HIGH,
-                "Three", "kabir", null, "TBG-Y", customFieldValues);
+        create = createEventBuilder("TBG-3", IssueType.FEATURE, Priority.HIGH, "Three")
+                .assignee("kabir")
+                .state("TBG-Y")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(5, "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
-        checkDocumenters(boardNode, "brian", "jason"/*, "kabir"*/);
+        boardNode = getJson(5, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("brian", "jason"/*, "kabir"*/));
 
 
         allIssues = getIssuesCheckingSize(boardNode, 9);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), new TesterChecker(0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, NoIssueCustomFieldChecker.TESTER, new DocumenterChecker(1));
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 3, 0, new TesterChecker(0), new DocumenterChecker(0));
-        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Six", null, 3, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.HIGH, "Three", null, 1, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1), new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 3, new AssigneeChecker(0), new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-6", IssueType.FEATURE, Priority.HIGH, "Six", 3, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.HIGH, "Three", 1, new AssigneeChecker(0), new TesterChecker(2));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3);
     }
@@ -1238,37 +1596,39 @@ public class BoardManagerTest extends AbstractBoardTest {
         final Long testerId = 121212121212L;
         final Long documenterId = 121212121213L;
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();      //1
         issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();      //2
         issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("jason"));
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();      //3
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();      //1
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        checkTesters(boardNode, "jason");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"), new BoardTesterChecker("jason"));
 
         //Exactly the same initial board was checked in testLoadBoardWithCustomFields() so don't bother checking it all here
 
         //Create an issue in the main project with one custom field set
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "brian");
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
-                "Four", "kabir", null, "TDP-D", customFieldValues);
+        JirbanIssueEvent create = createEventBuilder("TDP-4", IssueType.FEATURE, Priority.HIGH, "Four")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
-        checkComponents(boardNode);
-        checkNoBlacklist(boardNode);
-        checkTesters(boardNode, "brian", "jason");
-        checkDocumenters(boardNode);
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"), new BoardTesterChecker("brian", "jason"));
 
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 5);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new TesterChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
@@ -1276,45 +1636,45 @@ public class BoardManagerTest extends AbstractBoardTest {
         //Create an issue in the main project with more custom fields set
         customFieldValues.put(testerId, "stuart");
         customFieldValues.put(documenterId, "kabir");
-        create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
-                "Five", "kabir", null, "TDP-A", customFieldValues);
+        create = createEventBuilder("TDP-5", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("kabir")
+                .state("TDP-A")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
-        checkComponents(boardNode);
-        checkNoBlacklist(boardNode);
-        checkTesters(boardNode, "brian", "jason", "stuart");
-        checkDocumenters(boardNode, "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "stuart"), new BoardDocumenterChecker("kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 6);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 0, 0, new TesterChecker(2), new DocumenterChecker(0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new TesterChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 0, new AssigneeChecker(0), new TesterChecker(2), new DocumenterChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Create an issue in the other project, which does NOT have the Documenter field configured for the board
         customFieldValues.put(testerId, "james");
         customFieldValues.put(documenterId, "james");
-        create = createCreateEventAndAddToRegistry("TBG-2", IssueType.FEATURE, Priority.HIGH,
-                "Two", "kabir", null, "TBG-Y", customFieldValues);
+        create = createEventBuilder("TBG-2", IssueType.FEATURE, Priority.HIGH, "Two")
+                .assignee("kabir")
+                .state("TBG-Y")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        checkComponents(boardNode);
-        checkNoBlacklist(boardNode);
-        checkTesters(boardNode, "brian", "james", "jason", "stuart");
-        checkDocumenters(boardNode, "kabir");
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "james", "jason", "stuart"), new BoardDocumenterChecker("kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 0, 0, new TesterChecker(3), new DocumenterChecker(0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new TesterChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 0, new AssigneeChecker(0), new TesterChecker(3), new DocumenterChecker(0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2);
     }
@@ -1326,82 +1686,68 @@ public class BoardManagerTest extends AbstractBoardTest {
         final Long testerId = 121212121212L;
         final Long documenterId = 121212121213L;
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();   //1
         issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
         issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("jason"));
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();     //2
         issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("kabir"));
         issueRegistry.setCustomField("TDP-2", documenterId, userManager.getUserByKey("kabir"));
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        checkComponents(boardNode);
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "jason", "kabir");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "kabir");
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "jason", "kabir");
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), new DocumenterChecker(0));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(1), new DocumenterChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         //Unset custom fields, this will not remove it from the lookup list of field values
         customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, UNSET_VALUE);
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "jason", "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(1), new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(1), new DocumenterChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         //Clear all custom fields in an issue, they will stay in the lookup list of field values
         customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, UNSET_VALUE);
         customFieldValues.put(testerId, UNSET_VALUE);
-        update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-2").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "jason", "kabir");
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, NoIssueCustomFieldChecker.TESTER, NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "jason");
-        update = createUpdateEventAndAddToRegistry("TDP-2", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-2").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(4, "kabir");
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "jason", "kabir");
+        boardNode = getJson(4, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(1), NoIssueCustomFieldChecker.DOCUMENTER);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(0), NoIssueCustomFieldChecker.DOCUMENTER);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
     }
 
@@ -1411,50 +1757,43 @@ public class BoardManagerTest extends AbstractBoardTest {
         final Long testerId = 121212121212L;
         final Long documenterId = 121212121213L;
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();  //1
         issueRegistry.setCustomField("TDP-1", testerId, userManager.getUserByKey("jason"));
         issueRegistry.setCustomField("TDP-1", documenterId, userManager.getUserByKey("jason"));
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();     //2
         issueRegistry.setCustomField("TDP-2", testerId, userManager.getUserByKey("kabir"));
         issueRegistry.setCustomField("TDP-2", documenterId, userManager.getUserByKey("kabir"));
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
-        checkComponents(boardNode);
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "jason", "kabir");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
         //Update and bring in a new tester, the unused 'jason' stays in the list
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(testerId, "brian");
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "jason", "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
+        boardNode = getJson(1, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"), new BoardDocumenterChecker("jason", "kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(0), new DocumenterChecker(0));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), new DocumenterChecker(1));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(2), new DocumenterChecker(1));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
 
         //Update and bring in a new documenter, the unused 'jason' stays in the list
         customFieldValues = new HashMap<>();
         customFieldValues.put(documenterId, "brian");
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
-        checkNoBlacklist(boardNode);
-        checkDocumenters(boardNode, "brian", "jason", "kabir");
-        checkTesters(boardNode, "brian", "jason", "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"),
+                new BoardTesterChecker("brian", "jason", "kabir"),
+                new BoardDocumenterChecker("brian", "jason", "kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 2);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new TesterChecker(0), new DocumenterChecker(0));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new TesterChecker(2), new DocumenterChecker(2));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new TesterChecker(0), new DocumenterChecker(0));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new TesterChecker(2), new DocumenterChecker(2));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2);
     }
 
@@ -1479,16 +1818,20 @@ public class BoardManagerTest extends AbstractBoardTest {
         });
 
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();      //1
         issueRegistry.setParallelTaskField("TDP-1", upstreamId, "IP");
         issueRegistry.setParallelTaskField("TDP-1", downstreamId, "IP");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();      //2
         issueRegistry.setParallelTaskField("TDP-2", upstreamId, "M");
         issueRegistry.setParallelTaskField("TDP-2", downstreamId, "TD");
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();      //3
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();  //1
 
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "kabir");
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("kabir"));
 
         ModelNode parallelTasksNode = boardNode.get(PROJECTS, MAIN, "TDP", PARALLEL_TASKS);
         Assert.assertEquals(ModelType.LIST, parallelTasksNode.getType());
@@ -1498,10 +1841,10 @@ public class BoardManagerTest extends AbstractBoardTest {
         checkParallelTaskFieldOptions(parallelTasks.get(1), "DS", "Downstream", "TODO", "In Progress", "Done");
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(1, 1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new ParallelTaskFieldValueChecker(2, 0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(null));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(1, 1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1);
     }
@@ -1528,65 +1871,78 @@ public class BoardManagerTest extends AbstractBoardTest {
         });
 
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();  //1
         issueRegistry.setParallelTaskField("TDP-1", upstreamId, "IP");
         issueRegistry.setParallelTaskField("TDP-1", downstreamId, "IP");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();     //2
         issueRegistry.setParallelTaskField("TDP-2", upstreamId, "M");
         issueRegistry.setParallelTaskField("TDP-2", downstreamId, "TD");
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister(); //3
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();  //1
 
-        getJsonCheckingViewIdAndUsers(0, "kabir");
+        getJson(0, new BoardAssigneeChecker("kabir"));
         //Layout of board is aleady checked by testLoadBoardWithParallelTasks
 
         //Add an issue with explicit parallel fields
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "M");
         customFieldValues.put(downstreamId, "IP");
-        JirbanIssueEvent create = createCreateEventAndAddToRegistry("TDP-4", IssueType.FEATURE, Priority.HIGH,
-                "Four", "kabir", null, "TDP-D", customFieldValues);
+        JirbanIssueEvent create = createEventBuilder("TDP-4", IssueType.FEATURE, Priority.HIGH, "Four")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 5);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(1, 1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new ParallelTaskFieldValueChecker(2, 0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new ParallelTaskFieldValueChecker(2, 1));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(null));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(1, 1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 1));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Add an issue with no parallel fields set, and make sure that they default to zero
         customFieldValues = new HashMap<>();
-        create = createCreateEventAndAddToRegistry("TDP-5", IssueType.FEATURE, Priority.HIGH,
-                "Five", "kabir", null, "TDP-D", customFieldValues);
+        create = createEventBuilder("TDP-5", IssueType.FEATURE, Priority.HIGH, "Five")
+                .assignee("kabir")
+                .state("TDP-D")
+                .customFieldValues(customFieldValues)
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 6);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(1, 1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new ParallelTaskFieldValueChecker(2, 0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new ParallelTaskFieldValueChecker(2, 1));
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 3, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(null));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(1, 1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 1));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 3, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
         //Add an issue in a project with no parallel fields and make sure that they are not set in the issue
-        create = createCreateEventAndAddToRegistry("TBG-2", IssueType.FEATURE, Priority.HIGH,  "Two", "kabir", null, "TBG-X");
+        create = createEventBuilder("TBG-2", IssueType.FEATURE, Priority.HIGH,  "Two")
+                .assignee("kabir")
+                .state("TBG-X")
+                .buildAndRegister();
         boardManager.handleEvent(create, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "kabir");
+        boardNode = getJson(3, new BoardAssigneeChecker("kabir"));
         allIssues = getIssuesCheckingSize(boardNode, 7);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(1, 1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new ParallelTaskFieldValueChecker(2, 0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", null, 3, 0, new ParallelTaskFieldValueChecker(2, 1));
-        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", null, 3, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(null));
-        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", null, 0, 0, new ParallelTaskFieldValueChecker(null));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(1, 1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TDP-4", IssueType.FEATURE, Priority.HIGH, "Four", 3, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 1));
+        checkIssue(allIssues, "TDP-5", IssueType.FEATURE, Priority.HIGH, "Five", 3, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
+        checkIssue(allIssues, "TBG-2", IssueType.FEATURE, Priority.HIGH, "Two", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2);
 
@@ -1614,32 +1970,35 @@ public class BoardManagerTest extends AbstractBoardTest {
         });
 
 
-        issueRegistry.addIssue("TDP", "task", "high", "One", "kabir", null, "TDP-A");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();      //1
         issueRegistry.setParallelTaskField("TDP-1", upstreamId, "IP");
         issueRegistry.setParallelTaskField("TDP-1", downstreamId, "IP");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");     //2
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();      //2
         issueRegistry.setParallelTaskField("TDP-2", upstreamId, "M");
         issueRegistry.setParallelTaskField("TDP-2", downstreamId, "TD");
-        issueRegistry.addIssue("TDP", "task", "high", "Three", "kabir", null, "TDP-C"); //3
-        issueRegistry.addIssue("TBG", "task", "high", "One", "kabir", null, "TBG-X");  //1
+        issueRegistry.issueBuilder("TDP", "task", "high", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();      //3
+        issueRegistry.issueBuilder("TBG", "task", "high", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();;     //1
 
 
-        getJsonCheckingViewIdAndUsers(0, "kabir");
+        getJson(0, new BoardAssigneeChecker("kabir"));
         //Layout of board is aleady checked by testLoadBoardWithParallelTasks
 
         //Update some of an issue's parallel fields
         Map<Long, String> customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "M");
-        JirbanIssueEvent update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        JirbanIssueEvent update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "kabir");
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(2, 1));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new ParallelTaskFieldValueChecker(2, 0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(null));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
@@ -1647,16 +2006,15 @@ public class BoardManagerTest extends AbstractBoardTest {
         customFieldValues = new HashMap<>();
         customFieldValues.put(upstreamId, "IP");
         customFieldValues.put(downstreamId, "D");
-        update = createUpdateEventAndAddToRegistry("TDP-1", (IssueType)null, null,
-                null, null, false, null, false, null, false, customFieldValues);
+        update = updateEventBuilder("TDP-1").customFieldValues(customFieldValues).buildAndRegister();
         boardManager.handleEvent(update, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "kabir");
+        boardNode = getJson(2, new BoardAssigneeChecker("kabir"));
 
         allIssues = getIssuesCheckingSize(boardNode, 4);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(1, 2));
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 0, new ParallelTaskFieldValueChecker(2, 0));
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", null, 2, 0, new ParallelTaskFieldValueChecker(0, 0));
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", null, 0, 0, new ParallelTaskFieldValueChecker(null));
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(1, 2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(2, 0));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.HIGH, "Three", 2, new AssigneeChecker(0), new ParallelTaskFieldValueChecker(0, 0));
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGH, "One", 0, new AssigneeChecker(0));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3);
         checkProjectRankedIssues(boardNode, "TBG", 1);
 
@@ -1677,39 +2035,36 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testIrrelevantChange() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
-        getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D").assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y").assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "lowest", "Four", "TBG-Y").assignee("jason").buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         //Create an update event which doesn't change anything we are interested in and make sure the view id stays at zero
-        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, false, null);
+        JirbanIssueEvent event = updateEventBuilder("TDP-1").buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(0, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
 
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
@@ -1718,216 +2073,198 @@ public class BoardManagerTest extends AbstractBoardTest {
 
     @Test
     public void testRankIssue() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "TDP-D");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
-        issueRegistry.addIssue("TBG", "task", "highest", "One", "kabir", null, "TBG-X");
-        issueRegistry.addIssue("TBG", "bug", "high", "Two", "kabir", null, "TBG-Y");
-        issueRegistry.addIssue("TBG", "feature", "low", "Three", null, null, "TBG-X");
-        issueRegistry.addIssue("TBG", "task", "lowest", "Four", "jason", null, "TBG-Y");
-        getJsonCheckingViewIdAndUsers(0, "brian", "jason", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "TDP-D")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "highest", "One", "TBG-X")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "bug", "high", "Two", "TBG-Y")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "feature", "low", "Three", "TBG-X")
+                .buildAndRegister();
+        issueRegistry.issueBuilder("TBG", "task", "lowest", "Four", "TBG-Y")
+                .assignee("jason").buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "jason", "kabir"));
 
         //Rank an issue to somewhere in the middle in main project and check board
         issueRegistry.rerankIssue("TDP-1", "TDP-4");
-        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        JirbanIssueEvent event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "jason", "kabir"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 3, 1, 4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue to the start of the main project and check board
         issueRegistry.rerankIssue("TDP-1", "TDP-2");
-        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "jason", "kabir"));
         checkProjectRankedIssues(boardNode, "TDP", 1, 2, 3,  4, 5, 6, 7);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue to the end of the main project and check board
         issueRegistry.rerankIssue("TDP-1", null);
-        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "jason", "kabir"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 3,  4, 5, 6, 7, 1);
         checkProjectRankedIssues(boardNode, "TBG", 1, 2, 3, 4);
 
         //Rank an issue in the other project and check board
         issueRegistry.rerankIssue("TBG-2", "TBG-4");
-        event = JirbanIssueEvent.createUpdateEvent("TBG-2", "TBG", null, null, null, null, null, null, null, true, null);
+        event = updateEventBuilder("TBG-2").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(4, "brian", "jason", "kabir");
-        checkNoBlacklist(boardNode);
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(4, new BoardAssigneeChecker("brian", "jason", "kabir"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 3,  4, 5, 6, 7, 1);
         checkProjectRankedIssues(boardNode, "TBG", 1, 3, 2, 4);
 
         //Check that all the issue datas are as expected
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 11);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 2);
-        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", null, 3, 0);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 2);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 2);
-        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
-        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 2);
-        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", null, 1, 2);
-        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", null, 0, -1);
-        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", null, 1, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-4", IssueType.TASK, Priority.LOWEST, "Four", 3, new AssigneeChecker(0));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2);
+        checkIssue(allIssues, "TBG-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-2", IssueType.BUG, Priority.HIGH, "Two", 1, new AssigneeChecker(2));
+        checkIssue(allIssues, "TBG-3", IssueType.FEATURE, Priority.LOW, "Three", 0);
+        checkIssue(allIssues, "TBG-4", IssueType.TASK, Priority.LOWEST, "Four", 1, new AssigneeChecker(1));
     }
 
     @Test
     public void testRankIssueBeforeBlacklistedIssue() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "BAD");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "BAD");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "TDP-C");
-        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "BAD")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "BAD")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "TDP-C")
+                .buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-3", "TDP-4"));
 
         //Rank an issue to before a blacklisted issue and check board
         issueRegistry.rerankIssue("TDP-1", "TDP-3");
-        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        JirbanIssueEvent event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-3", "TDP-4"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 1, 5, 6, 7);
 
         //Try again, board should be the same
         issueRegistry.rerankIssue("TDP-1", "TDP-3");
-        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(2, "brian", "kabir");
-        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(2, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-3", "TDP-4"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 1, 5, 6, 7);
 
         //Rank somewhere not blacklisted
         issueRegistry.rerankIssue("TDP-1", "TDP-7");
-        event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        boardNode = getJsonCheckingViewIdAndUsers(3, "brian", "kabir");
-        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-3", "TDP-4");
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        boardNode = getJson(3, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-3", "TDP-4"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 5, 6, 1, 7);
 
         //Check that all the issue datas are as expected
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 5);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", null, 0, 1);
-        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", null, 1, 1);
-        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", null, 2, -1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-5", IssueType.TASK, Priority.HIGHEST, "Five", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-6", IssueType.BUG, Priority.HIGH, "Six", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-7", IssueType.FEATURE, Priority.LOW, "Seven", 2);
     }
 
 
     @Test
     public void testRankIssueBeforeBlacklistedIssueEnd() throws Exception {
-        issueRegistry.addIssue("TDP", "task", "highest", "One", "kabir", null, "TDP-A");
-        issueRegistry.addIssue("TDP", "task", "high", "Two", "kabir", null, "TDP-B");
-        issueRegistry.addIssue("TDP", "task", "low", "Three", "kabir", null, "TDP-C");
-        issueRegistry.addIssue("TDP", "task", "lowest", "Four", "brian", null, "BAD");
-        issueRegistry.addIssue("TDP", "task", "highest", "Five", "kabir", null, "BAD");
-        issueRegistry.addIssue("TDP", "bug", "high", "Six", "kabir", null, "BAD");
-        issueRegistry.addIssue("TDP", "feature", "low", "Seven", null, null, "BAD");
-        getJsonCheckingViewIdAndUsers(0, "brian", "kabir");
+        issueRegistry.issueBuilder("TDP", "task", "highest", "One", "TDP-A")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "high", "Two", "TDP-B")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "low", "Three", "TDP-C")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "lowest", "Four", "BAD")
+                .assignee("brian").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "task", "highest", "Five", "BAD")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "bug", "high", "Six", "BAD")
+                .assignee("kabir").buildAndRegister();
+        issueRegistry.issueBuilder("TDP", "feature", "low", "Seven", "BAD")
+                .buildAndRegister();
+        getJson(0, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-4", "TDP-5", "TDP-6", "TDP-7"));
 
         //Rank an issue to before a blacklisted issue. There are only blacklisted issues left, so the issue should get inserted at the end
         issueRegistry.rerankIssue("TDP-1", "TDP-4");
-        JirbanIssueEvent event = JirbanIssueEvent.createUpdateEvent("TDP-1", "TDP", null, null, null, null, null, null, null, true, null);
+        JirbanIssueEvent event = updateEventBuilder("TDP-1").rank().buildAndRegister();
         boardManager.handleEvent(event, nextRankedIssueUtil);
-        ModelNode boardNode = getJsonCheckingViewIdAndUsers(1, "brian", "kabir");
-        checkBlacklist(boardNode, new String[]{"BAD"}, null, null, "TDP-4", "TDP-5", "TDP-6", "TDP-7");
-        checkComponents(boardNode);
-        checkNoCustomFields(boardNode);
+        ModelNode boardNode = getJson(1, new BoardAssigneeChecker("brian", "kabir"),
+                new BoardBlacklistChecker().states("BAD").keys("TDP-4", "TDP-5", "TDP-6", "TDP-7"));
         checkProjectRankedIssues(boardNode, "TDP", 2, 3, 1);
 
 
         //Check that all the issue datas are as expected
         ModelNode allIssues = getIssuesCheckingSize(boardNode, 3);
-        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", null, 0, 1);
-        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", null, 1, 1);
-        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", null, 2, 1);
+        checkIssue(allIssues, "TDP-1", IssueType.TASK, Priority.HIGHEST, "One", 0, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-2", IssueType.TASK, Priority.HIGH, "Two", 1, new AssigneeChecker(1));
+        checkIssue(allIssues, "TDP-3", IssueType.TASK, Priority.LOW, "Three", 2, new AssigneeChecker(1));
     }
 
-    private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, String...users) throws SearchException {
-        return getJsonCheckingViewIdAndUsers(expectedViewId, false, users);
+    private ModelNode getJson(int expectedViewId, BoardDataChecker... checkers) throws SearchException {
+        return getJson(expectedViewId, false, checkers);
     }
 
-    private ModelNode getJsonCheckingViewIdAndUsers(int expectedViewId, boolean backlog, String...users) throws SearchException {
+    private ModelNode getJson(int expectedViewId, boolean backlog, BoardDataChecker... checkers) throws SearchException {
         String json = boardManager.getBoardJson(userManager.getUserByKey("kabir"), backlog, "TST");
         Assert.assertNotNull(json);
         ModelNode boardNode = ModelNode.fromJSONString(json);
         Assert.assertEquals(expectedViewId, boardNode.get("view").asInt());
-        checkUsers(boardNode, users);
-        return boardNode;
-    }
 
-    private void checkNoCustomFields(ModelNode boardNode) {
-        Assert.assertFalse(boardNode.hasDefined(CUSTOM));
-    }
-
-    private void checkTesters(ModelNode boardNode, String...testers) {
-        if (testers.length == 0) {
-            Assert.assertFalse(boardNode.hasDefined(CUSTOM, "Tester"));
-            return;
-        }
-
-        checkCustomFields(boardNode.get(CUSTOM, "Tester"), testers);
-    }
-
-    private void checkDocumenters(ModelNode boardNode, String...testers) {
-        if (testers.length == 0) {
-            Assert.assertFalse(boardNode.hasDefined(CUSTOM, "Documenter"));
-            return;
-        }
-
-        checkCustomFields(boardNode.get(CUSTOM, "Documenter"), testers);
-    }
-
-    private void checkCustomFields(ModelNode fieldList, String...keys) {
-        List<ModelNode> fields = fieldList.asList();
-        Assert.assertEquals(fields.size(), keys.length);
-        for (int i = 0 ; i < keys.length ; i++) {
-            ModelNode field = fields.get(i);
-            Assert.assertNotNull(field);
-            Assert.assertEquals(keys[i], field.get(KEY).asString());
-            String displayName = field.get(VALUE).toString().toLowerCase();
-            Assert.assertTrue(displayName.length() > keys[i].length());
-            Assert.assertTrue(displayName.contains(keys[i]));
-        }
-    }
-
-    private void checkProjectIssues(ModelNode boardNode, String project, String[][] issueTable) {
-        List<ModelNode> issues = boardNode.get(PROJECTS, MAIN, project, ISSUES).asList();
-        Assert.assertEquals(issueTable.length, issues.size());
-        for (int i = 0 ; i < issueTable.length ; i++) {
-            List<ModelNode> issuesForState = issues.get(i).asList();
-            Assert.assertEquals(issueTable[i].length, issuesForState.size());
-            for (int j = 0 ; j < issueTable[i].length ; j++) {
-                Assert.assertEquals(issueTable[i][j], issuesForState.get(j).asString());
+        Map<Class<? extends BoardDataChecker>, BoardDataChecker> checkerMap = new HashMap<>();
+        checkerMap.put(BoardAssigneeChecker.class, BoardAssigneeChecker.NONE);
+        checkerMap.put(BoardComponentsChecker.class, BoardComponentsChecker.NONE);
+        checkerMap.put(BoardLabelsChecker.class, BoardLabelsChecker.NONE);
+        checkerMap.put(BoardFixVersionsChecker.class, BoardFixVersionsChecker.NONE);
+        checkerMap.put(BoardTesterChecker.class, BoardTesterChecker.NONE);
+        checkerMap.put(BoardDocumenterChecker.class, BoardDocumenterChecker.NONE);
+        checkerMap.put(BoardBlacklistChecker.class, BoardBlacklistChecker.NONE);
+        boolean hasCustom = false;
+        for (BoardDataChecker checker : checkers) {
+            if (checker.getClass() == BoardTesterChecker.class && checker != BoardTesterChecker.NONE) {
+                hasCustom = true;
             }
+            checkerMap.put(checker.getClass(), checker);
         }
+        if (!hasCustom) {
+            Assert.assertFalse(boardNode.hasDefined(CUSTOM));
+        }
+        for (BoardDataChecker checker : checkerMap.values()) {
+            checker.check(boardNode);
+        }
+
+        return boardNode;
     }
 
     private void checkProjectRankedIssues(ModelNode boardNode, String projectCode, int...issueNumbers) {
@@ -1938,30 +2275,6 @@ public class BoardManagerTest extends AbstractBoardTest {
             Assert.assertEquals(projectCode + "-" + issueNumbers[i], ranked.get(i).asString());
         }
     }
-
-    private void checkUsers(ModelNode board, String...users) {
-        checkUsers(board.get(ASSIGNEES), true, users);
-    }
-
-    private void checkUsers(ModelNode userList, boolean avatar, String...users) {
-        List<ModelNode> assignees = userList.asList();
-        Assert.assertEquals(assignees.size(), users.length);
-        for (int i = 0 ; i < users.length ; i++) {
-            ModelNode assignee = assignees.get(i);
-            Assert.assertNotNull(assignee);
-            Assert.assertEquals(users[i] + "@example.com", assignee.get(EMAIL).asString());
-            if (avatar) {
-                Assert.assertEquals("/avatars/" + users[i] + ".png", assignee.get(AVATAR).asString());
-            } else {
-                Assert.assertFalse(assignee.get(AVATAR).isDefined());
-            }
-
-            String displayName = assignee.get("name").toString().toLowerCase();
-            Assert.assertTrue(displayName.length() > users[i].length());
-            Assert.assertTrue(displayName.contains(users[i]));
-        }
-    }
-
 
     private void checkNameAndIcon(ModelNode board, String type, String...names) {
         List<ModelNode> entries = board.get(type).asList();
@@ -1980,7 +2293,7 @@ public class BoardManagerTest extends AbstractBoardTest {
     }
 
     private void checkIssue(ModelNode issues, String key, IssueType type, Priority priority, String summary,
-                            int[] components, int state, int assignee, IssueChecker... issueCheckers) {
+                            int state, IssueChecker... issueCheckers) {
         ModelNode issue = issues.get(key);
         Assert.assertNotNull(issue);
         Assert.assertEquals(key, issue.get(KEY).asString());
@@ -1988,95 +2301,68 @@ public class BoardManagerTest extends AbstractBoardTest {
         Assert.assertEquals(priority.index, issue.get(PRIORITY).asInt());
         Assert.assertEquals(summary, issue.get(SUMMARY).asString());
         Assert.assertEquals(state, issue.get(STATE).asInt());
-        if (assignee < 0) {
-            Assert.assertFalse(issue.hasDefined(ASSIGNEE));
-        } else {
-            Assert.assertEquals(assignee, issue.get(ASSIGNEE).asInt());
-        }
-        if (components == null) {
-            Assert.assertFalse(issue.hasDefined(COMPONENTS));
-        } else {
-            List<ModelNode> componentsNodes = issue.get(COMPONENTS).asList();
-            Assert.assertEquals(components.length, componentsNodes.size());
-            for (int i = 0 ; i < components.length ; i++) {
-                Assert.assertEquals(components[i], componentsNodes.get(i).asInt());
-            }
-        }
-        for (IssueChecker issueChecker : issueCheckers) {
-            issueChecker.check(issue);
-        }
-    }
 
-    private void checkBlacklist(ModelNode boardNode, String[] states, String[] issueTypes, String[] priorities, String... issues) {
-        Assert.assertTrue(boardNode.hasDefined(BLACKLIST));
-        ModelNode blacklist = boardNode.get(BLACKLIST);
-        checkBlacklistEntry(blacklist, STATES, states);
-        checkBlacklistEntry(blacklist, ISSUE_TYPES, issueTypes);
-        checkBlacklistEntry(blacklist, PRIORITIES, priorities);
-        checkBlacklistEntry(blacklist, ISSUES, issues);
-    }
-
-    private void checkBlacklistEntry(ModelNode blacklist, String key, String[] entries) {
-        if (entries == null || entries.length == 0) {
-            Assert.assertFalse(blacklist.hasDefined(key));
-        } else {
-            List<ModelNode> entryList = blacklist.get(key).asList();
-            Assert.assertEquals(entries.length, entryList.size());
-            Set<String> expectedSet = new HashSet<>(Arrays.asList(entries));
-            for (ModelNode entry : entryList) {
-                Assert.assertTrue(expectedSet.contains(entry.asString()));
-            }
+        //Assume that we should check for no data for each field, unless we have passed it in in the issueCheckers list
+        Map<Class<? extends IssueChecker>, IssueChecker> checkerMap = new HashMap<>();
+        checkerMap.put(AssigneeChecker.class, AssigneeChecker.NONE);
+        checkerMap.put(ComponentsChecker.class, ComponentsChecker.NONE);
+        checkerMap.put(LabelsChecker.class, LabelsChecker.NONE);
+        checkerMap.put(FixVersionsChecker.class, FixVersionsChecker.NONE);
+        checkerMap.put(TesterChecker.class, TesterChecker.NONE);
+        checkerMap.put(DocumenterChecker.class, DocumenterChecker.NONE);
+        checkerMap.put(ParallelTaskFieldValueChecker.class, ParallelTaskFieldValueChecker.NONE);
+        for (IssueChecker checker : issueCheckers) {
+            checkerMap.put(checker.getClass(), checker);
         }
-    }
 
-    private void checkComponents(ModelNode boardNode, String...componentNames) {
-        if (componentNames.length == 0) {
-            Assert.assertFalse(boardNode.hasDefined(COMPONENTS));
-        } else {
-            List<ModelNode> components = boardNode.get(COMPONENTS).asList();
-            for (int i = 0; i < componentNames.length; i++) {
-                Assert.assertEquals(componentNames[i], components.get(i).asString());
-            }
+        //Now run each checker
+        for (IssueChecker checker : checkerMap.values()) {
+            checker.check(issue);
         }
-    }
-
-    private void checkNoBlacklist(ModelNode boardNode) {
-        Assert.assertFalse(boardNode.has(BLACKLIST));
     }
 
     private static class DefaultIssueCustomFieldChecker implements IssueChecker {
         private final String fieldName;
         private final int id;
 
-        public DefaultIssueCustomFieldChecker(String fieldName, int id) {
+        DefaultIssueCustomFieldChecker(String fieldName, int id) {
             this.fieldName = fieldName;
             this.id = id;
         }
 
         @Override
         public void check(ModelNode issue) {
-            Assert.assertTrue(issue.hasDefined(CUSTOM, fieldName));
-            Assert.assertEquals(id, issue.get(CUSTOM, fieldName).asInt());
+            if (id < 0) {
+                Assert.assertFalse(issue.hasDefined(CUSTOM, fieldName));
+            } else {
+                Assert.assertTrue(issue.hasDefined(CUSTOM, fieldName));
+                Assert.assertEquals(id, issue.get(CUSTOM, fieldName).asInt());
+            }
         }
     }
 
     private static class TesterChecker extends DefaultIssueCustomFieldChecker {
-        public TesterChecker(int testerId) {
+        static final TesterChecker NONE = new TesterChecker(-1);
+
+        TesterChecker(int testerId) {
             super("Tester", testerId);
         }
     }
 
     private static class DocumenterChecker extends DefaultIssueCustomFieldChecker {
-        public DocumenterChecker(int documenterId) {
+        static final DocumenterChecker NONE = new DocumenterChecker(-1);
+
+        DocumenterChecker(int documenterId) {
             super("Documenter", documenterId);
         }
     }
 
     private static class ParallelTaskFieldValueChecker implements IssueChecker {
+        static final ParallelTaskFieldValueChecker NONE = new ParallelTaskFieldValueChecker(null);
 
         private int[] expected;
 
-        public ParallelTaskFieldValueChecker(int...expected) {
+        ParallelTaskFieldValueChecker(int...expected) {
             this.expected = expected;
         }
 
@@ -2093,5 +2379,254 @@ public class BoardManagerTest extends AbstractBoardTest {
                 }
             }
         }
+    }
+
+    private static class AssigneeChecker implements IssueChecker {
+        static final AssigneeChecker NONE = new AssigneeChecker(-1);
+        private int expected;
+
+        AssigneeChecker(int expected) {
+            this.expected = expected;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            if (expected < 0) {
+                Assert.assertFalse(issue.hasDefined(ASSIGNEE));
+            } else {
+                Assert.assertEquals(expected, issue.get(ASSIGNEE).asInt());
+            }
+
+        }
+    }
+
+    private static abstract class MultiSelectNameOnlyChecker implements IssueChecker {
+        private final String name;
+        private int[] expected;
+
+        MultiSelectNameOnlyChecker(String name, int[] expected) {
+            this.name = name;
+            this.expected = expected;
+        }
+
+        @Override
+        public void check(ModelNode issue) {
+            if (expected == null) {
+                Assert.assertFalse(issue.hasDefined(name));
+            } else {
+                List<ModelNode> componentsNodes = issue.get(name).asList();
+                Assert.assertEquals(expected.length, componentsNodes.size());
+                for (int i = 0 ; i < expected.length ; i++) {
+                    Assert.assertEquals(expected[i], componentsNodes.get(i).asInt());
+                }
+            }
+        }
+    }
+
+    private static class ComponentsChecker extends MultiSelectNameOnlyChecker {
+        static final ComponentsChecker NONE = new ComponentsChecker(null);
+
+        ComponentsChecker(int...expected) {
+            super(COMPONENTS, expected);
+        }
+    }
+
+    private static class LabelsChecker extends MultiSelectNameOnlyChecker {
+        static final LabelsChecker NONE = new LabelsChecker(null);
+
+        LabelsChecker(int...expected) {
+            super(LABELS, expected);
+        }
+    }
+
+    private static class FixVersionsChecker extends MultiSelectNameOnlyChecker {
+        static final FixVersionsChecker NONE = new FixVersionsChecker(null);
+
+        FixVersionsChecker(int...expected) {
+            super(FIX_VERSIONS, expected);
+        }
+    }
+
+    private interface BoardDataChecker {
+        void check(ModelNode board);
+    }
+
+    private static class BoardAssigneeChecker implements BoardDataChecker {
+        static final BoardAssigneeChecker NONE = new BoardAssigneeChecker();
+        private final String[] assignees;
+
+        BoardAssigneeChecker(String...assignees) {
+            this.assignees = assignees;
+        }
+
+        @Override
+        public void check(ModelNode board) {
+            List<ModelNode> assigneesList = board.get(ASSIGNEES).asList();
+            Assert.assertEquals(assigneesList.size(), assignees.length);
+            for (int i = 0 ; i < assignees.length ; i++) {
+                ModelNode assignee = assigneesList.get(i);
+                Assert.assertNotNull(assignee);
+                Assert.assertEquals(assignees[i] + "@example.com", assignee.get(EMAIL).asString());
+                Assert.assertEquals("/avatars/" + assignees[i] + ".png", assignee.get(AVATAR).asString());
+
+                String displayName = assignee.get("name").toString().toLowerCase();
+                Assert.assertTrue(displayName.length() > assignees[i].length());
+                Assert.assertTrue(displayName.contains(assignees[i]));
+            }
+        }
+    }
+
+    private static abstract class BoardMultiSelectNameOnlyValueChecker implements BoardDataChecker {
+        private final String name;
+        private final String[] valueNames;
+
+        BoardMultiSelectNameOnlyValueChecker(String name, String...valueNames) {
+            this.name = name;
+            this.valueNames = valueNames;
+        }
+
+        @Override
+        public void check(ModelNode board) {
+            if (valueNames.length == 0) {
+                Assert.assertFalse(board.hasDefined(name));
+            } else {
+                List<ModelNode> values = board.get(name).asList();
+                for (int i = 0; i < valueNames.length; i++) {
+                    Assert.assertEquals(valueNames[i], values.get(i).asString());
+                }
+            }
+
+        }
+    }
+
+    private static class BoardComponentsChecker extends BoardMultiSelectNameOnlyValueChecker {
+        static final BoardComponentsChecker NONE = new BoardComponentsChecker();
+
+        BoardComponentsChecker(String...componentNames) {
+            super(COMPONENTS, componentNames);
+        }
+    }
+
+    private static class BoardLabelsChecker extends BoardMultiSelectNameOnlyValueChecker {
+        static final BoardLabelsChecker NONE = new BoardLabelsChecker();
+
+        BoardLabelsChecker(String...labelNames) {
+            super(LABELS, labelNames);
+        }
+    }
+
+    private static class BoardFixVersionsChecker extends BoardMultiSelectNameOnlyValueChecker {
+        static final BoardFixVersionsChecker NONE = new BoardFixVersionsChecker();
+
+        BoardFixVersionsChecker(String... fixVersionNames) {
+            super(FIX_VERSIONS, fixVersionNames);
+        }
+    }
+
+    private static abstract class BoardCustomFieldChecker implements BoardDataChecker {
+        private final String customFieldName;
+        private final String[] keys;
+
+        public BoardCustomFieldChecker(String customFieldName, String[] keys) {
+            this.customFieldName = customFieldName;
+            this.keys = keys;
+        }
+
+        @Override
+        public void check(ModelNode board) {
+            if (keys.length == 0) {
+                Assert.assertFalse(board.hasDefined(CUSTOM, customFieldName));
+            } else {
+
+                List<ModelNode> fields = board.get(CUSTOM, customFieldName).asList();
+                Assert.assertEquals(fields.size(), keys.length);
+                for (int i = 0 ; i < keys.length ; i++) {
+                    ModelNode field = fields.get(i);
+                    Assert.assertNotNull(field);
+                    Assert.assertEquals(keys[i], field.get(KEY).asString());
+                    String displayName = field.get(VALUE).toString().toLowerCase();
+                    Assert.assertTrue(displayName.length() > keys[i].length());
+                    Assert.assertTrue(displayName.contains(keys[i]));
+                }
+            }
+
+        }
+    }
+
+    private static class BoardTesterChecker extends BoardCustomFieldChecker {
+        static final BoardTesterChecker NONE = new BoardTesterChecker();
+
+        public BoardTesterChecker(String... keys) {
+            super("Tester", keys);
+        }
+    }
+
+    private static class BoardDocumenterChecker extends BoardCustomFieldChecker {
+        static final BoardDocumenterChecker NONE = new BoardDocumenterChecker();
+
+        public BoardDocumenterChecker(String... keys) {
+            super("Documenter", keys);
+        }
+    }
+
+    private static class BoardBlacklistChecker implements BoardDataChecker {
+        static final BoardBlacklistChecker NONE = new BoardBlacklistChecker();
+        String[] states;
+        String[] issueTypes;
+        String[] priorities;
+        String[] issueKeys;
+
+        BoardBlacklistChecker states(String... states) {
+            this.states = states;
+            return this;
+        }
+
+        BoardBlacklistChecker types(String... issueTypes) {
+            this.issueTypes = issueTypes;
+            return this;
+        }
+
+        BoardBlacklistChecker priorities(String... priorities) {
+            this.priorities = priorities;
+            return this;
+        }
+
+        BoardBlacklistChecker keys(String... issueKeys) {
+            this.issueKeys = issueKeys;
+            return this;
+        }
+
+        @Override
+        public void check(ModelNode board) {
+            String[] states = emptyIfNull(this.states);
+            String[] issueTypes = emptyIfNull(this.issueTypes);
+            String[] priorities = emptyIfNull(this.priorities);
+            String[] issueKeys = emptyIfNull(this.issueKeys);
+
+            if (states.length == 0 && issueTypes.length == 0 && priorities.length == 0 && issueKeys.length == 0) {
+                Assert.assertFalse(board.has(BLACKLIST));
+            } else {
+                Assert.assertTrue(board.hasDefined(BLACKLIST));
+                ModelNode blacklist = board.get(BLACKLIST);
+                checkBlacklistEntry(blacklist, STATES, states);
+                checkBlacklistEntry(blacklist, ISSUE_TYPES, issueTypes);
+                checkBlacklistEntry(blacklist, PRIORITIES, priorities);
+                checkBlacklistEntry(blacklist, ISSUES, issueKeys);
+            }
+        }
+
+        private void checkBlacklistEntry(ModelNode blacklist, String key, String[] entries) {
+            if (entries == null || entries.length == 0) {
+                Assert.assertFalse(blacklist.hasDefined(key));
+            } else {
+                List<ModelNode> entryList = blacklist.get(key).asList();
+                Assert.assertEquals(entries.length, entryList.size());
+                Set<String> expectedSet = new HashSet<>(Arrays.asList(entries));
+                for (ModelNode entry : entryList) {
+                    Assert.assertTrue(expectedSet.contains(entry.asString()));
+                }
+            }
+        }
+
     }
 }

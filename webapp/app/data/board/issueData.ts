@@ -4,10 +4,10 @@ import {Priority} from "./priority";
 import {IssueType} from "./issueType";
 import {BoardProject, Project} from "./project";
 import {IssueUpdate, IssueAdd} from "./change";
-import {JiraComponent} from "./component";
+import {JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 import {Indexed} from "../../common/indexed";
 import {CustomFieldValue} from "./customField";
-import {IMap} from "../../common/map";
+import {IMap, IMapUtil} from "../../common/map";
 import {Subject, Observable} from "rxjs/Rx";
 import {ParallelTask} from "./parallelTask";
 import {BoardFilters} from "./boardFilters";
@@ -20,6 +20,8 @@ export class IssueData {
     private _summary:string;
     private _assignee:Assignee;
     private _components:Indexed<JiraComponent>;
+    private _labels:Indexed<JiraLabel>
+    private _fixVersions:Indexed<JiraFixVersion>
     private _priority:Priority;
     private _type:IssueType;
     private _customFields:IMap<CustomFieldValue>;
@@ -39,7 +41,9 @@ export class IssueData {
     private _issueChangedSubject:Subject<void> = new Subject<void>();
 
     constructor(boardData:BoardData, key:string, projectCode:string, colour:string, summary:string,
-                assignee:Assignee,  components:Indexed<JiraComponent>, priority:Priority, type:IssueType, statusIndex:number,
+                assignee:Assignee,  components:Indexed<JiraComponent>,
+                labels:Indexed<JiraLabel>, fixVersions:Indexed<JiraFixVersion>,
+                priority:Priority, type:IssueType, statusIndex:number,
                 linked:IssueData[], customFields:IMap<CustomFieldValue>, parallelTaskOptions:Indexed<string>) {
         this._boardData = boardData;
         this._key = key;
@@ -48,6 +52,8 @@ export class IssueData {
         this._summary = summary;
         this._assignee = assignee;
         this._components = components;
+        this._labels = labels;
+        this._fixVersions = fixVersions;
         this._priority = priority;
         this._type = type;
         this._colour = colour;
@@ -66,11 +72,29 @@ export class IssueData {
         let type:IssueType = boardData.issueTypes.forIndex(input.type);
 
         let components:Indexed<JiraComponent>;
-        if (input.components) {
-            components = new Indexed<JiraComponent>()
-            for (let componentIndex of input.components) {
-                let component:JiraComponent =boardData.components.forIndex(componentIndex);
+        if (input["components"]) {
+            components = new Indexed<JiraComponent>();
+            for (let index of input["components"]) {
+                let component:JiraComponent = boardData.components.forIndex(index);
                 components.add(component.name, component);
+            }
+        }
+
+        let labels:Indexed<JiraLabel>;
+        if (input["labels"]) {
+            labels = new Indexed<JiraLabel>();
+            for (let index of input["labels"]) {
+                let label:JiraLabel = boardData.labels.forIndex(index);
+                labels.add(label.name, label);
+            }
+        }
+
+        let fixVersions:Indexed<JiraFixVersion>;
+        if (input["fix-versions"]) {
+            fixVersions = new Indexed<JiraFixVersion>();
+            for (let index of input["fix-versions"]) {
+                let fixVersion:JiraFixVersion = boardData.fixVersions.forIndex(index);
+                fixVersions.add(fixVersion.name, fixVersion);
             }
         }
 
@@ -104,7 +128,8 @@ export class IssueData {
             parallelTaskOptions = IssueData.deserializeParallelTasksArray(project, parallelTasksInput);
         }
 
-        return new IssueData(boardData, key, projectCode, colour, summary, assignee, components, priority,
+        return new IssueData(boardData, key, projectCode, colour, summary,
+            assignee, components, labels, fixVersions, priority,
             type, statusIndex, linked, customFieldValues, parallelTaskOptions);
     }
 
@@ -130,6 +155,24 @@ export class IssueData {
             }
         }
 
+        let labels:Indexed<JiraLabel>;
+        if (add.labels) {
+            labels = new Indexed<JiraLabel>();
+            for (let name of add.labels) {
+                let label:JiraLabel = boardData.labels.forKey(name);
+                labels.add(label.name, label);
+            }
+        }
+
+        let fixVersions:Indexed<JiraFixVersion>;
+        if (add.fixVersions) {
+            fixVersions = new Indexed<JiraFixVersion>();
+            for (let name of add.fixVersions) {
+                let fixVersion:JiraFixVersion = boardData.fixVersions.forKey(name);
+                fixVersions.add(fixVersion.name, fixVersion);
+            }
+        }
+
         let linked:IssueData[];//This does not get set from the events
 
         let customFieldValues:IMap<CustomFieldValue> = {};
@@ -143,7 +186,8 @@ export class IssueData {
         let parallelTaskOptions:Indexed<string> = IssueData.deserializeParallelTasksArray(project, add.parallelTaskValues);
 
         return new IssueData(boardData, add.key, projectCode, colour, add.summary, assignee,
-            components, priority, type, statusIndex, linked, customFieldValues, parallelTaskOptions);
+            components, labels, fixVersions, priority, type, statusIndex,
+            linked, customFieldValues, parallelTaskOptions);
     }
 
     private static deserializeParallelTasksArray(project:BoardProject, parallelTasksInput: number[]):Indexed<string> {
@@ -192,6 +236,14 @@ export class IssueData {
 
     get components():Indexed<JiraComponent> {
         return this._components;
+    }
+
+    get labels(): Indexed<JiraLabel> {
+        return this._labels;
+    }
+
+    get fixVersions(): Indexed<JiraFixVersion> {
+        return this._fixVersions;
     }
 
     get priority():Priority {
@@ -344,6 +396,7 @@ export class IssueData {
         } else if (update.assignee) {
             this._assignee = this.boardData.assignees.forKey(update.assignee);
         }
+
         if (update.clearedComponents) {
             this._components = null;
         } else if (update.components) {
@@ -351,6 +404,26 @@ export class IssueData {
             for (let name of update.components) {
                 let component:JiraComponent = this.boardData.components.forKey(name);
                 this._components.add(component.name, component);
+            }
+        }
+
+        if (update.clearedLabels) {
+            this._labels = null;
+        } else if (update.labels) {
+            this._labels = new Indexed<JiraLabel>();
+            for (let name of update.labels) {
+                let label:JiraLabel = this.boardData.labels.forKey(name);
+                this._labels.add(label.name, label);
+            }
+        }
+
+        if (update.clearedFixVersions) {
+            this._fixVersions = null;
+        } else if (update.fixVersions) {
+            this._fixVersions = new Indexed<JiraFixVersion>();
+            for (let name of update.fixVersions) {
+                let fixVersion:JiraFixVersion = this.boardData.fixVersions.forKey(name);
+                this._fixVersions.add(fixVersion.name, fixVersion);
             }
         }
 
@@ -378,6 +451,10 @@ export class IssueData {
         }
 
         this._issueChangedSubject.next(null);
+    }
+
+    get customFieldNames():string[] {
+        return IMapUtil.getSortedKeys(this._customFields);
     }
 
     getCustomFieldValue(name:string):CustomFieldValue {
