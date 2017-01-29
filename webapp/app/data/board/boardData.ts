@@ -78,6 +78,8 @@ export class BoardData {
     private _helpTexts:IMap<string> = {};
 
     private _parallelTasks: Indexed<ParallelTask>;
+
+    private _issueDisplayDetailsSubject:Subject<IssueDisplayDetails> = new Subject<IssueDisplayDetails>();
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -402,6 +404,10 @@ export class BoardData {
         return this._parallelTasks;
     }
 
+    get issueDisplayDetailsObservable(): Observable<IssueDisplayDetails> {
+        return this._issueDisplayDetailsSubject;
+    }
+
     getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
         let values:CustomFieldValues = this._customFields.forKey(name);
         if (values) {
@@ -424,6 +430,7 @@ export class BoardData {
 
     updateIssueDetail(assignee:boolean, description:boolean, info:boolean, linked:boolean) {
         this._issueDisplayDetails = new IssueDisplayDetails(assignee, description, info, linked);
+        this._issueDisplayDetailsSubject.next(this._issueDisplayDetails);
     }
 
     updateFilters(projectFilter:any, priorityFilter:any, issueTypeFilter:any, assigneeFilter:any, componentFilter:any,

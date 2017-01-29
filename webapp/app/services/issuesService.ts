@@ -25,7 +25,7 @@ export class IssuesService {
 
     private _destroyed:boolean = false;
 
-    private _defaultPollInterval:number = 30000;
+    private _defaultPollInterval:number = 30000/3;
 
     private _visible:boolean = true;
 

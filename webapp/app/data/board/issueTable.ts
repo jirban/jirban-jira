@@ -134,13 +134,15 @@ export class IssueTable {
         //Now do the actual application of the updates
         if (changeSet.issueUpdates) {
             for (let update of changeSet.issueUpdates) {
-                let issue = this._allIssues.forKey(update.key);
+                let issueIndex = this._allIssues.indexOf(update.key);
+                let issue = this._allIssues.array[issueIndex];
                 if (!issue) {
                     console.log("Could not find issue to update " + update.key);
                     continue;
                 }
-                issue.applyUpdate(update);
-                issue.filterIssue(this._filters);
+                let newIssue:IssueData = issue.applyUpdate(update);
+                newIssue.filterIssue(this._filters);
+                this._allIssues.array[issueIndex] = newIssue;
             }
         }
         //Add all the created issues
