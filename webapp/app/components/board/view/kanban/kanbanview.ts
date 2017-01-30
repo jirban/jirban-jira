@@ -1,16 +1,16 @@
 import {Component} from "@angular/core";
 import {BoardData} from "../../../../data/board/boardData";
-import {ProgressErrorService} from "../../../../services/progressErrorService";
 import {AppHeaderService} from "../../../../services/appHeaderService";
 import {BoardHeaderEntry, State} from "../../../../data/board/header";
 import {CharArrayRegistry} from "../../../../common/charArrayRegistry";
 import {FixedHeaderView} from "../fixedHeaderView";
 import {IssuesService} from "../../../../services/issuesService";
+import {AbbreviatedHeaderRegistry} from "../../../../common/abbreviatedStateNameRegistry";
 
 
 @Component({
     selector: 'kanban-view',
-    inputs: ["boardCode", "issuesService", "boardData"],
+    inputs: ["boardCode", "issuesService", "boardData", "abbreviatedHeaderRegistry"],
     outputs: ["showIssueContextMenu", "showParallelTaskMenu"],
     templateUrl: './kanbanview.html',
     styleUrls: ['./kanbanview.css']
@@ -20,9 +20,8 @@ export class KanbanViewComponent extends FixedHeaderView {
     /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
-    constructor(_progressError:ProgressErrorService,
-                _appHeaderService:AppHeaderService) {
-        super(_progressError, _appHeaderService, "Kanban");
+    constructor(_appHeaderService:AppHeaderService) {
+        super(_appHeaderService, "Kanban");
     }
 
     set issuesService(value:IssuesService) {
@@ -39,6 +38,10 @@ export class KanbanViewComponent extends FixedHeaderView {
 
     get boardData():BoardData {
         return this._boardData;
+    }
+
+    set abbreviatedHeaderRegistry(value:AbbreviatedHeaderRegistry) {
+        super.setAbbreviatedHeaderRegistry(value);
     }
 
     private get visibleColumns():boolean[] {
