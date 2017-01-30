@@ -165,7 +165,7 @@ export class BoardComponent implements OnDestroy {
         if (index >= 0) {
             url = url.substr(0, index);
         }
-        url = this.boardData.createQueryStringParticeles(url);
+        url = this.boardData.createQueryStringParticles(url);
         if (this.view != VIEW_KANBAN) {
             url += "&view=" + this.view;
         }

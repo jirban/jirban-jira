@@ -23,8 +23,18 @@ export class SwimlaneData {
         this._visible = !this._visible;
     }
 
-    get visible() {
+    get visible():boolean {
         return this._visible;
+    }
+
+    get displayEntry():boolean {
+        if (this.filtered) {
+            return false;
+        }
+        if (this._empty && this.boardData.hideEmptySwimlanes) {
+            return false;
+        }
+        return true;
     }
 
     set visible(visible:boolean) {

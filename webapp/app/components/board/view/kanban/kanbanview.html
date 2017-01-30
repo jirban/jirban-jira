@@ -147,7 +147,7 @@
                 <tbody *ngIf="boardData.swimlane"  [style.height]="boardBodyHeight">
                 <div *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index">
                     <swimlane-entry
-                            *ngIf="!swimlane.filtered"
+                            *ngIf="swimlane.displayEntry"
                             [boardData]="boardData"
                             [swimlaneIndex]="swimlaneIndex"
                             [swimlane]="swimlane"

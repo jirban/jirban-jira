@@ -14,7 +14,7 @@ import {IMap} from "../../../common/map";
 import "rxjs/add/operator/debounceTime";
 import {CustomFieldValues} from "../../../data/board/customField";
 import {VIEW_KANBAN} from "../../../common/constants";
-import {FormGroup, FormControl, AbstractControl} from "@angular/forms";
+import {FormGroup, FormControl} from "@angular/forms";
 import {Indexed} from "../../../common/indexed";
 import {ParallelTask} from "../../../data/board/parallelTask";
 import {FilterControlAction} from "./filterControl/filterControl";
@@ -367,6 +367,14 @@ export class ControlPanelComponent {
         }
     }
 
+    get swimlaneSelected():string {
+        return this.boardData.swimlane;
+    }
+
+    private get hideEmptySwimlanes() {
+        return this.boardData.hideEmptySwimlanes;
+    }
+
     private get priorities():Priority[] {
         return this.boardData.priorities.array;
     }
@@ -517,27 +525,15 @@ export class ControlPanelComponent {
         this.filtersToDisplay = filter;
     }
 
-    private grabInitialFormValues(form:FormGroup):any {
-        let values:any = {};
-
-        for (let key in form.controls) {
-            let ac:AbstractControl = form.controls[key];
-            if (ac instanceof FormControl) {
-                values[key] = ac.value;
-            } else {
-                values[key] = this.grabInitialFormValues(<FormGroup>ac);
-            }
-        }
-
-        return values;
+    private onToggleShowEmptySwimlanes(event:MouseEvent) {
+        event.preventDefault();
+        this.boardData.hideEmptySwimlanes = !this.boardData.hideEmptySwimlanes;
+        this.updateLinkUrl();
     }
-
 
     private updateLinkUrl() {
         this.filtersUpdated.emit({});
     }
-
-
 
     private getFilterLinkClass(filterName:string) {
         let clazz:string = "filter";
@@ -574,6 +570,8 @@ export class ControlPanelComponent {
     private get showSwimlane():boolean {
         return this.view == VIEW_KANBAN;
     }
+
+
 
     private isDirty(...keys:string[]):boolean{
         let formGroup:FormGroup = this._controlForm;

@@ -81,6 +81,8 @@ export class BoardData {
     private _parallelTasks: Indexed<ParallelTask>;
 
     private _issueDisplayDetailsSubject:Subject<IssueDisplayDetails> = new Subject<IssueDisplayDetails>();
+
+    private _hideEmptySwimlanes:boolean = true;
     /**
      * Called on loading the board the first time
      * @param input the json containing the issue tables
@@ -409,6 +411,14 @@ export class BoardData {
         return this._issueDisplayDetailsSubject;
     }
 
+    get hideEmptySwimlanes(): boolean {
+        return this._hideEmptySwimlanes;
+    }
+
+    set hideEmptySwimlanes(value: boolean) {
+        this._hideEmptySwimlanes = value;
+    }
+
     getCustomFieldValueForIndex(name:string, index:number):CustomFieldValue {
         let values:CustomFieldValues = this._customFields.forKey(name);
         if (values) {
@@ -520,6 +530,12 @@ export class BoardData {
             this._issueTable.setSwimlaneVisibilitiesFromQueryParams(queryParams);
         }
 
+        if (queryParams["showEmptySl"]) {
+            let showEmptySwimlanes:any = queryParams["showEmptySl"];
+            this.hideEmptySwimlanes = showEmptySwimlanes === "true" || showEmptySwimlanes === true ?
+                false : true;
+        }
+
         this._headers.setVisibilitiesFromQueryParams(queryParams);
     }
 
@@ -547,7 +563,7 @@ export class BoardData {
         return new IssueDisplayDetails();
     }
 
-    createQueryStringParticeles(url:string):string{
+    createQueryStringParticles(url:string):string{
         url = url + "?board=" + this.code;
 
         if (this.showBacklog) {
@@ -558,6 +574,10 @@ export class BoardData {
         url += this.filters.createQueryStringParticles();
         url += this.headers.createQueryStringParticle();
         url += this._issueTable.createQueryStringParticle();
+
+        if (!this.hideEmptySwimlanes) {
+            url += "&showEmptySl=true";
+        }
         return url;
     }
 
