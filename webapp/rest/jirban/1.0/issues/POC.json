@@ -78,7 +78,16 @@
     {
       "name" : "Epic",
       "icon" : "/images/icons/issuetypes/epic.png"
+    },
+    {
+      "name" : "Empty",
+      "icon" : "/images/icons/issuetypes/epic.png"
+    },
+    {
+      "name" : "Empty2",
+      "icon" : "/images/icons/issuetypes/epic.png"
     }
+
   ],
   "projects" : {
     "owner" : "EAPDS",

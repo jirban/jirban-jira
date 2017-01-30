@@ -1,12 +1,12 @@
 import {IssuesService} from "../../../services/issuesService";
 import {BoardData} from "../../../data/board/boardData";
 import {OnInit, EventEmitter} from "@angular/core";
-import {ProgressErrorService} from "../../../services/progressErrorService";
 import {AppHeaderService} from "../../../services/appHeaderService";
 import {TOOLBAR_HEIGHT} from "../../../common/constants";
 import {BoardHeaderEntry} from "../../../data/board/header";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
+import {AbbreviatedHeaderRegistry} from "../../../common/abbreviatedStateNameRegistry";
 
 /**
  * Abstract base class for a board containing a fixed header.
@@ -17,6 +17,7 @@ export abstract class FixedHeaderView implements OnInit {
     protected _boardCode: string;
     protected _issuesService: IssuesService;
     protected _boardData: BoardData;
+    protected _abbreviatedHeaderRegistry:AbbreviatedHeaderRegistry;
 
     /** The calculate height of the board body */
     private _boardBodyHeight:string;
@@ -29,8 +30,7 @@ export abstract class FixedHeaderView implements OnInit {
     private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
 
 
-    constructor(private _progressError:ProgressErrorService,
-                private _appHeaderService:AppHeaderService,
+    constructor(private _appHeaderService:AppHeaderService,
                 private _titlePrefix:string) {
     }
 
@@ -52,6 +52,10 @@ export abstract class FixedHeaderView implements OnInit {
         this._boardData.registerInitializedCallback(() => {
             this.setWindowSize();
         });
+    }
+
+    protected setAbbreviatedHeaderRegistry(value:AbbreviatedHeaderRegistry) {
+        this._abbreviatedHeaderRegistry = value;
     }
 
     get initialized():boolean {
@@ -76,6 +80,11 @@ export abstract class FixedHeaderView implements OnInit {
     get boardBodyHeight(): string {
         return this._boardBodyHeight;
     }
+
+    private getAbbreviatedHeader(state:string):string {
+        return this._abbreviatedHeaderRegistry.getAbbreviatedHeader(state);
+    }
+
 
     getColourForIndex(index:number) : string {
         let mod:number = index % 5;

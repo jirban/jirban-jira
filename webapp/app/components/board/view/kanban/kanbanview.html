@@ -39,7 +39,7 @@
                             <div *ngIf="backlogTopHeader.visible">
                                 <div>{{backlogTopHeader.name}}</div>
                                 <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
-                                <div>({{backlogTopHeader.totalIssues}})</div>
+                                <div class="issue-count">{{backlogTopHeader.totalIssues}}</div>
                             </div>
                         </th>
                         <!-- The non-backlog headers -->
@@ -53,10 +53,13 @@
                             (click)="toggleHeaderVisibility(header)">
                             <div *ngIf="header.visible">
                                 <div>{{header.name}}</div>
-                                <div [style.color]="header.exceedWip ? '#FF0000' : ''"
-                                    >({{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span>)</div>
+                                <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''"
+                                    >{{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span></div>
                             </div>
-                            <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                            <div *ngIf="!header.visible" title="{{header.name}}">
+                                <div>{{getAbbreviatedHeader(header.name)}}</div>
+                                <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                            </div>
                         </th>
                     </tr>
 
@@ -69,9 +72,12 @@
                             <div *ngIf="header.visible">
                                 <div>{{header.name}}</div>
                                 <!-- Don't worry about wip here, since the server does not allow configuring wip for backlog states -->
-                                <div>({{header.totalIssues}})</div>
+                                <div>{{header.totalIssues}}</div>
                             </div>
-                            <div *ngIf="!header.visible">{{header.totalIssues}}</div>
+                            <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''" title="{{header.name}}">
+                                <div>{{getAbbreviatedHeader(header.name)}}</div>
+                                <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                            </div>
                         </th>
                         <!-- The non-backlog headers -->
                         <th *ngFor="let header of bottomHeaders"
@@ -80,10 +86,13 @@
                             (click)="toggleHeaderVisibility(header)">
                             <div *ngIf="header.visible">
                                 <div>{{header.name}}</div>
-                                <div [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''"
-                                    >({{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span>)</div>
+                                <div class="issue-count" [style.color]="header.visible && header.exceedWip ? '#FF0000' : ''"
+                                    >{{header.totalIssues}}<span *ngIf="header.wip">/{{header.wip}}</span></div>
                             </div>
-                            <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                            <div *ngIf="!header.visible" [style.color]="header.exceedWip ? '#FF0000' : ''" title="{{header.name}}">
+                                <div>{{getAbbreviatedHeader(header.name)}}</div>
+                                <div class="issue-count" [style.color]="header.exceedWip ? '#FF0000' : ''">{{header.totalIssues}}</div>
+                            </div>
                         </th>
                     </tr>
                 </thead>
@@ -115,7 +124,6 @@
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-                                <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
                             </div>
                         </td>
 
@@ -132,21 +140,24 @@
                                 </ul>
                             </div>
                             <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-                                <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
                             </div>
                         </td>
                     </tr>
                 </tbody>
                 <tbody *ngIf="boardData.swimlane"  [style.height]="boardBodyHeight">
-                    <swimlane-entry *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index"
-                                [boardData]="boardData"
-                                [swimlaneIndex]="swimlaneIndex"
-                                [swimlane]="swimlane"
-                                [boardLeftOffset]="boardLeftOffset"
-                                [hidden]="swimlane.filtered"
-                                (showIssueContextMenu)="onShowIssueContextMenu($event)"
-                                (showParallelTaskMenu)="onShowParallelTaskMenu($event)"
-                                (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
+                <div *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index">
+                    <swimlane-entry
+                            *ngIf="swimlane.displayEntry"
+                            [boardData]="boardData"
+                            [swimlaneIndex]="swimlaneIndex"
+                            [swimlane]="swimlane"
+                            [boardLeftOffset]="boardLeftOffset"
+                            [hidden]="swimlane.filtered"
+                            (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                            (showParallelTaskMenu)="onShowParallelTaskMenu($event)"
+                            (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
+
+                </div>
                 </tbody>
             </table>
         </div>

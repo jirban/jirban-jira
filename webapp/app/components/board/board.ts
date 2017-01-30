@@ -6,6 +6,7 @@ import {VIEW_KANBAN, VIEW_RANK} from "../../common/constants";
 import {IssueContextMenuData} from "../../data/board/issueContextMenuData";
 import {ActivatedRoute} from "@angular/router";
 import {ParallelTaskMenuData} from "../../data/board/parallelTaskMenuData";
+import {AbbreviatedHeaderRegistry} from "../../common/abbreviatedStateNameRegistry";
 
 
 /**
@@ -27,6 +28,9 @@ export class BoardComponent implements OnDestroy {
     private _wasBacklogForced:boolean = false;
 
     private linkUrl:string;
+
+    private abbreviatedHeaderRegistry:AbbreviatedHeaderRegistry = new AbbreviatedHeaderRegistry();
+
 
     constructor(private _issuesService:IssuesService,
                 private _boardData:BoardData,
@@ -161,7 +165,7 @@ export class BoardComponent implements OnDestroy {
         if (index >= 0) {
             url = url.substr(0, index);
         }
-        url = this.boardData.createQueryStringParticeles(url);
+        url = this.boardData.createQueryStringParticles(url);
         if (this.view != VIEW_KANBAN) {
             url += "&view=" + this.view;
         }

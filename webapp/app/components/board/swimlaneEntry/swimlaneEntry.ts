@@ -1,8 +1,7 @@
 import {Component, EventEmitter} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
-import {SwimlaneData} from "../../../data/board/issueTable";
+import {SwimlaneData} from "../../../data/board/swimlaneData";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
-import {CharArrayRegistry} from "../../../common/charArrayRegistry";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
 
@@ -28,9 +27,6 @@ export class SwimlaneEntryComponent {
     private showParallelTaskMenu:EventEmitter<ParallelTaskMenuData> = new EventEmitter<ParallelTaskMenuData>();
     private toggleBacklogVisibility:EventEmitter<any> = new EventEmitter();
 
-    /** Cache all the char arrays used for the collapsed column labels so they are not recalculated all the time */
-    private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
-
     constructor() {
     }
 
@@ -45,17 +41,6 @@ export class SwimlaneEntryComponent {
 
     private get boardStates() : State[] {
         return this.boardData.boardStates;
-    }
-
-    private getCharArray(state:string):string[] {
-        let arr:string[] = [];
-        for (let i:number = 0; i < state.length; i++) {
-            let s = state.charAt(i);
-            if (s == " ") {
-            }
-            arr.push(s);
-        }
-        return arr;
     }
 
     private toggleSwimlane(index:number) {

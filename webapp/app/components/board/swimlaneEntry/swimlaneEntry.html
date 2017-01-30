@@ -25,7 +25,6 @@
     <td *ngIf="backlogAndIsCollapsed"
         (click)="toggleBacklog($event)"
         class="collapsed backlog-state-summary backlog-cell">
-        <div class="collapsed backlog-state-summary" *ngFor="let character of getCharArray('Backlog')">{{character}}</div>
     </td>
     <!-- Backlog visible, show all the possible backlog states -->
     <td *ngFor="let state of backlogStatesIfVisible"
@@ -40,7 +39,6 @@
             </ul>
         </div>
         <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-            <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
         </div>
 
     </td>
@@ -58,13 +56,12 @@
             </ul>
         </div>
         <div class="state-summary" *ngIf="!visibleColumns[state.index]">
-            <div class="state-summary" *ngFor="let character of getCharArray(state.name)">{{character}}</div>
         </div>
 
     </td>
 </tr>
 <!--
-    This is just an empty row for layout purposes, its width shold be the same as the table,
+    This is just an empty row for layout purposes, its width should be the same as the table,
     so use the same logic to select the css classes as above. The reason for this is that
     angular wraps the output for this component in an extra <tbody> tag, so we need to size it ourselves.
 -->

@@ -1,7 +1,6 @@
 import {Component} from "@angular/core";
 import {IssuesService} from "../../../../services/issuesService";
 import {BoardData} from "../../../../data/board/boardData";
-import {ProgressErrorService} from "../../../../services/progressErrorService";
 import {AppHeaderService} from "../../../../services/appHeaderService";
 import {BoardHeaderEntry, State} from "../../../../data/board/header";
 import {AbbreviatedHeaderRegistry} from "../../../../common/abbreviatedStateNameRegistry";
@@ -11,19 +10,17 @@ import {FixedHeaderView} from "../fixedHeaderView";
 
 @Component({
     selector: 'rank-view',
-    inputs: ["boardCode", "issuesService", "boardData"],
+    inputs: ["boardCode", "issuesService", "boardData", "abbreviatedHeaderRegistry"],
     outputs: ["showIssueContextMenu", "showParallelTaskMenu"],
     templateUrl: './rankview.html',
     styleUrls: ['./rankview.css']
 })
 export class RankViewComponent extends FixedHeaderView {
 
-    private _abbreviatedHeaderRegistry:AbbreviatedHeaderRegistry = new AbbreviatedHeaderRegistry();
     private _mainStates:State[];
 
-    constructor(_progressError:ProgressErrorService,
-                _appHeaderService:AppHeaderService) {
-        super(_progressError, _appHeaderService, "Rank");
+    constructor(_appHeaderService:AppHeaderService) {
+        super(_appHeaderService, "Rank");
     }
 
     set issuesService(value:IssuesService) {
@@ -38,8 +35,8 @@ export class RankViewComponent extends FixedHeaderView {
         super.setBoardData(value);
     }
 
-    private getAbbreviatedHeader(state:string):string {
-        return this._abbreviatedHeaderRegistry.getAbbreviatedHeader(state);
+    set abbreviatedHeaderRegistry(value:AbbreviatedHeaderRegistry) {
+        super.setAbbreviatedHeaderRegistry(value);
     }
 
     get boardData():BoardData {

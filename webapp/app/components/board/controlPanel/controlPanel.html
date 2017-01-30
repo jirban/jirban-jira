@@ -32,7 +32,12 @@
                 </div>
             </div>
             <div class="setting top-space" *ngIf="showSwimlane">
-                <div class="setting-header clickable" (click)="clearSwimlane($event)" title="Clear swimlane">Swimlane</div>
+                <div class="setting-header clickable">
+                    <span (click)="clearSwimlane($event)" title="Clear swimlane">Swimlane</span>
+                    <a href="{{hideEmptySwimlanes ? 'Show' : 'Hide'}} Empty"
+                       class="toggle-empty-swimlane" *ngIf="swimlaneSelected"
+                       (click)="onToggleShowEmptySwimlanes($event)">[{{hideEmptySwimlanes ? 'Show' : 'Hide'}} Empty]</a>
+                </div>
                 <div class="setting-content-small">
                     <select formControlName="swimlane" class="setting-input" >
                         <!-- Don't set a value for the undefined one -->

@@ -2,13 +2,13 @@ import {BoardData} from "./boardData";
 import {BoardFilters, NONE} from "./boardFilters";
 import {IssueData} from "./issueData";
 import {IMap} from "../../common/map";
-import {SwimlaneData} from "./issueTable";
+import {SwimlaneData, SwimlaneDataBuilder} from "./swimlaneData";
 import {CustomFieldValues, CustomFieldValue} from "./customField";
 import {Indexed} from "../../common/indexed";
 import {JiraMultiSelectFieldValue, JiraComponent, JiraLabel, JiraFixVersion} from "./multiSelectNameOnlyValue";
 
 export interface SwimlaneIndexer {
-    swimlaneTable : SwimlaneData[];
+    swimlaneBuilderTable : SwimlaneDataBuilder[];
     swimlaneIndex(issue:IssueData):number[];
     filter(swimlaneData:SwimlaneData):boolean;
 }
@@ -48,13 +48,13 @@ export class SwimlaneIndexerFactory {
 }
 
 abstract class BaseIndexer {
-    protected _swimlaneTable:SwimlaneData[];
+    protected _swimlaneTable:SwimlaneDataBuilder[];
     constructor(
         protected _filters:BoardFilters,
         protected _boardData:BoardData) {
     }
 
-    get swimlaneTable():SwimlaneData[] {
+    get swimlaneBuilderTable():SwimlaneDataBuilder[] {
         return this._swimlaneTable;
     }
 }
@@ -181,7 +181,7 @@ abstract class MultiSelectNameOnlyValueIndexer<T extends JiraMultiSelectFieldVal
         }
     }
 
-    get swimlaneTable():SwimlaneData[] {
+    get swimlaneBuilderTable():SwimlaneDataBuilder[] {
         return this._swimlaneTable;
     }
 
@@ -288,10 +288,6 @@ class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer 
         }
     }
 
-    get swimlaneTable():SwimlaneData[] {
-        return this._swimlaneTable;
-    }
-
     swimlaneIndex(issue:IssueData):number[] {
         let customFieldValue:CustomFieldValue = issue.getCustomFieldValue(this._customFieldName);
         if (!customFieldValue) {
@@ -312,11 +308,11 @@ class CustomFieldSwimlaneIndexer extends BaseIndexer implements SwimlaneIndexer 
     }
 }
 
-function createTable(boardData:BoardData, swimlaneNames:string[]) : SwimlaneData[] {
-    let swimlaneTable:SwimlaneData[] = [];
+function createTable(boardData:BoardData, swimlaneNames:string[]) : SwimlaneDataBuilder[] {
+    let swimlaneTable:SwimlaneDataBuilder[] = [];
     let slIndex:number = 0;
     for (let swimlaneName of swimlaneNames) {
-        swimlaneTable.push(new SwimlaneData(boardData, swimlaneName, slIndex++));
+        swimlaneTable.push(new SwimlaneDataBuilder(boardData, swimlaneName, slIndex++));
     }
     return swimlaneTable;
 }

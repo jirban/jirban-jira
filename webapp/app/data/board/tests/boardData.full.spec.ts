@@ -6,7 +6,7 @@ import {Indexed} from "../../../common/indexed";
 import {IssueType} from "./../issueType";
 import {IssueData} from "./../issueData";
 import {JiraMultiSelectFieldValue} from "../multiSelectNameOnlyValue";
-import {SwimlaneData} from "../issueTable";
+import {SwimlaneData} from "../swimlaneData";
 import {CustomFieldValues, CustomFieldValue} from "../customField";
 import {IMap, IMapUtil} from "../../../common/map";
 import {BoardProject} from "../project";

@@ -7,6 +7,7 @@ import {SwimlaneIndexer, SwimlaneIndexerFactory} from "./swimlaneIndexer";
 import {Indexed} from "../../common/indexed";
 import {ChangeSet, RankChange} from "./change";
 import {Subject, Observable} from "rxjs/Rx";
+import {SwimlaneData, SwimlaneDataBuilder} from "./swimlaneData";
 
 export class IssueTable {
     private _allIssues:Indexed<IssueData>;
@@ -265,7 +266,7 @@ export class IssueTable {
 
         let indexer:SwimlaneIndexer = this.createSwimlaneIndexer();
         let issueCounters = new Array<StateIssueCounter>(numStates);
-        let swimlaneTable:SwimlaneData[] = indexer.swimlaneTable;
+        let swimlaneBuilderTable:SwimlaneDataBuilder[] = indexer.swimlaneBuilderTable;
 
         //Initialise the states
         for (let stateIndex:number = 0 ; stateIndex < numStates ; stateIndex++) {
@@ -280,8 +281,8 @@ export class IssueTable {
 
                 let swimlaneIndices:number[] = indexer.swimlaneIndex(issue);
                 for (let swimlaneIndex of swimlaneIndices) {
-                    let targetSwimlane:SwimlaneData = swimlaneTable[swimlaneIndex];
-                    targetSwimlane.issueTable[boardStateIndex].push(issue);
+                    let targetSwimlaneBuilder:SwimlaneDataBuilder = swimlaneBuilderTable[swimlaneIndex];
+                    targetSwimlaneBuilder.addIssue(boardStateIndex, issue);
 
                 }
 
@@ -299,8 +300,11 @@ export class IssueTable {
             this._totalIssuesByState[stateIndex] = issueCounters[stateIndex].count;
         }
 
-        //Apply the filters to the swimlanes
-        for (let swimlaneData of swimlaneTable) {
+        //Create the tables and Apply the filters to the swimlanes
+        let swimlaneTable:SwimlaneData[] = new Array<SwimlaneData>(swimlaneBuilderTable.length);
+        for (let i:number = 0 ; i < swimlaneBuilderTable.length ; i++) {
+            let swimlaneData:SwimlaneData = swimlaneBuilderTable[i].build();
+            swimlaneTable[i] = swimlaneData;
             swimlaneData.filtered = indexer.filter(swimlaneData);
         }
 
@@ -380,56 +384,6 @@ export class IssueTable {
         }
     }
 
-}
-
-
-
-export class SwimlaneData {
-    private _name:string;
-    public issueTable:IssueData[][];
-    private _visible:boolean = true;
-    public filtered:boolean;
-    private _index:number;
-
-    constructor(private boardData:BoardData, name:string, index:number) {
-        this._name = name;
-        this._index = index;
-        let states = boardData.boardStateNames.length;
-        this.issueTable = new Array<IssueData[]>(states);
-        for (let i:number = 0 ; i < states ; i++) {
-            this.issueTable[i] = [];
-        }
-    }
-
-    toggleVisibility() : void {
-        this._visible = !this._visible;
-    }
-
-    get visible() {
-        return this._visible;
-    }
-
-    set visible(visible:boolean) {
-        this._visible = visible;
-    }
-
-    get name() {
-        return this._name;
-    }
-
-    get index() {
-        return this._index;
-    }
-
-    resetState(stateIndex:number) {
-        this.issueTable[stateIndex] = [];
-    }
-
-    restoreVisibility(savedVisibilities:IMap<boolean>) {
-        //When restoring the visibility, take into account that new swimlanes would not have been saved,
-        //and so do not appear in the map
-        this._visible = !(savedVisibilities[this._name] == false);
-    }
 }
 
 class StateIssueCounter {
