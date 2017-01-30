@@ -39,10 +39,6 @@ export class RankViewComponent extends FixedHeaderView {
         super.setAbbreviatedHeaderRegistry(value);
     }
 
-    private getAbbreviatedHeader(state:string):string {
-        return this._abbreviatedHeaderRegistry.getAbbreviatedHeader(state);
-    }
-
     get boardData():BoardData {
         return this._boardData;
     }

@@ -81,6 +81,11 @@ export abstract class FixedHeaderView implements OnInit {
         return this._boardBodyHeight;
     }
 
+    private getAbbreviatedHeader(state:string):string {
+        return this._abbreviatedHeaderRegistry.getAbbreviatedHeader(state);
+    }
+
+
     getColourForIndex(index:number) : string {
         let mod:number = index % 5;
         switch (mod) {

@@ -58,6 +58,10 @@ table {
 #header-table th:hover {
     background-color: #F0F0F0;
 }
+#header-table .issue-count {
+    font-size: 10px;
+    color: #666666;
+}
 
 /* Board body */
 #table-body {
@@ -89,12 +93,6 @@ th.collapsed,  td.collapsed {
 td.backlog-state-summary:hover {
     cursor: pointer;
     background-color: #F0F0F0;
-}
-div.state-summary {
-    width: 100%;
-    font-size: 10px;
-    text-align: center;
-    min-height: 11px;
 }
 div.backlog-state-summary {
     width: 100%;

@@ -36,19 +36,19 @@
                             [ngStyle]="{'border-top-width': '2px', 'border-top-style': 'solid', 'border-top-color': getColourForIndex(headerIndex)}"
                             title="{{header.name}}">
                             <div>{{getAbbreviatedHeader(header.name)}}</div>
-                            <div>({{header.totalIssues}})</div>
+                            <div class="issue-count">{{header.totalIssues}}</div>
                         </th>
                     </tr>
                     <tr>
                         <th *ngFor="let header of backlogBottomHeaders"
                             title="{{header.name}}">
                             <div>{{getAbbreviatedHeader(header.name)}}</div>
-                            <div>({{header.totalIssues}})</div>
+                            <div>{{header.totalIssues}}</div>
                         </th>
                         <th *ngFor="let header of bottomHeaders"
                             title="{{header.name}}">
                             <div>{{getAbbreviatedHeader(header.name)}}</div>
-                            <div>({{header.totalIssues}})</div>
+                            <div class="issue-count">{{header.totalIssues}}</div>
                         </th>
                     </tr>
                 </thead>

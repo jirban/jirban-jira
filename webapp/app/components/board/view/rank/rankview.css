@@ -53,6 +53,10 @@ table {
     min-width: 200px;
     max-width: 200px;
 }
+#header-table .issue-count {
+    font-size: 10px;
+    color: #666666;
+}
 
 /* Board body */
 #table-body {
