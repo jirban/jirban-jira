@@ -368,9 +368,7 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
     private boolean canEditCustomField(ApplicationUser user) {
         //Only Jira Administrators can tweak the custom field id
-        final GlobalPermissionManager globalPermissionManager = jiraInjectables.getGlobalPermissionManager();
-
-        return globalPermissionManager.hasPermission(GlobalPermissionKey.ADMINISTER, user);
+        return isJiraAdministrator(user);
     }
 
     private boolean hasPermissionBoard(ApplicationUser user, BoardConfig boardConfig, ProjectPermissionKey... permissions) {
@@ -384,6 +382,9 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
 
 
     private boolean hasPermissionBoard(ApplicationUser user, ModelNode boardConfig, ProjectPermissionKey...permissions) {
+        if (isJiraAdministrator(user)) {
+            return true;
+        }
         if (!boardConfig.hasDefined(PROJECTS)) {
             //The project is empty, start checking once they add something
             return true;
@@ -397,6 +398,9 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
     }
 
     private boolean hasPermission(ApplicationUser user, String projectCode, ProjectPermissionKey[] permissions) {
+        if (isJiraAdministrator(user)) {
+            return true;
+        }
         final ProjectManager projectManager = jiraInjectables.getProjectManager();
         final PermissionManager permissionManager = jiraInjectables.getPermissionManager();
 
@@ -407,5 +411,11 @@ public class BoardConfigurationManagerImpl implements BoardConfigurationManager 
             }
         }
         return true;
+    }
+
+    private boolean isJiraAdministrator(ApplicationUser user) {
+        final GlobalPermissionManager globalPermissionManager = jiraInjectables.getGlobalPermissionManager();
+
+        return globalPermissionManager.hasPermission(GlobalPermissionKey.ADMINISTER, user);
     }
 }
