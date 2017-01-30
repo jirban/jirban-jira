@@ -382,8 +382,6 @@ export class IssueTable {
 
 }
 
-
-
 export class SwimlaneData {
     private _name:string;
     public issueTable:IssueData[][];
@@ -419,10 +417,6 @@ export class SwimlaneData {
 
     get index() {
         return this._index;
-    }
-
-    resetState(stateIndex:number) {
-        this.issueTable[stateIndex] = [];
     }
 
     restoreVisibility(savedVisibilities:IMap<boolean>) {

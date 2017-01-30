@@ -145,15 +145,19 @@
                     </tr>
                 </tbody>
                 <tbody *ngIf="boardData.swimlane"  [style.height]="boardBodyHeight">
-                    <swimlane-entry *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index"
-                                [boardData]="boardData"
-                                [swimlaneIndex]="swimlaneIndex"
-                                [swimlane]="swimlane"
-                                [boardLeftOffset]="boardLeftOffset"
-                                [hidden]="swimlane.filtered"
-                                (showIssueContextMenu)="onShowIssueContextMenu($event)"
-                                (showParallelTaskMenu)="onShowParallelTaskMenu($event)"
-                                (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
+                <div *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index">
+                    <swimlane-entry
+                            *ngIf="!swimlane.filtered"
+                            [boardData]="boardData"
+                            [swimlaneIndex]="swimlaneIndex"
+                            [swimlane]="swimlane"
+                            [boardLeftOffset]="boardLeftOffset"
+                            [hidden]="swimlane.filtered"
+                            (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                            (showParallelTaskMenu)="onShowParallelTaskMenu($event)"
+                            (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
+
+                </div>
                 </tbody>
             </table>
         </div>
