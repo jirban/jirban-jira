@@ -7,7 +7,7 @@ import {IMap} from "../../common/map";
 import {Indexed} from "../../common/indexed";
 import {Hideable} from "../../common/hide";
 import {Projects, ProjectDeserializer, LinkedProject, BoardProject} from "./project";
-import {IssueTable, SwimlaneData} from "./issueTable";
+import {IssueTable} from "./issueTable";
 import {RestUrlUtil} from "../../common/RestUrlUtil";
 import {BlacklistData} from "./blacklist";
 import {ChangeSet} from "./change";
@@ -16,6 +16,7 @@ import {BoardHeaders, State} from "./header";
 import {Observable, Subject, Subscription} from "rxjs/Rx";
 import {CustomFieldValues, CustomFieldDeserializer, CustomFieldValue} from "./customField";
 import {ParallelTask, ParallelTaskDeserializer} from "./parallelTask";
+import {SwimlaneData} from "./swimlaneData";
 
 
 export class BoardData {

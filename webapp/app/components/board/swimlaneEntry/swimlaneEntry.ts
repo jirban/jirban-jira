@@ -1,6 +1,6 @@
 import {Component, EventEmitter} from "@angular/core";
 import {BoardData} from "../../../data/board/boardData";
-import {SwimlaneData} from "../../../data/board/issueTable";
+import {SwimlaneData} from "../../../data/board/swimlaneData";
 import {State, BoardHeaderEntry} from "../../../data/board/header";
 import {IssueContextMenuData} from "../../../data/board/issueContextMenuData";
 import {ParallelTaskMenuData} from "../../../data/board/parallelTaskMenuData";
