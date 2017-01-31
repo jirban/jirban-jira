@@ -1,4 +1,5 @@
 ** https://useiconic.com/open/ **
+chevron-bottom-2x.png
 cog-3x.png
 eye-3x.png
 heart-3x.png
