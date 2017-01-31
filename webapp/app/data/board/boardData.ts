@@ -272,7 +272,7 @@ export class BoardData {
     }
 
     toggleSwimlaneVisibility(swimlaneIndex:number) {
-        this._issueTable.toggleSwimlaneVisibility(swimlaneIndex);
+        this._issueTable.toggleSwimlaneCollapsedStatus(swimlaneIndex);
     }
 
     get code():string {

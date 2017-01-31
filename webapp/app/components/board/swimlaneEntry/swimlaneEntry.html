@@ -13,62 +13,75 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+<div *ngIf="displayEntry">
+    <tr>
+        <!--
+            Swap out the header depending on what is going on
+         -->
+        <td class="swimlane-header" [attr.colspan]="boardStates.length" (click)="toggleSwimlane(swimlaneIndex)" title="{{swimlane.name}}">
+            <div class="swimlane-name-holder">
+                <div class="swimlane-name" [style.left]="boardLeftOffsetPx">
+                    <span *ngIf="empty" class="empty-name">{{swimlane.name}}</span>
+                    <span *ngIf="!empty">{{swimlane.name}}
+                        <img *ngIf="collapsed"
+                             class="collapse-icon"
+                             src="../../../../images/chevron-bottom-2x.png"/>
+                    </span>
+                </div>
+            </div>
+        </td>
+    </tr>
+    <tr *ngIf="!collapsed">
 
-<tr>
-    <td class="swimlane-header" [attr.colspan]="boardStates.length" (click)="toggleSwimlane(swimlaneIndex)" title="{{swimlane.name}}">
-        <div class="swimlane-name-holder"><div class="swimlane-name" [style.left]="boardLeftOffsetPx">{{swimlane.name}}</div></div>
-    </td>
-</tr>
-<tr *ngIf="swimlane.visible">
+        <!-- Backlog collapsed, just show a single backlog column -->
+        <td *ngIf="backlogAndIsCollapsed"
+            (click)="toggleBacklog($event)"
+            class="collapsed backlog-state-summary backlog-cell">
+        </td>
+        <!-- Backlog visible, show all the possible backlog states -->
+        <td *ngFor="let state of backlogStatesIfVisible"
+            [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
+            title="State: {{state.name}}">
+            <div *ngIf="visibleColumns[state.index]">
+                <ul class="issues-list">
+                    <issue *ngFor="let issue of swimlane.issueTable[state.index]"
+                           [issue]="issue"
+                           (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                           (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
+                </ul>
+            </div>
+            <div class="collapsed" *ngIf="!visibleColumns[state.index]">
+            </div>
 
-    <!-- Backlog collapsed, just show a single backlog column -->
-    <td *ngIf="backlogAndIsCollapsed"
-        (click)="toggleBacklog($event)"
-        class="collapsed backlog-state-summary backlog-cell">
-    </td>
-    <!-- Backlog visible, show all the possible backlog states -->
-    <td *ngFor="let state of backlogStatesIfVisible"
-        [ngClass]="visibleColumns[state.index] == true ? 'visible backlog-cell' : 'collapsed backlog-cell'"
-        title="State: {{state.name}}">
-        <div *ngIf="visibleColumns[state.index]">
-            <ul class="issues-list">
-                <issue *ngFor="let issue of swimlane.issueTable[state.index]"
-                       [issue]="issue"
-                       (showIssueContextMenu)="onShowIssueContextMenu($event)"
-                       (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
-            </ul>
-        </div>
-        <div class="collapsed" *ngIf="!visibleColumns[state.index]">
-        </div>
+        </td>
 
-    </td>
+        <!-- Normal states -->
+        <td *ngFor="let state of mainStates" title="State: {{state.name}}"
+            [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
+            title="State: {{state.name}}">
+            <div *ngIf="visibleColumns[state.index]">
+                <ul class="issues-list">
+                    <issue *ngFor="let issue of swimlane.issueTable[state.index]"
+                           [issue]="issue"
+                           (showIssueContextMenu)="onShowIssueContextMenu($event)"
+                           (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
+                </ul>
+            </div>
+            <div class="state-summary" *ngIf="!visibleColumns[state.index]">
+            </div>
 
-    <!-- Normal states -->
-    <td *ngFor="let state of mainStates" title="State: {{state.name}}"
-        [ngClass]="visibleColumns[state.index] == true ? 'visible' : 'collapsed'"
-        title="State: {{state.name}}">
-        <div *ngIf="visibleColumns[state.index]">
-            <ul class="issues-list">
-                <issue *ngFor="let issue of swimlane.issueTable[state.index]"
-                       [issue]="issue"
-                       (showIssueContextMenu)="onShowIssueContextMenu($event)"
-                       (showParallelTaskMenu)="onShowParallelTaskMenu($event)"></issue>
-            </ul>
-        </div>
-        <div class="state-summary" *ngIf="!visibleColumns[state.index]">
-        </div>
-
-    </td>
-</tr>
-<!--
-    This is just an empty row for layout purposes, its width should be the same as the table,
-    so use the same logic to select the css classes as above. The reason for this is that
-    angular wraps the output for this component in an extra <tbody> tag, so we need to size it ourselves.
--->
-<tr *ngIf="!swimlane.visible">
-    <td *ngIf="backlogAndIsCollapsed" class="swimlane-empty-collapsed"></td>
-    <td *ngFor="let state of backlogStatesIfVisible"
-        [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
-    <td *ngFor="let state of mainStates"
-        [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
-</tr>
+        </td>
+    </tr>
+    <!--
+        This is just an empty row for layout purposes, its width should be the same as the table,
+        so use the same logic to select the css classes as above. The reason for this is that
+        angular wraps the output for this component in an extra <tbody> tag, so we need to size it ourselves.
+    -->
+    <tr *ngIf="collapsed">
+        <td *ngIf="backlogAndIsCollapsed" class="swimlane-empty-collapsed"></td>
+        <td *ngFor="let state of backlogStatesIfVisible"
+            [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
+        <td *ngFor="let state of mainStates"
+            [ngClass]="visibleColumns[state.index] == true ? 'swimlane-empty' : 'swimlane-empty-collapsed'"></td>
+    </tr>
+</div>

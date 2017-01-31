@@ -30,6 +30,16 @@ export class SwimlaneEntryComponent {
     constructor() {
     }
 
+    get displayEntry():boolean {
+        if (this.swimlane.filtered) {
+            return false;
+        }
+        if (this.swimlane.empty && this.boardData.hideEmptySwimlanes) {
+            return false;
+        }
+        return true;
+    }
+
     get boardLeftOffsetPx():string {
         return this._boardLeftOffsetPx;
     }
@@ -37,6 +47,10 @@ export class SwimlaneEntryComponent {
     set boardLeftOffset(value:number) {
         let i:number = 10 + -1 * value;
         this._boardLeftOffsetPx = i + "px";
+    }
+
+    private get collapsed() {
+        return this.swimlane.collapsed;
     }
 
     private get boardStates() : State[] {
@@ -82,8 +96,11 @@ export class SwimlaneEntryComponent {
         return null;
     }
 
+    get empty() {
+        return this.swimlane.empty;
+    }
+
     toggleBacklog(event:any) {
-        console.log("---> sl tb");
         this.toggleBacklogVisibility.emit(event);
     }
 }

@@ -99,9 +99,9 @@ export class IssueTable {
         return this._rankedIssues;
     }
 
-    toggleSwimlaneVisibility(swimlaneIndex:number) {
+    toggleSwimlaneCollapsedStatus(swimlaneIndex:number) {
         if (this._swimlaneTable) {
-            this._swimlaneTable[swimlaneIndex].toggleVisibility();
+            this._swimlaneTable[swimlaneIndex].toggleCollapsedStatus();
         }
         this._swimlaneVisibitilySubject.next(null);
     }
@@ -111,7 +111,7 @@ export class IssueTable {
     }
 
     processTableChanges(boardData:BoardData, changeSet:ChangeSet) {
-        let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(false);
+        let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneCollapsedStatus(false);
 
         //Delete from the "all issues table"
         let deletedIssues:IssueData[] = this._allIssues.deleteKeys(changeSet.deletedIssueKeys);
@@ -169,11 +169,11 @@ export class IssueTable {
         }
 
         this.createTable(false);
-        this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+        this.restoreSwimlaneCollapsedStatus(storedSwimlaneVisibilities);
     }
 
     private internalFullRefresh(input:any, initial:boolean) {
-        let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneVisibilities(initial);
+        let storedSwimlaneVisibilities:IMap<boolean> = this.storeSwimlaneCollapsedStatus(initial);
 
         this._allIssues = new Indexed<IssueData>();
         this._allIssues.indexMap(
@@ -183,26 +183,26 @@ export class IssueTable {
             });
         this.createTable(!initial);
 
-        this.restoreSwimlaneVisibilities(storedSwimlaneVisibilities);
+        this.restoreSwimlaneCollapsedStatus(storedSwimlaneVisibilities);
     }
 
-    private storeSwimlaneVisibilities(initial:boolean) : IMap<boolean> {
+    private storeSwimlaneCollapsedStatus(initial:boolean) : IMap<boolean> {
         let swimlaneVisibilities:IMap<boolean>;
         if (!initial && this._swimlane && this._swimlaneTable) {
             //Store the visibilities from the users collapsing swimlanes
             swimlaneVisibilities = {};
             for (let swimlane of this._swimlaneTable) {
-                swimlaneVisibilities[swimlane.name] = swimlane.visible;
+                swimlaneVisibilities[swimlane.name] = swimlane.collapsed;
             }
         }
         return swimlaneVisibilities;
     }
 
-    private restoreSwimlaneVisibilities(storedSwimlaneVisibilities:IMap<boolean>) {
+    private restoreSwimlaneCollapsedStatus(storedSwimlaneVisibilities:IMap<boolean>) {
         if (storedSwimlaneVisibilities) {
             //Restore the user defined visibilities
             for (let swimlane of this._swimlaneTable) {
-                swimlane.restoreVisibility(storedSwimlaneVisibilities);
+                swimlane.restoreCollapsedStatus(storedSwimlaneVisibilities);
             }
         }
     }
@@ -323,7 +323,7 @@ export class IssueTable {
             let hiddenEntries:SwimlaneData[] = [];
             let visibleEntries:SwimlaneData[] = [];
             for (let sd of this._swimlaneTable) {
-                if (sd.visible) {
+                if (!sd.collapsed) {
                     visibleEntries.push(sd);
                 } else {
                     hiddenEntries.push(sd);
@@ -377,9 +377,9 @@ export class IssueTable {
 
         for (let sd of this._swimlaneTable) {
             if (swimlaneNames[sd.name]) {
-                sd.visible = visible;
+                sd.collapsed = !visible;
             } else {
-                sd.visible = !visible;
+                sd.collapsed = visible;
             }
         }
     }

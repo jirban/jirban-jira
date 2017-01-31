@@ -145,9 +145,8 @@
                     </tr>
                 </tbody>
                 <tbody *ngIf="boardData.swimlane"  [style.height]="boardBodyHeight">
-                <div *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index">
                     <swimlane-entry
-                            *ngIf="swimlane.displayEntry"
+                            *ngFor="let swimlane of boardData.swimlaneTable; let swimlaneIndex=index"
                             [boardData]="boardData"
                             [swimlaneIndex]="swimlaneIndex"
                             [swimlane]="swimlane"
@@ -156,8 +155,6 @@
                             (showIssueContextMenu)="onShowIssueContextMenu($event)"
                             (showParallelTaskMenu)="onShowParallelTaskMenu($event)"
                             (toggleBacklogVisibility)="toggleHeaderVisibility(backlogTopHeader)"></swimlane-entry>
-
-                </div>
                 </tbody>
             </table>
         </div>
