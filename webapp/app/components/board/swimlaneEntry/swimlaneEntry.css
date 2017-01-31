@@ -25,7 +25,13 @@
     left: 10px;
     bottom: 5px;
 }
-
+.empty-name {
+    color: #666666;
+}
+.collapse-icon {
+    width: 11px;
+    height: 11px;
+}
 td.swimlane-header {
     vertical-align: middle;
     font-size: 11px;

@@ -6,12 +6,12 @@ export class SwimlaneData {
     private _name:string;
     //TODO make this immutable at some stage
     public _issueTable:IssueData[][];
-    private _visible:boolean = true;
+    private _collapsed:boolean = false;
     public filtered:boolean;
     private _index:number;
     private _empty:boolean;
 
-    constructor(private boardData:BoardData, issueTable:IssueData[][], name:string, index:number, empty:boolean) {
+    constructor(issueTable:IssueData[][], name:string, index:number, empty:boolean) {
         this._name = name;
         this._index = index;
         this._issueTable = issueTable;
@@ -19,26 +19,16 @@ export class SwimlaneData {
         console.log("Swimlane " + name + " is empty " + empty);
     }
 
-    toggleVisibility() : void {
-        this._visible = !this._visible;
+    toggleCollapsedStatus() : void {
+        this._collapsed = !this._collapsed;
     }
 
-    get visible():boolean {
-        return this._visible;
+    get collapsed():boolean {
+        return this._collapsed;
     }
 
-    get displayEntry():boolean {
-        if (this.filtered) {
-            return false;
-        }
-        if (this._empty && this.boardData.hideEmptySwimlanes) {
-            return false;
-        }
-        return true;
-    }
-
-    set visible(visible:boolean) {
-        this._visible = visible;
+    set collapsed(collapsed:boolean) {
+        this._collapsed = collapsed;
     }
 
     get name() {
@@ -53,10 +43,14 @@ export class SwimlaneData {
         return this._issueTable;
     }
 
-    restoreVisibility(savedVisibilities:IMap<boolean>) {
+    get empty(): boolean {
+        return this._empty;
+    }
+
+    restoreCollapsedStatus(savedVisibilities:IMap<boolean>) {
         //When restoring the visibility, take into account that new swimlanes would not have been saved,
         //and so do not appear in the map
-        this._visible = !(savedVisibilities[this._name] == false);
+        this._collapsed = (savedVisibilities[this._name] == false);
     }
 }
 
@@ -66,7 +60,7 @@ export class SwimlaneDataBuilder {
     private _index:number;
     private _empty:boolean = true;
 
-    constructor(private boardData:BoardData, name:string, index:number) {
+    constructor(boardData:BoardData, name:string, index:number) {
         this._name = name;
         this._index = index;
         let states = boardData.boardStateNames.length;
@@ -90,7 +84,7 @@ export class SwimlaneDataBuilder {
     }
 
     build() : SwimlaneData {
-        return new SwimlaneData(this.boardData, this._issueTable, this._name, this._index, this._empty);
+        return new SwimlaneData(this._issueTable, this._name, this._index, this._empty);
     }
 
 }
