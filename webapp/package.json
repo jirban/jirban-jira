@@ -11,18 +11,18 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@angular/common": "2.3.0",
-    "@angular/compiler": "2.3.0",
-    "@angular/core": "2.3.0",
-    "@angular/forms": "2.3.0",
-    "@angular/http": "2.3.0",
-    "@angular/platform-browser": "2.3.0",
-    "@angular/platform-browser-dynamic": "2.3.0",
-    "@angular/router": "3.3.0",
-    "@angular/upgrade": "2.3.0",
+    "@angular/common": "2.4.5",
+    "@angular/compiler": "2.4.5",
+    "@angular/core": "2.4.5",
+    "@angular/forms": "2.4.5",
+    "@angular/http": "2.4.5",
+    "@angular/platform-browser": "2.4.5",
+    "@angular/platform-browser-dynamic": "2.4.5",
+    "@angular/router": "3.4.5",
+    "@angular/upgrade": "2.4.5",
     "core-js": "2.4.1",
     "reflect-metadata": "0.1.8",
-    "rxjs": "5.0.0-rc.4",
+    "rxjs": "^5.0.1",
     "zone.js": "0.7.2"
   },
   "devDependencies": {
@@ -51,8 +51,8 @@
     "webpack-dev-server": "1.15.2",
     "webpack-merge": "0.14.1",
 
-    "@types/core-js": "0.9.34",
-    "@types/node": "6.0.48",
-    "@types/jasmine": "2.5.38"
+    "@types/core-js": "0.9.35",
+    "@types/node": "7.0.4",
+    "@types/jasmine": "2.5.41"
   }
 }

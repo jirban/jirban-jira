@@ -22,7 +22,7 @@ export class VersionService {
     initialise(expectedVersion:number, progressError:ProgressErrorService):void {
         let path:string = RestUrlUtil.caclulateRestUrl('rest/jirban/1.0/version');
         this._http.get(path)
-            .timeout(this.timeout, "The server did not respond in a timely manner for GET " + path)
+            .timeout(this.timeout)
             .map((res: Response) => res.json())
             .subscribe(
                 data => {

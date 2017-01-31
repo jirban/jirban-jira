@@ -18,7 +18,7 @@ export class BoardsService {
         let path:string = RestUrlUtil.caclulateRestUrl(summaryOnly ? 'rest/jirban/1.0/boards' : 'rest/jirban/1.0/boards?full=true');
         let ret:Observable<any> =
             this._http.get(path)
-                .timeout(this.timeout, "The server did not respond in a timely manner for GET " + path)
+                .timeout(this.timeout)
                 .map((res: Response) => res.json());
 
         return ret;
@@ -29,7 +29,7 @@ export class BoardsService {
         console.log("Loading board configuration" + path);
         let ret:Observable<any> =
             this._http.get(path)
-                .timeout(this.timeout, "The server did not respond in a timely manner for GET " + path)
+                .timeout(this.timeout)
                 .map((res: Response) => res.json());
 
         return ret;
@@ -44,7 +44,7 @@ export class BoardsService {
             this._http.post(path, json, {
                 headers : headers
             })
-                .timeout(this.timeout, "The server did not respond in a timely manner for POST " + path)
+                .timeout(this.timeout)
                 .map((res: Response) => res.json());
         return ret;
     }
@@ -58,7 +58,7 @@ export class BoardsService {
             this._http.put(path, json, {
                 headers : headers
             })
-                .timeout(this.timeout, "The server did not respond in a timely manner for PUT " + path)
+                .timeout(this.timeout)
                 .map((res: Response) => res.json());
         return ret;
     }
@@ -72,7 +72,7 @@ export class BoardsService {
             this._http.delete(path, {
                 headers : headers
             })
-                .timeout(this.timeout, "The server did not respond in a timely manner for DELETE " + path)
+                .timeout(this.timeout)
                 .map((res: Response) => res.json());
         return ret;
     }
@@ -87,7 +87,7 @@ export class BoardsService {
             this._http.put(path, payload, {
                     headers : headers
                 })
-                .timeout(this.timeout, "The server did not respond in a timely manner for PUT " + path)
+                .timeout(this.timeout)
                 .map((res: Response) => res.json());
         return ret;
     }

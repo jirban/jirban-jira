@@ -83,7 +83,7 @@ export class IssuesService {
         let path:string = RestUrlUtil.caclulateRestUrl(url);
         console.log("Poll " + path);
         return this._http.get(path)
-            .timeout(this._bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .timeout(this._bigTimeout)
             .map(res => (<Response>res).json());
     }
 
@@ -101,14 +101,14 @@ export class IssuesService {
         let payload:any = {body: comment};
 
         return this._http.post(url, JSON.stringify(payload), {headers : headers})
-            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + url);
+            .timeout(IssuesService._smallTimeout);
     }
 
     loadHelpTexts(board:string, boardData:BoardData) : void {
         let url = 'rest/jirban/1.0/issues/' + board + "/help";
         let path:string = RestUrlUtil.caclulateRestUrl(url);
         this._http.get(path)
-            .timeout(this._bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .timeout(this._bigTimeout)
             .map(res => (<Response>res).json()).subscribe(
                 data => {
                     console.log("Got help texts " + JSON.stringify(data));
@@ -158,7 +158,7 @@ export class IssuesService {
 
         console.log("PUT " + JSON.stringify(payload) + " to " + path);
         this._http.put(path, JSON.stringify(payload), {headers: headers})
-            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + path)
+            .timeout(IssuesService._smallTimeout)
             .map(res => (<Response>res).json())
             .subscribe(
                 data => {
@@ -183,7 +183,7 @@ export class IssuesService {
         headers.append("Accept", "application/json");
 
         this._http.put(url, JSON.stringify(payload), {headers : headers})
-            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + url)
+            .timeout(IssuesService._smallTimeout)
             .map(res => (<Response>res).json())
             .subscribe(
                 data => {
@@ -203,7 +203,7 @@ export class IssuesService {
         let path:string = RestUrlUtil.caclulateRestUrl(url);
         console.log("Populate " + path);
         return this._http.get(path)
-            .timeout(this._bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .timeout(this._bigTimeout)
             .map(res => (<Response>res).json());
     }
 
@@ -299,7 +299,7 @@ class MoveIssueAction {
         headers.append("Accept", "application/json");
 
         this._http.get(path, {headers : headers})
-            .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for GET " + path)
+            .timeout(IssuesService._smallTimeout)
             .map(res => (<Response>res).json())
             .subscribe(
                 data => this.performStateTransition(data),
@@ -337,7 +337,7 @@ class MoveIssueAction {
             console.log("post to URL " + path);
 
             this._http.post(path, JSON.stringify(payload), {headers : headers})
-                .timeout(IssuesService._smallTimeout, "The server did not respond in a timely manner for POST " + path)
+                .timeout(IssuesService._smallTimeout)
                 //.map(res => (<Response>res).json())
                 .subscribe(
                     data => {
