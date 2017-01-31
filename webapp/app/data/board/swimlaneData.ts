@@ -50,7 +50,7 @@ export class SwimlaneData {
     restoreCollapsedStatus(savedVisibilities:IMap<boolean>) {
         //When restoring the visibility, take into account that new swimlanes would not have been saved,
         //and so do not appear in the map
-        this._collapsed = (savedVisibilities[this._name] == false);
+        this._collapsed = (savedVisibilities[this._name] == true);
     }
 }
 
