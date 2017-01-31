@@ -528,12 +528,16 @@ export class BoardData {
             this.swimlane = queryParams["swimlane"];
 
             this._issueTable.setSwimlaneVisibilitiesFromQueryParams(queryParams);
+        } else {
+            this.swimlane = null;
         }
 
-        if (queryParams["showEmptySl"]) {
+        if (!!queryParams["showEmptySl"]) {
             let showEmptySwimlanes:any = queryParams["showEmptySl"];
             this.hideEmptySwimlanes = showEmptySwimlanes === "true" || showEmptySwimlanes === true ?
                 false : true;
+        } else {
+            this.hideEmptySwimlanes = true;
         }
 
         this._headers.setVisibilitiesFromQueryParams(queryParams);

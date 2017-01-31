@@ -53,7 +53,6 @@ export class BoardComponent implements OnDestroy {
 
 
         this._boardData.setBacklogFromQueryParams(queryParams, this._wasBacklogForced);
-
         this._issuesService.populateIssues(this.boardCode, () => {
             //Loading filters does not work until the issue data is loaded
             _boardData.setFiltersFromQueryParams(queryParams);
@@ -62,6 +61,19 @@ export class BoardComponent implements OnDestroy {
                 this.updateLinkUrl();
             });
             this.boardData.swimlaneVisibilityObservable.subscribe((value:void) => {
+                this.updateLinkUrl();
+            });
+
+            let firstQueryParamEvent:boolean = true;
+            route.queryParams.subscribe(params => {
+                if (firstQueryParamEvent) {
+                    //Skip this first one since we already got it via the snapshot earlier
+                    firstQueryParamEvent = false;
+                    return;
+                }
+                let queryParams:IMap<string> = params;
+                this._boardData.setBacklogFromQueryParams(queryParams, this._wasBacklogForced);
+                _boardData.setFiltersFromQueryParams(queryParams);
                 this.updateLinkUrl();
             });
         })
