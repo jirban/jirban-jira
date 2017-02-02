@@ -18,7 +18,7 @@ export class AccessLogService {
         let url = 'rest/jirban/1.0/access-log';
         let path:string = RestUrlUtil.caclulateRestUrl(url);
         return this.http.get(path)
-            .timeout(this.bigTimeout, "The server did not respond in a timely manner for GET " + path)
+            .timeout(this.bigTimeout)
             .map(res => (<Response>res).json());
     }
 }

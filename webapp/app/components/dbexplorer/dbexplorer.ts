@@ -39,7 +39,10 @@ export class DbExplorerComponent {
         let payload:any = {sql: this.sqlForm.value.sql};
 
         return this._http.post(path, JSON.stringify(payload),  {headers : headers})
-            .timeout(60000, "The server did not respond in a timely manner for GET " + path)
+
+            //TODO figure out how to
+
+            .timeout(60000)
             .subscribe(
                 data => {
                     console.log(data);
