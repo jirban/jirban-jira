@@ -6,7 +6,7 @@
     "start": "webpack-dev-server --inline --progress --port 3000 --config config/webpack.dev.js",
     "test": "karma start",
     "test-debug": "karma start --single-run=false --debug",
-    "_build-doc" : "To build it do 'npm run build'",
+    "_build-doc": "To build it do 'npm run build'",
     "build": "rimraf ../target/classes/webapp && webpack --config config/webpack.prod.js --progress --profile --bail"
   },
   "license": "MIT",
@@ -21,22 +21,25 @@
     "@angular/router": "3.4.5",
     "@angular/upgrade": "2.4.5",
     "core-js": "2.4.1",
-    "reflect-metadata": "0.1.9",
+    "reflect-metadata": "0.1.10",
     "rxjs": "5.1.0",
     "zone.js": "0.7.6"
   },
   "devDependencies": {
-    "angular2-template-loader": "0.6.0",
+    "@types/core-js": "0.9.41",
+    "@types/jasmine": "2.5.47",
+    "@types/node": "7.0.12",
+    "angular2-template-loader": "0.6.2",
     "css-loader": "0.26.1",
     "extract-text-webpack-plugin": "1.0.1",
     "file-loader": "0.10.0",
-    "html-loader": "0.4.4",
+    "html-loader": "0.4.5",
     "html-webpack-plugin": "2.28.0",
     "jasmine-core": "2.5.2",
     "karma": "1.3.0",
     "karma-jasmine": "1.0.2",
     "karma-mocha-reporter": "2.1.0",
-    "karma-phantomjs-launcher": "1.0.2",
+    "karma-phantomjs-launcher": "1.0.4",
     "karma-sourcemap-loader": "0.3.7",
     "karma-webpack": "1.8.1",
     "null-loader": "0.1.1",
@@ -49,10 +52,6 @@
     "typescript": "2.0.3",
     "webpack": "1.14.0",
     "webpack-dev-server": "1.16.3",
-    "webpack-merge": "0.20.0",
-
-    "@types/core-js": "0.9.35",
-    "@types/node": "7.0.4",
-    "@types/jasmine": "2.5.41"
+    "webpack-merge": "0.20.0"
   }
 }
