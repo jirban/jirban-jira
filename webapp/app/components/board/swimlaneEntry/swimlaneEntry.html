@@ -14,12 +14,12 @@
   ~ limitations under the License.
   -->
 
-<tr>
+<tr *ngIf="!swimlane.filtered">
     <td class="swimlane-header" [attr.colspan]="boardStates.length" (click)="toggleSwimlane(swimlaneIndex)" title="{{swimlane.name}}">
         <div class="swimlane-name-holder"><div class="swimlane-name" [style.left]="boardLeftOffsetPx">{{swimlane.name}}</div></div>
     </td>
 </tr>
-<tr *ngIf="swimlane.visible">
+<tr *ngIf="!swimlane.filtered && swimlane.visible">
 
     <!-- Backlog collapsed, just show a single backlog column -->
     <td *ngIf="backlogAndIsCollapsed"
