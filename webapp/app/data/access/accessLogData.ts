@@ -56,8 +56,8 @@ export class AccessLogData {
         let firstTime:string;
         let lastTime:string;
         if (entries.length > 0) {
-            firstTime = entries[0].time;
-            lastTime = entries[entries.length - 1].time;
+            lastTime = entries[0].time;
+            firstTime = entries[entries.length - 1].time;
         }
         return new AccessLogData(userAccesses.array, entries, firstTime, lastTime);
     }
