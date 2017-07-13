@@ -21,7 +21,7 @@ export class KanbanViewComponent extends FixedHeaderView {
     private _collapsedColumnLabels:CharArrayRegistry = new CharArrayRegistry();
 
     constructor(_appHeaderService:AppHeaderService) {
-        super(_appHeaderService, "Kanban");
+        super(_appHeaderService, "KhanBan");
     }
 
     set issuesService(value:IssuesService) {
