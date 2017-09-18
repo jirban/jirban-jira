@@ -4,7 +4,7 @@ Jirban is a Kanban board integrating with Jira. It is implemented as a Jira plug
 * to make setup of filters and swimlanes less static, minimising the need for configuration. Since we are using a 'fat' browser client, all changes to the view purely happen on the client side with no need for extra round trips to the server.
 
 ## Jira version 7
-It is currently built for and used on Jira 7.2.2 (starting with the 2.0.0 release), but should work on all Jira 7.x versions. 
+It is currently built for and used on Jira 7.5.x (the 2.0.0 to 2.0.3 releases work with 7.2.x). 
 
 ##Jira version 6
 The previous 1.0.x versions were built and used on Jira 6.4.11, and should have worked on all 6.4.x and probably other versions in the 6.x series. Jira 7 contains some breaking changes in the SDK, so currently only the Jira 7 version is maintained. It would be nice to provide parallel releases, but it would also be a lot more work than our current user base warrants to set up the project to result in libraries for both Jira versions. If you want to install the plugin on Jira 6.x you can: 
