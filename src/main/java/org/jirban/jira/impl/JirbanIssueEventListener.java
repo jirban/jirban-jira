@@ -43,8 +43,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.atlassian.core.util.map.EasyMap;
 import com.atlassian.event.api.EventListener;
 import com.atlassian.event.api.EventPublisher;
-import com.atlassian.greenhopper.service.lexorank.balance.LexoRankBalanceEvent;
+//import com.atlassian.greenhopper.service.lexorank.balance.LexoRankBalanceEvent;
+import com.atlassian.greenhopper.service.lexorank.balance.LexoRankChangeEvent;
 import com.atlassian.jira.bc.project.component.ProjectComponent;
+import com.atlassian.jira.event.JiraEvent;
 import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.event.type.EventType;
 import com.atlassian.jira.issue.Issue;
@@ -162,8 +164,8 @@ public class JirbanIssueEventListener implements InitializingBean, DisposableBea
      * @param event the rerank event
      */
     @EventListener
-    public void onRankEvent(LexoRankBalanceEvent event) {
-        JirbanLogger.LOGGER.debug("LexoRankBalanceEvent on thread {}", Thread.currentThread().getName());
+    public void onRankEvent(LexoRankChangeEvent event) {
+        JirbanLogger.LOGGER.debug("LexoRankChangeEvent on thread {}", Thread.currentThread().getName());
 
         JirbanEventWrapper wrapper = new JirbanEventWrapper(true);
         delayedEvents.set(wrapper);
