@@ -83,14 +83,14 @@
 .info-icons {
     padding-left: 3px;
     float: left;
-    width: 25%;
+    width: 20%;
     vertical-align: middle;
 }
 .info-parallel {
     padding-right: 3px;
     text-align: right;
     float: right;
-    width: 70%;
+    width: 75%;
     vertical-align: middle;
 }
 .parallel-task {
