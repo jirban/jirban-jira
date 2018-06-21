@@ -32,6 +32,10 @@ export class AppComponent {
 
 
         versionService.initialise(VERSION, progressError);
+
+        let obUrl = RestUrlUtil.calculateJiraUrl() + '/overbaard';
+        progressError.setError("Jirban is being sunset. Please visit <a href='" + obUrl +
+            "'>Overbård</a> instead! Report issues to <a href='https://github.com/overbaard/overbaard/issues'>GitHub</a>");
     }
 
     get hideProgress(): boolean {
