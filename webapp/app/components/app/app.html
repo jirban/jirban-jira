@@ -14,13 +14,23 @@
   ~ limitations under the License.
   -->
 
-<div class="toolbar">
+<div class="toolbar" xmlns="http://www.w3.org/1999/html">
     <div class="toolbar-left">
         <span> <a [routerLink]="['/boards']" class="toolbar-link">Boards</a></span>
         <!-- TODO Only display this if it is an admin -->
         <span> <a [routerLink]="['/config']" class="toolbar-link">Config</a></span>
     </div>
     <div class="toolbar-right" [innerHTML]="completedMessage"></div>
+</div>
+<div id="sunset" *ngIf="!sunsetDismissed">
+    <p>
+        Jirban is being sunset.<br/>
+        Visit <a href="{{overbaardUrl}}">Overbård</a> instead to see what is coming next, and report issues in
+        the <a href='https://github.com/overbaard/overbaard/issues'>Overbård GitHub</a><br/>
+    </p>
+    <p>
+        <input type="button" value="Continue in Jirban ({{sunsetMsgTTL}})" (click)="dismissSunset($event)"/>
+    </p>
 </div>
 <router-outlet></router-outlet>
 <div class="wait-screen" [hidden]="hideProgress"> </div>

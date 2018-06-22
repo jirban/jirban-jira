@@ -86,3 +86,19 @@ a.error-message {
 a.close {
     color: #FFFFFF;
 }
+#sunset {
+    top: 0px;
+    position: absolute;
+    text-align: center;
+    vertical-align: middle;
+    height: 100%;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    background-color: #4667CA;
+    color: white;
+}
+#sunset a {
+    color: #ffffff;
+    font-weight: bold;
+}

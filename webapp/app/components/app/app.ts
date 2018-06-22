@@ -1,6 +1,6 @@
 //our root app component
 import "../../../global.css";
-import {Component} from "@angular/core";
+import {Component, OnInit} from "@angular/core";
 import {VersionService} from "../../services/versionService";
 import {ProgressErrorService} from "../../services/progressErrorService";
 import {AppHeaderService} from "../../services/appHeaderService";
@@ -15,9 +15,13 @@ const VERSION: number = 2;
     template : require('./app.html'),
     styles: [require('./app.css')]
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
     _progressError: ProgressErrorService;
     loginUrl: string;
+
+    overbaardUrl: string;
+    sunsetDismissed: boolean = false;
+    sunsetMsgTTL: number = 5;
 
     constructor(progressError: ProgressErrorService, versionService: VersionService, appHeaderService: AppHeaderService) {
         this._progressError = progressError;
@@ -32,10 +36,17 @@ export class AppComponent {
 
 
         versionService.initialise(VERSION, progressError);
+        this.overbaardUrl = RestUrlUtil.calculateJiraUrl() + '/overbaard';
+    }
 
-        let obUrl = RestUrlUtil.calculateJiraUrl() + '/overbaard';
-        progressError.setError("Jirban is being sunset. Please visit <a href='" + obUrl +
-            "'>Overbård</a> instead! Report issues to <a href='https://github.com/overbaard/overbaard/issues'>GitHub</a>");
+    ngOnInit(): void {
+        let handle: any = setInterval(() => {
+            this.sunsetMsgTTL--;
+            if (this.sunsetMsgTTL <= 0) {
+                this.sunsetDismissed = true;
+                clearInterval(handle);
+            }
+        }, 1000);
     }
 
     get hideProgress(): boolean {
@@ -61,6 +72,11 @@ export class AppComponent {
 
     onClickMessageLoginLink(event: MouseEvent): void {
         event.stopPropagation();
+    }
+
+    dismissSunset(event: MouseEvent) {
+        event.preventDefault();
+        this.sunsetDismissed = true;
     }
 }
 
