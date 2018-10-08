@@ -20,8 +20,8 @@ export class AppComponent implements OnInit {
     loginUrl: string;
 
     overbaardUrl: string;
-    sunsetDismissed: boolean = false;
-    sunsetMsgTTL: number = 5;
+    attemptedReplacementUrl: string;
+    private sunsetDismissed = false;
 
     constructor(progressError: ProgressErrorService, versionService: VersionService, appHeaderService: AppHeaderService) {
         this._progressError = progressError;
@@ -37,16 +37,10 @@ export class AppComponent implements OnInit {
 
         versionService.initialise(VERSION, progressError);
         this.overbaardUrl = RestUrlUtil.calculateJiraUrl() + '/overbaard';
+        this.attemptedReplacementUrl = RestUrlUtil.calculateOverbaardUrl();
     }
 
     ngOnInit(): void {
-        let handle: any = setInterval(() => {
-            this.sunsetMsgTTL--;
-            if (this.sunsetMsgTTL <= 0) {
-                this.sunsetDismissed = true;
-                clearInterval(handle);
-            }
-        }, 1000);
     }
 
     get hideProgress(): boolean {

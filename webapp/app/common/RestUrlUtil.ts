@@ -52,6 +52,11 @@ export class RestUrlUtil {
         return "";
     }
 
+    static calculateOverbaardUrl(): string {
+        let url: string = window.location.href;
+        return url.replace('/jirban/', '/overbaard/');
+    }
+
     private static isLocalDebug(location:Location) : boolean {
         return location.hostname === "localhost" && location.port === "3000";
     }

@@ -24,12 +24,14 @@
 </div>
 <div id="sunset" *ngIf="!sunsetDismissed">
     <p>
-        Jirban is being sunset.<br/>
-        Visit <a href="{{overbaardUrl}}">Overbård</a> instead to see what is coming next, and report issues in
-        the <a href='https://github.com/overbaard/overbaard/issues'>Overbård GitHub</a><br/>
+        Jirban has been replaced by <a href="{{overbaardUrl}}">Overbård</a> and will be removed very soon.
     </p>
     <p>
-        <input type="button" value="Continue in Jirban ({{sunsetMsgTTL}})" (click)="dismissSunset($event)"/>
+        Click <a href="{{attemptedReplacementUrl}}">here</a> to attempt to load the same board in Overbård. If that doesn't
+        work, go to the Overbård <a href="{{overbaardUrl}}">main page</a>.
+    </p>
+    <p>
+        If you must, you can <a href="continue" (click)="dismissSunset($event)">continue in Jirban</a> for now.
     </p>
 </div>
 <router-outlet></router-outlet>
